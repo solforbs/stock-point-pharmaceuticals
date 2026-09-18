@@ -1,10 +1,11 @@
-import { Building2, Calendar, ChevronLeft, Search, ShoppingCart } from 'lucide-react'
-import { useEffect } from 'react'
+import { Building2, Calendar, ChevronLeft, Menu, Search, ShoppingCart } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useBranchStore } from '../lib/branch'
 import { formatDate, todayIso } from '../lib/format'
 import Sidebar from './Sidebar'
+import { CommandPalette } from './ui/CommandPalette'
 
 export default function AppLayout() {
   const location = useLocation()
@@ -12,6 +13,8 @@ export default function AppLayout() {
   const { data: user } = useCurrentUser()
   const activeBranchId = useBranchStore((s) => s.activeBranchId)
   const setActiveBranch = useBranchStore((s) => s.setActiveBranch)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [cmdOpen, setCmdOpen] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -21,52 +24,86 @@ export default function AppLayout() {
     }
   }, [user, activeBranchId, setActiveBranch])
 
+  // Close mobile nav on route change
+  useEffect(() => {
+    setMobileNavOpen(false)
+  }, [location.pathname])
+
+  // Global Ctrl+K / ⌘K shortcut
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setCmdOpen((o) => !o)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   const activeBranch = user?.active_branch
   const today = todayIso()
 
   return (
     <div className="flex min-h-svh bg-[#f8fafc]">
-      <Sidebar />
+      <Sidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
+
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-16 border-b border-slate-200/70 bg-white/90 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-20">
-          {isPos ? (
-            <div className="flex items-center gap-3">
-              <span className="text-[15px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                PharmaPoint POS
-              </span>
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200/60">
-                Live Terminal
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 flex-1 max-w-md">
-              <div className="relative w-full">
-                <Search
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Search medicines, batches, customers..."
-                  className="w-full h-9 pl-10 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-[12.5px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
-                />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-400 pointer-events-none tabular">
-                  Ctrl+K
+        <header className="h-16 border-b border-slate-200/70 bg-white/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 gap-3">
+
+          {/* Left section */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {/* Hamburger — mobile only, non-POS */}
+            {!isPos && (
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen(true)}
+                aria-label="Open navigation"
+                className="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+              >
+                <Menu size={20} />
+              </button>
+            )}
+
+            {isPos ? (
+              <div className="flex items-center gap-3">
+                <span className="text-[15px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                  PharmaPoint POS
+                </span>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200/60">
+                  Live Terminal
                 </span>
               </div>
-            </div>
-          )}
+            ) : (
+              /* Search bar — clicking opens the Command Palette */
+              <button
+                type="button"
+                onClick={() => setCmdOpen(true)}
+                className="w-full max-w-md flex items-center gap-2.5 h-9 pl-3.5 pr-3 rounded-xl bg-slate-50 border border-slate-200 text-left cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition-colors group"
+              >
+                <Search size={15} className="text-slate-400 group-hover:text-slate-600 shrink-0 transition-colors" />
+                <span className="text-[13px] text-slate-400 font-medium flex-1 truncate group-hover:text-slate-500 transition-colors">
+                  Search medicines, customers, pages...
+                </span>
+                <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-400 shrink-0">
+                  Ctrl+K
+                </span>
+              </button>
+            )}
+          </div>
 
-          <div className="flex items-center gap-3">
+          {/* Right section */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[12px] font-semibold text-slate-600 tabular">
               <Calendar size={13} className="text-blue-600" />
               {formatDate(today)}
             </span>
 
             {activeBranch && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50/70 border border-blue-200/70 text-[12px] font-bold text-blue-700">
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50/70 border border-blue-200/70 text-[12px] font-bold text-blue-700">
                 <Building2 size={13} />
-                {activeBranch.code} · {activeBranch.name}
+                <span className="hidden lg:inline">{activeBranch.code} · {activeBranch.name}</span>
+                <span className="lg:hidden">{activeBranch.code}</span>
               </span>
             )}
 
@@ -83,7 +120,7 @@ export default function AppLayout() {
                 className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[12.5px] font-bold shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 transition-all cursor-pointer"
               >
                 <ShoppingCart size={15} />
-                Open POS
+                <span className="hidden sm:inline">Open POS</span>
               </Link>
             )}
           </div>
@@ -93,6 +130,9 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Global Command Palette */}
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
     </div>
   )
 }

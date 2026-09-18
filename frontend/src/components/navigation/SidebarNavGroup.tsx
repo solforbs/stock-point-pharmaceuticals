@@ -7,9 +7,10 @@ export interface SidebarNavGroupProps {
   collapsed: boolean
   isOpen: boolean
   onToggle: (key: string) => void
+  onLinkClick?: () => void
 }
 
-export function SidebarNavGroup({ item, collapsed, isOpen, onToggle }: SidebarNavGroupProps) {
+export function SidebarNavGroup({ item, collapsed, isOpen, onToggle, onLinkClick }: SidebarNavGroupProps) {
   const location = useLocation()
   const Icon = item.icon
   const isActive = location.pathname.startsWith(item.path)
@@ -55,6 +56,7 @@ export function SidebarNavGroup({ item, collapsed, isOpen, onToggle }: SidebarNa
               <NavLink
                 key={child.key}
                 to={child.path}
+                onClick={onLinkClick}
                 className={({ isActive: childActive }) =>
                   `block px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors truncate ${
                     childActive
@@ -76,6 +78,7 @@ export function SidebarNavGroup({ item, collapsed, isOpen, onToggle }: SidebarNa
     <div className="mb-1">
       <NavLink
         to={item.path}
+        onClick={onLinkClick}
         title={collapsed ? item.label : undefined}
         className={({ isActive: singleActive }) =>
           `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13.5px] font-bold transition-all group ${
