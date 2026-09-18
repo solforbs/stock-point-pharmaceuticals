@@ -108,7 +108,7 @@ export function ProductSearch({
   return (
     <div ref={wrapRef} className="relative">
       <div className="relative">
-        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
@@ -124,15 +124,15 @@ export function ProductSearch({
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          className="ui-input pl-7"
+          className="ui-input pl-10"
           autoComplete="off"
         />
       </div>
-      {scanError && <div className="text-[11px] text-[var(--status-red)] mt-1">{scanError}</div>}
+      {scanError && <div className="text-[12px] font-bold text-rose-600 mt-1.5 px-1">{scanError}</div>}
       {open && query.trim() && (
-        <div className="absolute z-30 left-0 right-0 top-9 ui-card shadow-xl max-h-72 overflow-y-auto">
+        <div className="absolute z-30 left-0 right-0 top-full mt-1.5 ui-card shadow-2xl max-h-72 overflow-y-auto border border-slate-200">
           {results.length === 0 ? (
-            <div className="px-3 py-2 text-[11.5px] text-[var(--text-muted)]">{isFetching ? 'Searching…' : 'No products match.'}</div>
+            <div className="px-4 py-3 text-xs text-slate-500">{isFetching ? 'Searching…' : 'No products match.'}</div>
           ) : (
             results.map((product, i) => (
               <ProductResultRow key={product.id} product={product} active={i === highlight} onClick={() => choose(product)} onHover={() => setHighlight(i)} />
@@ -163,18 +163,20 @@ export function ProductResultRow({
       type="button"
       onClick={onClick}
       onMouseEnter={onHover}
-      className={`w-full text-left px-3 py-1.5 border-b border-[var(--border)] last:border-b-0 ${active ? 'bg-[var(--surface-3)]' : 'hover:bg-[var(--surface-2)]'}`}
+      className={`w-full text-left px-3.5 py-2 border-b border-slate-100 last:border-b-0 transition-colors cursor-pointer ${
+        active ? 'bg-blue-50 text-blue-900' : 'hover:bg-slate-50 text-slate-800'
+      }`}
     >
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[12.5px] text-[var(--text)] truncate">
+        <span className="text-[13.5px] font-bold text-slate-900 truncate">
           {product.name}
-          {product.strength && <b className="ml-1">{product.strength}</b>}
+          {product.strength && <b className="ml-1 text-slate-700">{product.strength}</b>}
         </span>
-        {uom && <span className="text-[10.5px] text-[var(--text-muted)] shrink-0">{uom.uom?.code ?? ''}</span>}
+        {uom && <span className="text-[11.5px] font-bold text-blue-700 bg-blue-100/60 px-1.5 py-0.2 rounded shrink-0">{uom.uom?.code ?? ''}</span>}
       </div>
-      <div className="flex items-center justify-between gap-2 text-[10.5px] text-[var(--text-muted)]">
+      <div className="flex items-center justify-between gap-2 text-[11.5px] text-slate-500 mt-0.5">
         <span className="truncate">
-          {product.code}
+          #{product.code}
           {product.generic_name ? ` · ${product.generic_name}` : ''}
         </span>
         {extra}
