@@ -2,10 +2,14 @@
 
 namespace Tests\Feature\Blueprint;
 
+use App\Models\ProductBatch;
 use App\Models\Sale;
 use App\Models\SaleLineBatchAllocation;
+use App\Models\StockBalance;
 use App\Models\StockLedger;
+use App\Models\Store;
 use App\Services\Inventory\InsufficientStockException;
+use App\Services\Inventory\StockTransferService;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
 
@@ -97,5 +101,46 @@ class BatchAllocationAndFefoTest extends TestCase
 
         $this->assertSame(0, Sale::count(), 'A failed allocation must leave no partial sale behind');
         $this->assertSame(0, StockLedger::where('txn_type', 'SALE')->count());
+    }
+
+    /**
+     * Part 7.4 — allocation is scoped to the selling store. A released batch
+     * in the warehouse is not sellable at the counter until it is transferred
+     * there, however healthy its QC status looks on the batch screen.
+     */
+    public function test_released_stock_in_another_store_is_not_sellable_until_it_is_transferred(): void
+    {
+        $counter = Store::create([
+            'branch_id' => $this->branch->id,
+            'code' => 'RETAIL',
+            'name' => 'Retail Counter',
+            'store_type' => 'RETAIL',
+            'is_sellable' => true,
+        ]);
+
+        try {
+            $this->checkout([$this->saleLine('TAB', '100', '2.7500')], [['method' => 'CASH', 'amount' => '275.0000']], ['store_id' => $counter->id]);
+            $this->fail('Expected InsufficientStockException: the stock is in MAIN, not at the counter');
+        } catch (InsufficientStockException $e) {
+            $this->assertSame('0.0000', $e->available);
+        }
+
+        $transfers = app(StockTransferService::class);
+        $b2401 = ProductBatch::where('batch_number', 'B-2401')->firstOrFail();
+        $transfer = $transfers->create([
+            'from_store_id' => $this->store->id,
+            'to_store_id' => $counter->id,
+            'user_id' => $this->user->id,
+            'lines' => [['product_id' => $this->amox->id, 'batch_id' => $b2401->id, 'qty_base' => '150.0000']],
+        ]);
+        $transfers->approve($transfer, $this->user->id);
+        $transfers->dispatch($transfer, $this->user->id);
+        $transfers->receive($transfer, $this->user->id);
+
+        $sale = $this->checkout([$this->saleLine('TAB', '100', '2.7500')], [['method' => 'CASH', 'amount' => '275.0000']], ['store_id' => $counter->id]);
+
+        $this->assertSame('B-2401', $sale->lines[0]->batchAllocations[0]->batch->batch_number);
+        $this->assertSame('100.0000', (string) $sale->lines[0]->batchAllocations[0]->qty_base);
+        $this->assertSame('50.0000', (string) StockBalance::where('store_id', $counter->id)->where('product_id', $this->amox->id)->sum('qty_on_hand'));
     }
 }

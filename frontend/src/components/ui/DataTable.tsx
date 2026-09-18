@@ -99,7 +99,7 @@ export function DataTable<T>({
   const colSpan = columns.length + (renderExpanded ? 1 : 0)
 
   return (
-    <div className="overflow-auto" style={maxHeight ? { maxHeight } : undefined}>
+    <div className="overflow-auto rounded-[24px]" style={maxHeight ? { maxHeight } : undefined}>
       <table className="ui-table">
         <thead>
           <tr>

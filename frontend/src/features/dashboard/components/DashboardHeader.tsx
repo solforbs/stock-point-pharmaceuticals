@@ -29,13 +29,13 @@ export function DashboardHeader({
           </h1>
           <div className="flex items-center gap-3 text-[12px] text-[var(--text-muted)] mt-1 font-medium">
             {branchCode && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border)] font-semibold text-[11px]">
-                <Building2 size={12} className="text-[var(--color-navy)]" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold text-[11.5px]">
+                <Building2 size={12} className="text-blue-600" />
                 {branchCode} · {branchName}
               </span>
             )}
-            <span className="inline-flex items-center gap-1.5 tabular text-[11.5px]">
-              <Calendar size={12} />
+            <span className="inline-flex items-center gap-1.5 tabular text-[12px] text-slate-500 font-medium">
+              <Calendar size={13} className="text-slate-400" />
               {formatDate(dateIso)}
             </span>
           </div>

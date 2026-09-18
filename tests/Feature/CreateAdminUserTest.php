@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Console\Commands\CreateAdminUser;
 use App\Models\AuditLog;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -42,9 +43,8 @@ class CreateAdminUserTest extends TestCase
         $this->assertSame(1, AuditLog::where('action', 'USER_CREATED')->where('entity_id', (string) $admin->id)->count());
 
         $this->postJson('/auth/login', ['email' => 'admin@stockpoint.test', 'password' => 'a-long-enough-password'])->assertOk();
-        $this->getJson('/api/user')->assertOk()
-            ->assertJsonPath('active_branch.code', 'LDW')
-            ->assertJsonPath('permissions', ['admin.users', 'admin.settings', 'audit.view']);
+        $permissions = $this->getJson('/api/user')->assertOk()->assertJsonPath('active_branch.code', 'LDW')->json('permissions');
+        $this->assertEqualsCanonicalizing(RoleSeeder::ROLE_PERMISSIONS[CreateAdminUser::SYSTEM_ADMINISTRATOR], $permissions);
 
         // No clinical or financial posting rights.
         $this->postJson('/api/pricing/quote', ['sale_mode' => 'RETAIL', 'store_id' => $this->store->id, 'lines' => []])->assertStatus(403);

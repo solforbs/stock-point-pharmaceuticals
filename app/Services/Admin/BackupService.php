@@ -99,7 +99,7 @@ class BackupService
                 $files[] = $this->entry($path);
             }
         }
-        usort($files, fn (array $a, array $b) => strcmp($b['created_at'], $a['created_at']) ?: strcmp($b['name'], $a['name']));
+        usort($files, fn (array $a, array $b) => strcmp($b['created_at'], $a['created_at']) ?: strcmp($a['name'], $b['name']));
 
         return $files;
     }

@@ -50,14 +50,14 @@ td {
   /* Crisp high-contrast surface and typography colors */
   --bg: #f8fafc;
   --card: #ffffff;
-  --surface-2: #f1f5f9;
-  --surface-3: #e2e8f0;
-  --border: #cbd5e1;
-  --border-strong: #94a3b8;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --border: #f1f5f9;
+  --border-strong: #e2e8f0;
   --input-bg: #ffffff;
   --text: #0f172a;
   --text-secondary: #1e293b;
-  --text-muted: #475569;
+  --text-muted: #64748b;
 }
 
 body {
@@ -99,7 +99,7 @@ body {
   height: 40px;
   padding: 0 14px;
   border-radius: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid #e2e8f0;
   background: var(--input-bg);
   color: var(--text);
   font-size: 13.5px;
@@ -109,7 +109,7 @@ body {
   width: 100%;
   min-width: 0;
   transition: all 0.2s ease-in-out;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
 }
 .ui-input:focus {
   border-color: var(--color-navy-light);
@@ -134,30 +134,27 @@ textarea.ui-input {
   font-weight: 700;
 }
 
-/* Modern card matching 21st.dev / shadcn: 20px radius, soft ambient shadow, subtle border */
+/* Modern luxury SaaS card: 24px radius, soft layered ambient shadow, seamless borderless elevation */
 .ui-card {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 4px 18px -2px rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  border-radius: 24px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.01), 0 8px 24px -4px rgba(15, 23, 42, 0.035);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ui-card:hover {
-  border-color: color-mix(in srgb, var(--border) 60%, var(--color-navy-light));
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 10px 30px -4px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 12px 32px -6px rgba(15, 23, 42, 0.05);
 }
 
 .ui-kbd {
   display: inline-flex;
   align-items: center;
   padding: 2px 7px;
-  border: 1px solid var(--border-strong);
-  border-bottom-width: 2px;
   border-radius: 6px;
   font-size: 11.5px;
   font-weight: 700;
   font-family: inherit;
-  background: var(--surface-2);
+  background: #f1f5f9;
   color: var(--text-secondary);
 }
 
@@ -172,20 +169,20 @@ textarea.ui-input {
   top: 0;
   z-index: 1;
   background: #f8fafc;
-  color: var(--text-secondary);
-  font-size: 12px;
-  letter-spacing: 0.05em;
+  color: #64748b;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   text-align: left;
-  font-weight: 800;
-  padding: 12px 16px;
-  border-bottom: 1px solid #cbd5e1;
+  font-weight: 700;
+  padding: 13px 18px;
+  border-bottom: 1px solid #f1f5f9;
   white-space: nowrap;
   user-select: none;
 }
 .ui-table td {
-  padding: 13px 16px;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f8fafc;
   vertical-align: middle;
   background: #ffffff;
   color: var(--text);

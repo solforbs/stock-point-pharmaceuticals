@@ -93,6 +93,33 @@ class DashboardController extends ApiController
             ];
         }
 
+        // Compliance and people signals from the modules that own them; each
+        // key only appears for someone who may open that screen.
+        $quality = [];
+        if ($user->can('coldchain.record') || $user->can('coldchain.review')) {
+            $quality['cold_chain_open_excursions'] = DB::table('cold_chain_excursions')->where('branch_id', $branchId)->whereIn('status', ['OPEN', 'UNDER_REVIEW'])->count();
+        }
+        if ($user->can('adr.report') || $user->can('adr.manage')) {
+            $quality['adr_draft_reports'] = DB::table('adr_reports')->where('branch_id', $branchId)->where('status', 'DRAFT')->count();
+        }
+        if ($user->can('licence.view')) {
+            $quality['licences_expired'] = DB::table('licences')->where('organisation_id', $organisationId)->where('is_active', true)->whereDate('expiry_date', '<', $today)->count();
+            $quality['licences_expiring_60d'] = DB::table('licences')->where('organisation_id', $organisationId)->where('is_active', true)
+                ->whereBetween('expiry_date', [$today, now()->addDays(60)->toDateString()])->count();
+        }
+        // Everyone sees the SOPs they have not read yet, so this block is never empty.
+        $quality['documents_to_acknowledge'] = DB::table('controlled_documents as d')
+            ->join('document_versions as v', 'v.id', '=', 'd.current_version_id')
+            ->where('d.organisation_id', $organisationId)->where('d.status', 'ACTIVE')
+            ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('document_acknowledgements as a')
+                ->whereColumn('a.document_version_id', 'v.id')->where('a.user_id', $user->id))
+            ->count();
+
+        $people = [];
+        if ($user->can('leave.approve')) {
+            $people['leave_pending'] = DB::table('leave_requests')->where('organisation_id', $organisationId)->where('status', 'PENDING')->count();
+        }
+
         $finance = null;
         if ($user->can('journal.post') || $user->can('period.close')) {
             $open = FinancialPeriod::where('organisation_id', $organisationId)->where('status', 'OPEN')
@@ -110,6 +137,8 @@ class DashboardController extends ApiController
             'inventory' => $inventory,
             'procurement' => $procurement,
             'compliance' => $compliance,
+            'quality' => $quality,
+            'people' => $people === [] ? null : $people,
             'finance' => $finance,
         ]);
     }

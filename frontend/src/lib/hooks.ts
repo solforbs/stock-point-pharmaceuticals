@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from './api'
-import type { AdminBranch, AdminRole, CustomerTier, DashboardSummary, Paginated, PermissionGroup, PriceList, Product, ProductCategory, ProductStock, PurchaseOrder, Store, Supplier, TaxCode, Uom, UserRef } from './types'
+import type { AdminBranch, AdminRole, CustomerTier, DashboardSummary, DosageForm, Paginated, PermissionGroup, PriceList, Product, ProductCategory, ProductStock, PurchaseOrder, StorageCondition, Store, Supplier, TaxCode, Uom, UserRef } from './types'
 
 export function useUsers(q = '') {
   return useQuery({ queryKey: ['users', q], queryFn: () => apiGet<UserRef[]>('/api/users', { q }), staleTime: 60_000 })
@@ -16,6 +16,14 @@ export function usePurchaseOrder(id: string | null | undefined) {
 
 export function useStores() {
   return useQuery({ queryKey: ['stores'], queryFn: () => apiGet<Store[]>('/api/stores'), staleTime: 5 * 60_000 })
+}
+
+export function useDosageForms() {
+  return useQuery({ queryKey: ['dosage-forms'], queryFn: () => apiGet<DosageForm[]>('/api/dosage-forms'), staleTime: 10 * 60_000 })
+}
+
+export function useStorageConditions() {
+  return useQuery({ queryKey: ['storage-conditions'], queryFn: () => apiGet<StorageCondition[]>('/api/storage-conditions'), staleTime: 10 * 60_000 })
 }
 
 export function useUoms() {

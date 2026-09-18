@@ -2,6 +2,7 @@
 
 use App\Exceptions\ApiErrorMap;
 use App\Http\Middleware\AttachRequestId;
+use App\Http\Middleware\ResolveActiveBranch;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -21,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->append(AttachRequestId::class);
         $middleware->alias([
-            'branch.context' => \App\Http\Middleware\ResolveActiveBranch::class,
+            'branch.context' => ResolveActiveBranch::class,
         ]);
 
         // This backend has no server-rendered login page — the SPA owns
@@ -35,7 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen($isApi);
 
         // Part 21.15 — domain exceptions become stable error codes.
-        $exceptions->render(function (\Throwable $e, Request $request) use ($isApi) {
+        $exceptions->render(function (Throwable $e, Request $request) use ($isApi) {
             if (! $isApi($request)) {
                 return null;
             }

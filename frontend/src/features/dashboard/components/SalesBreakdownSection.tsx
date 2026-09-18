@@ -19,18 +19,18 @@ export function SalesBreakdownSection({ salesToday }: SalesBreakdownSectionProps
   const totalAmount = Number(salesToday.total ?? 0)
 
   return (
-    <section className="ui-card p-5">
-      <header className="flex items-center justify-between pb-4 border-b border-[var(--border)] mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600">
-            <TrendingUp size={16} />
+    <section className="bg-white rounded-[26px] p-6 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_10px_28px_-6px_rgba(15,23,42,0.03)] border-0">
+      <header className="flex items-center justify-between pb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <TrendingUp size={18} />
           </div>
           <div>
-            <h2 className="text-[14px] font-bold text-[var(--text)]">Sales by Channel Today</h2>
-            <p className="text-[11px] text-[var(--text-muted)]">Real-time revenue split across active sales desks</p>
+            <h2 className="text-[14.5px] font-bold text-slate-900">Sales by Channel Today</h2>
+            <p className="text-[11.5px] text-slate-400 font-medium">Real-time revenue split across active sales desks</p>
           </div>
         </div>
-        <span className="text-[14px] font-black tabular text-[var(--text)]">
+        <span className="text-[15px] font-black tabular text-slate-900">
           {formatKes(salesToday.total)}
         </span>
       </header>

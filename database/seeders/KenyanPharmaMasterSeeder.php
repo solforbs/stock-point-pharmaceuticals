@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class KenyanPharmaMasterSeeder extends Seeder
 {
@@ -19,9 +20,7 @@ class KenyanPharmaMasterSeeder extends Seeder
     {
         $org = Organisation::first();
         if (! $org) {
-            $this->command?->error('Organisation not found. Run OrganisationSeeder first.');
-
-            return;
+            throw new RuntimeException('Organisation not found. Run OrganisationSeeder first.');
         }
 
         $admin = User::where('email', 'admin@example.com')->first();

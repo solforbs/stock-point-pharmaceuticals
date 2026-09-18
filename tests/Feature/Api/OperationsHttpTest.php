@@ -171,7 +171,7 @@ class OperationsHttpTest extends TestCase
 
     public function test_operations_endpoints_require_admin_settings(): void
     {
-        $this->user->roles()->detach();
+        $this->revokeAllRoles();
         $this->grantPermissions(['product.view'], 'Viewer');
 
         $this->getJson('/api/admin/system-health')->assertForbidden();
@@ -184,7 +184,7 @@ class OperationsHttpTest extends TestCase
 
     public function test_sync_status_reports_session_terminal_activity_and_the_etims_queue(): void
     {
-        $this->user->roles()->detach();
+        $this->revokeAllRoles();
         $this->grantPermissions(['sale.view'], 'Supervisor');
 
         $this->receive('L1', now()->addYear()->toDateString(), '2000', '2.0000');

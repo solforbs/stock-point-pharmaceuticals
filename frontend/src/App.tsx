@@ -88,6 +88,7 @@ const SystemHealthPage = lazy(() => import('./features/admin/SystemHealthPage'))
 const BackupPage = lazy(() => import('./features/admin/BackupPage'))
 const SyncCentrePage = lazy(() => import('./features/admin/SyncCentrePage'))
 const PricingRulesPage = lazy(() => import('./features/admin/pricing/PricingRulesPage'))
+import { NAV_ITEMS } from './lib/navigation'
 
 function App() {
   return (
@@ -178,6 +179,11 @@ function App() {
             <Route path="/reports/analytics" element={<AnalyticsPage />} />
             <Route path="/reports/scheduled" element={<ScheduledReportsPage />} />
             <Route path="/admin/pricing-rules" element={<PricingRulesPage />} />
+
+            {/* A module header (/sell, /inventory …) opens its first section. */}
+            {NAV_ITEMS.filter((m) => m.children?.length).map((m) => (
+              <Route key={m.key} path={m.path} element={<Navigate to={m.children![0].path} replace />} />
+            ))}
 
             <Route path="/:moduleKey" element={<Placeholder />} />
             <Route path="/:moduleKey/:sectionKey" element={<Placeholder />} />

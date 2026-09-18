@@ -21,14 +21,14 @@ const ACTIONS = [
 
 export function QuickActionsSection() {
   return (
-    <section className="ui-card p-5">
-      <header className="flex items-center gap-2 pb-4 border-b border-[var(--border)] mb-4">
-        <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
+    <section className="bg-white rounded-[26px] p-6 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_10px_28px_-6px_rgba(15,23,42,0.03)] border-0">
+      <header className="flex items-center gap-2.5 mb-4">
+        <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
           <Zap size={16} />
         </div>
         <div>
-          <h2 className="text-[13.5px] font-bold text-[var(--text)]">Quick Actions</h2>
-          <p className="text-[11px] text-[var(--text-muted)]">Frequent operational shortcuts</p>
+          <h2 className="text-[14px] font-bold text-slate-900">Quick Actions</h2>
+          <p className="text-[11.5px] text-slate-400 font-medium">Frequent operational shortcuts</p>
         </div>
       </header>
 
@@ -39,16 +39,16 @@ export function QuickActionsSection() {
             <motion.div key={action.to} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
               <Link
                 to={action.to}
-                className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--color-navy-light)] hover:bg-[var(--card)] transition-all flex flex-col justify-between h-full group"
+                className="p-3.5 rounded-2xl bg-slate-50/80 hover:bg-white hover:shadow-[0_4px_20px_-4px_rgba(15,23,42,0.08)] border-0 transition-all duration-200 flex flex-col justify-between h-full group"
               >
-                <div className="p-2 w-fit rounded-lg bg-[var(--card)] group-hover:bg-[color-mix(in_srgb,var(--color-navy)_10%,transparent)] text-[var(--color-navy)] border border-[var(--border)] mb-2 transition-colors">
+                <div className="w-9 h-9 rounded-xl bg-white shadow-2xs text-blue-600 flex items-center justify-center mb-2.5 group-hover:bg-blue-600 group-hover:text-white transition-all">
                   <Icon size={16} />
                 </div>
                 <div>
-                  <div className="text-[12.5px] font-bold text-[var(--text)] group-hover:text-[var(--color-navy)] transition-colors">
+                  <div className="text-[13px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                     {action.label}
                   </div>
-                  <div className="text-[10.5px] text-[var(--text-muted)] font-medium">
+                  <div className="text-[11px] text-slate-400 font-medium">
                     {action.desc}
                   </div>
                 </div>

@@ -19,6 +19,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class KenyanPharmaSalesSeeder extends Seeder
 {
@@ -26,14 +27,12 @@ class KenyanPharmaSalesSeeder extends Seeder
     {
         $org = Organisation::first();
         if (! $org) {
-            $this->command?->error('Organisation not found.');
-
-            return;
+            throw new RuntimeException('Organisation not found. Run OrganisationSeeder first.');
         }
 
         $branch = Branch::where('organisation_id', $org->id)->first();
         $admin = User::where('email', 'admin@example.com')->first();
-        $userId = $admin?->id ?? 1;
+        $userId = $admin->id ?? 1;
 
         $stores = Store::where('branch_id', $branch->id)->get()->keyBy('code');
         $mainStore = $stores['MAIN'];

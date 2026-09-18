@@ -31,45 +31,45 @@ export function StatCard({
   isLoading = false,
 }: StatCardProps) {
   const content = (
-    <div className="flex flex-col justify-between h-full space-y-3">
+    <div className="flex flex-col justify-between h-full space-y-3.5">
       <div className="flex items-center justify-between">
-        <span className="text-[12.5px] font-bold text-slate-500">
+        <span className="text-[13px] font-bold text-slate-500">
           {label}
         </span>
         <div
-          className="p-2.5 rounded-2xl transition-transform duration-200 group-hover:scale-105"
+          className="w-10 h-10 rounded-2xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shrink-0"
           style={{
             background: `color-mix(in srgb, ${tone} 10%, transparent)`,
             color: tone,
           }}
         >
-          <Icon size={18} />
+          <Icon size={19} />
         </div>
       </div>
 
       <div>
-        <div className="text-[26px] font-black tabular tracking-tight text-slate-900 leading-tight">
+        <div className="text-[28px] font-black tabular tracking-tight text-slate-900 leading-tight">
           {isLoading ? (
-            <span className="inline-block w-28 h-8 bg-slate-100 rounded-xl animate-pulse" />
+            <span className="inline-block w-32 h-8 bg-slate-100/80 rounded-xl animate-pulse" />
           ) : (
             value
           )}
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-1">
+      <div className="flex items-center justify-between gap-2 pt-0.5">
         {hint && (
-          <div className="text-[11.5px] text-slate-500 font-medium truncate">
+          <div className="text-[12px] text-slate-400 font-medium truncate">
             {hint}
           </div>
         )}
         {trend && (
           <span
             className={cn(
-              'inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full tabular shrink-0 ml-auto',
+              'inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full tabular shrink-0 ml-auto',
               trend.isPositive
-                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
-                : 'bg-rose-50 text-rose-600 border border-rose-200/60'
+                ? 'bg-emerald-50 text-emerald-700'
+                : 'bg-rose-50 text-rose-700'
             )}
           >
             {trend.value}
@@ -80,7 +80,7 @@ export function StatCard({
   )
 
   const cardClasses = cn(
-    'ui-card p-5 block transition-all duration-200 group cursor-pointer',
+    'bg-white rounded-[24px] p-6 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_10px_28px_-6px_rgba(15,23,42,0.03)] hover:shadow-[0_6px_24px_-4px_rgba(15,23,42,0.06),0_16px_36px_-6px_rgba(15,23,42,0.05)] transition-all duration-300 block group',
     className
   )
 

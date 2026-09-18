@@ -13,17 +13,17 @@ export function LatestSalesSection({ sales, isLoading = false }: LatestSalesSect
   const displaySales = sales.slice(0, 6)
 
   return (
-    <section className="ui-card flex flex-col overflow-hidden">
-      <header className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+    <section className="bg-white rounded-[26px] p-6 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_10px_28px_-6px_rgba(15,23,42,0.03)] border-0 flex flex-col overflow-hidden">
+      <header className="flex items-center justify-between pb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+          <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
             <ReceiptText size={18} />
           </div>
           <div>
-            <h2 className="text-[14px] font-bold text-slate-900">
+            <h2 className="text-[14.5px] font-bold text-slate-900">
               Recent Posted Sales
             </h2>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11.5px] text-slate-400 font-medium">
               Audited invoices across wholesale & counter desks
             </p>
           </div>

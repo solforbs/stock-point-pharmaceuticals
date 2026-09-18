@@ -275,6 +275,22 @@ trait BuildsBlueprintWorld
      *
      * @param  list<string>  $permissions
      */
+    /**
+     * Removes every role assignment, in every branch. `$user->roles()->detach()`
+     * cannot do this: with Spatie teams the relation is scoped to the team id
+     * in context, which is null outside a request.
+     */
+    protected function revokeAllRoles(): void
+    {
+        DB::table(config('permission.table_names.model_has_roles'))
+            ->where('model_type', $this->user->getMorphClass())
+            ->where('model_id', $this->user->getKey())
+            ->delete();
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->user->unsetRelation('roles')->unsetRelation('permissions');
+    }
+
     protected function grantPermissions(array $permissions, string $roleName = 'Test role'): Role
     {
         foreach ($permissions as $name) {

@@ -49,9 +49,9 @@ export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCard
   const channels: SaleMode[] = ['WHOLESALE', 'RETAIL', 'DISPENSING']
 
   return (
-    <section className="ui-card p-6 flex flex-col justify-between">
+    <section className="bg-white rounded-[26px] p-6 md:p-7 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_10px_28px_-6px_rgba(15,23,42,0.03)] border-0 flex flex-col justify-between">
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3">
           <div>
             <span className="text-[12px] font-bold uppercase tracking-wider text-slate-400">
               Total Revenue Today
@@ -60,13 +60,13 @@ export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCard
               <span className="text-[32px] font-black tabular tracking-tight text-slate-900">
                 {formatKes(salesToday?.total ?? '0')}
               </span>
-              <span className="text-[12px] font-semibold text-slate-500 tabular">
+              <span className="text-[12px] font-semibold text-slate-400 tabular">
                 {salesToday?.count ?? salesList.length} transaction{(salesToday?.count ?? salesList.length) === 1 ? '' : 's'} posted
               </span>
             </div>
           </div>
           {salesToday?.voided_today ? (
-            <div className="text-[12px] text-rose-600 font-semibold">
+            <div className="text-[12px] text-rose-600 font-semibold px-3 py-1 rounded-full bg-rose-50 w-fit">
               {salesToday.voided_today} sale{salesToday.voided_today === 1 ? '' : 's'} voided today
             </div>
           ) : null}
@@ -78,28 +78,28 @@ export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCard
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.25} />
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2} />
                     <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="time" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                <XAxis dataKey="time" stroke="#cbd5e1" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip
                   formatter={(val: any) => [formatKes(String(val ?? 0)), 'Cumulative Revenue']}
                   contentStyle={{
                     backgroundColor: '#ffffff',
-                    borderRadius: '12px',
-                    border: '1px solid #e2e8f0',
-                    boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
+                    borderRadius: '16px',
+                    border: 'none',
+                    boxShadow: '0 8px 24px -4px rgba(0,0,0,0.08)',
                     fontSize: '12px',
-                    fontWeight: 600,
+                    fontWeight: 700,
                   }}
                 />
-                <Area type="monotone" dataKey="amount" stroke="#2563eb" strokeWidth={2.5} fillOpacity={1} fill="url(#salesGrad)" />
+                <Area type="monotone" dataKey="amount" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#salesGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-44 w-full my-2 flex flex-col items-center justify-center rounded-2xl bg-slate-50/60 border border-dashed border-slate-200 p-6 text-center">
+          <div className="h-44 w-full my-2 flex flex-col items-center justify-center rounded-2xl bg-slate-50/50 p-6 text-center">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 shadow-2xs">
               <TrendingUp size={18} />
             </div>
@@ -111,7 +111,7 @@ export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCard
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-slate-100">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-5 mt-2">
         {channels.map((mode) => {
           const cfg = CHANNEL_CONFIG[mode]
           const data = salesToday?.by_mode[mode]
@@ -121,13 +121,16 @@ export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCard
           return (
             <div
               key={mode}
-              className={`p-3.5 rounded-2xl bg-slate-50/70 border-t-3 ${cfg.border} flex flex-col justify-between`}
+              className="p-4 rounded-2xl bg-slate-50/70 hover:bg-slate-50 transition-colors flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between text-[11.5px] font-bold text-slate-500 mb-1">
-                <span>{cfg.label}</span>
-                <span className="tabular">{count} sales</span>
+              <div className="flex items-center justify-between text-[11.5px] font-bold text-slate-500 mb-1.5">
+                <span className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${cfg.bg}`} />
+                  {cfg.label}
+                </span>
+                <span className="tabular font-medium text-slate-400">{count} sales</span>
               </div>
-              <div className="text-[16px] font-extrabold text-slate-900 tabular">
+              <div className="text-[17px] font-black text-slate-900 tabular tracking-tight">
                 {formatKes(total)}
               </div>
             </div>

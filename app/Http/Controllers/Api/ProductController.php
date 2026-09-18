@@ -213,6 +213,7 @@ class ProductController extends ApiController
             'generic_name' => ['nullable', 'string', 'max:255'],
             'strength' => ['nullable', 'string', 'max:255'],
             'category_id' => ['nullable', 'uuid', 'exists:product_categories,id'],
+            'dosage_form_id' => ['nullable', 'uuid', 'exists:dosage_forms,id'],
             'manufacturer_id' => ['nullable', 'uuid', 'exists:manufacturers,id'],
             'tax_code_id' => ['nullable', 'uuid', 'exists:tax_codes,id'],
             'storage_condition_id' => ['nullable', 'uuid', 'exists:storage_conditions,id'],
