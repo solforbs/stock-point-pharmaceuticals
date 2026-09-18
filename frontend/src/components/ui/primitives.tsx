@@ -4,17 +4,17 @@ type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'success'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
 const variantClass: Record<ButtonVariant, string> = {
-  primary: 'bg-[var(--color-navy)] text-white hover:bg-[var(--color-navy-dark)] border-transparent',
-  success: 'bg-[var(--status-green)] text-white hover:brightness-95 border-transparent',
-  secondary: 'bg-[var(--card)] text-[var(--text)] border-[var(--border-strong)] hover:bg-[var(--surface-2)]',
-  danger: 'bg-[var(--status-red)] text-white hover:brightness-95 border-transparent',
-  ghost: 'bg-transparent text-[var(--text-secondary)] border-transparent hover:bg-[var(--surface-2)]',
+  primary: 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs shadow-blue-500/20 border-transparent',
+  success: 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent shadow-xs',
+  secondary: 'bg-white text-slate-800 border-slate-200 hover:bg-slate-50 shadow-2xs',
+  danger: 'bg-rose-600 text-white hover:bg-rose-700 border-transparent shadow-xs',
+  ghost: 'bg-transparent text-slate-600 border-transparent hover:bg-slate-100',
 }
 
 const sizeClass: Record<ButtonSize, string> = {
-  sm: 'h-7 px-2.5 text-[11.5px]',
-  md: 'h-8 px-3.5 text-[12.5px]',
-  lg: 'h-10 px-5 text-[13px] font-bold',
+  sm: 'h-8 px-3 text-[11.5px] rounded-lg',
+  md: 'h-9 px-4 text-[12.5px] rounded-xl',
+  lg: 'h-10 px-5 text-[13.5px] font-bold rounded-xl',
 }
 
 export function Button({
@@ -27,7 +27,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-md border font-semibold whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variantClass[variant]} ${sizeClass[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 border font-bold whitespace-nowrap transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${variantClass[variant]} ${sizeClass[size]} ${className}`}
       {...rest}
     />
   )

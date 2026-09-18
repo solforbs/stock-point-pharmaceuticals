@@ -1,4 +1,5 @@
-import { Activity, ChevronsLeft, ChevronsRight, Pill } from 'lucide-react'
+import { Activity, ChevronUp, ChevronsLeft, ChevronsRight, Pill, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
@@ -27,6 +28,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(readInitialCollapsed)
+  const [showStatusPopup, setShowStatusPopup] = useState(false)
   const location = useLocation()
   const { data: user } = useCurrentUser()
 
@@ -104,22 +106,88 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <footer className="shrink-0 p-3 space-y-2.5 border-t border-slate-100 bg-slate-50/50">
-        {!collapsed && (
-          <div className="space-y-2">
-            <SidebarBranchSelector user={user} />
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-500/15">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-100">
-                <Activity size={12} className="text-emerald-300 animate-pulse" />
-                Branch Operational
-              </div>
-              <div className="mt-1.5 flex items-center justify-between">
-                <span className="text-[10.5px] text-blue-100/90">PPB Verified</span>
-                <SyncStatusChip invert />
-              </div>
+      <footer className="shrink-0 p-3 space-y-2 border-t border-slate-100 bg-slate-50/50 relative">
+        {/* Compact Click-to-View Status Trigger */}
+        {!collapsed ? (
+          <button
+            type="button"
+            onClick={() => setShowStatusPopup((prev) => !prev)}
+            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white hover:bg-blue-50/70 border border-slate-200/80 transition-all text-left text-[11.5px] cursor-pointer shadow-2xs group"
+            title="Click to view branch & sync status"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span className="font-bold text-slate-700 truncate group-hover:text-blue-700">
+                {user?.active_branch?.code ?? 'LDW'} · Operational
+              </span>
             </div>
-          </div>
+            <ChevronUp
+              size={13}
+              className={`text-slate-400 transition-transform duration-200 group-hover:text-blue-600 shrink-0 ${
+                showStatusPopup ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowStatusPopup((prev) => !prev)}
+            className="w-full flex justify-center py-1.5 rounded-xl hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+            title="Branch Operational · Click for status"
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+            </span>
+          </button>
         )}
+
+        {/* Floating Details Popup when Clicked */}
+        <AnimatePresence>
+          {showStatusPopup && (
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.96 }}
+              transition={{ duration: 0.15 }}
+              className="absolute bottom-20 left-3 right-3 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-900/10 z-50 space-y-2.5"
+            >
+              <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-slate-800">
+                  <Activity size={13} className="text-emerald-500" />
+                  Branch & Sync Status
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowStatusPopup(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+                  aria-label="Close status"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+
+              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-sm">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-blue-100">
+                  Branch Operational
+                </div>
+                <div className="text-[12.5px] font-extrabold mt-0.5">
+                  {user?.active_branch?.name ?? 'Lodwar Main Branch'}
+                </div>
+                <div className="mt-2 pt-2 border-t border-white/15 flex items-center justify-between text-[10.5px]">
+                  <span className="text-blue-100">PPB Verified</span>
+                  <SyncStatusChip invert />
+                </div>
+              </div>
+
+              <SidebarBranchSelector user={user} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <SidebarUserProfile user={user} collapsed={collapsed} />
       </footer>
     </aside>
