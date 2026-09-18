@@ -42,6 +42,11 @@ class DatabaseSeeder extends Seeder
             MrlPricelistSeeder::class,
             MrlPricelistRemainderSeeder::class,
             ProductTaxDefaultSeeder::class,
+            KenyanPharmaMasterSeeder::class,
+            KenyanPharmaStockSeeder::class,
+            KenyanPharmaSalesSeeder::class,
+            KenyanPharmaFinanceSeeder::class,
+            KenyanPharmaApprovalsSeeder::class,
         ]);
     }
 }
