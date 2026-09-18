@@ -1,5 +1,6 @@
-import { ArrowRight, ReceiptText } from 'lucide-react'
+import { ArrowRight, ReceiptText, Store } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { StatusBadge } from '../../../components/ui/StatusBadge'
 import { formatKes } from '../../../lib/money'
 import type { Sale } from '../../../lib/types'
 
@@ -9,37 +10,41 @@ export interface LatestSalesSectionProps {
 }
 
 export function LatestSalesSection({ sales, isLoading = false }: LatestSalesSectionProps) {
-  const displaySales = sales.slice(0, 7)
+  const displaySales = sales.slice(0, 6)
 
   return (
     <section className="ui-card flex flex-col overflow-hidden">
-      <header className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-[color-mix(in_srgb,var(--color-navy)_12%,transparent)] text-[var(--color-navy)] dark:text-blue-400">
-            <ReceiptText size={16} />
+      <header className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+            <ReceiptText size={18} />
           </div>
           <div>
-            <h2 className="text-[13.5px] font-bold text-[var(--text)]">Recent Posted Sales</h2>
-            <p className="text-[11px] text-[var(--text-muted)]">Latest invoices across wholesale & POS</p>
+            <h2 className="text-[14px] font-bold text-slate-900 dark:text-white">
+              Recent Posted Sales
+            </h2>
+            <p className="text-[11px] text-slate-400">
+              Audited invoices across wholesale & counter desks
+            </p>
           </div>
         </div>
         <Link
           to="/sell/invoices"
-          className="inline-flex items-center gap-1 text-[11.5px] font-bold text-[var(--color-navy)] dark:text-blue-400 hover:underline"
+          className="inline-flex items-center gap-1.5 text-[12px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors"
         >
-          All Invoices <ArrowRight size={12} />
+          View all invoices <ArrowRight size={13} />
         </Link>
       </header>
 
       {isLoading ? (
         <div className="p-6 space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-8 bg-[var(--surface-2)] rounded animate-pulse" />
+            <div key={i} className="h-9 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : displaySales.length === 0 ? (
-        <div className="p-6 text-center text-[12.5px] text-[var(--text-muted)]">
-          No sales recorded yet today.
+        <div className="p-8 text-center text-[13px] text-slate-400">
+          No transactions posted yet today.
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -48,30 +53,31 @@ export function LatestSalesSection({ sales, isLoading = false }: LatestSalesSect
               <tr>
                 <th>Invoice #</th>
                 <th>Mode</th>
-                <th>Customer / Account</th>
+                <th>Customer / Healthcare Account</th>
                 <th className="text-right">Total (KES)</th>
               </tr>
             </thead>
             <tbody>
               {displaySales.map((sale) => (
-                <tr key={sale.id} className="group hover:bg-[var(--surface-2)] transition-colors">
+                <tr key={sale.id} className="group hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                   <td className="tabular font-bold">
                     <Link
                       to={`/sell/invoices?sale=${sale.id}`}
-                      className="text-[var(--color-navy)] dark:text-blue-400 hover:underline"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 transition-colors text-[12px]"
                     >
                       {sale.doc_number}
                     </Link>
                   </td>
                   <td>
-                    <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border)]">
-                      {sale.sale_mode}
-                    </span>
+                    <StatusBadge status={sale.sale_mode} />
                   </td>
-                  <td className="text-[var(--text)] font-medium">
-                    {sale.customer?.name ?? 'Walk-in Cash Customer'}
+                  <td>
+                    <div className="flex items-center gap-2 font-medium text-slate-800 dark:text-slate-200">
+                      <Store size={14} className="text-slate-400 shrink-0" />
+                      <span>{sale.customer?.name ?? 'Walk-in Cash Customer'}</span>
+                    </div>
                   </td>
-                  <td className="text-right tabular font-extrabold text-[var(--text)]">
+                  <td className="text-right tabular font-black text-slate-900 dark:text-white text-[13.5px]">
                     {formatKes(sale.grand_total)}
                   </td>
                 </tr>

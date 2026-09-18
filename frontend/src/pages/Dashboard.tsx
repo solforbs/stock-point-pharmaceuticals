@@ -4,9 +4,9 @@ import { ApprovalsQueueSection } from '../features/dashboard/components/Approval
 import { AttentionAlertsSection } from '../features/dashboard/components/AttentionAlertsSection'
 import { DashboardHeader } from '../features/dashboard/components/DashboardHeader'
 import { DashboardKpis } from '../features/dashboard/components/DashboardKpis'
+import { HeroSalesChartCard } from '../features/dashboard/components/HeroSalesChartCard'
 import { LatestSalesSection } from '../features/dashboard/components/LatestSalesSection'
-import { QuickActionsSection } from '../features/dashboard/components/QuickActionsSection'
-import { SalesBreakdownSection } from '../features/dashboard/components/SalesBreakdownSection'
+import { SalesActivityCard } from '../features/dashboard/components/SalesActivityCard'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { apiGet } from '../lib/api'
 import { dCmp, dIsPos, dSum } from '../lib/decimal'
@@ -20,7 +20,7 @@ const containerVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.3, staggerChildren: 0.08 },
+    transition: { duration: 0.35, staggerChildren: 0.08 },
   },
 }
 
@@ -93,14 +93,18 @@ export default function Dashboard() {
         stockLoading={stock.isLoading}
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SalesBreakdownSection salesToday={salesToday} />
-        <ApprovalsQueueSection approvals={s?.approvals} />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <HeroSalesChartCard salesToday={salesToday} salesList={todayRows} />
+        </div>
+        <div>
+          <SalesActivityCard />
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        <ApprovalsQueueSection approvals={s?.approvals} />
         <AttentionAlertsSection summary={s} />
-        <QuickActionsSection />
       </div>
 
       <LatestSalesSection sales={todayRows} isLoading={sales.isLoading} />

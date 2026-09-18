@@ -25,64 +25,68 @@ export function StatCard({
   value,
   hint,
   to,
-  tone = 'var(--color-navy)',
+  tone = '#2563eb',
   trend,
   className,
   isLoading = false,
 }: StatCardProps) {
   const content = (
-    <div className="flex items-start justify-between gap-3">
-      <div className="flex items-start gap-3 min-w-0 flex-1">
+    <div className="flex flex-col justify-between h-full space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-[12.5px] font-bold text-slate-500 dark:text-slate-400">
+          {label}
+        </span>
         <div
-          className="p-2.5 rounded-xl shrink-0 transition-transform duration-200 group-hover:scale-105"
+          className="p-2.5 rounded-2xl transition-transform duration-200 group-hover:scale-105"
           style={{
-            background: `color-mix(in srgb, ${tone} 12%, transparent)`,
+            background: `color-mix(in srgb, ${tone} 10%, transparent)`,
             color: tone,
-            boxShadow: `0 0 12px color-mix(in srgb, ${tone} 15%, transparent)`,
           }}
         >
-          <Icon size={20} />
+          <Icon size={18} />
         </div>
-        <div className="min-w-0 flex-1">
-          <span className="ui-label !mb-1 text-[11px] font-bold tracking-wider">{label}</span>
-          <div className="text-[24px] font-black tabular tracking-tight leading-tight text-[var(--text)]">
-            {isLoading ? (
-              <span className="inline-block w-24 h-7 bg-[var(--surface-3)] rounded animate-pulse" />
-            ) : (
-              value
-            )}
-          </div>
-          {hint && (
-            <div className="text-[11.5px] text-[var(--text-muted)] mt-1 font-medium leading-normal">
-              {hint}
-            </div>
+      </div>
+
+      <div>
+        <div className="text-[26px] font-black tabular tracking-tight text-slate-900 dark:text-white leading-tight">
+          {isLoading ? (
+            <span className="inline-block w-28 h-8 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
+          ) : (
+            value
           )}
         </div>
       </div>
-      {trend && (
-        <span
-          className={cn(
-            'inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full tabular shrink-0',
-            trend.isPositive
-              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-              : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-          )}
-        >
-          {trend.value}
-        </span>
-      )}
+
+      <div className="flex items-center justify-between gap-2 pt-1">
+        {hint && (
+          <div className="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium truncate">
+            {hint}
+          </div>
+        )}
+        {trend && (
+          <span
+            className={cn(
+              'inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full tabular shrink-0 ml-auto',
+              trend.isPositive
+                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60'
+                : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/60'
+            )}
+          >
+            {trend.value}
+          </span>
+        )}
+      </div>
     </div>
   )
 
   const cardClasses = cn(
-    'ui-card p-5 block relative overflow-hidden transition-all duration-200 border-[var(--border)] group',
-    'hover:border-[var(--color-navy-light)] hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20',
+    'ui-card p-5 block transition-all duration-200 group cursor-pointer',
     className
   )
 
   if (to) {
     return (
-      <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.99 }}>
+      <motion.div whileHover={{ y: -3 }} whileTap={{ scale: 0.99 }}>
         <Link to={to} className={cardClasses}>
           {content}
         </Link>

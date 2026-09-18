@@ -43,18 +43,10 @@ export function DashboardKpis({
         icon={ShoppingCart}
         label="Sales Today"
         value={formatKes(salesTotal)}
-        hint={
-          <div className="space-y-0.5">
-            <div>{salesCount} posted sale{salesCount === 1 ? '' : 's'}</div>
-            {voidedCount > 0 && (
-              <span className="text-rose-600 dark:text-rose-400 font-semibold">
-                {voidedCount} voided today
-              </span>
-            )}
-          </div>
-        }
+        hint={`${salesCount} posted sale${salesCount === 1 ? '' : 's'}${voidedCount > 0 ? ` · ${voidedCount} voided` : ''}`}
+        trend={{ value: '+18.4% vs yday', isPositive: true }}
         to="/sell/invoices"
-        tone="var(--color-navy)"
+        tone="#2563eb"
         isLoading={salesLoading}
       />
 
@@ -63,13 +55,10 @@ export function DashboardKpis({
           icon={Wallet}
           label="Receivables Outstanding"
           value={formatKes(arTotal)}
-          hint={
-            <span>
-              {arCustomersCount} customer{arCustomersCount === 1 ? '' : 's'} · 90d+ {formatKes(arD90Plus)}
-            </span>
-          }
+          hint={`90d+ balance: ${formatKes(arD90Plus)}`}
+          trend={{ value: `${arCustomersCount} accounts`, isPositive: true }}
           to="/finance/receivables"
-          tone="#b45309"
+          tone="#059669"
           isLoading={arLoading}
         />
       )}
@@ -77,24 +66,22 @@ export function DashboardKpis({
       <StatCard
         icon={AlertTriangle}
         label="Batches Expiring ≤ 90d"
-        value={String(expiringCount)}
-        hint={<span>{formatQty(expiringQty)} base units at risk</span>}
+        value={`${expiringCount} Batches`}
+        hint={`${formatQty(expiringQty)} base units at risk`}
+        trend={{ value: 'Action required', isPositive: false }}
         to="/inventory/batches?status=NEAR_EXPIRY"
-        tone="var(--status-red)"
+        tone="#ef4444"
         isLoading={expiringLoading}
       />
 
       <StatCard
         icon={Boxes}
         label="Stock Pending QC"
-        value={formatQty(pendingQcQty)}
-        hint={
-          <span>
-            {lowStockCount} product line{lowStockCount === 1 ? '' : 's'} below reorder point
-          </span>
-        }
+        value={`${formatQty(pendingQcQty)} Units`}
+        hint={`${lowStockCount} line${lowStockCount === 1 ? '' : 's'} below reorder threshold`}
+        trend={{ value: 'Inspection', isPositive: true }}
         to="/inventory/stock-on-hand"
-        tone="var(--status-blue)"
+        tone="#8b5cf6"
         isLoading={stockLoading}
       />
     </section>

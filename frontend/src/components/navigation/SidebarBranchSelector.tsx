@@ -21,37 +21,37 @@ export function SidebarBranchSelector({ user }: SidebarBranchSelectorProps) {
 
   if (branches.length > 1) {
     return (
-      <label className="block">
-        <span className="text-[9.5px] uppercase tracking-wider text-slate-400 font-bold">
-          Active Branch
-        </span>
-        <div className="relative mt-1">
+      <div className="space-y-1">
+        <label className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block px-1">
+          Branch Location
+        </label>
+        <div className="relative">
           <Building2
-            size={13}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 dark:text-blue-400 pointer-events-none"
           />
           <select
             value={activeBranch?.id ?? ''}
             onChange={(e) => switchBranch(e.target.value)}
-            className="w-full h-8 pl-7 pr-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-[11.5px] font-medium border border-slate-700/60 focus:border-blue-500 transition-colors outline-none cursor-pointer"
+            className="w-full h-9 pl-8 pr-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 text-slate-800 dark:text-slate-200 text-[12px] font-semibold border border-slate-200 dark:border-slate-700/60 focus:border-blue-500 transition-colors outline-none cursor-pointer"
             aria-label="Active branch"
           >
             {branches.map((b) => (
-              <option key={b.id} value={b.id} className="text-black bg-white">
+              <option key={b.id} value={b.id}>
                 {b.code} · {b.name}
               </option>
             ))}
           </select>
         </div>
-      </label>
+      </div>
     )
   }
 
   if (activeBranch) {
     return (
-      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/40 text-[11px] text-slate-300 truncate">
-        <Building2 size={12} className="shrink-0 text-blue-400" />
-        <span className="truncate font-medium">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/50 text-[11.5px] text-slate-700 dark:text-slate-300">
+        <Building2 size={13} className="shrink-0 text-blue-600 dark:text-blue-400" />
+        <span className="truncate font-bold">
           {activeBranch.code} · {activeBranch.name}
         </span>
       </div>

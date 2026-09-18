@@ -2,8 +2,6 @@ import { titleCase } from '../../lib/format'
 
 export type StatusTone = 'green' | 'amber' | 'red' | 'blue' | 'purple' | 'cold' | 'slate' | 'teal' | 'void'
 
-// Part 1.4 — one status vocabulary for the whole product. Colour never
-// carries meaning alone: every badge also shows its text label.
 const TONES: Record<string, StatusTone> = {
   POSTED: 'green', APPROVED: 'green', PAID: 'green', RELEASED: 'green', ACTIVE: 'green', CLEARED: 'green',
   MATCHED: 'green', COMPLETED: 'green', DELIVERED: 'green', FULFILLED: 'green', PICKED: 'green', OPEN: 'green',
@@ -19,19 +17,19 @@ const TONES: Record<string, StatusTone> = {
   DRAFT: 'slate', ARCHIVED: 'slate', DISABLED: 'slate', CLOSED: 'slate', LOCKED: 'slate', INACTIVE: 'slate',
   CONVERTED: 'slate', RETURNED_TO_SUPPLIER: 'slate', CONSUMED: 'slate',
   VOIDED: 'void', REVERSED: 'void',
-  RETAIL: 'teal', WHOLESALE: 'amber', DISPENSING: 'purple',
+  RETAIL: 'blue', WHOLESALE: 'amber', DISPENSING: 'purple',
 }
 
-const toneStyle: Record<StatusTone, { color: string; bg: string; extra?: string }> = {
-  green: { color: 'var(--status-green)', bg: 'color-mix(in srgb, var(--status-green) 14%, transparent)' },
-  amber: { color: '#b45309', bg: 'color-mix(in srgb, var(--status-amber) 18%, transparent)' },
-  red: { color: 'var(--status-red)', bg: 'color-mix(in srgb, var(--status-red) 12%, transparent)' },
-  blue: { color: 'var(--status-blue)', bg: 'color-mix(in srgb, var(--status-blue) 14%, transparent)' },
-  purple: { color: 'var(--status-purple)', bg: 'color-mix(in srgb, var(--status-purple) 14%, transparent)' },
-  cold: { color: 'var(--status-cold)', bg: 'color-mix(in srgb, var(--status-cold) 14%, transparent)' },
-  slate: { color: 'var(--status-slate)', bg: 'color-mix(in srgb, var(--status-slate) 14%, transparent)' },
-  teal: { color: 'var(--status-teal)', bg: 'color-mix(in srgb, var(--status-teal) 14%, transparent)' },
-  void: { color: 'var(--status-red)', bg: 'color-mix(in srgb, var(--status-slate) 18%, transparent)', extra: 'line-through' },
+const toneStyles: Record<StatusTone, { text: string; bg: string; dot: string; extra?: string }> = {
+  green: { text: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200/60 dark:border-emerald-800/60', dot: 'bg-emerald-500' },
+  amber: { text: 'text-amber-700 dark:text-amber-300', bg: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200/60 dark:border-amber-800/60', dot: 'bg-amber-500' },
+  red: { text: 'text-rose-700 dark:text-rose-300', bg: 'bg-rose-50 dark:bg-rose-950/40 border-rose-200/60 dark:border-rose-800/60', dot: 'bg-rose-500' },
+  blue: { text: 'text-blue-700 dark:text-blue-300', bg: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200/60 dark:border-blue-800/60', dot: 'bg-blue-500' },
+  purple: { text: 'text-purple-700 dark:text-purple-300', bg: 'bg-purple-50 dark:bg-purple-950/40 border-purple-200/60 dark:border-purple-800/60', dot: 'bg-purple-500' },
+  cold: { text: 'text-cyan-700 dark:text-cyan-300', bg: 'bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200/60 dark:border-cyan-800/60', dot: 'bg-cyan-500' },
+  slate: { text: 'text-slate-600 dark:text-slate-300', bg: 'bg-slate-100 dark:bg-slate-800 border-slate-200/60 dark:border-slate-700/60', dot: 'bg-slate-400' },
+  teal: { text: 'text-teal-700 dark:text-teal-300', bg: 'bg-teal-50 dark:bg-teal-950/40 border-teal-200/60 dark:border-teal-800/60', dot: 'bg-teal-500' },
+  void: { text: 'text-slate-500 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-slate-800 border-slate-200/60 dark:border-slate-700/60', dot: 'bg-rose-400', extra: 'line-through opacity-75' },
 }
 
 export function toneFor(status: string | null | undefined): StatusTone {
@@ -39,15 +37,25 @@ export function toneFor(status: string | null | undefined): StatusTone {
   return TONES[status.toUpperCase()] ?? 'slate'
 }
 
-export function StatusBadge({ status, tone, label, className = '' }: { status: string | null | undefined; tone?: StatusTone; label?: string; className?: string }) {
+export function StatusBadge({
+  status,
+  tone,
+  label,
+  className = '',
+}: {
+  status: string | null | undefined
+  tone?: StatusTone
+  label?: string
+  className?: string
+}) {
   const resolved = tone ?? toneFor(status)
-  const style = toneStyle[resolved]
+  const st = toneStyles[resolved]
+
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-[1px] rounded text-[10.5px] font-semibold uppercase tracking-wide whitespace-nowrap ${style.extra ?? ''} ${className}`}
-      style={{ color: style.color, background: style.bg }}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-tight border ${st.bg} ${st.text} ${st.extra ?? ''} ${className}`}
     >
-      <span className="w-1.5 h-1.5 rounded-full" style={{ background: style.color }} aria-hidden />
+      <span className={`w-1.5 h-1.5 rounded-full ${st.dot} shadow-xs`} aria-hidden />
       {label ?? titleCase(status) ?? '—'}
     </span>
   )

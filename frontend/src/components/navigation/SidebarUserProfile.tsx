@@ -23,41 +23,49 @@ export function SidebarUserProfile({ user, collapsed }: SidebarUserProfileProps)
   })
 
   return (
-    <div className="pt-2 border-t border-slate-700/60 space-y-2">
+    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
       {!collapsed && (
-        <div className="flex items-center gap-2.5 px-1 py-1">
-          <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 shrink-0 font-bold text-[12px]">
-            {user?.name ? user.name.charAt(0).toUpperCase() : <User size={14} />}
+        <div className="flex items-center gap-3 px-2 py-1">
+          <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 font-bold text-[13px] shadow-xs">
+            {user?.name ? user.name.charAt(0).toUpperCase() : <User size={15} />}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-bold text-white truncate">{user?.name}</div>
-            <div className="text-[10px] text-slate-400 truncate">{user?.email}</div>
+            <div className="text-[12.5px] font-bold text-slate-800 dark:text-slate-100 truncate">
+              {user?.name ?? 'Pharmacist'}
+            </div>
+            <div className="text-[11px] text-slate-400 truncate">
+              {user?.email ?? 'active session'}
+            </div>
           </div>
         </div>
       )}
 
-      <NavLink
-        to="/admin/security"
-        title={collapsed ? 'Security & MFA' : undefined}
-        className={({ isActive }) =>
-          `w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11.5px] font-medium transition-colors ${
-            isActive ? 'text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-          }`
-        }
-      >
-        <ShieldCheck size={15} className="shrink-0 text-emerald-400" />
-        {!collapsed && <span>Security{user?.mfa_required ? ' · MFA on' : ''}</span>}
-      </NavLink>
+      <div className="flex flex-col gap-0.5">
+        <NavLink
+          to="/admin/security"
+          title={collapsed ? 'Security' : undefined}
+          className={({ isActive }) =>
+            `w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-colors ${
+              isActive
+                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+            }`
+          }
+        >
+          <ShieldCheck size={16} className="shrink-0 text-emerald-500" />
+          {!collapsed && <span>Security{user?.mfa_required ? ' · MFA On' : ''}</span>}
+        </NavLink>
 
-      <button
-        onClick={() => logout.mutate()}
-        title={collapsed ? 'Sign Out' : undefined}
-        disabled={logout.isPending}
-        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11.5px] font-medium text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-      >
-        <LogOut size={15} className="shrink-0" />
-        {!collapsed && <span>{logout.isPending ? 'Signing out…' : 'Sign out'}</span>}
-      </button>
+        <button
+          onClick={() => logout.mutate()}
+          title={collapsed ? 'Sign Out' : undefined}
+          disabled={logout.isPending}
+          className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+        >
+          <LogOut size={16} className="shrink-0" />
+          {!collapsed && <span>{logout.isPending ? 'Signing out…' : 'Sign out'}</span>}
+        </button>
+      </div>
     </div>
   )
 }
