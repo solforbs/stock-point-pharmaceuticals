@@ -55,6 +55,26 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | The built React SPA (frontend/ -> `npm run build` -> public/spa). Every
+    | non-API GET falls through to this file so client-side routes such as
+    | /dashboard survive a page refresh.
+    */
+    'spa_index' => env('SPA_INDEX', public_path('spa/index.html')),
+
+    /*
+    | The legal entity and first branch created by OrganisationSeeder. The KRA
+    | PIN prints on every invoice and is what eTIMS identifies the business
+    | by, so production must set the real one before the first seed.
+    */
+    'organisation' => [
+        'name' => env('ORG_NAME', 'Stockpoint Pharma Wholesalers Ltd'),
+        'kra_pin' => env('ORG_KRA_PIN', 'P000000000X'),
+        'branch_code' => env('ORG_BRANCH_CODE', 'LDW'),
+        'branch_name' => env('ORG_BRANCH_NAME', 'Lodwar Main Branch'),
+        'county' => env('ORG_COUNTY', 'Turkana'),
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
@@ -65,7 +85,9 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // Kenyan trading days: "sales today", the 00:05 expiry job and period
+    // boundaries follow local time in production (APP_TIMEZONE=Africa/Nairobi).
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------

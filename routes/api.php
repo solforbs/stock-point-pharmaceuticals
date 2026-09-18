@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DocumentListController;
 use App\Http\Controllers\Api\EtimsController;
 use App\Http\Controllers\Api\FinanceController;
@@ -8,6 +10,7 @@ use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PayrollController;
+use App\Http\Controllers\Api\PriceListController;
 use App\Http\Controllers\Api\PricingController;
 use App\Http\Controllers\Api\ProcurementController;
 use App\Http\Controllers\Api\ProductController;
@@ -70,6 +73,12 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/customers/{customer}', [MasterDataController::class, 'customer']);
     Route::patch('/customers/{customer}/credit', [MasterDataController::class, 'updateCredit']);
     Route::get('/customer-tiers', [MasterDataController::class, 'tiers']);
+    Route::post('/customer-tiers', [PriceListController::class, 'storeTier']);
+    Route::get('/price-lists', [PriceListController::class, 'index']);
+    Route::post('/price-lists', [PriceListController::class, 'store']);
+    Route::patch('/price-lists/{list}', [PriceListController::class, 'update']);
+    Route::get('/price-lists/{list}/items', [PriceListController::class, 'items']);
+    Route::post('/price-lists/{list}/items', [PriceListController::class, 'storeItem']);
 
     // 21.4 Pricing
     Route::post('/pricing/quote', [PricingController::class, 'quote']);
@@ -100,6 +109,7 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/inventory/stock', [InventoryController::class, 'stock']);
     Route::get('/inventory/ledger', [InventoryController::class, 'ledger']);
     Route::post('/inventory/adjustments', [InventoryController::class, 'storeAdjustment']);
+    Route::post('/inventory/opening-stock', [InventoryController::class, 'openingStock']);
     Route::post('/inventory/adjustments/{adjustment}/approve', [InventoryController::class, 'approveAdjustment']);
     Route::post('/inventory/adjustments/{adjustment}/reject', [InventoryController::class, 'rejectAdjustment']);
     Route::get('/batches', [InventoryController::class, 'batches']);
@@ -173,6 +183,7 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/finance/ar-ageing', [PaymentController::class, 'arAgeing']);
     Route::get('/finance/trial-balance', [FinanceController::class, 'trialBalance']);
     Route::get('/finance/journals', [FinanceController::class, 'journals']);
+    Route::get('/finance/chart-of-accounts', [FinanceController::class, 'chartOfAccounts']);
     Route::get('/finance/periods', [FinanceController::class, 'periods']);
     Route::post('/finance/periods/{period}/close', [FinanceController::class, 'closePeriod']);
 
@@ -203,6 +214,25 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/picking-lists', [DocumentListController::class, 'pickingLists']);
     Route::get('/picking-lists/{list}', [DocumentListController::class, 'pickingList']);
     Route::get('/users', [DocumentListController::class, 'users']);
+
+    // 21.16 Dashboard and administration (Parts 16.3, 17, 18, 19)
+    Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
+    Route::get('/admin/users', [AdminController::class, 'users']);
+    Route::post('/admin/users', [AdminController::class, 'storeUser']);
+    Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
+    Route::post('/admin/users/{user}/unlock', [AdminController::class, 'unlockUser']);
+    Route::get('/admin/roles', [AdminController::class, 'roles']);
+    Route::post('/admin/roles', [AdminController::class, 'storeRole']);
+    Route::patch('/admin/roles/{role}', [AdminController::class, 'updateRole']);
+    Route::get('/admin/permissions', [AdminController::class, 'permissions']);
+    Route::get('/admin/branches', [AdminController::class, 'branches']);
+    Route::post('/admin/branches', [AdminController::class, 'storeBranch']);
+    Route::patch('/admin/branches/{branch}', [AdminController::class, 'updateBranch']);
+    Route::post('/admin/branches/{branch}/stores', [AdminController::class, 'storeStore']);
+    Route::get('/admin/settings', [AdminController::class, 'settings']);
+    Route::put('/admin/settings', [AdminController::class, 'putSetting']);
+    Route::get('/admin/number-sequences', [AdminController::class, 'numberSequences']);
+    Route::get('/admin/audit-log', [AdminController::class, 'auditLog']);
     Route::get('/product-categories', [DocumentListController::class, 'productCategories']);
 
     // Part 20 — reports

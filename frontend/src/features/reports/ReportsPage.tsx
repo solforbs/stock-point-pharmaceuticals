@@ -1,51 +1,21 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Download, Play } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CustomerPicker } from '../../components/CustomerPicker'
 import { ProductSearch } from '../../components/ProductSearch'
 import { DataTable, type Column } from '../../components/ui/DataTable'
-import { MoneyCell, QtyCell } from '../../components/ui/MoneyCell'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { EmptyState, InlineError, LoadingSkeleton } from '../../components/ui/States'
-import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Field, Input, Select } from '../../components/ui/primitives'
 import { api, apiGet, cleanParams } from '../../lib/api'
 import { addDaysIso, formatDate, formatDateTime, titleCase, todayIso } from '../../lib/format'
 import { useProductCategories, useStores } from '../../lib/hooks'
-import { formatPct } from '../../lib/money'
 import { toastApiError } from '../../lib/toast'
-import type { Customer, Product, ReportColumn, ReportDef, ReportResult } from '../../lib/types'
+import type { Customer, Product, ReportDef, ReportResult } from '../../lib/types'
+import { formatCell, isNumericType } from './reportCells'
 
 type Filters = Record<string, string>
-
-function formatCell(value: unknown, column: ReportColumn) {
-  if (value === null || value === undefined || value === '') return <span className="text-[var(--text-muted)]">—</span>
-  switch (column.type) {
-    case 'money':
-      return <MoneyCell value={String(value)} />
-    case 'qty':
-      return <QtyCell value={String(value)} />
-    case 'pct':
-      return <span className="tabular">{formatPct(String(value))}</span>
-    case 'int':
-      return <span className="tabular">{Number(value).toLocaleString('en-KE')}</span>
-    case 'date':
-      return <span className="tabular">{formatDate(String(value))}</span>
-    case 'datetime':
-      return <span className="tabular">{formatDateTime(String(value))}</span>
-    case 'bool':
-      return <StatusBadge status={value ? 'OK' : 'FAILED'} label={value ? 'Yes' : 'No'} />
-    default:
-      if (typeof value === 'object') return <span className="text-[11px] tabular">{JSON.stringify(value)}</span>
-      if (typeof value === 'string' && /^[A-Z_]{3,}$/.test(value)) return <StatusBadge status={value} />
-      return String(value)
-  }
-}
-
-function isNumericType(type?: string) {
-  return type === 'money' || type === 'qty' || type === 'pct' || type === 'int'
-}
 
 /** Part 20 — one generic viewer for the whole catalogue: group tabs, a filter bar driven by each report's filters, typed columns, totals, CSV export. */
 export default function ReportsPage() {
@@ -55,17 +25,15 @@ export default function ReportsPage() {
   const catalogue = useQuery({ queryKey: ['reports', 'catalogue'], queryFn: () => apiGet<{ data: ReportDef[] }>('/api/reports'), staleTime: 5 * 60_000 })
   const defs = catalogue.data?.data ?? []
   const groups = [...new Set(defs.map((d) => d.group))]
-  const [group, setGroup] = useState<string>('')
+  const [chosenGroup, setGroup] = useState<string>('')
   const activeKey = params.get('report') ?? ''
   const def = defs.find((d) => d.key === activeKey) ?? null
   const [filters, setFilters] = useState<Filters>({ from: addDaysIso(-30), to: todayIso() })
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [product, setProduct] = useState<Product | null>(null)
   const [result, setResult] = useState<ReportResult | null>(null)
-
-  useEffect(() => {
-    if (!group && groups.length) setGroup(def?.group ?? groups[0])
-  }, [group, groups, def])
+  // The active tab is the one chosen, else the selected report's group, else the first group — derived, not synchronised.
+  const group = chosenGroup || def?.group || groups[0] || ''
 
   const effective = cleanParams({ ...filters, customer_id: customer?.id, product_id: product?.id }) ?? {}
 

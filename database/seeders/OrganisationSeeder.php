@@ -13,11 +13,13 @@ class OrganisationSeeder extends Seeder
 {
     public function run(): void
     {
+        $settings = config('app.organisation');
+
         $org = Organisation::firstOrCreate(
-            ['kra_pin' => 'P000000000X'],
+            ['kra_pin' => $settings['kra_pin']],
             [
-                'name' => 'Stockpoint Pharma Wholesalers Ltd',
-                'legal_name' => 'Stockpoint Pharma Wholesalers Ltd',
+                'name' => $settings['name'],
+                'legal_name' => $settings['name'],
                 'vat_registered' => true,
                 'base_currency' => 'KES',
                 'fiscal_year_start' => 1,
@@ -25,11 +27,11 @@ class OrganisationSeeder extends Seeder
         );
 
         $branch = Branch::firstOrCreate(
-            ['code' => 'LDW'],
+            ['code' => $settings['branch_code']],
             [
                 'organisation_id' => $org->id,
-                'name' => 'Lodwar Main Branch',
-                'county' => 'Turkana',
+                'name' => $settings['branch_name'],
+                'county' => $settings['county'],
                 'is_active' => true,
                 // Stockpoint is a wholesaler with a retail counter — both on.
                 'retail_enabled' => true,

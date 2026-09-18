@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from './api'
-import type { CustomerTier, Paginated, Product, ProductCategory, ProductStock, PurchaseOrder, Store, Supplier, TaxCode, Uom, UserRef } from './types'
+import type { AdminBranch, AdminRole, CustomerTier, DashboardSummary, Paginated, PermissionGroup, PriceList, Product, ProductCategory, ProductStock, PurchaseOrder, Store, Supplier, TaxCode, Uom, UserRef } from './types'
 
 export function useUsers(q = '') {
   return useQuery({ queryKey: ['users', q], queryFn: () => apiGet<UserRef[]>('/api/users', { q }), staleTime: 60_000 })
@@ -49,4 +49,24 @@ export function useProductStock(id: string | null | undefined) {
     enabled: !!id,
     staleTime: 15_000,
   })
+}
+
+export function useDashboardSummary() {
+  return useQuery({ queryKey: ['dashboard', 'summary'], queryFn: () => apiGet<DashboardSummary>('/api/dashboard/summary'), staleTime: 30_000 })
+}
+
+export function useAdminRoles(enabled = true) {
+  return useQuery({ queryKey: ['admin', 'roles'], queryFn: () => apiGet<AdminRole[]>('/api/admin/roles'), enabled, staleTime: 60_000 })
+}
+
+export function usePermissionCatalogue(enabled = true) {
+  return useQuery({ queryKey: ['admin', 'permissions'], queryFn: () => apiGet<PermissionGroup[]>('/api/admin/permissions'), enabled, staleTime: 10 * 60_000 })
+}
+
+export function useAdminBranches(enabled = true) {
+  return useQuery({ queryKey: ['admin', 'branches'], queryFn: () => apiGet<AdminBranch[]>('/api/admin/branches'), enabled, staleTime: 60_000 })
+}
+
+export function usePriceLists(enabled = true) {
+  return useQuery({ queryKey: ['price-lists'], queryFn: () => apiGet<PriceList[]>('/api/price-lists'), enabled, staleTime: 60_000 })
 }

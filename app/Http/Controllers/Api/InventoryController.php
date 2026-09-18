@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Models\ProductBatch;
 use App\Models\StockAdjustment;
 use App\Models\StockLedger;
+use App\Models\Store;
 use App\Services\Inventory\BatchQualityService;
 use App\Services\Inventory\InventoryReport;
+use App\Services\Inventory\OpeningStockService;
+use App\Services\Inventory\OpeningStockValidationException;
 use App\Services\Inventory\StockAdjustmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -205,6 +208,35 @@ class InventoryController extends ApiController
         $data = $request->validate(['reason' => ['required', 'string', 'min:3', 'max:255']]);
 
         return response()->json($quality->quarantine($this->findBatch($request, $batch), $request->user()->id, $data['reason']));
+    }
+
+    /**
+     * POST /api/inventory/opening-stock — the go-live stock take for one store
+     * (Part 7.1). All-or-nothing; validation errors come back per row.
+     */
+    public function openingStock(Request $request, OpeningStockService $openingStock): JsonResponse
+    {
+        $this->requirePermission($request, 'stock.count.post');
+
+        $data = $request->validate([
+            'store_id' => ['required', 'uuid'],
+            'dry_run' => ['nullable', 'boolean'],
+            'rows' => ['required', 'array', 'min:1', 'max:10000'],
+            'rows.*' => ['array'],
+        ]);
+        $store = Store::where('branch_id', $this->branchId($request))->findOrFail($data['store_id']);
+
+        try {
+            if ($request->boolean('dry_run')) {
+                $openingStock->validateOnly($store, $data['rows']);
+
+                return response()->json(['valid' => true, 'lines' => count($data['rows'])]);
+            }
+
+            return response()->json($openingStock->import($store, $data['rows'], $request->user()->id), 201);
+        } catch (OpeningStockValidationException $e) {
+            return $this->error('OPENING_STOCK_INVALID', $e->getMessage(), 422, ['rows' => $e->rowErrors]);
+        }
     }
 
     private function findBatch(Request $request, string $id): ProductBatch

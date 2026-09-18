@@ -2,7 +2,7 @@
 
 // odsl-C:\xampp\htdocs\pharmacy_erp\app\Models\Store.php-PHPStan\BetterReflection\Reflection\ReflectionClass-App\Models\Store
 return \PHPStan\Cache\CacheItem::__set_state(array(
-   'variableKey' => 'v2-6.70.0.6-8.3.31-b347ca18889bf91a77b2ce1b53e3031a7c40e4a738b5b1927fd97359bf3a6ce3',
+   'variableKey' => 'v2-6.70.0.6-8.3.31-470ccd63d461bbdb5feb90fed5fb8fbdfc15dc3cec16c2ef3e3ee81fea1b0482',
    'data' => 
   array (
     'locatedSource' => 
@@ -52,15 +52,15 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'type' => NULL,
         'default' => 
         array (
-          'code' => '[\'branch_id\', \'code\', \'name\', \'store_type\', \'storage_condition_id\', \'is_sellable\']',
+          'code' => '[\'branch_id\', \'code\', \'name\', \'store_type\', \'storage_condition_id\', \'is_sellable\', \'created_by\', \'updated_by\']',
           'attributes' => 
           array (
             'startLine' => 14,
             'endLine' => 14,
             'startTokenPos' => 48,
             'startFilePos' => 302,
-            'endTokenPos' => 65,
-            'endFilePos' => 383,
+            'endTokenPos' => 71,
+            'endFilePos' => 411,
           ),
         ),
         'docComment' => NULL,
@@ -70,7 +70,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'startLine' => 14,
         'endLine' => 14,
         'startColumn' => 5,
-        'endColumn' => 109,
+        'endColumn' => 137,
         'isPromoted' => false,
         'declaredAtCompileTime' => true,
         'immediateVirtual' => false,

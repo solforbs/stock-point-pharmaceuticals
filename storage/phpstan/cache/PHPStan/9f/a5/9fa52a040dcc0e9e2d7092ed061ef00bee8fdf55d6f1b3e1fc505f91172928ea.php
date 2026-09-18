@@ -23,7 +23,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\DatabaseSeeder.php' => 
     array (
-      0 => 'f5bddd65c79a6c7da2ffdcb38759d7dcdb95c2d6eb215511dba50ece2786bd41',
+      0 => '159fc2b65d94af5751457d911edfd123560f7f6ad23fc33e38e6eb17f1436890',
       1 => 
       array (
         0 => 'database\\seeders\\databaseseeder',
@@ -83,7 +83,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\ChartOfAccountsSeeder.php' => 
     array (
-      0 => '01b886e9344ad025086113e29df2e997e501ff4bcf620c6dde5a249962a54f63',
+      0 => '580108e9c4be6bfe67ef3962ac74190ded976b86b1be32ef80f21d8a3e18c166',
       1 => 
       array (
         0 => 'database\\seeders\\chartofaccountsseeder',
@@ -192,6 +192,21 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
       1 => 
       array (
         0 => 'database\\seeders\\taxcodeseeder',
+      ),
+      2 => 
+      array (
+        0 => 'database\\seeders\\run',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\ProductTaxDefaultSeeder.php' => 
+    array (
+      0 => 'c13273fa2586a7fb83ad14277a13d96f7005db9fbc7597b0e26b582b0df910d1',
+      1 => 
+      array (
+        0 => 'database\\seeders\\producttaxdefaultseeder',
       ),
       2 => 
       array (

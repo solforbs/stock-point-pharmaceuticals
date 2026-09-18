@@ -1053,3 +1053,152 @@ export type Payslip = {
   employee: Pick<Employee, 'id' | 'employee_no' | 'name' | 'job_title' | 'department' | 'kra_pin' | 'nssf_no' | 'shif_no' | 'bank_name'> | null
   line: PayrollRunLine
 }
+
+// ---- Dashboard, admin, price lists, chart of accounts ------------------
+
+export type ApprovalQueueKey = 'requisitions' | 'purchase_orders' | 'adjustments' | 'transfers' | 'counts' | 'customer_returns'
+
+export type DashboardSummary = {
+  as_of: string
+  sales_today: null | { count: number; total: Decimal; by_mode: Partial<Record<SaleMode, { count: number; total: Decimal }>>; voided_today: number }
+  approvals: null | Partial<Record<ApprovalQueueKey, number>>
+  inventory: null | { pending_qc_batches: number; quarantined_batches: number; expiring_90d_batches: number; expired_batches_on_hand: number; transfers_in_transit: number }
+  procurement: null | { open_purchase_orders: number; suppliers_licence_expired: number; suppliers_licence_expiring_30d: number }
+  compliance: null | { etims_failed: number; etims_pending: number }
+  finance: null | { open_period: null | Pick<FinancialPeriod, 'id' | 'fiscal_year' | 'period_no' | 'start_date' | 'end_date'>; period_open_for_today: boolean }
+}
+
+export type UserAssignment = { branch_id: string; branch_code: string | null; role: string }
+
+export type AdminUser = {
+  id: number
+  name: string
+  username: string | null
+  email: string
+  phone: string | null
+  is_active: boolean
+  mfa_required: boolean
+  must_change_password: boolean
+  failed_login_attempts: number
+  locked_until: string | null
+  last_login_at: string | null
+  created_at: string | null
+  assignments: UserAssignment[]
+}
+
+export type AdminRole = { id: number; name: string; permissions: string[]; users_count: number }
+
+export type PermissionGroup = { group: string; permissions: string[] }
+
+export type StoreType = 'MAIN' | 'COLD' | 'QUARANTINE' | 'RETAIL' | 'TRANSIT' | 'DISPENSARY'
+export const STORE_TYPES: StoreType[] = ['MAIN', 'COLD', 'QUARANTINE', 'RETAIL', 'TRANSIT', 'DISPENSARY']
+
+export type AdminStore = { id: string; code: string; name: string; store_type: string; is_sellable: boolean }
+
+export type AdminBranch = {
+  id: string
+  code: string
+  name: string
+  address: string | null
+  county: string | null
+  is_active: boolean
+  retail_enabled: boolean
+  wholesale_enabled: boolean
+  dispensing_enabled: boolean
+  stores: AdminStore[]
+}
+
+export type SettingType = 'string' | 'integer' | 'decimal'
+export type SettingValue = string | number | null
+
+export type SettingRow = {
+  scope: string
+  key: string
+  type: SettingType
+  default: SettingValue
+  description: string
+  value: SettingValue
+  source: 'default' | 'organisation' | 'branch'
+  organisation_value: SettingValue
+  branch_value: SettingValue
+  set_at: string | null
+  set_by: number | null
+}
+
+export type SettingsResponse = { branch_id: string; data: SettingRow[] }
+
+export type NumberSequence = {
+  id: string
+  scope: string
+  branch_id: string | null
+  prefix: string
+  fiscal_year: number | null
+  current_value: number
+  padding: number
+  reset_policy: string
+}
+
+export type AuditLogRow = {
+  id: string
+  occurred_at: string
+  user_id: number | null
+  username_snapshot: string | null
+  branch_id: string | null
+  action: string
+  entity_type: string
+  entity_id: string | null
+  reference: string | null
+  before_json: unknown
+  after_json: unknown
+  changed_fields: string[] | null
+  reason: string | null
+}
+
+export type AuditLogPage = Paginated<AuditLogRow> & { actions: string[] }
+
+export type PriceList = {
+  id: string
+  code: string
+  name: string
+  sale_mode: SaleMode | null
+  tier_id: string | null
+  branch_id: string | null
+  currency: string
+  prices_include_tax: boolean
+  effective_from: string | null
+  effective_to: string | null
+  is_active: boolean
+  priority: number
+  product_prices_count?: number
+  tier?: { id: string; code: string; name: string } | null
+  branch?: { id: string; code: string; name: string } | null
+}
+
+export type PriceFactorType = 'FIXED' | 'COST_PLUS_MARKUP' | 'TARGET_MARGIN' | 'LIST_RELATIVE'
+export const PRICE_FACTOR_TYPES: PriceFactorType[] = ['FIXED', 'COST_PLUS_MARKUP', 'TARGET_MARGIN', 'LIST_RELATIVE']
+
+export type PriceListItem = {
+  id: string
+  product_id: string
+  uom_id: string | null
+  factor_type: PriceFactorType
+  unit_price: Decimal
+  factor_value: Decimal | null
+  effective_from: string | null
+  effective_to: string | null
+  product?: { id: string; code: string; name: string; default_price: Decimal | null } | null
+  uom?: Uom | null
+}
+
+export type ChartAccount = {
+  id: string
+  code: string
+  name: string
+  account_type: string
+  parent_id: string | null
+  is_postable: boolean
+  system_role: string | null
+  currency: string | null
+  is_active: boolean
+  balance: Decimal
+}

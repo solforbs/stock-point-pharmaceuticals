@@ -2,9 +2,17 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from './components/ui/Toaster'
+import AuditLogPage from './features/admin/AuditLogPage'
+import BranchesPage from './features/admin/BranchesPage'
+import NumberSequencesPage from './features/admin/NumberSequencesPage'
+import PermissionsPage from './features/admin/PermissionsPage'
 import SecurityPage from './features/admin/SecurityPage'
+import SettingsPage from './features/admin/SettingsPage'
+import UsersRolesPage from './features/admin/UsersRolesPage'
 import CreditControlPage from './features/customers/CreditControlPage'
 import CustomersPage from './features/customers/CustomersPage'
+import TiersPage from './features/customers/TiersPage'
+import ChartOfAccountsPage from './features/finance/ChartOfAccountsPage'
 import JournalsPage from './features/finance/JournalsPage'
 import PayablesPage from './features/finance/PayablesPage'
 import PeriodsPage from './features/finance/PeriodsPage'
@@ -18,6 +26,8 @@ import ProductsPage from './features/inventory/ProductsPage'
 import StockLedgerPage from './features/inventory/StockLedgerPage'
 import StockOnHandPage from './features/inventory/StockOnHandPage'
 import TransfersPage from './features/inventory/TransfersPage'
+import ValuationPage from './features/inventory/ValuationPage'
+import OpeningStockPage from './features/inventory/OpeningStockPage'
 import EmployeesPage from './features/people/EmployeesPage'
 import PayrollPage from './features/people/PayrollPage'
 import PosPage from './features/pos/PosPage'
@@ -26,6 +36,7 @@ import PurchaseOrdersPage from './features/procurement/PurchaseOrdersPage'
 import RequisitionsPage from './features/procurement/RequisitionsPage'
 import SupplierInvoicesPage from './features/procurement/SupplierInvoicesPage'
 import SuppliersPage from './features/procurement/SuppliersPage'
+import QuarantinePage from './features/quality/QuarantinePage'
 import RecallsPage from './features/quality/RecallsPage'
 import WastePage from './features/quality/WastePage'
 import ReportsPage from './features/reports/ReportsPage'
@@ -69,6 +80,8 @@ function App() {
           <Route path="/inventory/transfers" element={<TransfersPage />} />
           <Route path="/inventory/counts" element={<CountsPage />} />
           <Route path="/inventory/adjustments" element={<AdjustmentsPage />} />
+          <Route path="/inventory/valuation" element={<ValuationPage />} />
+          <Route path="/inventory/opening-stock" element={<OpeningStockPage />} />
 
           <Route path="/buy/requisitions" element={<RequisitionsPage />} />
           <Route path="/buy/purchase-orders" element={<PurchaseOrdersPage />} />
@@ -82,15 +95,18 @@ function App() {
           <Route path="/warehouse/deliveries" element={<DeliveriesPage />} />
 
           <Route path="/customers/list" element={<CustomersPage />} />
+          <Route path="/customers/tiers" element={<TiersPage />} />
           <Route path="/customers/credit-control" element={<CreditControlPage />} />
 
           <Route path="/finance/receivables" element={<ReceivablesPage />} />
           <Route path="/finance/payables" element={<PayablesPage />} />
           <Route path="/finance/journals" element={<JournalsPage />} />
+          <Route path="/finance/chart-of-accounts" element={<ChartOfAccountsPage />} />
           <Route path="/finance/statements" element={<StatementsPage />} />
           <Route path="/finance/tax-centre" element={<TaxCentrePage />} />
           <Route path="/finance/periods" element={<PeriodsPage />} />
 
+          <Route path="/quality/quarantine" element={<QuarantinePage />} />
           <Route path="/quality/waste" element={<WastePage />} />
           <Route path="/quality/recalls" element={<RecallsPage />} />
 
@@ -99,7 +115,13 @@ function App() {
           <Route path="/people/employees" element={<EmployeesPage />} />
           <Route path="/people/payroll" element={<PayrollPage />} />
 
+          <Route path="/admin/users-roles" element={<UsersRolesPage />} />
+          <Route path="/admin/permissions" element={<PermissionsPage />} />
+          <Route path="/admin/branches" element={<BranchesPage />} />
+          <Route path="/admin/settings" element={<SettingsPage />} />
           <Route path="/admin/security" element={<SecurityPage />} />
+          <Route path="/admin/number-sequences" element={<NumberSequencesPage />} />
+          <Route path="/admin/audit-log" element={<AuditLogPage />} />
 
           <Route path="/:moduleKey" element={<Placeholder />} />
           <Route path="/:moduleKey/:sectionKey" element={<Placeholder />} />

@@ -1,4 +1,4 @@
-import { AlertOctagon, Inbox } from 'lucide-react'
+import { AlertOctagon, Inbox, Lock } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { getApiError } from '../../lib/apiError'
 import { Button } from './primitives'
@@ -37,6 +37,17 @@ export function LoadingSkeleton({ rows = 5, className = '' }: { rows?: number; c
         <div key={i} className="h-[26px] rounded bg-[var(--surface-3)] animate-pulse" style={{ width: `${100 - (i % 3) * 8}%` }} />
       ))}
     </div>
+  )
+}
+
+/** Part 16.5 — a screen the user's roles do not include. The server refuses the data anyway; this just says so plainly. */
+export function NoAccess({ permission }: { permission: string }) {
+  return (
+    <EmptyState
+      icon={<Lock size={28} strokeWidth={1.5} />}
+      title="You do not have access to this workspace"
+      hint={`Your roles do not include the '${permission}' permission. Ask an administrator if you need it.`}
+    />
   )
 }
 

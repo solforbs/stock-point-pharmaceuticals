@@ -47,6 +47,7 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'counts', label: 'Counts', path: '/inventory/counts' },
       { key: 'adjustments', label: 'Adjustments', path: '/inventory/adjustments' },
       { key: 'valuation', label: 'Valuation', path: '/inventory/valuation' },
+      { key: 'opening-stock', label: 'Opening Stock', path: '/inventory/opening-stock' },
     ],
   },
   {

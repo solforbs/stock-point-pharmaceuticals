@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
+use App\Models\ChartOfAccount;
 use App\Models\FinancialPeriod;
 use App\Models\JournalEntry;
 use Illuminate\Http\JsonResponse;
@@ -44,6 +45,27 @@ class FinanceController extends ApiController
             'total_credit' => $totalCredit,
             'balanced' => bccomp($totalDebit, $totalCredit, 4) === 0,
         ]);
+    }
+
+    /** GET /api/finance/chart-of-accounts — every account with its posted balance (Dr − Cr), Part 12.1. */
+    public function chartOfAccounts(Request $request): JsonResponse
+    {
+        $this->requirePermission($request, 'report.financial.view');
+        $organisationId = $this->organisationId($request);
+
+        $balances = DB::table('journal_entry_lines as l')
+            ->join('journal_entries as j', 'j.id', '=', 'l.journal_id')
+            ->join('chart_of_accounts as a', 'a.id', '=', 'l.account_id')
+            ->where('a.organisation_id', $organisationId)->whereNotNull('j.posted_at')
+            ->selectRaw('l.account_id, SUM(l.debit_amount) - SUM(l.credit_amount) as balance')
+            ->groupBy('l.account_id')->pluck('balance', 'account_id');
+
+        $accounts = ChartOfAccount::where('organisation_id', $organisationId)->orderBy('code')->get()
+            ->map(fn (ChartOfAccount $a) => $a->only(['id', 'code', 'name', 'account_type', 'parent_id', 'is_postable', 'system_role', 'currency', 'is_active']) + [
+                'balance' => number_format((float) ($balances[$a->id] ?? 0), 4, '.', ''),
+            ]);
+
+        return response()->json(['data' => $accounts->values()]);
     }
 
     public function journals(Request $request): JsonResponse

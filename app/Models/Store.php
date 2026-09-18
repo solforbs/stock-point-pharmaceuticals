@@ -11,7 +11,7 @@ class Store extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['branch_id', 'code', 'name', 'store_type', 'storage_condition_id', 'is_sellable'];
+    protected $fillable = ['branch_id', 'code', 'name', 'store_type', 'storage_condition_id', 'is_sellable', 'created_by', 'updated_by'];
 
     protected function casts(): array
     {

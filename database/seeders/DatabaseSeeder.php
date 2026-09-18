@@ -21,10 +21,14 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
         ]);
 
-        User::firstOrCreate(
-            ['email' => 'test@example.com'],
-            ['name' => 'Test User', 'username' => 'testuser', 'password' => Hash::make('password')]
-        );
+        // A known-password account must never exist in production; there the
+        // first administrator comes from `php artisan user:create-admin`.
+        if (! app()->isProduction()) {
+            User::firstOrCreate(
+                ['email' => 'test@example.com'],
+                ['name' => 'Test User', 'username' => 'testuser', 'password' => Hash::make('password')]
+            );
+        }
 
         $this->call([
             OrganisationSeeder::class,
@@ -36,6 +40,7 @@ class DatabaseSeeder extends Seeder
             UnitOfMeasureSeeder::class,
             MrlPricelistSeeder::class,
             MrlPricelistRemainderSeeder::class,
+            ProductTaxDefaultSeeder::class,
         ]);
     }
 }

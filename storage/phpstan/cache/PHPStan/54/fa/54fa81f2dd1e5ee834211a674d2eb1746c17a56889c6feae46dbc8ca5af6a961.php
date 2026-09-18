@@ -2,7 +2,7 @@
 
 // odsl-C:\xampp\htdocs\pharmacy_erp\app\Models\Branch.php-PHPStan\BetterReflection\Reflection\ReflectionClass-App\Models\Branch
 return \PHPStan\Cache\CacheItem::__set_state(array(
-   'variableKey' => 'v2-6.70.0.6-8.3.31-b78c6bb79799b8fdb52c45b49c8942726ba4d9462d25c95f5a3457f2d2b89545',
+   'variableKey' => 'v2-6.70.0.6-8.3.31-a6480b086f18cfe1600cc8e826287a9ff0f8d40c312474bf654072420412ec98',
    'data' => 
   array (
     'locatedSource' => 
@@ -81,15 +81,15 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'type' => NULL,
         'default' => 
         array (
-          'code' => '[\'organisation_id\', \'code\', \'name\', \'address\', \'county\', \'is_active\', \'retail_enabled\', \'wholesale_enabled\', \'dispensing_enabled\']',
+          'code' => '[\'organisation_id\', \'code\', \'name\', \'address\', \'county\', \'is_active\', \'retail_enabled\', \'wholesale_enabled\', \'dispensing_enabled\', \'created_by\', \'updated_by\']',
           'attributes' => 
           array (
             'startLine' => 22,
             'endLine' => 25,
             'startTokenPos' => 85,
             'startFilePos' => 755,
-            'endTokenPos' => 114,
-            'endFilePos' => 907,
+            'endTokenPos' => 120,
+            'endFilePos' => 935,
           ),
         ),
         'docComment' => NULL,

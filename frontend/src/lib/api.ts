@@ -55,6 +55,11 @@ export async function apiPatch<T>(url: string, body?: unknown): Promise<T> {
   return data
 }
 
+export async function apiPut<T>(url: string, body?: unknown): Promise<T> {
+  const { data } = await api.put<T>(url, body)
+  return data
+}
+
 /** Drops empty filter values so the API sees only what was actually chosen. */
 export function cleanParams(params?: Record<string, unknown>) {
   if (!params) return undefined

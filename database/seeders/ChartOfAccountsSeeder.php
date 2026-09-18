@@ -31,6 +31,7 @@ class ChartOfAccountsSeeder extends Seeder
         ['2310', 'GRN accrual', 'LIABILITY', 'GRN_ACCRUAL'],
         ['3010', 'Share capital', 'EQUITY', null],
         ['3100', 'Retained earnings', 'EQUITY', null],
+        ['3200', 'Opening balance equity', 'EQUITY', 'OPENING_BALANCE_EQUITY'],
         ['4010', 'Sales - retail', 'REVENUE', 'SALES_RETAIL'],
         ['4020', 'Sales - wholesale', 'REVENUE', 'SALES_WHOLESALE'],
         ['4030', 'Sales - dispensing', 'REVENUE', 'SALES_DISPENSING'],

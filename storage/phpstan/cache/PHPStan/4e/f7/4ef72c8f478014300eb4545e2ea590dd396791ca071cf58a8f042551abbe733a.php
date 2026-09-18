@@ -77,7 +77,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\Branch.php' => 
     array (
-      0 => 'b78c6bb79799b8fdb52c45b49c8942726ba4d9462d25c95f5a3457f2d2b89545',
+      0 => 'a6480b086f18cfe1600cc8e826287a9ff0f8d40c312474bf654072420412ec98',
       1 => 
       array (
         0 => 'app\\models\\branch',
@@ -337,7 +337,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\Store.php' => 
     array (
-      0 => 'b347ca18889bf91a77b2ce1b53e3031a7c40e4a738b5b1927fd97359bf3a6ce3',
+      0 => '470ccd63d461bbdb5feb90fed5fb8fbdfc15dc3cec16c2ef3e3ee81fea1b0482',
       1 => 
       array (
         0 => 'app\\models\\store',
@@ -1942,7 +1942,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\FinanceController.php' => 
     array (
-      0 => 'fa8ff94c0474ec73a47485990af6f5ccf07b63274d82e646001315c7de98d7db',
+      0 => 'ef1c35be87813d4c4f12085190b5069ba616f6309cc5f6fd83596ad65dbbb1f2',
       1 => 
       array (
         0 => 'app\\http\\controllers\\api\\financecontroller',
@@ -1950,9 +1950,10 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
       2 => 
       array (
         0 => 'app\\http\\controllers\\api\\trialbalance',
-        1 => 'app\\http\\controllers\\api\\journals',
-        2 => 'app\\http\\controllers\\api\\periods',
-        3 => 'app\\http\\controllers\\api\\closeperiod',
+        1 => 'app\\http\\controllers\\api\\chartofaccounts',
+        2 => 'app\\http\\controllers\\api\\journals',
+        3 => 'app\\http\\controllers\\api\\periods',
+        4 => 'app\\http\\controllers\\api\\closeperiod',
       ),
       3 => 
       array (
@@ -1960,7 +1961,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\InventoryController.php' => 
     array (
-      0 => 'fa6f98c182c903280b89349288caa4f662daefe63b93739b5a12420630890ebb',
+      0 => '748dcc26c50e7ca10019172acd23cbb5ed5168f99346e8a4db2526575fcbb46f',
       1 => 
       array (
         0 => 'app\\http\\controllers\\api\\inventorycontroller',
@@ -1976,7 +1977,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         6 => 'app\\http\\controllers\\api\\batch',
         7 => 'app\\http\\controllers\\api\\releasebatch',
         8 => 'app\\http\\controllers\\api\\quarantinebatch',
-        9 => 'app\\http\\controllers\\api\\findbatch',
+        9 => 'app\\http\\controllers\\api\\openingstock',
+        10 => 'app\\http\\controllers\\api\\findbatch',
       ),
       3 => 
       array (
@@ -3187,6 +3189,129 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
       2 => 
       array (
         0 => 'app\\console\\commands\\handle',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\AdminController.php' => 
+    array (
+      0 => '34a284dcd64c317405ff55e29adf256958daf03406f39f3c443fce9a8b8ef63d',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\admincontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\users',
+        1 => 'app\\http\\controllers\\api\\storeuser',
+        2 => 'app\\http\\controllers\\api\\updateuser',
+        3 => 'app\\http\\controllers\\api\\unlockuser',
+        4 => 'app\\http\\controllers\\api\\roles',
+        5 => 'app\\http\\controllers\\api\\storerole',
+        6 => 'app\\http\\controllers\\api\\updaterole',
+        7 => 'app\\http\\controllers\\api\\permissions',
+        8 => 'app\\http\\controllers\\api\\branches',
+        9 => 'app\\http\\controllers\\api\\storebranch',
+        10 => 'app\\http\\controllers\\api\\updatebranch',
+        11 => 'app\\http\\controllers\\api\\storestore',
+        12 => 'app\\http\\controllers\\api\\settings',
+        13 => 'app\\http\\controllers\\api\\putsetting',
+        14 => 'app\\http\\controllers\\api\\numbersequences',
+        15 => 'app\\http\\controllers\\api\\auditlog',
+        16 => 'app\\http\\controllers\\api\\assignmentrules',
+        17 => 'app\\http\\controllers\\api\\syncassignments',
+        18 => 'app\\http\\controllers\\api\\assignmentsfor',
+        19 => 'app\\http\\controllers\\api\\userpayload',
+        20 => 'app\\http\\controllers\\api\\settingrow',
+        21 => 'app\\http\\controllers\\api\\branchrules',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\DashboardController.php' => 
+    array (
+      0 => 'b52be1518c8b81b71700eb4b17535d5af8a20b1745c2d701889a518eefb59833',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\dashboardcontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\summary',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\PriceListController.php' => 
+    array (
+      0 => '17c9984cfd572a3165112384c70bc4c9c36c204ec2f8c9a0854a824559ff516b',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\pricelistcontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\index',
+        1 => 'app\\http\\controllers\\api\\store',
+        2 => 'app\\http\\controllers\\api\\update',
+        3 => 'app\\http\\controllers\\api\\items',
+        4 => 'app\\http\\controllers\\api\\storeitem',
+        5 => 'app\\http\\controllers\\api\\storetier',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Console\\Commands\\ImportOpeningStock.php' => 
+    array (
+      0 => '41d7bcdf33050215041dda2f7521d634910e9b3e2488b8dfb771856ca45c9471',
+      1 => 
+      array (
+        0 => 'app\\console\\commands\\importopeningstock',
+      ),
+      2 => 
+      array (
+        0 => 'app\\console\\commands\\handle',
+        1 => 'app\\console\\commands\\readcsv',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Console\\Commands\\OpenFinancialPeriods.php' => 
+    array (
+      0 => 'ac5f84f8e0f248e0216c16a1cdef4562cc39e2a24efb62d4714bd7e881409f04',
+      1 => 
+      array (
+        0 => 'app\\console\\commands\\openfinancialperiods',
+      ),
+      2 => 
+      array (
+        0 => 'app\\console\\commands\\handle',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Inventory\\OpeningStockService.php' => 
+    array (
+      0 => 'a02685fbc9cbcb969a3a35d266e5a37743ecf57598a94cc82aff38f0086c3b83',
+      1 => 
+      array (
+        0 => 'app\\services\\inventory\\openingstockvalidationexception',
+        1 => 'app\\services\\inventory\\openingstockservice',
+      ),
+      2 => 
+      array (
+        0 => 'app\\services\\inventory\\__construct',
+        1 => 'app\\services\\inventory\\__construct',
+        2 => 'app\\services\\inventory\\import',
+        3 => 'app\\services\\inventory\\validateonly',
+        4 => 'app\\services\\inventory\\validate',
+        5 => 'app\\services\\inventory\\decimal',
       ),
       3 => 
       array (

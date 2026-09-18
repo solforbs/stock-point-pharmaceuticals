@@ -21,7 +21,7 @@ class Branch extends Model
 
     protected $fillable = [
         'organisation_id', 'code', 'name', 'address', 'county',
-        'is_active', 'retail_enabled', 'wholesale_enabled', 'dispensing_enabled',
+        'is_active', 'retail_enabled', 'wholesale_enabled', 'dispensing_enabled', 'created_by', 'updated_by',
     ];
 
     protected function casts(): array

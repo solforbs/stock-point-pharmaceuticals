@@ -2,7 +2,7 @@
 
 // odsl-C:\xampp\htdocs\pharmacy_erp\database\seeders\DatabaseSeeder.php-PHPStan\BetterReflection\Reflection\ReflectionClass-Database\Seeders\DatabaseSeeder
 return \PHPStan\Cache\CacheItem::__set_state(array(
-   'variableKey' => 'v2-6.70.0.6-8.3.31-f5bddd65c79a6c7da2ffdcb38759d7dcdb95c2d6eb215511dba50ece2786bd41',
+   'variableKey' => 'v2-6.70.0.6-8.3.31-159fc2b65d94af5751457d911edfd123560f7f6ad23fc33e38e6eb17f1436890',
    'data' => 
   array (
     'locatedSource' => 
@@ -27,7 +27,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     array (
     ),
     'startLine' => 10,
-    'endLine' => 41,
+    'endLine' => 46,
     'startColumn' => 1,
     'endColumn' => 1,
     'parentClassName' => 'Illuminate\\Database\\Seeder',
@@ -69,7 +69,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
  * Seed the application\'s database.
  */',
         'startLine' => 17,
-        'endLine' => 40,
+        'endLine' => 45,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
