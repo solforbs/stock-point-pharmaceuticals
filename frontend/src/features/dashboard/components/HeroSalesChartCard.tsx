@@ -34,10 +34,10 @@ export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCard
               Total Revenue Today
             </span>
             <div className="flex items-baseline gap-3 mt-1">
-              <span className="text-[32px] font-black tabular tracking-tight text-slate-900 dark:text-white">
+              <span className="text-[32px] font-black tabular tracking-tight text-slate-900">
                 {formatKes(salesToday?.total ?? '0')}
               </span>
-              <span className="inline-flex items-center text-[12px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 tabular">
+              <span className="inline-flex items-center text-[12px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/60 tabular">
                 ↑ +18.4% vs yesterday
               </span>
             </div>
@@ -74,7 +74,7 @@ export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCard
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-slate-100">
         {channels.map((mode) => {
           const cfg = CHANNEL_CONFIG[mode]
           const data = salesToday?.by_mode[mode]
@@ -84,13 +84,13 @@ export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCard
           return (
             <div
               key={mode}
-              className={`p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/50 border-t-3 ${cfg.border} flex flex-col justify-between`}
+              className={`p-3.5 rounded-2xl bg-slate-50/70 border-t-3 ${cfg.border} flex flex-col justify-between`}
             >
-              <div className="flex items-center justify-between text-[11.5px] font-bold text-slate-500 dark:text-slate-400 mb-1">
+              <div className="flex items-center justify-between text-[11.5px] font-bold text-slate-500 mb-1">
                 <span>{cfg.label}</span>
                 <span className="tabular">{count} sales</span>
               </div>
-              <div className="text-[16px] font-extrabold text-slate-900 dark:text-white tabular">
+              <div className="text-[16px] font-extrabold text-slate-900 tabular">
                 {formatKes(total)}
               </div>
             </div>

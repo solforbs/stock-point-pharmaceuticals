@@ -43,7 +43,7 @@ export function DashboardHeader({
       </div>
 
       {periodClosed && (
-        <div className="mt-4 p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 flex items-center justify-between text-[12px] text-rose-700 dark:text-rose-400">
+        <div className="mt-4 p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 flex items-center justify-between text-[12px] text-rose-700">
           <div className="flex items-center gap-2">
             <AlertTriangle size={16} className="shrink-0" />
             <span>

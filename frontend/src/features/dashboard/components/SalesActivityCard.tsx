@@ -17,12 +17,12 @@ export function SalesActivityCard() {
       <div>
         <div className="flex items-center justify-between pb-3">
           <div>
-            <h3 className="text-[14px] font-bold text-slate-800 dark:text-slate-100">
+            <h3 className="text-[14px] font-bold text-slate-800">
               Peak Sales Day
             </h3>
             <p className="text-[11px] text-slate-400">Weekly transaction activity</p>
           </div>
-          <span className="text-[18px] font-black text-blue-600 dark:text-blue-400 tabular">
+          <span className="text-[18px] font-black text-blue-600 tabular">
             KES 64.4K
           </span>
         </div>
@@ -51,21 +51,21 @@ export function SalesActivityCard() {
         </div>
       </div>
 
-      <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50 flex items-center justify-between">
+      <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200/60 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 rounded-xl bg-emerald-500 text-white">
             <ShieldCheck size={16} />
           </div>
           <div>
-            <div className="text-[12px] font-bold text-emerald-800 dark:text-emerald-300">
+            <div className="text-[12px] font-bold text-emerald-800">
               KRA eTIMS Transmission
             </div>
-            <div className="text-[11px] text-emerald-600/90 dark:text-emerald-400">
+            <div className="text-[11px] text-emerald-600/90">
               8 of 9 posted sales matched & signed
             </div>
           </div>
         </div>
-        <span className="text-[13px] font-extrabold text-emerald-700 dark:text-emerald-300 tabular">
+        <span className="text-[13px] font-extrabold text-emerald-700 tabular">
           89%
         </span>
       </div>

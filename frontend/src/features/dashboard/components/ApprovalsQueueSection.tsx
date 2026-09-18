@@ -25,7 +25,7 @@ export function ApprovalsQueueSection({ approvals }: ApprovalsQueueSectionProps)
     <section className="ui-card flex flex-col overflow-hidden">
       <header className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-[color-mix(in_srgb,var(--color-navy)_12%,transparent)] text-[var(--color-navy)] dark:text-blue-400">
+          <div className="p-1.5 rounded-lg bg-[color-mix(in_srgb,var(--color-navy)_12%,transparent)] text-[var(--color-navy)]">
             <ClipboardCheck size={16} />
           </div>
           <div>
@@ -33,7 +33,7 @@ export function ApprovalsQueueSection({ approvals }: ApprovalsQueueSectionProps)
             <p className="text-[11px] text-[var(--text-muted)]">Operations awaiting manager sign-off</p>
           </div>
         </div>
-        <span className="tabular font-black text-[12px] px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/20">
+        <span className="tabular font-black text-[12px] px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-800 border border-amber-500/20">
           {totalWaiting} Total
         </span>
       </header>
@@ -50,10 +50,10 @@ export function ApprovalsQueueSection({ approvals }: ApprovalsQueueSectionProps)
                 to={q.to}
                 className="flex items-center justify-between px-5 py-2.5 text-[12.5px] font-medium hover:bg-[var(--surface-2)] transition-colors group"
               >
-                <span className="text-[var(--text)] group-hover:text-[var(--color-navy)] dark:group-hover:text-blue-400 transition-colors">
+                <span className="text-[var(--text)] group-hover:text-[var(--color-navy)] transition-colors">
                   {q.label}
                 </span>
-                <span className="tabular font-bold px-2 py-0.5 rounded-full text-[11px] bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/25">
+                <span className="tabular font-bold px-2 py-0.5 rounded-full text-[11px] bg-amber-500/15 text-amber-800 border border-amber-500/25">
                   {approvals[q.key]}
                 </span>
               </Link>

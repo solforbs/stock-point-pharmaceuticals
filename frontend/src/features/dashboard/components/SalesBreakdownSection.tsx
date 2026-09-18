@@ -22,7 +22,7 @@ export function SalesBreakdownSection({ salesToday }: SalesBreakdownSectionProps
     <section className="ui-card p-5">
       <header className="flex items-center justify-between pb-4 border-b border-[var(--border)] mb-4">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+          <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600">
             <TrendingUp size={16} />
           </div>
           <div>

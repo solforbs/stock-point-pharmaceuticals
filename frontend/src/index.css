@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.never-dark-selector *));
+
+:root,
+html,
+body {
+  color-scheme: light !important;
+}
+
 :root {
   /* Vibrant, modern royal/medical brand palette inspired by 21st.dev / shadcn */
   --color-navy: #1d4ed8;
@@ -26,21 +34,6 @@
   --text: #0f172a;
   --text-secondary: #475569;
   --text-muted: #64748b;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #090d16;
-    --card: #0f172a;
-    --surface-2: #1e293b;
-    --surface-3: #334155;
-    --border: #1e293b;
-    --border-strong: #334155;
-    --input-bg: #0f172a;
-    --text: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-  }
 }
 
 body {

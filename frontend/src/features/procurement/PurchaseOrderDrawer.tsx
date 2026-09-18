@@ -117,7 +117,7 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
               <ul className="text-[12px] space-y-1">
                 {p.goods_receipts!.map((g) => (
                   <li key={g.id} className="flex items-center gap-2">
-                    <Link to={`/buy/goods-receipts?receipt=${g.id}`} className="tabular font-semibold text-[var(--color-navy)] dark:text-blue-400 underline">
+                    <Link to={`/buy/goods-receipts?receipt=${g.id}`} className="tabular font-semibold text-[var(--color-navy)] underline">
                       {g.doc_number}
                     </Link>
                     <StatusBadge status={g.status} />

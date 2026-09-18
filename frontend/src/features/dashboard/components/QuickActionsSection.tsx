@@ -23,7 +23,7 @@ export function QuickActionsSection() {
   return (
     <section className="ui-card p-5">
       <header className="flex items-center gap-2 pb-4 border-b border-[var(--border)] mb-4">
-        <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+        <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
           <Zap size={16} />
         </div>
         <div>
@@ -41,11 +41,11 @@ export function QuickActionsSection() {
                 to={action.to}
                 className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--color-navy-light)] hover:bg-[var(--card)] transition-all flex flex-col justify-between h-full group"
               >
-                <div className="p-2 w-fit rounded-lg bg-[var(--card)] group-hover:bg-[color-mix(in_srgb,var(--color-navy)_10%,transparent)] text-[var(--color-navy)] dark:text-blue-400 border border-[var(--border)] mb-2 transition-colors">
+                <div className="p-2 w-fit rounded-lg bg-[var(--card)] group-hover:bg-[color-mix(in_srgb,var(--color-navy)_10%,transparent)] text-[var(--color-navy)] border border-[var(--border)] mb-2 transition-colors">
                   <Icon size={16} />
                 </div>
                 <div>
-                  <div className="text-[12.5px] font-bold text-[var(--text)] group-hover:text-[var(--color-navy)] dark:group-hover:text-blue-400 transition-colors">
+                  <div className="text-[12.5px] font-bold text-[var(--text)] group-hover:text-[var(--color-navy)] transition-colors">
                     {action.label}
                   </div>
                   <div className="text-[10.5px] text-[var(--text-muted)] font-medium">

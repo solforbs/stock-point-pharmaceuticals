@@ -23,10 +23,10 @@ export default function AppLayout() {
   const today = todayIso()
 
   return (
-    <div className="flex min-h-svh bg-[#f8fafc] dark:bg-[#090d16]">
+    <div className="flex min-h-svh bg-[#f8fafc]">
       <Sidebar />
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-16 border-b border-slate-200/70 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-20">
+        <header className="h-16 border-b border-slate-200/70 bg-white/90 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3 flex-1 max-w-md">
             <div className="relative w-full">
               <Search
@@ -36,22 +36,22 @@ export default function AppLayout() {
               <input
                 type="text"
                 placeholder="Search medicines, batches, customers..."
-                className="w-full h-9 pl-10 pr-12 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-[12.5px] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full h-9 pl-10 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-[12.5px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
               />
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[10px] font-bold text-slate-400 pointer-events-none tabular">
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-400 pointer-events-none tabular">
                 Ctrl+K
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 text-[12px] font-semibold text-slate-600 dark:text-slate-300 tabular">
-              <Calendar size={13} className="text-blue-600 dark:text-blue-400" />
+            <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[12px] font-semibold text-slate-600 tabular">
+              <Calendar size={13} className="text-blue-600" />
               {formatDate(today)}
             </span>
 
             {activeBranch && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900 text-[12px] font-bold text-blue-700 dark:text-blue-300">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50/70 border border-blue-200/70 text-[12px] font-bold text-blue-700">
                 <Building2 size={13} />
                 {activeBranch.code} · {activeBranch.name}
               </span>

@@ -25,7 +25,7 @@ export default function InvoicesPage() {
   })
 
   const columns: Column<Sale>[] = [
-    { key: 'doc', header: 'Document', render: (s) => <span className="font-semibold tabular text-[var(--color-navy)] dark:text-blue-400">{s.doc_number}</span>, sortValue: (s) => s.doc_number },
+    { key: 'doc', header: 'Document', render: (s) => <span className="font-semibold tabular text-[var(--color-navy)]">{s.doc_number}</span>, sortValue: (s) => s.doc_number },
     { key: 'posted', header: 'Posted', render: (s) => formatDateTime(s.posted_at), sortValue: (s) => s.posted_at ?? '' },
     { key: 'mode', header: 'Mode', render: (s) => <StatusBadge status={s.sale_mode} /> },
     { key: 'customer', header: 'Customer', render: (s) => s.customer?.name ?? <span className="text-[var(--text-muted)]">Walk-in</span>, sortValue: (s) => s.customer?.name ?? '' },

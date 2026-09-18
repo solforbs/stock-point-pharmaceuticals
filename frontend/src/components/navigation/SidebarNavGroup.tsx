@@ -23,15 +23,15 @@ export function SidebarNavGroup({ item, collapsed, isOpen, onToggle }: SidebarNa
           title={collapsed ? item.label : undefined}
           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all text-left group cursor-pointer ${
             isActive
-              ? 'text-blue-600 dark:text-blue-400 bg-blue-50/80 dark:bg-blue-950/40 font-bold'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+              ? 'text-blue-600 bg-blue-50/80 font-bold'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
           }`}
         >
           <div
             className={`p-1 rounded-lg transition-colors ${
               isActive
                 ? 'bg-blue-600 text-white shadow-xs shadow-blue-500/30'
-                : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200'
+                : 'text-slate-400 group-hover:text-slate-700'
             }`}
           >
             <Icon size={16} />
@@ -58,8 +58,8 @@ export function SidebarNavGroup({ item, collapsed, isOpen, onToggle }: SidebarNa
                 className={({ isActive: childActive }) =>
                   `block px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors truncate ${
                     childActive
-                      ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 font-bold'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                      ? 'text-blue-600 bg-blue-50 font-bold'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                   }`
                 }
               >
@@ -80,8 +80,8 @@ export function SidebarNavGroup({ item, collapsed, isOpen, onToggle }: SidebarNa
         className={({ isActive: singleActive }) =>
           `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all group ${
             singleActive
-              ? 'bg-blue-50/80 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+              ? 'bg-blue-50/80 text-blue-600 font-bold shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
           }`
         }
       >
@@ -89,7 +89,7 @@ export function SidebarNavGroup({ item, collapsed, isOpen, onToggle }: SidebarNa
           className={`p-1 rounded-lg transition-colors ${
             isActive
               ? 'bg-blue-600 text-white shadow-xs shadow-blue-500/30'
-              : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200'
+              : 'text-slate-400 group-hover:text-slate-700'
           }`}
         >
           <Icon size={16} />

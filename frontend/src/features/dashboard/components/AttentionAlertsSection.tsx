@@ -41,10 +41,10 @@ function resolveAttention(s?: DashboardSummary): Attention[] {
 }
 
 const toneStyles: Record<Attention['tone'], { text: string; bg: string; border: string }> = {
-  red: { text: 'text-rose-700 dark:text-rose-400', bg: 'bg-rose-500/12', border: 'border-rose-500/25' },
-  amber: { text: 'text-amber-800 dark:text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/25' },
-  blue: { text: 'text-sky-700 dark:text-sky-400', bg: 'bg-sky-500/12', border: 'border-sky-500/25' },
-  purple: { text: 'text-purple-700 dark:text-purple-400', bg: 'bg-purple-500/12', border: 'border-purple-500/25' },
+  red: { text: 'text-rose-700', bg: 'bg-rose-500/12', border: 'border-rose-500/25' },
+  amber: { text: 'text-amber-800', bg: 'bg-amber-500/15', border: 'border-amber-500/25' },
+  blue: { text: 'text-sky-700', bg: 'bg-sky-500/12', border: 'border-sky-500/25' },
+  purple: { text: 'text-purple-700', bg: 'bg-purple-500/12', border: 'border-purple-500/25' },
 }
 
 export function AttentionAlertsSection({ summary }: AttentionAlertsSectionProps) {
@@ -55,7 +55,7 @@ export function AttentionAlertsSection({ summary }: AttentionAlertsSectionProps)
     <section className="ui-card flex flex-col overflow-hidden">
       <header className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+          <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600">
             <AlertTriangle size={16} />
           </div>
           <div>
@@ -79,7 +79,7 @@ export function AttentionAlertsSection({ summary }: AttentionAlertsSectionProps)
                   to={item.to}
                   className="flex items-center justify-between px-5 py-2.5 text-[12.5px] font-medium hover:bg-[var(--surface-2)] transition-colors group"
                 >
-                  <span className="text-[var(--text)] group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                  <span className="text-[var(--text)] group-hover:text-rose-600 transition-colors">
                     {item.label}
                   </span>
                   <span className={`tabular font-bold px-2 py-0.5 rounded-full text-[11px] border ${st.bg} ${st.text} ${st.border}`}>

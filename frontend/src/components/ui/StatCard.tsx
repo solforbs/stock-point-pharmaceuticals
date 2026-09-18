@@ -33,7 +33,7 @@ export function StatCard({
   const content = (
     <div className="flex flex-col justify-between h-full space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-[12.5px] font-bold text-slate-500 dark:text-slate-400">
+        <span className="text-[12.5px] font-bold text-slate-500">
           {label}
         </span>
         <div
@@ -48,9 +48,9 @@ export function StatCard({
       </div>
 
       <div>
-        <div className="text-[26px] font-black tabular tracking-tight text-slate-900 dark:text-white leading-tight">
+        <div className="text-[26px] font-black tabular tracking-tight text-slate-900 leading-tight">
           {isLoading ? (
-            <span className="inline-block w-28 h-8 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
+            <span className="inline-block w-28 h-8 bg-slate-100 rounded-xl animate-pulse" />
           ) : (
             value
           )}
@@ -59,7 +59,7 @@ export function StatCard({
 
       <div className="flex items-center justify-between gap-2 pt-1">
         {hint && (
-          <div className="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium truncate">
+          <div className="text-[11.5px] text-slate-500 font-medium truncate">
             {hint}
           </div>
         )}
@@ -68,8 +68,8 @@ export function StatCard({
             className={cn(
               'inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full tabular shrink-0 ml-auto',
               trend.isPositive
-                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60'
-                : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/60'
+                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
+                : 'bg-rose-50 text-rose-600 border border-rose-200/60'
             )}
           >
             {trend.value}

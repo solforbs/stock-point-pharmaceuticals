@@ -37,7 +37,7 @@ export function PosHeldCartsDrawer({
                   {h.name || 'Unnamed Held Cart'}
                 </div>
                 <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                  <span className="font-semibold text-[var(--color-navy)] dark:text-blue-400">
+                  <span className="font-semibold text-[var(--color-navy)]">
                     {h.saleMode}
                   </span>{' '}
                   · {h.lines.length} item{h.lines.length === 1 ? '' : 's'} ·{' '}
