@@ -5,7 +5,7 @@
 #   REPO=git@github.com:solforbs/stock-point-pharmaceuticals.git bash deploy/provision.sh
 #
 # It installs nginx, MySQL, PHP 8.3-FPM, Node 20 and Composer; creates the
-# database; clones the app to /var/www/pharmacy_erp; writes .env; migrates
+# database; clones the app to /var/www/stockpoint; writes .env; migrates
 # and seeds (catalogue, VAT codes, supplier, roles); builds the SPA; and wires
 # nginx, the queue worker, the scheduler, daily backups and HTTPS.
 set -euo pipefail
@@ -15,9 +15,9 @@ set -euo pipefail
 : "${ORG_KRA_PIN:?set ORG_KRA_PIN (the business KRA PIN printed on invoices)}"
 : "${REPO:?set REPO (git URL of this repository)}"
 BRANCH="${BRANCH:-main}"
-APP_DIR="${APP_DIR:-/var/www/pharmacy_erp}"
-DB_NAME="${DB_NAME:-pharmacy_erp}"
-DB_USER="${DB_USER:-pharmacy_erp}"
+APP_DIR="${APP_DIR:-/var/www/stockpoint}"
+DB_NAME="${DB_NAME:-stockpoint}"
+DB_USER="${DB_USER:-stockpoint}"
 DB_PASSWORD="${DB_PASSWORD:-$(openssl rand -base64 24 | tr -d '/+=')}"
 SKIP_TLS="${SKIP_TLS:-0}"
 
@@ -27,13 +27,13 @@ export COMPOSER_ALLOW_SUPERUSER=1
 echo "==> Packages"
 apt-get update -y
 apt-get install -y software-properties-common curl git unzip ufw cron
-if ! apt-cache policy php8.3-fpm | grep -q Candidate: || apt-cache policy php8.3-fpm | grep -q "Candidate: (none)"; then
+if ! apt-cache policy php8.5-fpm | grep -q Candidate: || apt-cache policy php8.5-fpm | grep -q "Candidate: (none)"; then
   add-apt-repository -y ppa:ondrej/php
   apt-get update -y
 fi
 apt-get install -y nginx mysql-server supervisor \
-  php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-bcmath \
-  php8.3-curl php8.3-zip php8.3-intl php8.3-gd php8.3-sodium
+  php8.5-fpm php8.5-cli php8.5-mysql php8.5-mbstring php8.5-xml php8.5-bcmath \
+  php8.5-curl php8.5-zip php8.5-intl php8.5-gd php8.5-sodium
 if ! command -v node >/dev/null || [ "$(node -v | cut -d. -f1 | tr -d v)" -lt 20 ]; then
   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
   apt-get install -y nodejs
@@ -93,19 +93,19 @@ php artisan view:cache
 php artisan event:cache
 
 echo "==> nginx"
-sed "s|__DOMAIN__|${DOMAIN}|g; s|__APP_DIR__|${APP_DIR}|g" deploy/nginx.conf > /etc/nginx/sites-available/pharmacy_erp
-ln -sf /etc/nginx/sites-available/pharmacy_erp /etc/nginx/sites-enabled/pharmacy_erp
+sed "s|__DOMAIN__|${DOMAIN}|g; s|__APP_DIR__|${APP_DIR}|g" deploy/nginx.conf > /etc/nginx/sites-available/stockpoint
+ln -sf /etc/nginx/sites-available/stockpoint /etc/nginx/sites-enabled/stockpoint
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 
 echo "==> Queue worker (eTIMS submissions) and scheduler"
-sed "s|__APP_DIR__|${APP_DIR}|g" deploy/supervisor-queue.conf > /etc/supervisor/conf.d/pharmacy_erp-queue.conf
-supervisorctl reread && supervisorctl update && supervisorctl start pharmacy_erp-queue:* || true
-sed "s|__APP_DIR__|${APP_DIR}|g" deploy/cron > /etc/cron.d/pharmacy_erp
-chmod 644 /etc/cron.d/pharmacy_erp
+sed "s|__APP_DIR__|${APP_DIR}|g" deploy/supervisor-queue.conf > /etc/supervisor/conf.d/stockpoint-queue.conf
+supervisorctl reread && supervisorctl update && supervisorctl start stockpoint-queue:* || true
+sed "s|__APP_DIR__|${APP_DIR}|g" deploy/cron > /etc/cron.d/stockpoint
+chmod 644 /etc/cron.d/stockpoint
 
 echo "==> Backups"
-install -d -o root -g root -m 700 /var/backups/pharmacy_erp
+install -d -o root -g root -m 700 /var/backups/stockpoint
 chmod +x deploy/backup.sh deploy/deploy.sh
 
 echo "==> HTTPS"
