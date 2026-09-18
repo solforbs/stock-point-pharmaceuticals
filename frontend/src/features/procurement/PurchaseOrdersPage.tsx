@@ -5,7 +5,7 @@ import { DataTable, type Column } from '../../components/ui/DataTable'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, Field, Select } from '../../components/ui/primitives'
+import { Field, PrimaryAction, Select } from '../../components/ui/primitives'
 import { apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime } from '../../lib/format'
 import { useSuppliers } from '../../lib/hooks'
@@ -75,9 +75,9 @@ export default function PurchaseOrdersPage() {
         subtitle="DRAFT → APPROVED → SENT. Goods receipting completes procurement."
         actions={
           canCreate ? (
-            <Button variant="primary" onClick={() => setCreating(true)}>
+            <PrimaryAction onClick={() => setCreating(true)}>
               New Purchase Order
-            </Button>
+            </PrimaryAction>
           ) : null
         }
       />

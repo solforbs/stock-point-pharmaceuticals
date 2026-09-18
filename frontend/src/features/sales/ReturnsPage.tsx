@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Package, Plus, RotateCcw, Truck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { DataTable, type Column } from '../../components/ui/DataTable'
@@ -9,7 +10,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, DescriptionList, Field, Input, Select, Textarea } from '../../components/ui/primitives'
+import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
 import { UserPicker } from '../../components/UserPicker'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { apiGet, apiPost } from '../../lib/api'
@@ -29,10 +30,19 @@ export default function ReturnsPage() {
   const [tab, setTab] = useState<'customer' | 'supplier'>(params.get('tab') === 'supplier' ? 'supplier' : 'customer')
   return (
     <Page>
-      <PageHeader parent="Sell" title="Returns" subtitle="Customer returns are inspected line by line before anything re-enters stock; supplier returns reverse a receipt and raise a debit note." />
-      <div className="flex gap-1 mb-3">
+      <PageHeader
+        parent="Commerce & Stock"
+        title="Returns & Reverse Logistics"
+        subtitle="Customer returns inspected line by line before restocking; supplier returns reverse receipts and generate debit notes."
+      />
+      <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit mb-4">
         {(['customer', 'supplier'] as const).map((t) => (
-          <button key={t} type="button" onClick={() => { setTab(t); setParams({}) }} className={`h-8 px-3 rounded-md text-[12px] font-semibold ${tab === t ? 'bg-[var(--color-navy)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-secondary)]'}`}>
+          <button
+            key={t}
+            type="button"
+            onClick={() => { setTab(t); setParams({}) }}
+            className={`h-8 px-4 rounded-lg text-xs font-bold transition-all ${tab === t ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'}`}
+          >
             {t === 'customer' ? 'Customer returns' : 'Supplier returns'}
           </button>
         ))}
@@ -139,51 +149,85 @@ function NewReturnDrawer({ saleId, canCreate, onClose, onCreated }: { saleId: st
   const valid = !!storeId && reason.trim().length >= 5 && active.length > 0 && active.every((l) => Number(l.qty_base) <= Number(l.issued))
 
   return (
-    <Drawer open={!!saleId} onClose={onClose} title={sale.data ? `Return items from ${sale.data.doc_number}` : 'Return items'} subtitle={sale.data ? `${sale.data.sale_mode} · ${sale.data.customer?.name ?? 'Walk-in'} · ${formatDateTime(sale.data.posted_at)}` : undefined} width={860}>
+    <Drawer
+      open={!!saleId}
+      onClose={onClose}
+      title={sale.data ? `Return items from ${sale.data.doc_number}` : 'Return items'}
+      subtitle={sale.data ? `${sale.data.sale_mode} · ${sale.data.customer?.name ?? 'Walk-in'} · ${formatDateTime(sale.data.posted_at)}` : undefined}
+      width={860}
+      footer={
+        <DrawerFooter
+          badge={`${active.length} items to return`}
+          onCancel={onClose}
+          onSubmit={() => create.mutate()}
+          submitLabel="Create return"
+          disabled={!valid || !canCreate || create.isPending}
+          isPending={create.isPending}
+        />
+      }
+    >
       {sale.isLoading && <LoadingSkeleton />}
       {sale.isError && <InlineError error={sale.error} />}
       {!canCreate && <InlineError error={{ response: { status: 403, data: { message: 'You do not have the return.create permission.' } } }} className="mb-3" />}
       {sale.data && (
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Receiving store" required>
-              <Select value={storeId} onChange={(e) => setStoreId(e.target.value)}>{(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}</Select>
-            </Field>
-            <Field label="Refund method" hint={sale.data.sale_mode === 'WHOLESALE' ? 'Defaults to the customer account (credit note).' : undefined}>
-              <Select value={refundMethod} onChange={(e) => setRefundMethod(e.target.value)}>
-                <option value="">Default</option>
-                {['CASH', 'MPESA', 'BANK', 'CUSTOMER_ACCOUNT'].map((m) => (<option key={m} value={m}>{titleCase(m)}</option>))}
-              </Select>
-            </Field>
-            <Field label="Refund reference"><Input value={refundReference} onChange={(e) => setRefundReference(e.target.value)} /></Field>
-            <Field label="Reason" required className="col-span-3"><Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="At least 5 characters" /></Field>
-          </div>
-          <Field label="Lines (from the sale's batch allocations)" required hint="Quantities in base units, never more than was issued from that batch. Disposition defaults to quarantine; RESALEABLE needs quality.release.">
-            <table className="ui-table">
-              <thead><tr><th>Product · batch</th><th className="text-right">Issued</th><th>Return qty</th><th>Disposition</th><th>Inspection notes</th></tr></thead>
-              <tbody>
-                {lines.map((l, i) => (
-                  <tr key={`${l.sale_line_id}-${l.batch_id}`}>
-                    <td className="tabular text-[12px]">{l.label}</td>
-                    <td className="text-right"><QtyCell value={l.issued} /></td>
-                    <td><input value={l.qty_base} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, qty_base: e.target.value.replace(/[^\d.]/g, '') } : x)))} className={`ui-input h-7 w-24 tabular text-right ${Number(l.qty_base) > Number(l.issued) ? '!border-[var(--status-red)]' : ''}`} /></td>
-                    <td>
-                      <select value={l.disposition} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, disposition: e.target.value as Disposition | '' } : x)))} className="ui-input h-7">
-                        <option value="">Quarantine (default)</option>
-                        {DISPOSITIONS.map((d) => (<option key={d} value={d} disabled={d === 'RESALEABLE' && !perms.has('quality.release')}>{titleCase(d)}</option>))}
-                      </select>
-                    </td>
-                    <td><input value={l.inspection_notes} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, inspection_notes: e.target.value } : x)))} className="ui-input h-7" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Field>
+          <FormSection
+            title="Return Parameters"
+            description="Specify the destination inventory store and customer refund method"
+            icon={RotateCcw}
+            badge="Required"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Field label="Receiving Store" required>
+                <Select value={storeId} onChange={(e) => setStoreId(e.target.value)}>
+                  {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+                </Select>
+              </Field>
+              <Field label="Refund Method" hint={sale.data.sale_mode === 'WHOLESALE' ? 'Defaults to customer account credit.' : undefined}>
+                <Select value={refundMethod} onChange={(e) => setRefundMethod(e.target.value)}>
+                  <option value="">Default</option>
+                  {['CASH', 'MPESA', 'BANK', 'CUSTOMER_ACCOUNT'].map((m) => (<option key={m} value={m}>{titleCase(m)}</option>))}
+                </Select>
+              </Field>
+              <Field label="Refund Reference">
+                <Input value={refundReference} onChange={(e) => setRefundReference(e.target.value)} placeholder="e.g. M-Pesa code" />
+              </Field>
+              <Field label="Return Reason" required className="sm:col-span-3">
+                <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Provide specific reason (at least 5 characters)..." />
+              </Field>
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Allocated Batch Lines"
+            description="Quantities in base units. Quarantined batches undergo strict QC before release."
+            icon={Package}
+            badge={`${lines.length} lines available`}
+          >
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="ui-table">
+                <thead><tr><th>Product · batch</th><th className="text-right">Issued</th><th>Return qty</th><th>Disposition</th><th>Inspection notes</th></tr></thead>
+                <tbody>
+                  {lines.map((l, i) => (
+                    <tr key={`${l.sale_line_id}-${l.batch_id}`}>
+                      <td className="tabular text-[12px] font-medium">{l.label}</td>
+                      <td className="text-right"><QtyCell value={l.issued} /></td>
+                      <td><input value={l.qty_base} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, qty_base: e.target.value.replace(/[^\d.]/g, '') } : x)))} className={`ui-input h-7 w-24 tabular text-right ${Number(l.qty_base) > Number(l.issued) ? '!border-rose-500' : ''}`} /></td>
+                      <td>
+                        <select value={l.disposition} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, disposition: e.target.value as Disposition | '' } : x)))} className="ui-input h-7">
+                          <option value="">Quarantine (default)</option>
+                          {DISPOSITIONS.map((d) => (<option key={d} value={d} disabled={d === 'RESALEABLE' && !perms.has('quality.release')}>{titleCase(d)}</option>))}
+                        </select>
+                      </td>
+                      <td><input value={l.inspection_notes} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, inspection_notes: e.target.value } : x)))} className="ui-input h-7" placeholder="Notes..." /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </FormSection>
+
           {create.isError && <InlineError error={create.error} />}
-          <div className="flex justify-end gap-2">
-            <Button onClick={onClose}>Cancel</Button>
-            <Button variant="primary" disabled={!valid || !canCreate || create.isPending} onClick={() => create.mutate()}>{create.isPending ? 'Saving…' : 'Create return'}</Button>
-          </div>
         </div>
       )}
     </Drawer>
@@ -331,32 +375,71 @@ function SupplierReturns() {
   return (
     <>
       <FilterBar>
-        {perms.has('supplier.return') && <Button variant="primary" onClick={() => setCreating(true)}>New supplier return</Button>}
+        {perms.has('supplier.return') && (
+          <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+            New supplier return
+          </PrimaryAction>
+        )}
       </FilterBar>
       <div className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(r) => r.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(r) => setParams({ tab: 'supplier', supplier_return: r.id })} selectedKey={selectedId} emptyTitle="No supplier returns" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
 
-      <Drawer open={creating} onClose={() => setCreating(false)} title="New supplier return" width={820}>
+      <Drawer
+        open={creating}
+        onClose={() => setCreating(false)}
+        title="New Supplier Return"
+        subtitle="Reverse goods receipt at batch cost and generate supplier debit note"
+        width={820}
+        footer={
+          <DrawerFooter
+            badge={`${lines.length} lines`}
+            onCancel={() => setCreating(false)}
+            onSubmit={() => create.mutate()}
+            submitLabel="Post supplier return"
+            variant="danger"
+            disabled={!supplierId || !storeId || reason.trim().length < 3 || !batchLinesValid(lines) || create.isPending}
+            isPending={create.isPending}
+          />
+        }
+      >
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Supplier" required>
-              <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}><option value="">Choose…</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select>
-            </Field>
-            <Field label="Store" required>
-              <Select value={storeId} onChange={(e) => { setStoreId(e.target.value); setLines([]) }}><option value="">Choose…</option>{(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}</Select>
-            </Field>
-            <Field label="Reason" required className="col-span-2"><Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} /></Field>
-          </div>
-          <Field label="Lines" required hint="Posts immediately: the reverse of a goods receipt at the batch's cost.">
+          <FormSection
+            title="Supplier & Source Store"
+            description="Select origin store and target supplier for debit note credit"
+            icon={Truck}
+            badge="Required"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Supplier" required>
+                <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+                  <option value="">Choose supplier…</option>
+                  {(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
+                </Select>
+              </Field>
+              <Field label="Source Store" required>
+                <Select value={storeId} onChange={(e) => { setStoreId(e.target.value); setLines([]) }}>
+                  <option value="">Choose store…</option>
+                  {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+                </Select>
+              </Field>
+              <Field label="Return Reason" required className="sm:col-span-2">
+                <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for returning items to vendor..." />
+              </Field>
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Batch Quantities to Return"
+            description="Posts immediately: reverses stock from store balances at original batch cost."
+            icon={Package}
+            badge={`${lines.length} lines`}
+          >
             <BatchLinesEditor lines={lines} onChange={setLines} storeId={storeId} />
-          </Field>
+          </FormSection>
+
           {create.isError && <InlineError error={create.error} />}
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setCreating(false)}>Cancel</Button>
-            <Button variant="danger" disabled={!supplierId || !storeId || reason.trim().length < 3 || !batchLinesValid(lines) || create.isPending} onClick={() => create.mutate()}>{create.isPending ? 'Posting…' : 'Post supplier return'}</Button>
-          </div>
         </div>
       </Drawer>
 

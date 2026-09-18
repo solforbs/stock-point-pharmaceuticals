@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, Package, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ApprovalBar } from '../../components/ApprovalBar'
@@ -9,7 +10,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, DescriptionList, Field, Select, Textarea } from '../../components/ui/primitives'
+import { DescriptionList, DrawerFooter, Field, FormSection, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
 import { api, apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { useStores } from '../../lib/hooks'
@@ -79,11 +80,29 @@ export default function AdjustmentsPage() {
 
   return (
     <Page>
-      <PageHeader parent="Inventory" title="Adjustments" subtitle="Reason mandatory. Large adjustments wait for an approver; nothing moves until then." actions={canAdjust ? <Button variant="primary" onClick={() => setCreating(true)}>New adjustment</Button> : null} />
+      <PageHeader
+        parent="Inventory & Storage"
+        title="Stock Adjustments"
+        subtitle="Mandatory reason codes for write-offs, damages, and variances with secondary dual-control approval queues"
+        actions={
+          canAdjust ? (
+            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+              New adjustment
+            </PrimaryAction>
+          ) : null
+        }
+      />
       <FilterBar>
-        <div className="flex gap-1">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit">
           {[['PENDING', 'Approval queue'], ['', 'All'], ['APPROVED', 'Approved'], ['REJECTED', 'Rejected']].map(([v, label]) => (
-            <Button key={v} size="sm" variant={status === v ? 'primary' : 'secondary'} onClick={() => { setStatus(v); setPage(1) }}>{label}</Button>
+            <button
+              key={v}
+              type="button"
+              onClick={() => { setStatus(v); setPage(1) }}
+              className={`h-7 px-3 rounded-lg text-xs font-bold transition-all ${status === v ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              {label}
+            </button>
           ))}
         </div>
       </FilterBar>
@@ -92,28 +111,63 @@ export default function AdjustmentsPage() {
         <Pagination page={list.data} onPage={setPage} />
       </div>
 
-      <Drawer open={creating} onClose={() => setCreating(false)} title="New adjustment" width={820}>
+      <Drawer
+        open={creating}
+        onClose={() => setCreating(false)}
+        title="New Stock Adjustment"
+        subtitle="Log inventory write-offs or corrections against specific batches"
+        width={840}
+        footer={
+          <DrawerFooter
+            badge={`${lines.length} lines`}
+            onCancel={() => setCreating(false)}
+            onSubmit={() => create.mutate()}
+            submitLabel="Submit adjustment"
+            disabled={!effectiveStore || !batchLinesValid(lines) || create.isPending}
+            isPending={create.isPending}
+          />
+        }
+      >
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Store" required>
-              <Select value={effectiveStore} onChange={(e) => { setStoreId(e.target.value); setLines([]) }}>{(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}</Select>
-            </Field>
-            <Field label="Reason code" required>
-              <Select value={reason} onChange={(e) => setReason(e.target.value)}>{REASONS.map((r) => (<option key={r} value={r}>{titleCase(r)}</option>))}</Select>
-            </Field>
-            <Field label="Direction" required>
-              <Select value={direction} onChange={(e) => setDirection(e.target.value as '-' | '+')}><option value="-">Remove stock (−)</option><option value="+">Add stock (+)</option></Select>
-            </Field>
-            <Field label="Notes" className="col-span-3"><Textarea rows={1} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-          </div>
-          <Field label="Lines" required hint="Quantities in base units per batch.">
+          <FormSection
+            title="Adjustment Details & Justification"
+            description="Select target store, adjustment reason code, and direction"
+            icon={AlertTriangle}
+            badge="Audited"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <Field label="Store" required>
+                <Select value={effectiveStore} onChange={(e) => { setStoreId(e.target.value); setLines([]) }}>
+                  {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+                </Select>
+              </Field>
+              <Field label="Reason Code" required>
+                <Select value={reason} onChange={(e) => setReason(e.target.value)}>
+                  {REASONS.map((r) => (<option key={r} value={r}>{titleCase(r)}</option>))}
+                </Select>
+              </Field>
+              <Field label="Direction" required>
+                <Select value={direction} onChange={(e) => setDirection(e.target.value as '-' | '+')}>
+                  <option value="-">Remove stock (−)</option>
+                  <option value="+">Add stock (+)</option>
+                </Select>
+              </Field>
+              <Field label="Operational Notes / Incident Details" className="sm:col-span-3">
+                <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Provide detailed background for audit inspection..." />
+              </Field>
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Adjusted Batches & Quantities"
+            description="Specify exact batch and base quantity for each affected product"
+            icon={Package}
+            badge={`${lines.length} lines`}
+          >
             <BatchLinesEditor lines={lines} onChange={setLines} storeId={effectiveStore} />
-          </Field>
+          </FormSection>
+
           {create.isError && <InlineError error={create.error} />}
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setCreating(false)}>Cancel</Button>
-            <Button variant="primary" disabled={!effectiveStore || !batchLinesValid(lines) || create.isPending} onClick={() => create.mutate()}>{create.isPending ? 'Submitting…' : 'Submit adjustment'}</Button>
-          </div>
         </div>
       </Drawer>
 

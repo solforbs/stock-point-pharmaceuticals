@@ -1,8 +1,8 @@
-import { Trash2 } from 'lucide-react'
+import { Pill, Trash2, Truck } from 'lucide-react'
 import { ProductSearch } from '../../components/ProductSearch'
 import { Drawer } from '../../components/ui/Drawer'
 import { InlineError } from '../../components/ui/States'
-import { Button, Field, Input, Select } from '../../components/ui/primitives'
+import { Button, DrawerFooter, Field, FormSection, Input, Select } from '../../components/ui/primitives'
 import type { Product, Supplier } from '../../lib/types'
 
 export interface PoLine {
@@ -47,27 +47,46 @@ export function NewPurchaseOrderDrawer({
     lines.every((l) => l.uom_id && Number(l.qty_ordered) > 0 && /^\d+(\.\d+)?$/.test(l.unit_price))
 
   return (
-    <Drawer open={open} onClose={onClose} title="New Purchase Order" width={820}>
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title="Create Purchase Order"
+      subtitle="Issue formal supplier order with locked purchase prices and UOM conversion"
+      width={840}
+    >
       <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Supplier" required>
-            <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
-              <option value="">Choose supplier…</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id} disabled={s.status !== 'ACTIVE' || !s.is_active}>
-                  {s.name}
-                  {s.status !== 'ACTIVE' ? ` (${s.status})` : ''}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Expected Delivery Date">
-            <Input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} />
-          </Field>
-        </div>
+        {/* Section 1: Supplier & Delivery */}
+        <FormSection
+          title="Supplier & Delivery Schedule"
+          description="Choose registered supplier and estimated warehouse delivery date"
+          icon={Truck}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Supplier" required>
+              <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+                <option value="">Choose supplier…</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id} disabled={s.status !== 'ACTIVE' || !s.is_active}>
+                    {s.name}
+                    {s.status !== 'ACTIVE' ? ` (${s.status})` : ''}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Expected Delivery Date">
+              <Input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} />
+            </Field>
+          </div>
+        </FormSection>
 
-        <Field label="Order Lines" required hint="Unit price is per selected purchase UOM.">
-          <div className="space-y-2">
+        {/* Section 2: Order Lines */}
+        <FormSection
+          title="Medicine Order Lines"
+          description="Search products and specify purchase units of measure and unit cost"
+          icon={Pill}
+          badge={`${lines.length} items`}
+        >
+          <div className="space-y-3">
             <ProductSearch
               onSelect={(p) => {
                 const uoms = (p.uoms ?? []).filter((u) => u.is_purchase || u.is_base)
@@ -78,15 +97,16 @@ export function NewPurchaseOrderDrawer({
                 ])
               }}
             />
-            {lines.length > 0 && (
-              <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-white">
-                <table className="ui-table min-w-[520px]">
+
+            {lines.length > 0 ? (
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
+                <table className="ui-table min-w-[540px]">
                   <thead>
                     <tr>
                       <th>Product</th>
                       <th>UOM</th>
                       <th className="text-right">Qty</th>
-                      <th className="text-right">Unit price</th>
+                      <th className="text-right">Unit Price (KES)</th>
                       <th />
                     </tr>
                   </thead>
@@ -94,8 +114,8 @@ export function NewPurchaseOrderDrawer({
                     {lines.map((l) => (
                       <tr key={l.key}>
                         <td>
-                          <div className="font-semibold text-[var(--text)]">{l.product.name}</div>
-                          <div className="text-[10.5px] text-[var(--text-muted)]">{l.product.code}</div>
+                          <div className="font-bold text-slate-900">{l.product.name}</div>
+                          <div className="text-[11px] text-slate-400 font-mono">{l.product.code}</div>
                         </td>
                         <td>
                           <select
@@ -103,7 +123,7 @@ export function NewPurchaseOrderDrawer({
                             onChange={(e) =>
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, uom_id: e.target.value } : x)))
                             }
-                            className="ui-input h-7 w-auto"
+                            className="ui-input h-8 w-auto text-xs font-semibold"
                           >
                             {(l.product.uoms ?? [])
                               .filter((u) => u.is_purchase || u.is_base)
@@ -122,28 +142,30 @@ export function NewPurchaseOrderDrawer({
                             onChange={(e) =>
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, qty_ordered: e.target.value.replace(/[^\d.]/g, '') } : x)))
                             }
-                            className="ui-input h-7 w-20 tabular text-right"
+                            className="ui-input h-8 w-20 tabular text-right font-bold text-xs"
                           />
                         </td>
                         <td>
                           <input
                             type="text"
                             inputMode="decimal"
+                            placeholder="0.00"
                             value={l.unit_price}
                             onChange={(e) =>
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, unit_price: e.target.value.replace(/[^\d.]/g, '') } : x)))
                             }
-                            className="ui-input h-7 w-28 tabular text-right"
+                            className="ui-input h-8 w-28 tabular text-right font-bold text-xs"
                           />
                         </td>
                         <td className="text-right">
                           <Button
-                            size="sm"
+                            size="xs"
                             variant="ghost"
                             onClick={() => setLines(lines.filter((x) => x.key !== l.key))}
-                            aria-label="Remove"
+                            aria-label="Remove line"
+                            className="text-slate-400 hover:text-rose-600 hover:bg-rose-50"
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={14} />
                           </Button>
                         </td>
                       </tr>
@@ -151,23 +173,24 @@ export function NewPurchaseOrderDrawer({
                   </tbody>
                 </table>
               </div>
+            ) : (
+              <div className="p-6 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/60 text-[12.5px] text-slate-500">
+                Use the search box above to add medicine lines to this purchase order.
+              </div>
             )}
           </div>
-        </Field>
+        </FormSection>
 
         {error ? <InlineError error={error} /> : null}
 
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 border-t border-[var(--border)] mt-4">
-          <Button onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
-          <Button
-            variant="primary"
-            disabled={!supplierId || !validLines || isSubmitting}
-            onClick={onSubmit}
-            className="w-full sm:w-auto"
-          >
-            {isSubmitting ? 'Saving…' : 'Create Purchase Order'}
-          </Button>
-        </div>
+        {/* Sticky Glassmorphic Footer */}
+        <DrawerFooter
+          onCancel={onClose}
+          onSubmit={onSubmit}
+          submitLabel="Create Purchase Order"
+          isSubmitting={isSubmitting}
+          disabled={!supplierId || !validLines}
+        />
       </div>
     </Drawer>
   )

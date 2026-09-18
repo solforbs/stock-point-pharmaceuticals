@@ -10,7 +10,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, Card, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
+import { Button, Card, DescriptionList, Field, Input, PrimaryAction, Select } from '../../components/ui/primitives'
 import { apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { formatDate } from '../../lib/format'
 import { useProduct, useProductCategories, useProductStock, useTaxCodes, useUoms } from '../../lib/hooks'
@@ -70,9 +70,10 @@ export default function ProductsPage() {
   return (
     <Page>
       <PageHeader
-        parent="Inventory"
-        title="Products"
-        actions={<><ProductCatalogueActions />{canCreate ? <Button variant="primary" onClick={() => setCreating(true)}>New product</Button> : null}</>}
+        parent="Inventory & Formulations"
+        title="Medication & Product Catalogue"
+        subtitle="Manage active stock-keeping units, pharmaceutical strengths, packaging factor UOMs, and reorder levels"
+        actions={<><ProductCatalogueActions />{canCreate ? <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New product</PrimaryAction> : null}</>}
       />
       <FilterBar>
         <Field label="Search" className="w-72">

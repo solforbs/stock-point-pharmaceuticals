@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Building2, CreditCard, Plus, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useDebounced } from '../../components/ProductSearch'
@@ -9,7 +10,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
+import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select } from '../../components/ui/primitives'
 import { apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { formatDate, titleCase } from '../../lib/format'
 import { usePermission } from '../../lib/permissions'
@@ -54,13 +55,19 @@ export default function SuppliersPage() {
   return (
     <Page>
       <PageHeader
-        parent="Buy"
-        title="Suppliers"
-        subtitle="A purchase order can only go to an active, licensed supplier (Part 9.6)."
-        actions={canManage ? <Button variant="primary" onClick={() => setCreating(true)}>New supplier</Button> : null}
+        parent="Procurement & Supply"
+        title="Suppliers & Vendors"
+        subtitle="Licensed pharmaceutical manufacturers, importers, and distributors with regulatory compliance checks"
+        actions={
+          canManage ? (
+            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+              New supplier
+            </PrimaryAction>
+          ) : null
+        }
       />
       <FilterBar>
-        <Field label="Search" className="w-72"><Input placeholder="Supplier name" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
+        <Field label="Search" className="w-72"><Input placeholder="Search supplier name or code..." value={q} onChange={(e) => setQ(e.target.value)} /></Field>
       </FilterBar>
       <div className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(s) => s.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(s) => { setEditing(false); setParams({ supplier: s.id }) }} selectedKey={selectedId} emptyTitle="No suppliers" />
@@ -160,30 +167,96 @@ function SupplierForm({ supplier, onDone, onCancel }: { supplier?: Supplier; onD
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} disabled={!!supplier} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
-        <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-        <Field label="Contact person"><Input value={form.contact_name} onChange={(e) => set({ contact_name: e.target.value })} /></Field>
-        <Field label="Phone"><Input value={form.phone} onChange={(e) => set({ phone: e.target.value })} /></Field>
-        <Field label="Email" error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
-        <Field label="Address"><Input value={form.address} onChange={(e) => set({ address: e.target.value })} /></Field>
-        <Field label="PPB licence number"><Input value={form.licence_number} onChange={(e) => set({ licence_number: e.target.value })} /></Field>
-        <Field label="Licence expiry" hint="Purchase orders are refused once this passes." error={err?.errors.licence_expiry?.[0]}><Input type="date" value={form.licence_expiry} onChange={(e) => set({ licence_expiry: e.target.value })} /></Field>
-        <Field label="Payment terms (days)"><Input inputMode="numeric" className="tabular" value={form.payment_terms_days} onChange={(e) => set({ payment_terms_days: e.target.value.replace(/\D/g, '') })} /></Field>
-        <Field label="Lead time (days)" hint="Feeds the reorder advisor's required-by date."><Input inputMode="numeric" className="tabular" value={form.lead_time_days} onChange={(e) => set({ lead_time_days: e.target.value.replace(/\D/g, '') })} /></Field>
-        <Field label="Status"><Select value={form.status} onChange={(e) => set({ status: e.target.value })}>{STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}</Select></Field>
-        {!supplier && <Field label="Currency"><Input value={form.currency} maxLength={3} onChange={(e) => set({ currency: e.target.value.toUpperCase() })} /></Field>}
-        <Field label="Bank name" hint="Stored encrypted; never shown again."><Input value={form.bank_name} onChange={(e) => set({ bank_name: e.target.value })} placeholder={supplier ? 'Leave blank to keep' : ''} /></Field>
-        <Field label="Bank account"><Input value={form.bank_account} onChange={(e) => set({ bank_account: e.target.value })} placeholder={supplier ? 'Leave blank to keep' : ''} /></Field>
+      <FormSection
+        title="Company Profile & Contact"
+        description="Supplier unique code, legal business name, and primary contact representative"
+        icon={Building2}
+        badge="Required"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <Field label="Supplier Code" required error={err?.errors.code?.[0]}>
+            <Input value={form.code} disabled={!!supplier} onChange={(e) => set({ code: e.target.value.toUpperCase() })} placeholder="e.g. MEDS" />
+          </Field>
+          <Field label="Supplier Name" required error={err?.errors.name?.[0]}>
+            <Input value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="e.g. Mission for Essential Drugs (MEDS)" />
+          </Field>
+          <Field label="Contact Person">
+            <Input value={form.contact_name} onChange={(e) => set({ contact_name: e.target.value })} placeholder="e.g. Dr. Jane Doe" />
+          </Field>
+          <Field label="Phone Number">
+            <Input value={form.phone} onChange={(e) => set({ phone: e.target.value })} placeholder="e.g. +254 700 000 000" />
+          </Field>
+          <Field label="Email Address" error={err?.errors.email?.[0]}>
+            <Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} placeholder="orders@supplier.co.ke" />
+          </Field>
+          <Field label="Physical Address">
+            <Input value={form.address} onChange={(e) => set({ address: e.target.value })} placeholder="Industrial Area, Nairobi" />
+          </Field>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Regulatory Compliance & Terms"
+        description="Pharmacy and Poisons Board (PPB) licence verification and supply terms"
+        icon={ShieldCheck}
+        badge="PPB Audited"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <Field label="PPB Licence Number">
+            <Input value={form.licence_number} onChange={(e) => set({ licence_number: e.target.value })} placeholder="PPB/LIC/..." />
+          </Field>
+          <Field label="Licence Expiry Date" hint="Purchase orders refused once expired" error={err?.errors.licence_expiry?.[0]}>
+            <Input type="date" value={form.licence_expiry} onChange={(e) => set({ licence_expiry: e.target.value })} />
+          </Field>
+          <Field label="Payment Terms (Days)">
+            <Input inputMode="numeric" className="tabular" value={form.payment_terms_days} onChange={(e) => set({ payment_terms_days: e.target.value.replace(/\D/g, '') })} />
+          </Field>
+          <Field label="Lead Time (Days)" hint="Used by reorder advisor">
+            <Input inputMode="numeric" className="tabular" value={form.lead_time_days} onChange={(e) => set({ lead_time_days: e.target.value.replace(/\D/g, '') })} />
+          </Field>
+          <Field label="Status">
+            <Select value={form.status} onChange={(e) => set({ status: e.target.value })}>
+              {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+            </Select>
+          </Field>
+          {!supplier && (
+            <Field label="Billing Currency">
+              <Input value={form.currency} maxLength={3} onChange={(e) => set({ currency: e.target.value.toUpperCase() })} />
+            </Field>
+          )}
+        </div>
         {supplier && (
-          <label className="flex items-center gap-2 text-[12px] pt-4"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active</label>
+          <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 mt-2 cursor-pointer">
+            <input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+            <span>Active Supplier (eligible for RFQs and Purchase Orders)</span>
+          </label>
         )}
-      </div>
+      </FormSection>
+
+      <FormSection
+        title="Banking & Settlement Details"
+        description="Encrypted vendor bank coordinates for accounts payable disbursement"
+        icon={CreditCard}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <Field label="Bank Name" hint="Stored encrypted; never displayed back in plain text">
+            <Input value={form.bank_name} onChange={(e) => set({ bank_name: e.target.value })} placeholder={supplier ? '•••••••• (Leave blank to keep)' : 'e.g. Standard Chartered Bank'} />
+          </Field>
+          <Field label="Bank Account Number">
+            <Input value={form.bank_account} onChange={(e) => set({ bank_account: e.target.value })} placeholder={supplier ? '•••••••• (Leave blank to keep)' : 'e.g. 0102030405'} />
+          </Field>
+        </div>
+      </FormSection>
+
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
-      <div className="flex justify-end gap-2">
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" disabled={!form.code || !form.name || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : supplier ? 'Save changes' : 'Create supplier'}</Button>
-      </div>
+
+      <DrawerFooter
+        onCancel={onCancel}
+        onSubmit={() => save.mutate()}
+        submitLabel={supplier ? 'Save changes' : 'Create supplier'}
+        disabled={!form.code || !form.name || save.isPending}
+        isPending={save.isPending}
+      />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Trash2 } from 'lucide-react'
+import { Calendar, Package, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ProductSearch } from '../../components/ProductSearch'
@@ -11,7 +11,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, DescriptionList, Field, Input, Select, Textarea } from '../../components/ui/primitives'
+import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
 import { apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { useSuppliers, useUoms } from '../../lib/hooks'
@@ -69,10 +69,26 @@ export default function RequisitionsPage() {
 
   return (
     <Page>
-      <PageHeader parent="Buy" title="Requisitions" subtitle="What the branch needs, approved, then converted into a purchase order to a chosen supplier." actions={perms.has('requisition.create') ? <Button variant="primary" onClick={() => setCreating(true)}>New requisition</Button> : null} />
-      <div className="flex gap-1 mb-3">
+      <PageHeader
+        parent="Procurement & Supply"
+        title="Purchase Requisitions"
+        subtitle="Departmental medicine demands, approvals workflow, and conversion to supplier purchase orders."
+        actions={
+          perms.has('requisition.create') ? (
+            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+              New requisition
+            </PrimaryAction>
+          ) : null
+        }
+      />
+      <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit mb-4">
         {(['requisitions', 'reorder'] as const).map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)} className={`h-8 px-3 rounded-md text-[12px] font-semibold ${tab === t ? 'bg-[var(--color-navy)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-secondary)]'}`}>
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={`h-8 px-4 rounded-lg text-xs font-bold transition-all ${tab === t ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'}`}
+          >
             {t === 'requisitions' ? 'Requisitions' : 'Reorder suggestions'}
           </button>
         ))}
@@ -97,39 +113,68 @@ export default function RequisitionsPage() {
         <ReorderSuggestions canCreate={perms.has('requisition.create')} isCreating={create.isPending} onCreate={(rows) => create.mutate({ needed_by: rows.reduce<string | null>((min, r) => (min === null || r.required_by < min ? r.required_by : min), null), notes: 'From reorder suggestions', lines: rows.map((r) => ({ product_id: r.product_id, qty_base: r.suggested_qty_base, notes: r.formula })) })} />
       )}
 
-      <Drawer open={creating} onClose={() => setCreating(false)} title="New requisition" width={720}>
+      <Drawer
+        open={creating}
+        onClose={() => setCreating(false)}
+        title="New Purchase Requisition"
+        subtitle="Draft demand items for internal review and management approval"
+        width={780}
+        footer={
+          <DrawerFooter
+            badge={`${lines.length} ${lines.length === 1 ? 'item' : 'items'}`}
+            onCancel={() => setCreating(false)}
+            onSubmit={() => create.mutate({ needed_by: neededBy || null, notes: notes || null, lines: lines.map((l) => ({ product_id: l.product.id, qty_base: l.qty_base, notes: l.notes || null })) })}
+            submitLabel="Create requisition"
+            disabled={lines.length === 0 || lines.some((l) => !(Number(l.qty_base) > 0)) || create.isPending}
+            isPending={create.isPending}
+          />
+        }
+      >
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Needed by"><Input type="date" value={neededBy} onChange={(e) => setNeededBy(e.target.value)} /></Field>
-            <Field label="Notes"><Textarea rows={1} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-          </div>
-          <Field label="Lines" required hint="Quantities in base units.">
-            <div className="space-y-2">
+          <FormSection
+            title="Requisition Schedule"
+            description="Set required fulfillment date and operational notes"
+            icon={Calendar}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <Field label="Needed By Date">
+                <Input type="date" value={neededBy} onChange={(e) => setNeededBy(e.target.value)} />
+              </Field>
+              <Field label="Justification / Notes">
+                <Textarea rows={1} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Weekly buffer restock" />
+              </Field>
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Required Medication Lines"
+            description="Search and add products with required base unit quantities"
+            icon={Package}
+            badge={`${lines.length} items`}
+          >
+            <div className="space-y-3">
               <ProductSearch onSelect={(p) => setLines([...lines, { key: `${p.id}-${Date.now()}`, product: p, qty_base: '', notes: '' }])} />
               {lines.length > 0 && (
-                <table className="ui-table">
-                  <thead><tr><th>Product</th><th>Qty (base)</th><th>Notes</th><th /></tr></thead>
-                  <tbody>
-                    {lines.map((l) => (
-                      <tr key={l.key}>
-                        <td><div className="font-semibold">{l.product.name}</div><div className="text-[10.5px] text-[var(--text-muted)]">{l.product.code} · {l.product.base_uom?.code}</div></td>
-                        <td><input value={l.qty_base} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, qty_base: e.target.value.replace(/[^\d.]/g, '') } : x)))} className="ui-input h-7 w-24 tabular text-right" /></td>
-                        <td><input value={l.notes} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, notes: e.target.value } : x)))} className="ui-input h-7" /></td>
-                        <td className="text-right"><Button size="sm" variant="ghost" onClick={() => setLines(lines.filter((x) => x.key !== l.key))} aria-label="Remove"><Trash2 size={13} /></Button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="ui-table">
+                    <thead><tr><th>Product</th><th>Qty (base)</th><th>Notes</th><th /></tr></thead>
+                    <tbody>
+                      {lines.map((l) => (
+                        <tr key={l.key}>
+                          <td><div className="font-semibold text-slate-900">{l.product.name}</div><div className="text-[10.5px] text-slate-400 font-medium">{l.product.code} · {l.product.base_uom?.code}</div></td>
+                          <td><input value={l.qty_base} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, qty_base: e.target.value.replace(/[^\d.]/g, '') } : x)))} className="ui-input h-7 w-24 tabular text-right font-bold" /></td>
+                          <td><input value={l.notes} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, notes: e.target.value } : x)))} className="ui-input h-7" placeholder="Line notes..." /></td>
+                          <td className="text-right"><Button size="sm" variant="ghost" onClick={() => setLines(lines.filter((x) => x.key !== l.key))} aria-label="Remove"><Trash2 size={13} /></Button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-          </Field>
+          </FormSection>
+
           {create.isError && <InlineError error={create.error} />}
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setCreating(false)}>Cancel</Button>
-            <Button variant="primary" disabled={lines.length === 0 || lines.some((l) => !(Number(l.qty_base) > 0)) || create.isPending} onClick={() => create.mutate({ needed_by: neededBy || null, notes: notes || null, lines: lines.map((l) => ({ product_id: l.product.id, qty_base: l.qty_base, notes: l.notes || null })) })}>
-              {create.isPending ? 'Saving…' : 'Create requisition'}
-            </Button>
-          </div>
         </div>
       </Drawer>
 

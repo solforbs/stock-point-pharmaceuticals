@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Plus, ShoppingCart, User } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CreditLimitResolver, type CreditResolution } from '../../components/CreditLimitResolver'
@@ -11,7 +12,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
+import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select } from '../../components/ui/primitives'
 import { apiGet, apiPost, getApiError, newIdempotencyKey, withIdempotency } from '../../lib/api'
 import { formatDate, formatDateTime } from '../../lib/format'
 import { useStores } from '../../lib/hooks'
@@ -77,19 +78,19 @@ export default function SalesOrdersPage() {
   return (
     <Page>
       <PageHeader
-        parent="Sell"
+        parent="Commerce & Stock"
         title="Sales Orders"
-        subtitle="Confirmed orders reserve stock; picking, dispatch and delivery happen in Warehouse."
+        subtitle="Confirmed wholesale & facility orders reserve inventory, trigger warehouse pick lists, and schedule dispatch"
         actions={
-          <Button variant="primary" onClick={() => setCreating(true)}>
+          <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
             New sales order
-          </Button>
+          </PrimaryAction>
         }
       />
       <FilterBar>
         <Field label="Status">
           <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All</option>
+            <option value="">All Statuses</option>
             {STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -110,106 +111,61 @@ export default function SalesOrdersPage() {
         subtitle="Confirm sales order to reserve inventory under customer credit terms"
         width={880}
         footer={
-          <>
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="inline-flex items-center justify-center h-6 px-2 rounded-md bg-slate-100 text-slate-700 text-xs font-bold tabular">
-                {lines.length} {lines.length === 1 ? 'item' : 'items'}
-              </span>
-              {customer ? (
-                <span className="text-xs text-slate-600 truncate hidden sm:inline">
-                  Client: <strong className="text-slate-900 font-bold">{customer.name}</strong>
-                </span>
-              ) : (
-                <span className="text-xs font-semibold text-amber-600">
-                  Select a customer to proceed
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button onClick={() => setCreating(false)} variant="secondary" size="md">
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                disabled={!customer || !effectiveStore || lines.length === 0 || create.isPending}
-                onClick={() => create.mutate()}
-                className="font-bold shadow-md shadow-blue-600/20"
-              >
-                {create.isPending ? 'Saving…' : 'Create order →'}
-              </Button>
-            </div>
-          </>
+          <DrawerFooter
+            badge={`${lines.length} ${lines.length === 1 ? 'line' : 'lines'}`}
+            summary={customer ? <>Client: <strong className="text-slate-900 font-bold">{customer.name}</strong></> : <span className="text-amber-600 font-semibold">Select a customer</span>}
+            onCancel={() => setCreating(false)}
+            onSubmit={() => create.mutate()}
+            submitLabel="Create order"
+            disabled={!customer || !effectiveStore || lines.length === 0 || create.isPending}
+            isPending={create.isPending}
+          />
         }
       >
         <div className="space-y-4">
-          {/* Card 1: Client & Fulfillment */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
-                  1
-                </div>
-                <div>
-                  <h3 className="text-[13.5px] font-extrabold text-slate-900">Client & Delivery</h3>
-                  <p className="text-[11.5px] text-slate-400 font-medium">Customer account, fulfillment store, and payment terms</p>
-                </div>
-              </div>
-              <span className="text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                Required
-              </span>
-            </div>
+          <FormSection
+            title="Client & Fulfillment"
+            description="Select customer account, fulfillment store, and payment terms"
+            icon={User}
+            badge="Required"
+          >
+            <Field label="Customer Account" required>
+              <CustomerPicker value={customer} onChange={setCustomer} placeholder="Search customer by name, code, or phone number..." />
+            </Field>
 
-            <div className="space-y-3.5">
-              <Field label="Customer Account" required>
-                <CustomerPicker value={customer} onChange={setCustomer} placeholder="Search customer by name, code, or phone number..." />
-              </Field>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <Field label="Fulfillment Store" required>
-                  <Select value={effectiveStore} onChange={(e) => setStoreId(e.target.value)}>
-                    {(stores.data ?? []).map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.code} · {s.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-
-                <Field label="Required Date">
-                  <Input type="date" value={requiredDate} onChange={(e) => setRequiredDate(e.target.value)} />
-                </Field>
-              </div>
-
-              <Field label="Payment Terms" hint="Automatic: on account when customer has credit limit, otherwise cash on delivery.">
-                <Select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)}>
-                  <option value="">Automatic</option>
-                  <option value="ACCOUNT">{PAYMENT_TERMS_LABEL.ACCOUNT}</option>
-                  <option value="CASH_ON_DELIVERY">{PAYMENT_TERMS_LABEL.CASH_ON_DELIVERY}</option>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <Field label="Fulfillment Store" required>
+                <Select value={effectiveStore} onChange={(e) => setStoreId(e.target.value)}>
+                  {(stores.data ?? []).map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.code} · {s.name}
+                    </option>
+                  ))}
                 </Select>
               </Field>
-            </div>
-          </div>
 
-          {/* Card 2: Order Items */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-2xs space-y-3.5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
-                  2
-                </div>
-                <div>
-                  <h3 className="text-[13.5px] font-extrabold text-slate-900">Order Line Items</h3>
-                  <p className="text-[11.5px] text-slate-400 font-medium">Add products, quantities, UOMs, and negotiated discounts</p>
-                </div>
-              </div>
-              <span className="text-[11px] font-bold tabular px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                {lines.length} {lines.length === 1 ? 'line' : 'lines'}
-              </span>
+              <Field label="Required Date">
+                <Input type="date" value={requiredDate} onChange={(e) => setRequiredDate(e.target.value)} />
+              </Field>
             </div>
 
+            <Field label="Payment Terms" hint="Automatic: on account when customer has credit limit, otherwise cash on delivery.">
+              <Select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)}>
+                <option value="">Automatic</option>
+                <option value="ACCOUNT">{PAYMENT_TERMS_LABEL.ACCOUNT}</option>
+                <option value="CASH_ON_DELIVERY">{PAYMENT_TERMS_LABEL.CASH_ON_DELIVERY}</option>
+              </Select>
+            </Field>
+          </FormSection>
+
+          <FormSection
+            title="Order Line Items"
+            description="Add products, quantities, UOMs, and negotiated discounts"
+            icon={ShoppingCart}
+            badge={`${lines.length} ${lines.length === 1 ? 'line' : 'lines'}`}
+          >
             <DocLinesEditor lines={lines} onChange={setLines} canDiscount={canDiscount} />
-          </div>
+          </FormSection>
 
           {create.isError && <InlineError error={create.error} />}
         </div>

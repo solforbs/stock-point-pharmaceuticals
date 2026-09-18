@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowRightLeft, Package, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DataTable, type Column } from '../../components/ui/DataTable'
@@ -9,7 +10,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, DescriptionList, Field, Select, Textarea } from '../../components/ui/primitives'
+import { Button, DescriptionList, DrawerFooter, Field, FormSection, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
 import { apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { useStores } from '../../lib/hooks'
@@ -65,11 +66,22 @@ export default function TransfersPage() {
 
   return (
     <Page>
-      <PageHeader parent="Inventory" title="Transfers" subtitle="Stock between stores of one entity: in transit while on the road, no journal." actions={perms.has('stock.transfer.create') ? <Button variant="primary" onClick={() => setCreating(true)}>New transfer</Button> : null} />
+      <PageHeader
+        parent="Inventory & Storage"
+        title="Inter-Store Stock Transfers"
+        subtitle="Move inventory securely between facility branches and quarantine warehouses with custody tracking"
+        actions={
+          perms.has('stock.transfer.create') ? (
+            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+              New transfer
+            </PrimaryAction>
+          ) : null
+        }
+      />
       <FilterBar>
         <Field label="Status">
           <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All</option>
+            <option value="">All Statuses</option>
             {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
           </Select>
         </Field>
@@ -79,30 +91,56 @@ export default function TransfersPage() {
         <Pagination page={list.data} onPage={setPage} />
       </div>
 
-      <Drawer open={creating} onClose={() => setCreating(false)} title="New stock transfer" width={820}>
+      <Drawer
+        open={creating}
+        onClose={() => setCreating(false)}
+        title="New Stock Transfer"
+        subtitle="Transfer specific batches between stores without creating fiscal journal entries"
+        width={820}
+        footer={
+          <DrawerFooter
+            badge={`${lines.length} lines`}
+            onCancel={() => setCreating(false)}
+            onSubmit={() => create.mutate()}
+            submitLabel="Create transfer"
+            disabled={!fromStore || !toStore || !batchLinesValid(lines) || create.isPending}
+            isPending={create.isPending}
+          />
+        }
+      >
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="From store" required>
-              <Select value={fromStore} onChange={(e) => { setFromStore(e.target.value); setLines([]) }}>
-                <option value="">Choose…</option>
-                {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
-              </Select>
-            </Field>
-            <Field label="To store" required>
-              <Select value={toStore} onChange={(e) => setToStore(e.target.value)}>
-                <option value="">Choose…</option>
-                {(stores.data ?? []).filter((s) => s.id !== fromStore).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
-              </Select>
-            </Field>
-          </div>
-          <Field label="Lines" required hint="Quantities in base units, per batch, from the source store's balances.">
+          <FormSection
+            title="Source & Destination Stores"
+            description="Select origin storage location and destination pharmacy branch"
+            icon={ArrowRightLeft}
+            badge="Required"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <Field label="From Store (Origin)" required>
+                <Select value={fromStore} onChange={(e) => { setFromStore(e.target.value); setLines([]) }}>
+                  <option value="">Choose origin store…</option>
+                  {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+                </Select>
+              </Field>
+              <Field label="To Store (Destination)" required>
+                <Select value={toStore} onChange={(e) => setToStore(e.target.value)}>
+                  <option value="">Choose destination store…</option>
+                  {(stores.data ?? []).filter((s) => s.id !== fromStore).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+                </Select>
+              </Field>
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Batch Allocations"
+            description="Quantities in base units per batch, drawn from active source store stock balances"
+            icon={Package}
+            badge={`${lines.length} lines`}
+          >
             <BatchLinesEditor lines={lines} onChange={setLines} storeId={fromStore} statuses={['RELEASED', 'PENDING_QC', 'QUARANTINED']} />
-          </Field>
+          </FormSection>
+
           {create.isError && <InlineError error={create.error} />}
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setCreating(false)}>Cancel</Button>
-            <Button variant="primary" disabled={!fromStore || !toStore || !batchLinesValid(lines) || create.isPending} onClick={() => create.mutate()}>{create.isPending ? 'Saving…' : 'Create transfer'}</Button>
-          </div>
         </div>
       </Drawer>
 

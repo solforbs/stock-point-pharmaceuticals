@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Trash2 } from 'lucide-react'
+import { PackageCheck, Plus, Trash2, Truck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ProductSearch } from '../../components/ProductSearch'
@@ -10,7 +10,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, DescriptionList, Field, Select } from '../../components/ui/primitives'
+import { Button, DescriptionList, DrawerFooter, Field, FormSection, PrimaryAction, Select } from '../../components/ui/primitives'
 import { apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime } from '../../lib/format'
 import { usePurchaseOrder, useStores, useSuppliers } from '../../lib/hooks'
@@ -71,10 +71,21 @@ export default function GoodsReceiptsPage() {
 
   return (
     <Page>
-      <PageHeader parent="Buy" title="Goods Receipts" subtitle="Line-by-line delivered / accepted / rejected; batch and expiry are mandatory; every accepted line creates a PENDING QC batch." actions={canCreate ? <Button variant="primary" onClick={() => setCreating(true)}>New goods receipt</Button> : null} />
+      <PageHeader
+        parent="Procurement & Supply"
+        title="Goods Receipts (GRN)"
+        subtitle="Mandatory batch & expiry verification, cold chain temperature logging, and PENDING QC quarantine creation"
+        actions={
+          canCreate ? (
+            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+              New goods receipt
+            </PrimaryAction>
+          ) : null
+        }
+      />
       <FilterBar>
-        <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option><option value="DRAFT">Draft</option><option value="POSTED">Posted</option></Select></Field>
-        <Field label="Supplier"><Select value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setPage(1) }}><option value="">All</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select></Field>
+        <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All Statuses</option><option value="DRAFT">Draft</option><option value="POSTED">Posted</option></Select></Field>
+        <Field label="Supplier"><Select value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setPage(1) }}><option value="">All Suppliers</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select></Field>
       </FilterBar>
       <div className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(g) => g.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(g) => setParams({ receipt: g.id })} selectedKey={selectedId} emptyTitle="No goods receipts" />
@@ -174,72 +185,112 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
     lines.every((l) => l.product_id && l.uom_id && l.batch_number && l.expiry_date && /^\d+(\.\d+)?$/.test(l.qty_delivered) && /^\d+(\.\d+)?$/.test(l.qty_accepted) && /^\d+(\.\d+)?$/.test(l.unit_cost) && (emergency || l.purchase_order_line_id))
 
   return (
-    <Drawer open={open} onClose={onClose} title="New goods receipt" width={1180}>
-      <div className="space-y-3">
-        <div className="grid grid-cols-4 gap-3">
-          <Field label="Purchase order" required={!emergency} className="col-span-2">
-            <Select value={poId} disabled={emergency} onChange={(e) => { setPoId(e.target.value); setLines([]) }}>
-              <option value="">Choose…</option>
-              {receivable.map((p) => (<option key={p.id} value={p.id}>{p.doc_number} · {p.supplier?.name} · {p.status}</option>))}
-            </Select>
-          </Field>
-          <Field label="Supplier" required>
-            <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}><option value="">Choose…</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select>
-          </Field>
-          <Field label="Receiving store" required>
-            <Select value={effectiveStore} onChange={(e) => setStoreId(e.target.value)}>{(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}</Select>
-          </Field>
-        </div>
-        <label className="flex items-center gap-2 text-[12px]">
-          <input type="checkbox" checked={emergency} onChange={(e) => { setEmergency(e.target.checked); if (e.target.checked) { setPoId(''); setLines([]) } }} />
-          Emergency receipt without a purchase order (audited)
-        </label>
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title="New Goods Receipt (GRN)"
+      subtitle="Verify delivered quantities, batch numbers, expiry dates and temperatures"
+      width={1180}
+      footer={
+        <DrawerFooter
+          badge={`${lines.length} lines`}
+          onCancel={onClose}
+          onSubmit={() => create.mutate()}
+          submitLabel="Post goods receipt"
+          disabled={!valid || create.isPending}
+          isPending={create.isPending}
+        />
+      }
+    >
+      <div className="space-y-4">
+        <FormSection
+          title="Procurement Source & Receiving Store"
+          description="Link to an approved purchase order or initiate an emergency audited receipt"
+          icon={Truck}
+          badge="Required"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Field label="Purchase Order" required={!emergency} className="sm:col-span-2">
+              <Select value={poId} disabled={emergency} onChange={(e) => { setPoId(e.target.value); setLines([]) }}>
+                <option value="">Choose approved purchase order…</option>
+                {receivable.map((p) => (<option key={p.id} value={p.id}>{p.doc_number} · {p.supplier?.name} · {p.status}</option>))}
+              </Select>
+            </Field>
+            <Field label="Receiving Store" required>
+              <Select value={effectiveStore} onChange={(e) => setStoreId(e.target.value)}>
+                {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+              </Select>
+            </Field>
+            {emergency && (
+              <Field label="Supplier" required className="sm:col-span-3">
+                <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+                  <option value="">Choose supplier…</option>
+                  {(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
+                </Select>
+              </Field>
+            )}
+          </div>
+          <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 mt-2 cursor-pointer">
+            <input type="checkbox" checked={emergency} onChange={(e) => { setEmergency(e.target.checked); if (e.target.checked) { setPoId(''); setLines([]) } }} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+            <span>Emergency receipt without a purchase order (audited log entry created)</span>
+          </label>
+        </FormSection>
+
         {po.isLoading && <LoadingSkeleton rows={3} />}
         {po.isError && <InlineError error={po.error} />}
         {po.data && (po.data.goods_receipts ?? []).length > 0 && (
-          <p className="text-[11.5px] text-[var(--text-muted)]">Already received against this PO: {po.data.goods_receipts!.map((g) => `${g.doc_number} (${g.status})`).join(', ')}. Adjust the delivered quantities to what arrived today.</p>
-        )}
-        {emergency && <Field label="Add products"><ProductSearch onSelect={addManualLine} /></Field>}
-        {lines.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="ui-table min-w-[1100px]">
-              <thead><tr><th>Product</th><th>UOM</th><th className="text-right">Ordered</th><th>Delivered</th><th>Accepted</th><th>Rejected</th><th>Batch no.</th><th>Expiry</th><th>Mfg date</th><th>Unit cost</th><th>Temp °C</th><th>COA</th><th /></tr></thead>
-              <tbody>
-                {lines.map((l) => (
-                  <tr key={l.key}>
-                    <td className="text-[11.5px]">{l.product_label}</td>
-                    <td>
-                      {l.uom_options.length > 1 ? (
-                        <select value={l.uom_id} onChange={(e) => update(l.key, { uom_id: e.target.value })} className="ui-input h-7 w-auto">{l.uom_options.map((u) => (<option key={u.id} value={u.id}>{u.code}</option>))}</select>
-                      ) : (
-                        <span className="tabular text-[11.5px]">{l.uom_options[0]?.code ?? l.uom_id.slice(0, 8)}</span>
-                      )}
-                    </td>
-                    <td className="text-right"><QtyCell value={l.qty_ordered || null} /></td>
-                    <td><input value={l.qty_delivered} onChange={(e) => update(l.key, { qty_delivered: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-16 tabular text-right" /></td>
-                    <td><input value={l.qty_accepted} onChange={(e) => update(l.key, { qty_accepted: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-16 tabular text-right" /></td>
-                    <td>
-                      <input value={l.qty_rejected} onChange={(e) => update(l.key, { qty_rejected: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-14 tabular text-right" />
-                      {Number(l.qty_rejected) > 0 && <input value={l.rejection_reason} placeholder="Reason" onChange={(e) => update(l.key, { rejection_reason: e.target.value })} className="ui-input h-7 w-28 mt-1" />}
-                    </td>
-                    <td><input value={l.batch_number} onChange={(e) => update(l.key, { batch_number: e.target.value })} className="ui-input h-7 w-28 tabular" /></td>
-                    <td><input type="date" value={l.expiry_date} onChange={(e) => update(l.key, { expiry_date: e.target.value })} className="ui-input h-7 w-36" /></td>
-                    <td><input type="date" value={l.manufacture_date} onChange={(e) => update(l.key, { manufacture_date: e.target.value })} className="ui-input h-7 w-36" /></td>
-                    <td><input value={l.unit_cost} onChange={(e) => update(l.key, { unit_cost: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-20 tabular text-right" /></td>
-                    <td><input value={l.temperature_on_arrival} onChange={(e) => update(l.key, { temperature_on_arrival: e.target.value.replace(/[^-\d.]/g, '') })} className="ui-input h-7 w-14 tabular text-right" /></td>
-                    <td><input type="checkbox" checked={l.coa_received} onChange={(e) => update(l.key, { coa_received: e.target.checked })} /></td>
-                    <td><Button size="sm" variant="ghost" onClick={() => setLines(lines.filter((x) => x.key !== l.key))} aria-label="Remove"><Trash2 size={13} /></Button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="p-3 bg-blue-50/60 border border-blue-200/60 rounded-xl text-xs text-blue-800">
+            <strong>Previous Receipts:</strong> {po.data.goods_receipts!.map((g) => `${g.doc_number} (${g.status})`).join(', ')}. Adjust delivered quantities to what arrived today.
           </div>
         )}
+        {emergency && <Field label="Add Products"><ProductSearch onSelect={addManualLine} /></Field>}
+
+        <FormSection
+          title="Received Line Items & Batch Verification"
+          description="Verify delivered, accepted, and rejected units with batch numbers and cold-chain temperature"
+          icon={PackageCheck}
+          badge={`${lines.length} lines`}
+        >
+          {lines.length > 0 ? (
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="ui-table min-w-[1100px]">
+                <thead><tr><th>Product</th><th>UOM</th><th className="text-right">Ordered</th><th>Delivered</th><th>Accepted</th><th>Rejected</th><th>Batch no.</th><th>Expiry</th><th>Mfg date</th><th>Unit cost</th><th>Temp °C</th><th>COA</th><th /></tr></thead>
+                <tbody>
+                  {lines.map((l) => (
+                    <tr key={l.key}>
+                      <td className="text-[11.5px] font-semibold text-slate-900">{l.product_label}</td>
+                      <td>
+                        {l.uom_options.length > 1 ? (
+                          <select value={l.uom_id} onChange={(e) => update(l.key, { uom_id: e.target.value })} className="ui-input h-7 w-auto">{l.uom_options.map((u) => (<option key={u.id} value={u.id}>{u.code}</option>))}</select>
+                        ) : (
+                          <span className="tabular text-[11.5px] font-bold text-slate-600">{l.uom_options[0]?.code ?? l.uom_id.slice(0, 8)}</span>
+                        )}
+                      </td>
+                      <td className="text-right"><QtyCell value={l.qty_ordered || null} /></td>
+                      <td><input value={l.qty_delivered} onChange={(e) => update(l.key, { qty_delivered: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-16 tabular text-right font-bold" /></td>
+                      <td><input value={l.qty_accepted} onChange={(e) => update(l.key, { qty_accepted: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-16 tabular text-right font-bold text-emerald-600" /></td>
+                      <td>
+                        <input value={l.qty_rejected} onChange={(e) => update(l.key, { qty_rejected: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-14 tabular text-right text-rose-600" />
+                        {Number(l.qty_rejected) > 0 && <input value={l.rejection_reason} placeholder="Reason" onChange={(e) => update(l.key, { rejection_reason: e.target.value })} className="ui-input h-7 w-28 mt-1" />}
+                      </td>
+                      <td><input value={l.batch_number} onChange={(e) => update(l.key, { batch_number: e.target.value })} className="ui-input h-7 w-28 tabular font-semibold" placeholder="BATCH-001" /></td>
+                      <td><input type="date" value={l.expiry_date} onChange={(e) => update(l.key, { expiry_date: e.target.value })} className="ui-input h-7 w-36" /></td>
+                      <td><input type="date" value={l.manufacture_date} onChange={(e) => update(l.key, { manufacture_date: e.target.value })} className="ui-input h-7 w-36" /></td>
+                      <td><input value={l.unit_cost} onChange={(e) => update(l.key, { unit_cost: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-20 tabular text-right font-bold" /></td>
+                      <td><input value={l.temperature_on_arrival} placeholder="°C" onChange={(e) => update(l.key, { temperature_on_arrival: e.target.value.replace(/[^-\d.]/g, '') })} className="ui-input h-7 w-14 tabular text-right" /></td>
+                      <td><input type="checkbox" checked={l.coa_received} onChange={(e) => update(l.key, { coa_received: e.target.checked })} /></td>
+                      <td><Button size="sm" variant="ghost" onClick={() => setLines(lines.filter((x) => x.key !== l.key))} aria-label="Remove"><Trash2 size={13} /></Button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 py-3 text-center">Select a purchase order above to load expected products and quantities.</p>
+          )}
+        </FormSection>
+
         {create.isError && <InlineError error={create.error} />}
-        <div className="flex justify-end gap-2">
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" disabled={!valid || create.isPending} onClick={() => create.mutate()}>{create.isPending ? 'Posting…' : 'Post goods receipt'}</Button>
-        </div>
       </div>
     </Drawer>
   )

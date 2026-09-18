@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { X } from 'lucide-react'
+import { ClipboardList, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ProductSearch } from '../../components/ProductSearch'
@@ -10,7 +10,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, Field, Select } from '../../components/ui/primitives'
+import { Button, DrawerFooter, Field, FormSection, PrimaryAction, Select } from '../../components/ui/primitives'
 import { apiGet, apiPost, getApiError } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { useStores } from '../../lib/hooks'
@@ -63,11 +63,22 @@ export default function CountsPage() {
 
   return (
     <Page>
-      <PageHeader parent="Inventory" title="Counts" subtitle="Blind batch-level counts. Variances need a reason; approval posts them to the ledger and the variance journal." actions={perms.has('stock.count.enter') ? <Button variant="primary" onClick={() => setCreating(true)}>Plan a count</Button> : null} />
+      <PageHeader
+        parent="Inventory & Audits"
+        title="Physical Stock Counts (Stocktaking)"
+        subtitle="Blind batch-level stocktaking with variance analysis and dual-control approval"
+        actions={
+          perms.has('stock.count.enter') ? (
+            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+              Plan a count
+            </PrimaryAction>
+          ) : null
+        }
+      />
       <FilterBar>
         <Field label="Status">
           <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All</option>
+            <option value="">All Statuses</option>
             {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
           </Select>
         </Field>
@@ -77,27 +88,56 @@ export default function CountsPage() {
         <Pagination page={list.data} onPage={setPage} />
       </div>
 
-      <Drawer open={creating} onClose={() => setCreating(false)} title="Plan a stock count" width={620}>
+      <Drawer
+        open={creating}
+        onClose={() => setCreating(false)}
+        title="Plan a Stock Count"
+        subtitle="Initiate a blind batch verification session for a store location"
+        width={680}
+        footer={
+          <DrawerFooter
+            badge={products.length > 0 ? `${products.length} products selected` : 'Store-wide count'}
+            onCancel={() => setCreating(false)}
+            onSubmit={() => create.mutate()}
+            submitLabel="Plan count"
+            disabled={!storeId || create.isPending}
+            isPending={create.isPending}
+          />
+        }
+      >
         <div className="space-y-4">
-          <Field label="Store" required>
-            <Select value={storeId} onChange={(e) => setStoreId(e.target.value)}>
-              <option value="">Choose…</option>
-              {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
-            </Select>
-          </Field>
-          <Field label="Limit to products (optional)" hint="Leave empty to count every batch in the store.">
-            <ProductSearch onSelect={(p) => setProducts((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))} />
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {products.map((p) => (
-                <span key={p.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-[var(--border)] text-[11.5px]">{p.name}<button type="button" onClick={() => setProducts(products.filter((x) => x.id !== p.id))} aria-label="Remove"><X size={11} /></button></span>
-              ))}
+          <FormSection
+            title="Count Scope & Location"
+            description="Select store location and optionally scope to specific products"
+            icon={ClipboardList}
+            badge="Blind Count"
+          >
+            <div className="space-y-3.5">
+              <Field label="Target Store Location" required>
+                <Select value={storeId} onChange={(e) => setStoreId(e.target.value)}>
+                  <option value="">Choose store…</option>
+                  {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+                </Select>
+              </Field>
+              <Field label="Limit to Products (Optional)" hint="Leave empty to count every single batch in the store.">
+                <ProductSearch onSelect={(p) => setProducts((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))} />
+                {products.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {products.map((p) => (
+                      <span key={p.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold">
+                        {p.name}
+                        <button type="button" onClick={() => setProducts(products.filter((x) => x.id !== p.id))} aria-label="Remove" className="text-blue-500 hover:text-rose-600">
+                          <X size={13} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </Field>
             </div>
-          </Field>
+          </FormSection>
+
           {create.isError && <InlineError error={create.error} />}
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setCreating(false)}>Cancel</Button>
-            <Button variant="primary" disabled={!storeId || create.isPending} onClick={() => create.mutate()}>{create.isPending ? 'Planning…' : 'Plan count'}</Button>
-          </div>
         </div>
       </Drawer>
 
