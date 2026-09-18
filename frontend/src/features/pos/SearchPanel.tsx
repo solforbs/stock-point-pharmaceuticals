@@ -243,31 +243,31 @@ export function SearchPanel({
                     key={prod.id}
                     type="button"
                     onClick={() => add(prod)}
-                    className="p-2.5 rounded-xl border border-slate-200/80 bg-white hover:border-blue-400 hover:bg-blue-50/30 text-left transition-all group flex items-center justify-between gap-2 cursor-pointer shadow-2xs"
+                    className="p-2.5 rounded-xl border border-slate-200/90 bg-white hover:border-blue-500 hover:bg-blue-50/40 text-left transition-all group flex items-center justify-between gap-2 cursor-pointer shadow-2xs"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="font-bold text-[12.5px] text-slate-900 group-hover:text-blue-700 truncate">
+                      <div className="font-extrabold text-[13.5px] text-slate-900 group-hover:text-blue-700 line-clamp-2 leading-snug">
                         {prod.name}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5 text-[11px]">
+                      <div className="flex items-center gap-2 mt-0.5 text-xs">
                         {prod.default_price && (
-                          <span className="font-extrabold text-blue-600 tabular">
+                          <span className="font-black text-blue-700 tabular">
                             KES {formatMoney(prod.default_price)}
                           </span>
                         )}
                         {prod.strength && (
-                          <span className="text-slate-500 font-medium truncate">
+                          <span className="text-slate-600 font-semibold truncate">
                             {prod.strength}
                           </span>
                         )}
-                        <span className="text-slate-400 font-mono text-[10px]">
+                        <span className="text-slate-500 font-mono text-[11px] font-medium">
                           #{prod.code}
                         </span>
                       </div>
                     </div>
 
-                    <span className="h-6 px-2 rounded-lg bg-blue-50 group-hover:bg-blue-600 group-hover:text-white text-blue-600 flex items-center gap-0.5 text-[10.5px] font-bold transition-all shrink-0">
-                      <Plus size={11} /> Add
+                    <span className="h-7 px-2.5 rounded-lg bg-blue-50 group-hover:bg-blue-600 group-hover:text-white text-blue-700 flex items-center gap-1 text-xs font-bold transition-all shrink-0">
+                      <Plus size={12} /> Add
                     </span>
                   </button>
                 ))}

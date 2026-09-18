@@ -74,16 +74,16 @@ export function CartLineRow({
       {/* Product Title & Code Header */}
       <div className="flex items-start justify-between gap-2 pb-1.5 border-b border-slate-100">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h4 className="font-bold text-slate-900 text-[13px] tracking-tight truncate">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <h4 className="font-extrabold text-slate-900 text-[14px] leading-snug break-words line-clamp-2">
               {line.productName}
             </h4>
             {line.strength && (
-              <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold text-[10px]">
+              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-[11.5px] shrink-0">
                 {line.strength}
               </span>
             )}
-            <span className="text-slate-400 font-mono text-[10.5px]">#{line.productCode}</span>
+            <span className="text-slate-500 font-mono text-[11.5px] font-semibold shrink-0">#{line.productCode}</span>
           </div>
         </div>
 
@@ -175,18 +175,18 @@ export function CartLineRow({
           </select>
 
           {/* Unit price */}
-          <div className="text-[11.5px] tabular text-slate-500 pl-0.5">
+          <div className="text-xs tabular text-slate-600 pl-0.5 font-medium">
             <span>@</span>{' '}
             {showQuoted ? (
               <>
-                <span className="font-semibold text-slate-800">{formatMoney(quoted.unit_price)}</span>
+                <span className="font-bold text-slate-900">{formatMoney(quoted.unit_price)}</span>
                 {hasBonus && <span className="ml-1 text-emerald-600 font-bold">+{formatQty(quoted.bonus_qty)} FREE</span>}
                 <span className="ml-1 inline-block align-middle">
                   <PriceBreakdownPopover line={quoted} showCost={showCost} />
                 </span>
               </>
             ) : (
-              <span className="italic text-slate-400">{line.estimateUnitPrice ? `${formatMoney(line.estimateUnitPrice)} est.` : 'pricing…'}</span>
+              <span className="italic text-slate-500">{line.estimateUnitPrice ? `${formatMoney(line.estimateUnitPrice)} est.` : 'pricing…'}</span>
             )}
           </div>
         </div>
@@ -195,31 +195,37 @@ export function CartLineRow({
         <div className="text-right shrink-0">
           <MoneyCell
             value={lineTotal}
-            className={`text-sm font-black tracking-tight text-slate-900 ${showQuoted ? '' : 'opacity-60 italic'}`}
+            className={`text-[15px] font-black tracking-tight text-slate-900 ${showQuoted ? '' : 'opacity-60 italic'}`}
           />
         </div>
       </div>
 
-      {/* FEFO strip & Line discount trigger */}
-      <div className="flex items-center justify-between mt-1.5 pt-1 text-[10.5px] text-slate-500 border-t border-slate-100/70">
+      {/* Batch & Expiry strip & Line discount trigger */}
+      <div className="flex items-center justify-between mt-2 pt-1.5 text-[11.5px] text-slate-600 font-medium border-t border-slate-100/80">
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation()
             setFefoOpen((v) => !v)
           }}
-          className="hover:text-slate-800 inline-flex items-center gap-1 cursor-pointer"
+          className="hover:text-slate-900 inline-flex items-center gap-1 cursor-pointer font-semibold"
         >
-          {fefoOpen ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-          <span>FEFO: </span>
+          {fefoOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <span>Batch: </span>
           {fefo.allocations.length === 0 ? (
-            <span className="text-rose-600 font-medium">No released stock</span>
+            <span className="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80">
+              No released stock in store
+            </span>
           ) : (
-            <span className="text-slate-600 font-mono">
+            <span className="text-slate-700 font-mono">
               {fefo.allocations.map((a) => `${a.batch_number} (×${formatQty(a.qty_base)})`).join(', ')}
             </span>
           )}
-          {dIsPos(fefo.shortfall) && <span className="text-rose-600 font-bold ml-1">· Short {formatQty(fefo.shortfall)}</span>}
+          {dIsPos(fefo.shortfall) && (
+            <span className="text-rose-600 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200/80 ml-1">
+              Short by {formatQty(fefo.shortfall)}
+            </span>
+          )}
         </button>
 
         {canDiscount && !discountOpen && (
@@ -230,7 +236,7 @@ export function CartLineRow({
               setDiscountOpen(true)
             }}
             data-discount-toggle={line.lineRef}
-            className="text-blue-600 hover:text-blue-700 font-semibold hover:underline cursor-pointer"
+            className="text-blue-600 hover:text-blue-700 font-bold hover:underline cursor-pointer"
           >
             + Discount (F6)
           </button>

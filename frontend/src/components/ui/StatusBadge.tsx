@@ -53,7 +53,7 @@ export function StatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-tight border ${st.bg} ${st.text} ${st.extra ?? ''} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-bold tracking-normal border ${st.bg} ${st.text} ${st.extra ?? ''} ${className}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${st.dot} shadow-xs`} aria-hidden />
       {label ?? titleCase(status) ?? '—'}

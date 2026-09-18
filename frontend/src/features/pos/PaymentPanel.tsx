@@ -1,31 +1,27 @@
-import { Plus, Trash2, X } from 'lucide-react'
+import { CheckCircle2, CreditCard, DollarSign, Plus, Split, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { MoneyCell } from '../../components/ui/MoneyCell'
-import { Button, Kbd } from '../../components/ui/primitives'
 import { dCmp, dEq, dIsPos, dSub, dSum, isValidDecimal } from '../../lib/decimal'
 import { formatMoney } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
 import { PAYMENT_METHODS, type PaymentMethod, type TenderLine } from '../../lib/types'
 import { useCartStore } from './cartStore'
 
-/**
- * Part 24.2 — Payment: disabled until every line has a fresh quote;
- * payments must sum exactly to the total. Part 24.3 fast path: type the cash
- * tendered, Enter, change displayed.
- */
+export interface PaymentPanelProps {
+  open: boolean
+  onClose: () => void
+  onPost: (approve: boolean) => void
+  isPosting: boolean
+  quoteFresh: boolean
+}
+
 export function PaymentPanel({
   open,
   onClose,
   onPost,
   isPosting,
   quoteFresh,
-}: {
-  open: boolean
-  onClose: () => void
-  onPost: (approve: boolean) => void
-  isPosting: boolean
-  quoteFresh: boolean
-}) {
+}: PaymentPanelProps) {
   const canApprove = usePermission('sale.discount.approve')
   const quote = useCartStore((s) => s.quote)
   const saleMode = useCartStore((s) => s.saleMode)
@@ -47,8 +43,11 @@ export function PaymentPanel({
     if (open) {
       window.setTimeout(() => cashRef.current?.focus(), 0)
       if (needsApproval && canApprove) setApprove(true)
+      if (dIsPos(total) && !cashTendered) {
+        setCashTendered(total.replace(/\.?0+$/, ''))
+      }
     }
-  }, [open, needsApproval, canApprove])
+  }, [open, needsApproval, canApprove, total, cashTendered, setCashTendered])
 
   useEffect(() => {
     if (mode === 'cash') setPayments(dIsPos(total) ? [{ method: 'CASH', amount: total }] : [])
@@ -76,89 +75,142 @@ export function PaymentPanel({
   }
 
   return (
-    <div className="w-[380px] shrink-0 border-l border-[var(--border)] bg-[var(--card)] flex flex-col min-h-0" data-payment-panel>
-      <header className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
-        <div className="flex-1">
-          <div className="ui-label !mb-0">Payment</div>
-          <div className="text-[22px] font-extrabold tabular">{formatMoney(total)}</div>
+    <div className="w-[390px] shrink-0 border-l border-slate-200/90 bg-white flex flex-col min-h-0 shadow-xl z-20" data-payment-panel>
+      {/* Header */}
+      <header className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/70">
+        <div>
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+            Payment Due
+          </span>
+          <div className="text-[24px] font-black tracking-tight text-slate-900 tabular">
+            KES {formatMoney(total)}
+          </div>
         </div>
-        <button type="button" onClick={onClose} aria-label="Close payment" className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text)]">
-          <X size={16} />
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close payment"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+        >
+          <X size={18} />
         </button>
       </header>
 
-      <div className="flex gap-1 p-2 border-b border-[var(--border)]">
+      {/* Tender Mode Selection Tabs */}
+      <div className="flex gap-1.5 p-3 border-b border-slate-100 bg-white">
         {(['cash', 'split', 'credit'] as const).map((m) => {
           const disabledTab = m === 'credit' && saleMode !== 'WHOLESALE'
+          const isActive = mode === m
           return (
             <button
               key={m}
               type="button"
               disabled={disabledTab}
               onClick={() => setMode(m)}
-              className={`flex-1 h-8 rounded text-[11.5px] font-bold uppercase ${mode === m ? 'bg-[var(--color-navy)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-secondary)]'} disabled:opacity-40`}
-              title={disabledTab ? 'Credit terms are a wholesale feature' : undefined}
+              className={`flex-1 h-9 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                isActive
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80'
+              } disabled:opacity-30 disabled:cursor-not-allowed`}
+              title={disabledTab ? 'Credit terms require wholesale mode' : undefined}
             >
-              {m === 'cash' ? 'Cash' : m === 'split' ? 'Split / other' : 'On credit'}
+              {m === 'cash' ? <DollarSign size={13} /> : m === 'split' ? <Split size={13} /> : <CreditCard size={13} />}
+              <span>{m === 'cash' ? 'Cash' : m === 'split' ? 'Split / M-Pesa' : 'On Credit'}</span>
             </button>
           )
         })}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {!quoteFresh && (
-          <div className="text-[11.5px] rounded-md px-3 py-2 border border-[var(--status-amber)] bg-[color-mix(in_srgb,var(--status-amber)_14%,transparent)]">
-            Waiting for a fresh server quote — payment is disabled until every line is priced.
+          <div className="text-xs font-semibold rounded-xl px-3.5 py-2.5 border border-amber-200 bg-amber-50 text-amber-900">
+            Waiting for a fresh quote — payment unlocks once server verifies stock and prices.
           </div>
         )}
 
+        {/* CASH TENDER VIEW */}
         {mode === 'cash' && (
-          <>
-            <label className="ui-label">Cash tendered</label>
-            <input
-              ref={cashRef}
-              type="text"
-              inputMode="decimal"
-              value={cashTendered}
-              onChange={(e) => setCashTendered(e.target.value.replace(/[^\d.]/g, ''))}
-              onFocus={(e) => e.target.select()}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  post()
-                }
-              }}
-              className="ui-input h-12 text-[22px] tabular text-right font-bold"
-              placeholder={formatMoney(total)}
-            />
-            <div className="flex gap-1.5 flex-wrap">
-              <Button size="sm" onClick={() => setCashTendered(total.replace(/\.?0+$/, ''))}>
-                Exact
-              </Button>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                Cash Tendered (KES)
+              </label>
+              <input
+                ref={cashRef}
+                type="text"
+                inputMode="decimal"
+                value={cashTendered}
+                onChange={(e) => setCashTendered(e.target.value.replace(/[^\d.]/g, ''))}
+                onFocus={(e) => e.target.select()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    post()
+                  }
+                }}
+                className="w-full h-12 px-3 rounded-xl bg-slate-50 border border-slate-300 text-2xl tabular text-right font-black text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 shadow-inner"
+                placeholder={formatMoney(total)}
+              />
+            </div>
+
+            {/* Quick Denomination Chips */}
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setCashTendered(total.replace(/\.?0+$/, ''))}
+                className="h-8 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-800 text-xs font-extrabold border border-slate-200 transition-colors cursor-pointer flex items-center justify-center"
+              >
+                Exact Cash
+              </button>
               {[100, 200, 500, 1000, 5000].map((n) => (
-                <Button key={n} size="sm" onClick={() => setCashTendered(String(n))}>
-                  {n.toLocaleString()}
-                </Button>
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setCashTendered(String(n))}
+                  className="h-8 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-800 text-xs font-bold border border-slate-200 transition-colors cursor-pointer tabular flex items-center justify-center"
+                >
+                  +{n.toLocaleString()}
+                </button>
               ))}
             </div>
-            <div className="grid grid-cols-[1fr_auto] gap-y-1 text-[13px] tabular pt-2">
-              <span className="text-[var(--text-muted)]">Total due</span>
-              <MoneyCell value={total} />
-              <span className="text-[var(--text-muted)]">Tendered</span>
-              <MoneyCell value={tendered} />
-              <span className="font-bold text-[15px]">Change</span>
-              <MoneyCell value={cashOk ? change : '0'} className={`font-extrabold text-[18px] ${cashOk ? 'text-[var(--status-green)]' : ''}`} />
-              {!cashOk && dIsPos(tendered) && <span className="col-span-2 text-[11px] text-[var(--status-red)]">Short by {formatMoney(dSub(total, tendered))}</span>}
+
+            {/* Change & Balance Due Card */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/90 space-y-2 text-xs tabular">
+              <div className="flex justify-between text-slate-600">
+                <span>Total Payable</span>
+                <MoneyCell value={total} className="font-bold text-slate-800" />
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Cash Tendered</span>
+                <MoneyCell value={tendered} className="font-bold text-slate-800" />
+              </div>
+              <div className="border-t border-slate-200 pt-2 flex items-baseline justify-between">
+                <span className="font-extrabold text-sm text-slate-900 uppercase">Change Due</span>
+                <MoneyCell
+                  value={cashOk ? change : '0'}
+                  className={`font-black text-xl tabular ${cashOk ? 'text-emerald-600' : 'text-slate-400'}`}
+                />
+              </div>
+              {!cashOk && dIsPos(tendered) && (
+                <div className="text-[11.5px] font-bold text-rose-600 pt-1 border-t border-rose-100">
+                  Short by KES {formatMoney(dSub(total, tendered))}
+                </div>
+              )}
             </div>
-          </>
+          </div>
         )}
 
+        {/* SPLIT / M-PESA VIEW */}
         {mode === 'split' && (
-          <>
+          <div className="space-y-3">
             <div className="space-y-2">
               {payments.map((p, i) => (
-                <div key={i} className="grid grid-cols-[92px_1fr_1fr_auto] gap-1.5 items-center">
-                  <select value={p.method} onChange={(e) => updateTender(i, { method: e.target.value as PaymentMethod })} className="ui-input h-8">
+                <div key={i} className="grid grid-cols-[96px_1fr_1fr_auto] gap-1.5 items-center">
+                  <select
+                    value={p.method}
+                    onChange={(e) => updateTender(i, { method: e.target.value as PaymentMethod })}
+                    className="h-8 px-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800"
+                  >
                     {PAYMENT_METHODS.map((m) => (
                       <option key={m} value={m}>
                         {m}
@@ -170,91 +222,141 @@ export function PaymentPanel({
                     inputMode="decimal"
                     value={p.amount}
                     onChange={(e) => updateTender(i, { amount: e.target.value.replace(/[^\d.]/g, '') })}
-                    className="ui-input h-8 tabular text-right"
+                    className="h-8 px-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold tabular text-right text-slate-800"
                     placeholder="Amount"
                   />
                   <input
                     type="text"
                     value={p.reference ?? ''}
                     onChange={(e) => updateTender(i, { reference: e.target.value })}
-                    className="ui-input h-8"
-                    placeholder={p.method === 'MPESA' ? 'M-PESA ref' : 'Reference'}
+                    className="h-8 px-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-800"
+                    placeholder={p.method === 'MPESA' ? 'M-PESA Code' : 'Reference'}
                   />
-                  <button type="button" aria-label="Remove tender" onClick={() => setPayments(payments.filter((_, j) => j !== i))} className="p-1 text-[var(--text-muted)] hover:text-[var(--status-red)]">
+                  <button
+                    type="button"
+                    onClick={() => setPayments(payments.filter((_, j) => j !== i))}
+                    className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                  >
                     <Trash2 size={14} />
                   </button>
                 </div>
               ))}
             </div>
-            <Button size="sm" onClick={() => setPayments([...payments, { method: 'MPESA', amount: dIsPos(remaining) ? remaining.replace(/\.?0+$/, '') : '', reference: '' }])}>
-              <Plus size={12} /> Add tender
-            </Button>
-            <div className="grid grid-cols-[1fr_auto] gap-y-1 text-[13px] tabular pt-2">
-              <span className="text-[var(--text-muted)]">Total due</span>
-              <MoneyCell value={total} />
-              <span className="text-[var(--text-muted)]">Tendered</span>
-              <MoneyCell value={splitSum} />
-              <span className="font-bold">Remaining</span>
-              <MoneyCell value={remaining} className={`font-bold ${dEq(remaining, '0') ? 'text-[var(--status-green)]' : ''}`} />
-              {!dEq(remaining, '0') && <span className="col-span-2 text-[11px] text-[var(--status-red)]">Payments must sum exactly to the total (the server refuses a mismatch).</span>}
+
+            <button
+              type="button"
+              onClick={() =>
+                setPayments([
+                  ...payments,
+                  { method: 'MPESA', amount: dIsPos(remaining) ? remaining.replace(/\.?0+$/, '') : '', reference: '' },
+                ])
+              }
+              className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <Plus size={13} /> Add Payment Method
+            </button>
+
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs tabular">
+              <div className="flex justify-between text-slate-600">
+                <span>Total Due</span>
+                <MoneyCell value={total} className="font-bold text-slate-800" />
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Total Tendered</span>
+                <MoneyCell value={splitSum} className="font-bold text-slate-800" />
+              </div>
+              <div className="border-t border-slate-200 pt-1.5 flex justify-between font-extrabold text-slate-900">
+                <span>Remaining</span>
+                <MoneyCell
+                  value={remaining}
+                  className={dEq(remaining, '0') ? 'text-emerald-600' : 'text-rose-600'}
+                />
+              </div>
+              {!dEq(remaining, '0') && (
+                <p className="text-[11px] font-semibold text-rose-600 pt-1">
+                  Payments must sum exactly to the total.
+                </p>
+              )}
             </div>
-          </>
+          </div>
         )}
 
+        {/* WHOLESALE CREDIT VIEW */}
         {mode === 'credit' && (
-          <div className="text-[12.5px] space-y-2">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
             {customer ? (
               <>
-                <p>
-                  Invoice <b>{customer.name}</b> on credit. The server runs the credit check at posting: limit {formatMoney(customer.credit?.credit_limit ?? '0')}, available{' '}
-                  <b>{formatMoney(customer.available_credit ?? '0')}</b>.
+                <p className="text-slate-700">
+                  Invoice <strong className="text-slate-900">{customer.name}</strong> on 30-day credit terms.
                 </p>
-                {customer.credit?.on_hold && <p className="text-[var(--status-red)] font-bold">This customer is on credit hold: {customer.credit.hold_reason ?? 'no reason recorded'}.</p>}
-                {dCmp(customer.available_credit ?? '0', total) < 0 && <p className="text-[#b45309]">This sale exceeds the available credit; the server will refuse it with CREDIT_LIMIT_EXCEEDED.</p>}
+                <div className="pt-2 border-t border-slate-200 space-y-1 text-slate-600">
+                  <div className="flex justify-between">
+                    <span>Credit Limit:</span>
+                    <strong className="text-slate-800">{formatMoney(customer.credit?.credit_limit ?? '0')}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Available Credit:</span>
+                    <strong className="text-emerald-700">{formatMoney(customer.available_credit ?? '0')}</strong>
+                  </div>
+                </div>
+                {customer.credit?.on_hold && (
+                  <p className="text-rose-600 font-bold pt-1">
+                    ⚠️ Account is on credit hold: {customer.credit.hold_reason ?? 'Administrative hold'}.
+                  </p>
+                )}
               </>
             ) : (
-              <p className="text-[var(--status-red)]">Select a customer first (F5).</p>
+              <p className="text-rose-600 font-bold">
+                ⚠️ Please select a customer account first (F5).
+              </p>
             )}
           </div>
         )}
 
         {needsApproval && (
-          <label className={`flex items-start gap-2 text-[12px] p-2 rounded border ${canApprove ? 'border-[var(--status-amber)]' : 'border-[var(--border)] opacity-70'}`}>
-            <input type="checkbox" checked={approve && canApprove} disabled={!canApprove} onChange={(e) => setApprove(e.target.checked)} className="mt-0.5" />
-            <span>
-              {canApprove ? 'Approve the flagged discounts as the signed-in approver and post.' : 'Discounts need approval. Posting will hold the sale for an approver (sale.discount.approve).'}
+          <label className={`flex items-start gap-2.5 text-xs p-3 rounded-xl border ${canApprove ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+            <input
+              type="checkbox"
+              checked={approve && canApprove}
+              disabled={!canApprove}
+              onChange={(e) => setApprove(e.target.checked)}
+              className="mt-0.5 rounded border-slate-300 text-blue-600"
+            />
+            <span className="font-semibold">
+              {canApprove
+                ? 'Approve flagged discounts with manager credentials and post immediately.'
+                : 'Discount requires approval. Posting will place sale in queue for supervisor sign-off.'}
             </span>
           </label>
         )}
 
         {checkoutError && (
-          <div role="alert" className="text-[11.5px] rounded-md px-3 py-2 border border-[var(--status-red)] bg-[color-mix(in_srgb,var(--status-red)_8%,transparent)]">
-            <div className="font-bold">{checkoutError.code}</div>
+          <div role="alert" className="text-xs rounded-xl p-3 border border-rose-200 bg-rose-50 text-rose-900 space-y-1">
+            <div className="font-extrabold">{checkoutError.code}</div>
             <div>{checkoutError.message}</div>
-            {checkoutError.code === 'INSUFFICIENT_STOCK' && (
-              <div className="tabular mt-1 text-[var(--text-secondary)]">
-                Requested {String(checkoutError.details.requested ?? '')} · available {String(checkoutError.details.available ?? '')} · short {String(checkoutError.details.shortfall ?? '')}
-              </div>
-            )}
-            {checkoutError.code === 'PAYMENT_MISMATCH' && (
-              <div className="tabular mt-1 text-[var(--text-secondary)]">
-                Total {formatMoney(String(checkoutError.details.grand_total ?? ''))} · tendered {formatMoney(String(checkoutError.details.tendered ?? ''))}
-              </div>
-            )}
-            {checkoutError.code === 'CREDIT_LIMIT_EXCEEDED' && (
-              <div className="tabular mt-1 text-[var(--text-secondary)]">
-                Limit {formatMoney(String(checkoutError.details.limit ?? ''))} · exposure {formatMoney(String(checkoutError.details.exposure ?? ''))} · short {formatMoney(String(checkoutError.details.shortfall ?? ''))}
-              </div>
-            )}
           </div>
         )}
       </div>
 
-      <footer className="p-3 border-t border-[var(--border)]">
-        <Button variant="success" size="lg" className="w-full" disabled={!canPost} onClick={post}>
-          {isPosting ? 'Posting…' : mode === 'credit' ? 'Post invoice on credit' : 'Post sale'} <Kbd>Enter</Kbd>
-        </Button>
-        <p className="text-[10.5px] text-[var(--text-muted)] text-center mt-1.5">Posting is atomic and idempotent: a retry never creates a second sale.</p>
+      {/* Footer / Complete Payment CTA */}
+      <footer className="p-4 border-t border-slate-200 bg-slate-50/50">
+        <button
+          type="button"
+          disabled={!canPost}
+          onClick={post}
+          className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm shadow-md shadow-emerald-600/20 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 cursor-pointer transition-all"
+        >
+          <CheckCircle2 size={16} />
+          <span>
+            {isPosting ? 'POSTING SALE…' : mode === 'credit' ? 'POST INVOICE ON CREDIT' : `COMPLETE SALE (KES ${formatMoney(total)})`}
+          </span>
+          <span className="px-1.5 py-0.5 rounded bg-white/20 text-white text-[11px] font-mono font-bold tracking-wider">
+            Enter
+          </span>
+        </button>
+        <p className="text-[12px] text-slate-500 text-center mt-2 font-medium">
+          Receipt prints automatically and inventory is updated immediately.
+        </p>
       </footer>
     </div>
   )

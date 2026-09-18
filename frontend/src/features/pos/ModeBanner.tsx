@@ -35,8 +35,11 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
   return (
     <div className="h-11 px-4 flex items-center justify-between gap-3 bg-white border-b border-slate-200/80 shrink-0 select-none overflow-x-auto no-scrollbar">
       {/* Left: Mode Toggle Pills */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <div className="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200/60">
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">
+          Sale Mode:
+        </span>
+        <div className="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200/80">
           {modes.map((mode) => {
             const isActive = mode === saleMode
             return (
@@ -45,9 +48,9 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
                 type="button"
                 onClick={() => requestSwitch(mode)}
                 disabled={!switchable && !isActive}
-                className={`px-3 py-1 rounded-lg text-[11.5px] font-bold transition-all cursor-pointer ${
+                className={`px-3.5 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-2xs'
+                    ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
                 }`}
               >
@@ -61,17 +64,18 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
       {/* Right: Store, Terminal, Cashier & Live Status */}
       <div className="flex items-center gap-3 shrink-0 text-xs">
         {/* Store Selector */}
-        <div className="flex items-center gap-1.5 text-slate-500">
-          <StoreIcon size={13} className="text-slate-400 shrink-0" />
+        <div className="flex items-center gap-1.5 text-slate-600">
+          <StoreIcon size={14} className="text-blue-600 shrink-0" />
+          <span className="text-[11.5px] font-bold text-slate-500 hidden lg:inline">Stock Store:</span>
           <select
             value={storeId ?? ''}
             onChange={(e) => setStore(e.target.value)}
-            aria-label="Active store"
-            className="h-7 rounded-lg bg-slate-50 border border-slate-200/90 text-slate-800 text-[11.5px] font-semibold px-2 outline-none hover:bg-slate-100 transition-colors cursor-pointer"
+            aria-label="Inventory store"
+            className="h-7 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[12px] font-bold px-2 outline-none hover:bg-slate-100 transition-colors cursor-pointer"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>
-                {store.code} {store.is_sellable ? '' : '(read-only)'}
+                {store.code} · {store.name || 'Store'} {store.is_sellable ? '' : '(view only)'}
               </option>
             ))}
           </select>

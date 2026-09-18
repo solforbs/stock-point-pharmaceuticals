@@ -12,9 +12,9 @@ const variantClass: Record<ButtonVariant, string> = {
 }
 
 const sizeClass: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-[11.5px] rounded-lg',
-  md: 'h-9 px-4 text-[12.5px] rounded-xl',
-  lg: 'h-10 px-5 text-[13.5px] font-bold rounded-xl',
+  sm: 'h-8 px-3.5 text-[12.5px] font-semibold rounded-lg',
+  md: 'h-10 px-4 text-[13.5px] font-bold rounded-xl',
+  lg: 'h-11 px-5 text-[15px] font-extrabold rounded-xl',
 }
 
 export function Button({
@@ -27,7 +27,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`inline-flex items-center justify-center gap-1.5 border font-bold whitespace-nowrap transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${variantClass[variant]} ${sizeClass[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 border whitespace-nowrap transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${variantClass[variant]} ${sizeClass[size]} ${className}`}
       {...rest}
     />
   )
@@ -72,9 +72,9 @@ export function Field({
       </label>
       {children}
       {error ? (
-        <p className="text-[11px] text-[var(--status-red)] mt-1">{error}</p>
+        <p className="text-[12px] font-semibold text-rose-600 mt-1.5">{error}</p>
       ) : hint ? (
-        <p className="text-[11px] text-[var(--text-muted)] mt-1">{hint}</p>
+        <p className="text-[12px] text-slate-500 mt-1.5 font-medium">{hint}</p>
       ) : null}
     </div>
   )
@@ -84,8 +84,8 @@ export function Card({ children, className = '', title, actions }: { children: R
   return (
     <section className={`ui-card ${className}`}>
       {(title || actions) && (
-        <header className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border)]">
-          <h2 className="text-[13px] font-bold text-[var(--text)]">{title}</h2>
+        <header className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)]">
+          <h2 className="text-[14px] font-bold text-[var(--text)]">{title}</h2>
           <div className="flex items-center gap-2">{actions}</div>
         </header>
       )}
@@ -100,11 +100,11 @@ export function Kbd({ children }: { children: ReactNode }) {
 
 export function DescriptionList({ items, className = '' }: { items: { label: ReactNode; value: ReactNode }[]; className?: string }) {
   return (
-    <dl className={`grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[12px] ${className}`}>
+    <dl className={`grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-[13px] ${className}`}>
       {items.map((item, i) => (
         <div key={i} className="contents">
-          <dt className="text-[var(--text-muted)] whitespace-nowrap">{item.label}</dt>
-          <dd className="text-[var(--text)] min-w-0 break-words">{item.value ?? '—'}</dd>
+          <dt className="text-slate-500 font-semibold whitespace-nowrap">{item.label}</dt>
+          <dd className="text-slate-900 font-medium min-w-0 break-words">{item.value ?? '—'}</dd>
         </div>
       ))}
     </dl>

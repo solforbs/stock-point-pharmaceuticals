@@ -56,10 +56,10 @@ export function SidebarNavGroup({ item, collapsed, isOpen, onToggle }: SidebarNa
                 key={child.key}
                 to={child.path}
                 className={({ isActive: childActive }) =>
-                  `block px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors truncate ${
+                  `block px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors truncate ${
                     childActive
-                      ? 'text-blue-600 bg-blue-50 font-bold'
-                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                      ? 'text-blue-600 bg-blue-50 font-extrabold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`
                 }
               >
@@ -78,10 +78,10 @@ export function SidebarNavGroup({ item, collapsed, isOpen, onToggle }: SidebarNa
         to={item.path}
         title={collapsed ? item.label : undefined}
         className={({ isActive: singleActive }) =>
-          `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all group ${
+          `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13.5px] font-bold transition-all group ${
             singleActive
-              ? 'bg-blue-50/80 text-blue-600 font-bold shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-blue-50/80 text-blue-600 font-extrabold shadow-xs'
+              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
           }`
         }
       >

@@ -8,18 +8,16 @@ export interface PosShortcutsModalProps {
 }
 
 export const POS_SHORTCUTS = [
-  { key: 'F2', label: 'Scan / Search medicine' },
-  { key: 'F3', label: 'Edit quantity' },
-  { key: 'F4', label: 'Switch unit of measure (UOM)' },
-  { key: 'F5', label: 'Select customer account' },
-  { key: 'F6', label: 'Apply line discount' },
-  { key: 'F8', label: 'Hold active cart' },
-  { key: 'F9', label: 'Resume held cart' },
-  { key: 'F10', label: 'Proceed to payment' },
-  { key: 'Enter', label: 'Confirm / Add / Next' },
-  { key: 'Esc', label: 'Cancel / Clear active input' },
-  { key: 'Ctrl+Del', label: 'Remove selected line' },
-  { key: '?', label: 'Open shortcuts help' },
+  { key: 'F2', label: 'Search' },
+  { key: 'F3', label: 'Quantity' },
+  { key: 'F4', label: 'UOM' },
+  { key: 'F5', label: 'Customer' },
+  { key: 'F6', label: 'Discount' },
+  { key: 'F8', label: 'Hold' },
+  { key: 'F9', label: 'Resume' },
+  { key: 'F10', label: 'Pay' },
+  { key: 'Esc', label: 'Clear / Close' },
+  { key: '?', label: 'Shortcuts' },
 ]
 
 export function PosShortcutsModal({ open, onClose, canDiscount }: PosShortcutsModalProps) {

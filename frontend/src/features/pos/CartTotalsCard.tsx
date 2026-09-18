@@ -139,9 +139,9 @@ export function CartTotalsCard({
                 <Clock size={11} /> Pricing quote…
               </span>
             ) : activeQuote && secondsLeft !== null ? (
-              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                Locked for {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, '0')}
+                Price guaranteed: {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, '0')}
               </span>
             ) : expired ? (
               <span className="text-[11px] text-amber-600 font-semibold">Quote expired — re-quote</span>

@@ -70,7 +70,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold tracking-wide transition-colors',
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[12px] font-bold tracking-normal transition-colors',
         variant === 'pill' ? 'rounded-full' : 'rounded-md',
         variant === 'outline'
           ? cn('bg-transparent border', c.text, c.border)
