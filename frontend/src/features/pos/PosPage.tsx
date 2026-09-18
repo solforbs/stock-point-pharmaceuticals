@@ -1,44 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { KeyboardHintBar } from '../../components/KeyboardHintBar'
-import { Drawer } from '../../components/ui/Drawer'
-import { ConfirmDialog, Modal } from '../../components/ui/Modal'
+import { ConfirmDialog } from '../../components/ui/Modal'
 import { EmptyState, LoadingSkeleton } from '../../components/ui/States'
-import { Button, Field, Input, Kbd } from '../../components/ui/primitives'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
-import { formatDateTime } from '../../lib/format'
 import { useStores } from '../../lib/hooks'
-import { formatMoney } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
 import { CartPanel } from './CartPanel'
 import { ModeBanner } from './ModeBanner'
 import { PaymentPanel } from './PaymentPanel'
+import { PosHeldCartsDrawer } from './PosHeldCartsDrawer'
+import { PosHoldCartModal } from './PosHoldCartModal'
+import { PosPriceChangeModal } from './PosPriceChangeModal'
+import { POS_SHORTCUTS, PosShortcutsModal } from './PosShortcutsModal'
 import { ReceiptView } from './ReceiptView'
 import { SearchPanel } from './SearchPanel'
 import { useCartStore } from './cartStore'
 import { useCheckout } from './useCheckout'
 import { useQuote } from './useQuote'
 
-const SHORTCUTS = [
-  { key: 'F2', label: 'Scan / search' },
-  { key: 'F3', label: 'Quantity' },
-  { key: 'F4', label: 'UOM' },
-  { key: 'F5', label: 'Customer' },
-  { key: 'F6', label: 'Line discount' },
-  { key: 'F8', label: 'Hold' },
-  { key: 'F9', label: 'Resume' },
-  { key: 'F10', label: 'Payment' },
-  { key: 'Enter', label: 'Confirm / add' },
-  { key: 'Esc', label: 'Cancel field' },
-  { key: 'Ctrl+Del', label: 'Remove line' },
-  { key: '?', label: 'Help' },
-]
-
 function isTyping(target: EventTarget | null) {
   const el = target as HTMLElement | null
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)
 }
 
-/** Part 24 — the POS screen in full. Keyboard-first (Part 16.4). */
 export default function PosPage() {
   const { data: user } = useCurrentUser()
   const canDiscount = usePermission('sale.discount.apply')
@@ -74,7 +58,6 @@ export default function PosPage() {
   const [resumeOpen, setResumeOpen] = useState(false)
   const [removeRef, setRemoveRef] = useState<string | null>(null)
 
-  // Default to the branch's first sellable store; the mode the terminal opens in.
   useEffect(() => {
     if (!storeId && stores.data?.length) {
       const sellable = stores.data.find((s) => s.is_sellable) ?? stores.data[0]
@@ -88,8 +71,6 @@ export default function PosPage() {
     if (defaultMode && !enabledModes.includes(saleMode)) setSaleMode(defaultMode)
   }, [defaultMode, enabledModes, saleMode, setSaleMode])
 
-  // Payment stays open while paying; it closes once the quote goes stale so
-  // it can never post against a cart that has changed since it was priced.
   useEffect(() => {
     if (paymentOpen && status === 'BUILDING' && !quoteState.isFresh && !quoteState.isQuoting) setPaymentOpen(false)
   }, [paymentOpen, status, quoteState.isFresh, quoteState.isQuoting])
@@ -181,8 +162,6 @@ export default function PosPage() {
             setHelpOpen((v) => !v)
           }
           break
-        default:
-          break
       }
     }
     window.addEventListener('keydown', onKey)
@@ -191,10 +170,10 @@ export default function PosPage() {
 
   if (stores.isLoading) return <LoadingSkeleton rows={8} />
   if (stores.data && stores.data.length === 0) return <EmptyState title="No stores in this branch" hint="A store must exist before anything can be sold." />
-  if (enabledModes.length === 0 && user) return <EmptyState title="Commerce is disabled for this branch" hint="Neither retail nor wholesale mode is enabled (V6 Part 10.1)." />
+  if (enabledModes.length === 0 && user) return <EmptyState title="Commerce is disabled for this branch" hint="Neither retail nor wholesale mode is enabled." />
 
   return (
-    <div className="flex flex-col h-svh">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
       <ModeBanner stores={stores.data ?? []} />
 
       <div className="flex flex-1 min-h-0">
@@ -204,9 +183,7 @@ export default function PosPage() {
           customerInputRef={customerRef}
           onOpenPayment={openPayment}
           onHold={() => setHoldOpen(true)}
-          onApprove={() => {
-            openPayment()
-          }}
+          onApprove={openPayment}
           approvePending={checkout.isPending}
         />
         <PaymentPanel
@@ -221,151 +198,51 @@ export default function PosPage() {
         />
       </div>
 
-      <KeyboardHintBar hints={SHORTCUTS.map((s) => ({ ...s, disabled: s.key === 'F6' && !canDiscount }))} />
+      <KeyboardHintBar hints={POS_SHORTCUTS.map((s) => ({ ...s, disabled: s.key === 'F6' && !canDiscount }))} />
 
       {postedSale && <ReceiptView onNewSale={newSale} />}
 
-      <Modal
-        open={priceChange !== null}
+      <PosPriceChangeModal
+        priceChange={priceChange}
         onClose={() => setPriceChange(null)}
-        title="Prices changed since this cart was quoted"
-        footer={
-          <>
-            <Button onClick={() => setPriceChange(null)}>Review cart</Button>
-            <Button variant="primary" onClick={acceptPriceChange}>
-              Accept new prices
-            </Button>
-          </>
-        }
-      >
-        {priceChange && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3 tabular">
-              <div className="ui-card p-3">
-                <div className="ui-label">Quoted total</div>
-                <div className="text-[18px] font-bold line-through text-[var(--text-muted)]">{formatMoney(priceChange.old_total)}</div>
-              </div>
-              <div className="ui-card p-3">
-                <div className="ui-label">New total</div>
-                <div className="text-[18px] font-extrabold">{formatMoney(priceChange.new_total)}</div>
-              </div>
-            </div>
-            {priceChange.changed_lines.length > 0 && (
-              <table className="ui-table">
-                <thead>
-                  <tr>
-                    <th>Line</th>
-                    <th>Field</th>
-                    <th className="text-right">Was</th>
-                    <th className="text-right">Now</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {priceChange.changed_lines.map((c, i) => (
-                    <tr key={i}>
-                      <td>{c.line_ref}</td>
-                      <td>{c.field}</td>
-                      <td className="text-right tabular">{c.old}</td>
-                      <td className="text-right tabular">{c.new ?? '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            <p className="text-[var(--text-secondary)]">Accepting loads the server's fresh quote; you will re-enter the tender against the new total.</p>
-          </div>
-        )}
-      </Modal>
+        onAccept={acceptPriceChange}
+      />
 
-      <Modal
+      <PosHoldCartModal
         open={holdOpen}
         onClose={() => setHoldOpen(false)}
-        title="Hold this cart"
-        footer={
-          <>
-            <Button onClick={() => setHoldOpen(false)}>Cancel</Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                hold(holdName.trim())
-                setHoldName('')
-                setHoldOpen(false)
-                setPaymentOpen(false)
-                searchRef.current?.focus()
-              }}
-            >
-              Hold
-            </Button>
-          </>
-        }
-      >
-        <Field label="Name (optional)" hint="Held carts live on this terminal and can be resumed with F9 — by a manager too, for approvals.">
-          <Input
-            autoFocus
-            value={holdName}
-            onChange={(e) => setHoldName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                hold(holdName.trim())
-                setHoldName('')
-                setHoldOpen(false)
-                setPaymentOpen(false)
-              }
-            }}
-          />
-        </Field>
-      </Modal>
+        holdName={holdName}
+        onChangeName={setHoldName}
+        onConfirmHold={() => {
+          hold(holdName.trim())
+          setHoldName('')
+          setHoldOpen(false)
+          setPaymentOpen(false)
+          searchRef.current?.focus()
+        }}
+      />
 
-      <Drawer open={resumeOpen} onClose={() => setResumeOpen(false)} title="Held carts" subtitle="Resume replaces the current cart; hold it first if it matters.">
-        {heldCarts.length === 0 ? (
-          <EmptyState title="No held carts on this terminal" />
-        ) : (
-          <div className="space-y-2">
-            {heldCarts.map((h) => (
-              <div key={h.id} className="ui-card p-3 flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-semibold truncate">{h.name}</div>
-                  <div className="text-[11px] text-[var(--text-muted)]">
-                    {h.saleMode} · {h.lines.length} lines · {h.customer?.name ?? 'walk-in'} · {formatDateTime(h.heldAt)}
-                  </div>
-                </div>
-                <Button size="sm" variant="ghost" onClick={() => discardHeld(h.id)}>
-                  Discard
-                </Button>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={() => {
-                    resume(h.id)
-                    setResumeOpen(false)
-                    setPaymentOpen(false)
-                  }}
-                >
-                  Resume
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </Drawer>
+      <PosHeldCartsDrawer
+        open={resumeOpen}
+        onClose={() => setResumeOpen(false)}
+        heldCarts={heldCarts}
+        onDiscard={discardHeld}
+        onResume={(id) => {
+          resume(id)
+          setResumeOpen(false)
+          setPaymentOpen(false)
+        }}
+      />
 
-      <Modal open={helpOpen} onClose={() => setHelpOpen(false)} title="Keyboard shortcuts" width={420}>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
-          {SHORTCUTS.map((s) => (
-            <div key={s.key} className="contents">
-              <dt>
-                <Kbd>{s.key}</Kbd>
-              </dt>
-              <dd>{s.label}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="text-[11px] text-[var(--text-muted)] mt-3">Retail fast path: scan · scan · scan · F10 · type cash tendered · Enter.</p>
-      </Modal>
+      <PosShortcutsModal
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        canDiscount={canDiscount}
+      />
 
       <ConfirmDialog
         open={removeRef !== null}
-        title="Remove line?"
+        title="Remove item from cart?"
         message={removeRef ? lines.find((l) => l.lineRef === removeRef)?.productName : undefined}
         confirmLabel="Remove"
         danger
