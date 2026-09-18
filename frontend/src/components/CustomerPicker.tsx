@@ -87,15 +87,32 @@ export function CustomerPicker({
 
   if (value) {
     return (
-      <div className="flex items-center gap-2 ui-input !h-auto py-1.5">
-        <UserSquare2 size={14} className="text-[var(--text-muted)] shrink-0" />
-        <div className="flex-1 min-w-0">
-          <div className="text-[12.5px] font-semibold truncate">{value.name}</div>
-          <CustomerCreditLine customer={value} />
+      <div className="flex items-center justify-between gap-2.5 px-3 py-1.5 rounded-xl bg-blue-50/60 border border-blue-200/80 shadow-2xs">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+            <UserSquare2 size={14} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[12.5px] font-bold text-slate-900 truncate">{value.name}</span>
+              {value.tier?.code && (
+                <span className="px-1.5 py-0.2 rounded bg-blue-100 text-blue-700 text-[10px] font-bold">
+                  Tier {value.tier.code}
+                </span>
+              )}
+            </div>
+            <CustomerCreditLine customer={value} className="text-[10.5px] text-slate-500" />
+          </div>
         </div>
         {!disabled && (
-          <button type="button" aria-label="Clear customer" onClick={() => onChange(null)} className="text-[var(--text-muted)] hover:text-[var(--text)]">
-            <X size={14} />
+          <button
+            type="button"
+            aria-label="Clear customer"
+            onClick={() => onChange(null)}
+            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-white/80 transition-colors cursor-pointer shrink-0"
+            title="Clear customer (F5 to reselect)"
+          >
+            <X size={13} />
           </button>
         )}
       </div>
@@ -153,12 +170,21 @@ export function CustomerCreditLine({ customer, className = '' }: { customer: Cus
   const available = customer.available_credit ?? null
   const overLimit = available !== null && dIsNeg(available)
   return (
-    <div className={`text-[10.5px] text-[var(--text-muted)] tabular flex flex-wrap gap-x-2 ${className}`}>
-      <span>Tier {customer.tier?.code ?? '—'}</span>
+    <div className={`text-[10.5px] tabular flex flex-wrap items-center gap-x-1.5 text-slate-500 ${className}`}>
       <span>Limit {formatMoney(customer.credit?.credit_limit ?? '0')}</span>
-      <span>Balance {formatMoney(customer.credit?.current_balance ?? '0')}</span>
-      {available !== null && <span className={overLimit ? 'text-[var(--status-red)] font-bold' : ''}>Available {formatMoney(available)}</span>}
-      {customer.credit?.on_hold && <span className="text-[var(--status-red)] font-bold">ON HOLD</span>}
+      <span>·</span>
+      <span>Bal {formatMoney(customer.credit?.current_balance ?? '0')}</span>
+      <span>·</span>
+      {available !== null && (
+        <span className={overLimit ? 'text-rose-600 font-bold' : 'text-emerald-700 font-semibold'}>
+          Avail {formatMoney(available)}
+        </span>
+      )}
+      {customer.credit?.on_hold && (
+        <span className="px-1 py-0.2 rounded bg-rose-500 text-white font-bold text-[9px] uppercase">
+          On Hold
+        </span>
+      )}
     </div>
   )
 }

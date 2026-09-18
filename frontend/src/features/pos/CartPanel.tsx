@@ -76,8 +76,8 @@ export function CartPanel({
   return (
     <div className="flex-1 min-w-0 flex flex-col bg-slate-50/50 border-l border-slate-200/80">
       {/* Customer Header */}
-      <div className="px-4 py-3 bg-white border-b border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-        <div className="flex items-center justify-between mb-1.5">
+      <div className="px-3.5 py-2 bg-white border-b border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] shrink-0">
+        <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider">
               <User size={13} className="text-blue-600" />
