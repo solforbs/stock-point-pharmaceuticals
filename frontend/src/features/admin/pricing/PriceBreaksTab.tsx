@@ -164,7 +164,7 @@ function BreakForm({ listId, initialProductId, existing, onDone }: { listId: str
           )}
         </>
       )}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="From quantity" required error={err?.errors.min_qty?.[0]}><Input inputMode="decimal" className="tabular" value={form.min_qty} onChange={(e) => setForm({ ...form, min_qty: decimalInput(e.target.value) })} /></Field>
         <Field label="To quantity" hint="Empty = and above." error={err?.errors.max_qty?.[0]}><Input inputMode="decimal" className="tabular" value={form.max_qty} onChange={(e) => setForm({ ...form, max_qty: decimalInput(e.target.value) })} /></Field>
         <Field label="Unit price" required error={err?.errors.unit_price?.[0]}><Input inputMode="decimal" className="tabular" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: decimalInput(e.target.value) })} /></Field>

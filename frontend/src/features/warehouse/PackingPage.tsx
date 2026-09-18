@@ -158,7 +158,7 @@ function PackForm({ list, onDone }: { list: PackingListDetail; onDone: () => voi
         <p className="text-[12px] text-[var(--text-muted)]">Only a completed pick can be packed. Finish picking on the <Link to="/warehouse/pick-lists" className="underline">Pick lists</Link> page first.</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Packages" required error={err?.errors.package_count?.[0]}><Input inputMode="numeric" className="tabular" value={packageCount} onChange={(e) => setPackageCount(e.target.value.replace(/\D/g, ''))} placeholder="e.g. 3" /></Field>
             <Field label="Total weight (kg)" error={err?.errors.total_weight_kg?.[0]}><Input inputMode="decimal" className="tabular" value={weight} onChange={(e) => setWeight(e.target.value.replace(/[^\d.]/g, ''))} placeholder="Optional" /></Field>
           </div>

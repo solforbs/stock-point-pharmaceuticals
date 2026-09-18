@@ -209,7 +209,7 @@ function NewDocumentForm({ onDone, onCancel }: { onDone: (d: ControlledDoc) => v
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} placeholder="SOP-CC-01" onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
         <Field label="Category" required>
           <Select value={form.category} onChange={(e) => set({ category: e.target.value as Category })}>
@@ -218,7 +218,7 @@ function NewDocumentForm({ onDone, onCancel }: { onDone: (d: ControlledDoc) => v
         </Field>
       </div>
       <Field label="Title" required error={err?.errors.title?.[0]}><Input value={form.title} onChange={(e) => set({ title: e.target.value })} /></Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Owner" hint="Defaults to you."><UserPicker value={owner} onChange={(id) => setOwner(id)} /></Field>
         <Field label="Review due" error={err?.errors.review_due_date?.[0]}><Input type="date" value={form.review_due_date} onChange={(e) => set({ review_due_date: e.target.value })} /></Field>
         <Field label="Version" required error={err?.errors.version?.[0]}><Input value={form.version} onChange={(e) => set({ version: e.target.value })} /></Field>
@@ -297,7 +297,7 @@ function ManageDrawer({ id, onClose }: { id: string | null; onClose: () => void 
             {acks.isLoading && <LoadingSkeleton rows={3} />}
             {acks.error && <InlineError error={acks.error} />}
             {acks.data && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="border border-[var(--border)] rounded-md max-h-64 overflow-y-auto">
                   <div className="px-3 py-1.5 text-[11px] font-semibold text-[var(--status-green)] border-b border-[var(--border)]">Acknowledged</div>
                   {acks.data.acknowledged.length === 0 && <div className="px-3 py-2 text-[11.5px] text-[var(--text-muted)]">No one yet.</div>}
@@ -357,7 +357,7 @@ function NewVersionForm({ doc, onDone }: { doc: ControlledDoc; onDone: () => voi
 
   return (
     <div className="rounded-md border border-[var(--border)] p-3 space-y-3 bg-[var(--surface-2)]">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Version" required error={err?.errors.version?.[0]}><Input value={form.version} onChange={(e) => set({ version: e.target.value })} /></Field>
         <Field label="Effective date" required error={err?.errors.effective_date?.[0]}><Input type="date" value={form.effective_date} onChange={(e) => set({ effective_date: e.target.value })} /></Field>
       </div>

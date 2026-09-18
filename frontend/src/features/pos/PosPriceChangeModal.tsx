@@ -31,7 +31,7 @@ export function PosPriceChangeModal({
       }
     >
       <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3 tabular">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 tabular">
           <div className="ui-card p-3">
             <span className="ui-label">Previous Total</span>
             <div className="text-[18px] font-bold line-through text-[var(--text-muted)]">

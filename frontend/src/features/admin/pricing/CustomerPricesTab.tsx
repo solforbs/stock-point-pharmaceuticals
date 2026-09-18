@@ -157,7 +157,7 @@ function ContractForm({ contract, initialCustomer, canManage, onDelete, onDone }
           </div>
         </>
       )}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Contract price (per unit)" required error={err?.errors.unit_price?.[0]}><Input inputMode="decimal" className="tabular" value={form.unit_price} onChange={(e) => set({ unit_price: decimalInput(e.target.value) })} /></Field>
         <Field label="Contract reference" required error={err?.errors.contract_ref?.[0]}><Input value={form.contract_ref} onChange={(e) => set({ contract_ref: e.target.value })} /></Field>
         <Field label="Valid from" required error={err?.errors.effective_from?.[0]} hint={started ? 'Already in force; cannot move.' : undefined}><Input type="date" value={form.effective_from} disabled={started} onChange={(e) => set({ effective_from: e.target.value })} /></Field>

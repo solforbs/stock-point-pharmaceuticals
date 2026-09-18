@@ -99,7 +99,7 @@ export default function RequisitionsPage() {
 
       <Drawer open={creating} onClose={() => setCreating(false)} title="New requisition" width={720}>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Needed by"><Input type="date" value={neededBy} onChange={(e) => setNeededBy(e.target.value)} /></Field>
             <Field label="Notes"><Textarea rows={1} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
           </div>
@@ -273,7 +273,7 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
         footer={<><Button onClick={() => setConverting(false)}>Cancel</Button><Button variant="primary" disabled={!convertValid || convert.isPending} onClick={() => convert.mutate()}>{convert.isPending ? 'Creating…' : 'Create purchase order'}</Button></>}
       >
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Supplier" required>
               <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
                 <option value="">Choose…</option>

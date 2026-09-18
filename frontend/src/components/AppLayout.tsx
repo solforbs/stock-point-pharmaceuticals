@@ -1,11 +1,15 @@
-import { Building2, Calendar, ChevronLeft, Menu, Search, ShoppingCart } from 'lucide-react'
+import { Building2, Calendar, ChevronLeft, Compass, HelpCircle, Menu, Search, ShoppingCart } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useBranchStore } from '../lib/branch'
 import { formatDate, todayIso } from '../lib/format'
 import Sidebar from './Sidebar'
+import { ProductTour } from './tour/ProductTour'
+import { useTourStore } from './tour/useTourStore'
 import { CommandPalette } from './ui/CommandPalette'
+import { KeyboardShortcutsModal } from './ui/KeyboardShortcutsModal'
+import { OfflineBanner } from './ui/OfflineBanner'
 
 export default function AppLayout() {
   const location = useLocation()
@@ -15,6 +19,8 @@ export default function AppLayout() {
   const setActiveBranch = useBranchStore((s) => s.setActiveBranch)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const startTour = useTourStore((s) => s.startTour)
 
   useEffect(() => {
     if (!user) return
@@ -29,12 +35,21 @@ export default function AppLayout() {
     setMobileNavOpen(false)
   }, [location.pathname])
 
-  // Global Ctrl+K / ⌘K shortcut
+  // Global hotkeys: Ctrl+K (Search), ? / F1 (Shortcuts)
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement
+      const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
+
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault()
         setCmdOpen((o) => !o)
+      } else if (e.key === 'F1') {
+        e.preventDefault()
+        setShortcutsOpen((o) => !o)
+      } else if (e.key === '?' && !isInput && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault()
+        setShortcutsOpen((o) => !o)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -77,6 +92,7 @@ export default function AppLayout() {
             ) : (
               /* Search bar — clicking opens the Command Palette */
               <button
+                id="tour-search"
                 type="button"
                 onClick={() => setCmdOpen(true)}
                 className="w-full max-w-md flex items-center gap-2.5 h-9 pl-3.5 pr-3 rounded-xl bg-slate-50 border border-slate-200 text-left cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition-colors group"
@@ -94,7 +110,29 @@ export default function AppLayout() {
 
           {/* Right section */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[12px] font-semibold text-slate-600 tabular">
+            {/* Interactive Guided Tour Button */}
+            <button
+              type="button"
+              onClick={startTour}
+              title="Start Guided Product Tour"
+              className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50/80 border border-slate-200/80 transition-all text-[12px] font-bold cursor-pointer"
+            >
+              <Compass size={14} className="text-blue-600" />
+              <span>Tour</span>
+            </button>
+
+            {/* Keyboard Shortcuts Help Button */}
+            <button
+              type="button"
+              onClick={() => setShortcutsOpen(true)}
+              title="Keyboard Shortcuts (?)"
+              aria-label="Keyboard Shortcuts"
+              className="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-colors cursor-pointer"
+            >
+              <HelpCircle size={17} />
+            </button>
+
+            <span className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[12px] font-semibold text-slate-600 tabular">
               <Calendar size={13} className="text-blue-600" />
               {formatDate(today)}
             </span>
@@ -102,8 +140,8 @@ export default function AppLayout() {
             {activeBranch && (
               <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50/70 border border-blue-200/70 text-[12px] font-bold text-blue-700">
                 <Building2 size={13} />
-                <span className="hidden lg:inline">{activeBranch.code} · {activeBranch.name}</span>
-                <span className="lg:hidden">{activeBranch.code}</span>
+                <span className="hidden xl:inline">{activeBranch.code} · {activeBranch.name}</span>
+                <span className="xl:hidden">{activeBranch.code}</span>
               </span>
             )}
 
@@ -116,6 +154,7 @@ export default function AppLayout() {
               </Link>
             ) : (
               <Link
+                id="tour-pos-button"
                 to="/sell/pos"
                 className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[12.5px] font-bold shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 transition-all cursor-pointer"
               >
@@ -133,6 +172,15 @@ export default function AppLayout() {
 
       {/* Global Command Palette */}
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+
+      {/* Global Keyboard Shortcuts Cheat Sheet */}
+      <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+      {/* Interactive Guided Product Tour */}
+      <ProductTour />
+
+      {/* Global Offline / Online Status Guardian */}
+      <OfflineBanner />
     </div>
   )
 }

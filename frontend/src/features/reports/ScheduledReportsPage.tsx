@@ -281,7 +281,7 @@ function ScheduleForm({ schedule, onDone }: { schedule: ScheduledReport | null; 
       {catalogue.isError && <InlineError error={catalogue.error} />}
 
       {extraFilters.length > 0 && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {extraFilters.includes('customer_id') && (
             <Field label="Customer" className="col-span-2" hint="Leave empty for every customer.">
               <CustomerPicker value={customer ?? savedCustomer.data ?? null} onChange={(c) => { setCustomer(c); setFilter('customer_id', c?.id ?? '') }} />

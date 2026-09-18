@@ -137,7 +137,7 @@ function BranchForm({ branch, onDone, onCancel }: { branch?: AdminBranch; onDone
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} disabled={!!branch} maxLength={10} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
         <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="Address" className="col-span-2"><Input value={form.address} onChange={(e) => set({ address: e.target.value })} /></Field>

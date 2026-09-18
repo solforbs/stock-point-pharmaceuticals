@@ -114,6 +114,7 @@ function SidebarInner({
       <footer className="shrink-0 p-3 space-y-2 border-t border-slate-100 bg-slate-50/50 relative">
         {!collapsed ? (
           <button
+            id="tour-sync-status"
             type="button"
             onClick={() => setShowStatusPopup((prev) => !prev)}
             className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white hover:bg-blue-50/70 border border-slate-200/80 transition-all text-left text-[11.5px] cursor-pointer shadow-2xs group"

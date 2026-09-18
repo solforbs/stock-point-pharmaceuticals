@@ -49,6 +49,8 @@ export default function PosPage() {
   const setPriceChange = useCartStore((s) => s.setPriceChange)
   const reset = useCartStore((s) => s.reset)
 
+  const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('cart')
+
   const quoteState = useQuote()
   const checkout = useCheckout()
   const [paymentOpen, setPaymentOpen] = useState(false)
@@ -171,8 +173,6 @@ export default function PosPage() {
   if (stores.isLoading) return <LoadingSkeleton rows={8} />
   if (stores.data && stores.data.length === 0) return <EmptyState title="No stores in this branch" hint="A store must exist before anything can be sold." />
   if (enabledModes.length === 0 && user) return <EmptyState title="Commerce is disabled for this branch" hint="Neither retail nor wholesale mode is enabled." />
-
-  const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('cart')
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">

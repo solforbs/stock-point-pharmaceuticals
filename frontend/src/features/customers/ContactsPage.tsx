@@ -151,7 +151,7 @@ function ContactForm({ contact, defaultCustomer, onDone, onCancel }: { contact?:
   return (
     <div className="space-y-4">
       {!contact && <Field label="Customer" required error={err?.errors.customer_id?.[0]}><CustomerPicker value={customer} onChange={setCustomer} /></Field>}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="Role" error={err?.errors.role?.[0]}><Input value={form.role} onChange={(e) => set({ role: e.target.value })} placeholder="Buyer, Accounts, Pharmacist in charge" /></Field>
         <Field label="Phone" error={err?.errors.phone?.[0]}><Input value={form.phone} onChange={(e) => set({ phone: e.target.value })} /></Field>
@@ -279,7 +279,7 @@ function InteractionForm({ defaultCustomer, onDone, onCancel }: { defaultCustome
   return (
     <div className="space-y-4">
       <Field label="Customer" required error={err?.errors.customer_id?.[0]}><CustomerPicker value={customer} onChange={(c) => { setCustomer(c); setContactId('') }} /></Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Contact" error={err?.errors.contact_id?.[0]}>
           <Select value={contactId} onChange={(e) => setContactId(e.target.value)} disabled={!customer}>
             <option value="">—</option>

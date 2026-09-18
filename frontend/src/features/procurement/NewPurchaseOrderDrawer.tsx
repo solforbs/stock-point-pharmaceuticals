@@ -49,7 +49,7 @@ export function NewPurchaseOrderDrawer({
   return (
     <Drawer open={open} onClose={onClose} title="New Purchase Order" width={820}>
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Supplier" required>
             <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
               <option value="">Choose supplier…</option>
@@ -79,88 +79,91 @@ export function NewPurchaseOrderDrawer({
               }}
             />
             {lines.length > 0 && (
-              <table className="ui-table">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>UOM</th>
-                    <th className="text-right">Qty</th>
-                    <th className="text-right">Unit price</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {lines.map((l) => (
-                    <tr key={l.key}>
-                      <td>
-                        <div className="font-semibold text-[var(--text)]">{l.product.name}</div>
-                        <div className="text-[10.5px] text-[var(--text-muted)]">{l.product.code}</div>
-                      </td>
-                      <td>
-                        <select
-                          value={l.uom_id}
-                          onChange={(e) =>
-                            setLines(lines.map((x) => (x.key === l.key ? { ...x, uom_id: e.target.value } : x)))
-                          }
-                          className="ui-input h-7 w-auto"
-                        >
-                          {(l.product.uoms ?? [])
-                            .filter((u) => u.is_purchase || u.is_base)
-                            .map((u) => (
-                              <option key={u.uom_id} value={u.uom_id}>
-                                {u.uom?.code} {u.factor_to_base !== 1 ? `(×${u.factor_to_base})` : ''}
-                              </option>
-                            ))}
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={l.qty_ordered}
-                          onChange={(e) =>
-                            setLines(lines.map((x) => (x.key === l.key ? { ...x, qty_ordered: e.target.value.replace(/[^\d.]/g, '') } : x)))
-                          }
-                          className="ui-input h-7 w-20 tabular text-right"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={l.unit_price}
-                          onChange={(e) =>
-                            setLines(lines.map((x) => (x.key === l.key ? { ...x, unit_price: e.target.value.replace(/[^\d.]/g, '') } : x)))
-                          }
-                          className="ui-input h-7 w-28 tabular text-right"
-                        />
-                      </td>
-                      <td className="text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setLines(lines.filter((x) => x.key !== l.key))}
-                          aria-label="Remove"
-                        >
-                          <Trash2 size={13} />
-                        </Button>
-                      </td>
+              <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-white">
+                <table className="ui-table min-w-[520px]">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>UOM</th>
+                      <th className="text-right">Qty</th>
+                      <th className="text-right">Unit price</th>
+                      <th />
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {lines.map((l) => (
+                      <tr key={l.key}>
+                        <td>
+                          <div className="font-semibold text-[var(--text)]">{l.product.name}</div>
+                          <div className="text-[10.5px] text-[var(--text-muted)]">{l.product.code}</div>
+                        </td>
+                        <td>
+                          <select
+                            value={l.uom_id}
+                            onChange={(e) =>
+                              setLines(lines.map((x) => (x.key === l.key ? { ...x, uom_id: e.target.value } : x)))
+                            }
+                            className="ui-input h-7 w-auto"
+                          >
+                            {(l.product.uoms ?? [])
+                              .filter((u) => u.is_purchase || u.is_base)
+                              .map((u) => (
+                                <option key={u.uom_id} value={u.uom_id}>
+                                  {u.uom?.code} {u.factor_to_base !== 1 ? `(×${u.factor_to_base})` : ''}
+                                </option>
+                              ))}
+                          </select>
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={l.qty_ordered}
+                            onChange={(e) =>
+                              setLines(lines.map((x) => (x.key === l.key ? { ...x, qty_ordered: e.target.value.replace(/[^\d.]/g, '') } : x)))
+                            }
+                            className="ui-input h-7 w-20 tabular text-right"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={l.unit_price}
+                            onChange={(e) =>
+                              setLines(lines.map((x) => (x.key === l.key ? { ...x, unit_price: e.target.value.replace(/[^\d.]/g, '') } : x)))
+                            }
+                            className="ui-input h-7 w-28 tabular text-right"
+                          />
+                        </td>
+                        <td className="text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setLines(lines.filter((x) => x.key !== l.key))}
+                            aria-label="Remove"
+                          >
+                            <Trash2 size={13} />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </Field>
 
         {error ? <InlineError error={error} /> : null}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button onClick={onClose}>Cancel</Button>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 border-t border-[var(--border)] mt-4">
+          <Button onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
           <Button
             variant="primary"
             disabled={!supplierId || !validLines || isSubmitting}
             onClick={onSubmit}
+            className="w-full sm:w-auto"
           >
             {isSubmitting ? 'Saving…' : 'Create Purchase Order'}
           </Button>

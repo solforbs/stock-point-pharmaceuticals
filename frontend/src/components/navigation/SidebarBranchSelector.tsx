@@ -21,7 +21,7 @@ export function SidebarBranchSelector({ user }: SidebarBranchSelectorProps) {
 
   if (branches.length > 1) {
     return (
-      <div className="space-y-1.5">
+      <div id="tour-branch-selector" className="space-y-1.5">
         <label className="text-[11.5px] uppercase tracking-wider text-slate-500 font-bold block px-1">
           Branch Location
         </label>

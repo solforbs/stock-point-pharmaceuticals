@@ -152,7 +152,7 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="Generic name"><Input value={form.generic_name} onChange={(e) => set({ generic_name: e.target.value })} /></Field>
         <Field label="Strength"><Input value={form.strength} onChange={(e) => set({ strength: e.target.value })} /></Field>

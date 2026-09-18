@@ -11,7 +11,7 @@ export interface KeyboardHintBarProps {
 export function KeyboardHintBar({ hints, onOpenHelp, className = '' }: KeyboardHintBarProps) {
   return (
     <div
-      className={`h-8 px-4 flex items-center justify-between border-t border-slate-200/90 bg-white text-xs text-slate-700 shrink-0 select-none overflow-hidden ${className}`}
+      className={`h-8 px-4 hidden md:flex items-center justify-between border-t border-slate-200/90 bg-white text-xs text-slate-700 shrink-0 select-none overflow-hidden ${className}`}
     >
       <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
         {hints.map((hint) => (

@@ -92,7 +92,7 @@ function EmployeeDrawer({ target, onClose }: { target: Employee | 'new' | null; 
   return (
     <Drawer open={!!target} onClose={onClose} title={existing ? `${existing.employee_no} · ${existing.name}` : 'New employee'} width={680}>
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {text('employee_no', 'Employee number')}
           {text('name', 'Full name')}
           {text('job_title', 'Job title')}

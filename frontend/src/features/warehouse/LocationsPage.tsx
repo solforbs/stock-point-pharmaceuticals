@@ -250,7 +250,7 @@ function LocationForm({ storeId, location, onDone, onCancel }: { storeId: string
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Code" required hint="Unique within the store, e.g. A-01-03." error={err?.errors.code?.[0]}><Input value={form.code} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
         <Field label="Name" error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="Fast movers" /></Field>
         <Field label="Type" error={err?.errors.location_type?.[0]}>

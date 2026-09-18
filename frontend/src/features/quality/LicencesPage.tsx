@@ -280,7 +280,7 @@ function LicenceForm({ licence, onDone, onCancel }: { licence?: Licence; onDone:
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Holder type" required>
           <Select value={form.holder_type} onChange={(e) => set({ holder_type: e.target.value as HolderType, holder_id: '' })}>
             {HOLDER_TYPES.map((h) => (<option key={h} value={h}>{titleCase(h)}</option>))}

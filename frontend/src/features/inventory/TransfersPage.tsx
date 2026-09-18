@@ -81,7 +81,7 @@ export default function TransfersPage() {
 
       <Drawer open={creating} onClose={() => setCreating(false)} title="New stock transfer" width={820}>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="From store" required>
               <Select value={fromStore} onChange={(e) => { setFromStore(e.target.value); setLines([]) }}>
                 <option value="">Choose…</option>

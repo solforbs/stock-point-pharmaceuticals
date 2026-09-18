@@ -160,7 +160,7 @@ function SupplierForm({ supplier, onDone, onCancel }: { supplier?: Supplier; onD
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} disabled={!!supplier} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
         <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="Contact person"><Input value={form.contact_name} onChange={(e) => set({ contact_name: e.target.value })} /></Field>

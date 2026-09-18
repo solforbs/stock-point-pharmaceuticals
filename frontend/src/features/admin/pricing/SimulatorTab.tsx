@@ -78,7 +78,7 @@ export default function SimulatorTab() {
       <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
         <Card title="Test a price">
           <div className="p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Sale mode">
                 <Select value={form.sale_mode} onChange={(e) => set({ sale_mode: e.target.value })}>
                   {modes.map((m) => <option key={m} value={m}>{titleCase(m)}</option>)}

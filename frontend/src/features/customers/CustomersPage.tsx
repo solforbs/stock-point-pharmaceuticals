@@ -123,7 +123,7 @@ function CustomerCreateDrawer({ open, onClose, onCreated }: { open: boolean; onC
   return (
     <Drawer open={open} onClose={onClose} title="New customer" width={640}>
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} onChange={(e) => set({ code: e.target.value })} /></Field>
           <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
           <Field label="Type" required>

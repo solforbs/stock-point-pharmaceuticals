@@ -73,7 +73,7 @@ export function StockInForm({ product, onDone, onCancel }: { product: Product; o
       <div className="text-[12px] text-[var(--text-secondary)]">
         Receives stock without a purchase order (an emergency goods receipt). For supplier deliveries against an order use <Link to="/buy/goods-receipts" className="underline">Goods Receipts</Link>; for the go-live stock take use <Link to="/inventory/opening-stock" className="underline">Opening Stock</Link>.
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Store" required>
           <Select value={effectiveStore} onChange={(e) => setStoreId(e.target.value)}>
             {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}

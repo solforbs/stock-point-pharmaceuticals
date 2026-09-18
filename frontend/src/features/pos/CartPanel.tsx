@@ -83,7 +83,7 @@ export function CartPanel({
               <User size={13} className="text-blue-600" />
               Customer
             </span>
-            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-mono font-semibold">
+            <span className="hidden md:inline-flex px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-mono font-semibold">
               F5
             </span>
             {saleMode === 'WHOLESALE' ? (
