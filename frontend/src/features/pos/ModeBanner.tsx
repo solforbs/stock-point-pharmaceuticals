@@ -1,24 +1,16 @@
-import { ArrowLeftRight, Monitor } from 'lucide-react'
+import { Monitor } from 'lucide-react'
 import { useState } from 'react'
 import { SyncStatusChip } from '../../components/SyncStatusChip'
 import { ConfirmDialog } from '../../components/ui/Modal'
-import { Button } from '../../components/ui/primitives'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { formatMoney } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
 import type { SaleMode, Store } from '../../lib/types'
 import { useCartStore } from './cartStore'
 
-const MODE_COLOR: Record<SaleMode, string> = {
-  RETAIL: 'var(--mode-retail)',
-  WHOLESALE: 'var(--mode-wholesale)',
-  DISPENSING: 'var(--mode-dispensing)',
-}
-
 /**
- * V6 Part 10.2 — the persistent, colour-coded mode banner: active mode,
- * customer and tier, terminal and cashier. The highest-visibility element
- * on the screen because mode confusion is the costliest user error.
+ * V6 Part 10.2 — the persistent mode banner: active mode,
+ * customer and tier, terminal and cashier.
  * Part 24.2 — switching modes re-quotes the cart and needs sale.mode.switch.
  */
 export function ModeBanner({ stores }: { stores: Store[] }) {
@@ -36,9 +28,7 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
   const [pendingMode, setPendingMode] = useState<SaleMode | null>(null)
 
   const modes = user?.sale_modes ?? []
-  const defaultMode = user?.default_sale_mode ?? null
   const switchable = modes.length > 1 && canSwitch && status !== 'POSTED' && status !== 'POSTING'
-  const color = MODE_COLOR[saleMode]
 
   function requestSwitch(mode: SaleMode) {
     if (mode === saleMode) return
@@ -47,75 +37,94 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
   }
 
   return (
-    <div className="flex items-center gap-4 px-4 py-2 text-white shrink-0" style={{ background: color }}>
-      <div className="flex items-center gap-2">
-        <span className="px-2.5 py-1 rounded font-black text-[15px] tracking-wider bg-white/15 border-2 border-white/60">▌{saleMode}▐</span>
-        {defaultMode && defaultMode !== saleMode && <span className="text-[10px] uppercase opacity-80">switched from {defaultMode}</span>}
-      </div>
-
-      <div className="flex-1 min-w-0 text-[12.5px] truncate">
-        {saleMode === 'WHOLESALE' ? (
-          customer ? (
-            <>
-              <span className="font-bold">{customer.name}</span>
-              <span className="opacity-90"> · Tier {customer.tier?.code ?? '—'}</span>
-              <span className="opacity-90 tabular"> · Credit limit {formatMoney(customer.credit?.credit_limit ?? '0')}</span>
-              <span className="opacity-90 tabular"> · Available {formatMoney(customer.available_credit ?? '0')}</span>
-              {customer.credit?.on_hold && <span className="ml-2 px-1.5 py-0.5 rounded bg-white text-[var(--status-red)] font-bold text-[10.5px]">CREDIT HOLD</span>}
-            </>
-          ) : (
-            <span className="opacity-90">No customer — press F5. A wholesale sale needs one.</span>
-          )
-        ) : customer ? (
-          <span className="font-bold">{customer.name}</span>
-        ) : (
-          <span className="opacity-90">Walk-in customer</span>
-        )}
-      </div>
-
-      {switchable && (
-        <div className="flex items-center gap-1 rounded bg-white/10 p-0.5">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-2.5 bg-white border-b border-slate-200/80 shrink-0 shadow-2xs">
+      <div className="flex items-center gap-3">
+        {/* Sale Mode Toggle Pills */}
+        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/60">
           {modes.map((mode) => (
             <button
               key={mode}
               type="button"
               onClick={() => requestSwitch(mode)}
-              className={`px-2 h-6 rounded text-[10.5px] font-bold ${mode === saleMode ? 'bg-white text-[var(--text)]' : 'text-white/80 hover:text-white'}`}
+              disabled={!switchable && mode !== saleMode}
+              className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                mode === saleMode
+                  ? 'bg-blue-600 text-white shadow-xs shadow-blue-500/25'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
             >
-              {mode}
+              {mode === 'RETAIL' ? '🛒 Retail Walk-in' : mode === 'WHOLESALE' ? '🏢 Wholesale B2B' : '💊 Dispensing'}
             </button>
           ))}
-          <ArrowLeftRight size={12} className="mx-1 opacity-70" />
         </div>
-      )}
 
-      <label className="flex items-center gap-1.5 text-[11px]">
-        <span className="opacity-80">Store</span>
-        <select
-          value={storeId ?? ''}
-          onChange={(e) => setStore(e.target.value)}
-          className="h-6 rounded bg-white/15 border border-white/30 text-white text-[11px] px-1 outline-none"
-        >
-          {stores.map((store) => (
-            <option key={store.id} value={store.id} className="text-black">
-              {store.code} {store.is_sellable ? '' : '(not sellable)'}
-            </option>
-          ))}
-        </select>
-      </label>
+        {/* Customer / Credit Context */}
+        <div className="hidden lg:flex items-center gap-2 text-[12px]">
+          {saleMode === 'WHOLESALE' ? (
+            customer ? (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-700 border border-blue-200/70 font-semibold">
+                <span className="font-bold">{customer.name}</span>
+                <span className="text-blue-500">· Tier {customer.tier?.code ?? '—'}</span>
+                <span className="text-blue-500 tabular">· Avail {formatMoney(customer.available_credit ?? '0')}</span>
+                {customer.credit?.on_hold && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded bg-rose-500 text-white font-bold text-[10px]">
+                    CREDIT HOLD
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-[11.5px] font-semibold">
+                ⚠️ Account required (F5)
+              </div>
+            )
+          ) : customer ? (
+            <div className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 font-semibold text-[11.5px]">
+              👤 {customer.name}
+            </div>
+          ) : (
+            <div className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-500 font-medium text-[11.5px]">
+              👤 Walk-in Cash Customer
+            </div>
+          )}
+        </div>
+      </div>
 
-      <label className="flex items-center gap-1.5 text-[11px]">
-        <Monitor size={12} className="opacity-80" />
-        <input
-          value={terminalId}
-          onChange={(e) => setTerminal(e.target.value.slice(0, 20))}
-          className="h-6 w-14 rounded bg-white/15 border border-white/30 text-white text-[11px] px-1 outline-none"
-          aria-label="Terminal id"
-        />
-      </label>
+      <div className="flex items-center gap-3">
+        {/* Store Selector */}
+        <label className="flex items-center gap-1.5 text-[11.5px] text-slate-500 font-medium">
+          <span>Store:</span>
+          <select
+            value={storeId ?? ''}
+            onChange={(e) => setStore(e.target.value)}
+            className="h-8 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-[12px] font-semibold px-2.5 outline-none hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            {stores.map((store) => (
+              <option key={store.id} value={store.id}>
+                {store.code} {store.is_sellable ? '' : '(not sellable)'}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      <span className="text-[11px] whitespace-nowrap">Cashier: {user?.name ?? '—'}</span>
-      <SyncStatusChip className="!text-white !border-white/50" />
+        {/* Terminal Indicator */}
+        <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200/80 text-[11.5px] text-slate-600 font-semibold">
+          <Monitor size={12} className="text-slate-400" />
+          <input
+            value={terminalId}
+            onChange={(e) => setTerminal(e.target.value.slice(0, 20))}
+            className="w-10 bg-transparent text-slate-800 font-bold outline-none text-center"
+            aria-label="Terminal id"
+          />
+        </div>
+
+        {/* Cashier Name */}
+        <span className="hidden xl:inline text-[12px] font-medium text-slate-500">
+          Cashier: <strong className="text-slate-800 font-bold">{user?.name ?? '—'}</strong>
+        </span>
+
+        {/* Live Sync Status */}
+        <SyncStatusChip />
+      </div>
 
       <ConfirmDialog
         open={pendingMode !== null}
@@ -128,11 +137,6 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
           setPendingMode(null)
         }}
       />
-      {!switchable && modes.length > 1 && !canSwitch && (
-        <Button size="sm" variant="ghost" className="!text-white/70" disabled title="Switching modes needs the sale.mode.switch permission">
-          Switch mode
-        </Button>
-      )}
     </div>
   )
 }

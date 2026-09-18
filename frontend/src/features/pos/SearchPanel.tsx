@@ -1,19 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
-import { ScanBarcode } from 'lucide-react'
+import { ScanBarcode, Sparkles } from 'lucide-react'
 import { useState, type KeyboardEvent, type RefObject } from 'react'
 import { lookupBarcode, ProductResultRow, useDebounced, useProductSearch } from '../../components/ProductSearch'
-import { Kbd } from '../../components/ui/primitives'
 import { apiGet } from '../../lib/api'
 import { formatDate } from '../../lib/format'
 import { formatQty } from '../../lib/money'
-import type { Product, StockStateRow } from '../../lib/types'
+import type { Paginated, Product, StockStateRow } from '../../lib/types'
 import { useCartStore } from './cartStore'
 
-/**
- * Part 24.1 left panel — [F2] scan or search. Exact match only on scan;
- * fuzzy search never auto-selects; free-to-sell and nearest expiry inline.
- */
-export function SearchPanel({ inputRef, onAdded }: { inputRef: RefObject<HTMLInputElement | null>; onAdded: (lineRef: string) => void }) {
+export function SearchPanel({
+  inputRef,
+  onAdded,
+}: {
+  inputRef: RefObject<HTMLInputElement | null>
+  onAdded: (lineRef: string) => void
+}) {
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(-1)
   const [scanError, setScanError] = useState<string | null>(null)
@@ -24,6 +25,13 @@ export function SearchPanel({ inputRef, onAdded }: { inputRef: RefObject<HTMLInp
 
   const { data, isFetching } = useProductSearch(query)
   const results = data?.data ?? []
+
+  // Load popular/stocked products to eliminate the empty void
+  const popular = useQuery({
+    queryKey: ['products', 'pos-popular', storeId],
+    queryFn: () => apiGet<Paginated<Product>>('/api/products', { per_page: 24, is_active: 1 }),
+    staleTime: 60_000,
+  })
 
   const debouncedQ = useDebounced(query.trim(), 250)
   const stock = useQuery({
@@ -74,10 +82,14 @@ export function SearchPanel({ inputRef, onAdded }: { inputRef: RefObject<HTMLInp
   }
 
   return (
-    <div className="w-[300px] shrink-0 border-r border-[var(--border)] bg-[var(--card)] flex flex-col min-h-0">
-      <div className="p-3 border-b border-[var(--border)]">
+    <div className="w-[330px] lg:w-[360px] shrink-0 border-r border-slate-200/80 bg-white flex flex-col min-h-0">
+      {/* Search & Barcode Scan Bar */}
+      <div className="p-3.5 border-b border-slate-100 bg-white">
         <div className="relative">
-          <ScanBarcode size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+          <ScanBarcode
+            size={16}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+          />
           <input
             ref={inputRef}
             type="text"
@@ -89,26 +101,29 @@ export function SearchPanel({ inputRef, onAdded }: { inputRef: RefObject<HTMLInp
               setScanError(null)
             }}
             onKeyDown={onKeyDown}
-            placeholder="Scan or search…"
-            className="ui-input pl-8 pr-9 h-9 text-[13px]"
+            placeholder="Scan barcode or type name…"
+            className="w-full h-10 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-200 text-[12.5px] text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 transition-all font-medium"
             autoComplete="off"
             autoFocus
           />
-          <span className="absolute right-2 top-1/2 -translate-y-1/2">
-            <Kbd>F2</Kbd>
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-400 pointer-events-none tabular">
+            F2
           </span>
         </div>
         {scanError && (
-          <div role="alert" className="text-[11px] text-[var(--status-red)] mt-1.5">
+          <div role="alert" className="text-[11px] font-bold text-rose-600 mt-2 px-1">
             {scanError}
           </div>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto pos-scroll">
+      {/* Results or Fast-Moving OTC Grid */}
+      <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {query.trim() ? (
           results.length === 0 ? (
-            <div className="px-3 py-3 text-[11.5px] text-[var(--text-muted)]">{isFetching ? 'Searching…' : 'No products match. Enter tries an exact barcode.'}</div>
+            <div className="px-4 py-8 text-center text-[12.5px] text-slate-400">
+              {isFetching ? 'Searching catalog…' : 'No products match. Press Enter for exact barcode scan.'}
+            </div>
           ) : (
             results.map((product, i) => {
               const row = stockByProduct.get(product.id)
@@ -120,18 +135,26 @@ export function SearchPanel({ inputRef, onAdded }: { inputRef: RefObject<HTMLInp
                   onClick={() => add(product)}
                   onHover={() => setHighlight(i)}
                   extra={
-                    <span className="tabular shrink-0">
+                    <span className="tabular shrink-0 text-[11.5px]">
                       {row ? (
                         <>
-                          <span className={Number(row.free_to_sell) > 0 ? 'text-[var(--status-green)] font-semibold' : 'text-[var(--status-red)] font-semibold'}>
+                          <span
+                            className={
+                              Number(row.free_to_sell) > 0
+                                ? 'text-emerald-600 font-bold'
+                                : 'text-rose-600 font-bold'
+                            }
+                          >
                             {formatQty(row.free_to_sell)} free
                           </span>
-                          {row.nearest_expiry && <span> · exp {formatDate(row.nearest_expiry)}</span>}
+                          {row.nearest_expiry && (
+                            <span className="text-slate-400"> · exp {formatDate(row.nearest_expiry)}</span>
+                          )}
                         </>
                       ) : stock.isFetching ? (
                         '…'
                       ) : (
-                        <span className="text-[var(--status-red)]">0 free</span>
+                        <span className="text-rose-600 font-bold">0 free</span>
                       )}
                     </span>
                   }
@@ -140,24 +163,59 @@ export function SearchPanel({ inputRef, onAdded }: { inputRef: RefObject<HTMLInp
             })
           )
         ) : (
-          <div className="p-3">
-            <div className="ui-label">Recent</div>
-            {recent.length === 0 ? (
-              <p className="text-[11px] text-[var(--text-muted)]">Products you add appear here for one-click re-adding.</p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {recent.map((product) => (
+          <div className="p-3.5 space-y-4">
+            {recent.length > 0 && (
+              <div>
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">
+                  Recently Added
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {recent.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => add(product)}
+                      className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/60 text-[11px] font-bold transition-colors cursor-pointer"
+                    >
+                      + {product.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <div className="flex items-center justify-between text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400 mb-2.5 px-0.5">
+                <span className="flex items-center gap-1.5 text-slate-600 font-bold">
+                  <Sparkles size={12} className="text-amber-500" /> Fast-Moving Medicines
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal">1-tap add</span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-1.5">
+                {(popular.data?.data ?? []).map((prod) => (
                   <button
-                    key={product.id}
+                    key={prod.id}
                     type="button"
-                    onClick={() => add(product)}
-                    className="px-2 py-1 rounded border border-[var(--border)] bg-[var(--surface-2)] text-[11px] hover:border-[var(--color-navy)]"
+                    onClick={() => add(prod)}
+                    className="p-2.5 rounded-xl border border-slate-200/70 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-left transition-all group flex items-center justify-between gap-2.5 cursor-pointer shadow-2xs"
                   >
-                    {product.name}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-[12.5px] text-slate-900 group-hover:text-blue-700 truncate">
+                        {prod.name}
+                      </div>
+                      <div className="text-[11px] font-medium text-slate-400 truncate mt-0.5">
+                        {prod.strength ? `${prod.strength} · ` : ''}
+                        <span className="tabular font-semibold text-slate-500">{prod.code}</span>
+                      </div>
+                    </div>
+                    <span className="w-6 h-6 rounded-lg bg-slate-100 group-hover:bg-blue-600 group-hover:text-white text-slate-600 flex items-center justify-center text-[13px] font-black transition-colors shrink-0">
+                      +
+                    </span>
                   </button>
                 ))}
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>

@@ -198,7 +198,10 @@ export default function PosPage() {
         />
       </div>
 
-      <KeyboardHintBar hints={POS_SHORTCUTS.map((s) => ({ ...s, disabled: s.key === 'F6' && !canDiscount }))} />
+      <KeyboardHintBar
+        hints={POS_SHORTCUTS.map((s) => ({ ...s, disabled: s.key === 'F6' && !canDiscount }))}
+        onOpenHelp={() => setHelpOpen(true)}
+      />
 
       {postedSale && <ReceiptView onNewSale={newSale} />}
 
