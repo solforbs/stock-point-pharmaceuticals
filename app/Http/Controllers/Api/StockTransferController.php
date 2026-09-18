@@ -21,7 +21,7 @@ class StockTransferController extends ApiController
                 ->where(fn ($q) => $q->whereIn('from_store_id', $storeIds)->orWhereIn('to_store_id', $storeIds))
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->with(['fromStore:id,code,name', 'toStore:id,code,name'])->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 

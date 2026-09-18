@@ -48,7 +48,7 @@ class DocumentListController extends ApiController
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->when($request->input('customer_id'), fn ($q, $v) => $q->where('customer_id', $v))
                 ->with('customer:id,code,name')->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 
@@ -61,7 +61,7 @@ class DocumentListController extends ApiController
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->when($request->input('supplier_id'), fn ($q, $v) => $q->where('supplier_id', $v))
                 ->with(['supplier:id,code,name', 'purchaseOrder:id,doc_number', 'store:id,code'])->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 
@@ -97,7 +97,7 @@ class DocumentListController extends ApiController
             StockAdjustment::whereIn('store_id', $this->storeIds($request))
                 ->when($request->input('approval_status'), fn ($q, $v) => $q->where('approval_status', $v))
                 ->with('store:id,code,name')->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 
@@ -127,7 +127,7 @@ class DocumentListController extends ApiController
             DeliveryNote::where('branch_id', $this->branchId($request))
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->with(['salesOrder:id,doc_number,customer_id', 'salesOrder.customer:id,code,name'])->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 
@@ -150,7 +150,7 @@ class DocumentListController extends ApiController
             PickingList::where('branch_id', $this->branchId($request))
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->with(['salesOrder:id,doc_number,customer_id', 'salesOrder.customer:id,code,name'])->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 

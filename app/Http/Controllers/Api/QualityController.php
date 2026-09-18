@@ -99,7 +99,7 @@ class QualityController extends ApiController
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->when($request->input('reason'), fn ($q, $v) => $q->where('reason', $v))
                 ->with('store:id,code,name')->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 

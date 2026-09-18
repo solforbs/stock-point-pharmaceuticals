@@ -34,6 +34,7 @@ class AdminController extends ApiController
         ['scope' => 'pricing', 'key' => 'default_min_margin_pct', 'type' => 'decimal', 'default' => '0', 'description' => 'Minimum gross margin a quote may fall to before it is refused.'],
         ['scope' => 'sales', 'key' => 'min_shelf_life_days', 'type' => 'integer', 'default' => 90, 'description' => 'FEFO will not allocate a batch expiring sooner than this.'],
         ['scope' => 'sales', 'key' => 'min_shelf_life_days_institutional', 'type' => 'integer', 'default' => 180, 'description' => 'Shelf-life floor for hospital, tender and institutional customers.'],
+        ['scope' => 'alerts', 'key' => 'email_digest_enabled', 'type' => 'boolean', 'default' => true, 'description' => 'Email the morning alert digest to everyone who may see the alerts; turning it off leaves the in-app alert centre working.'],
         ['scope' => 'inventory', 'key' => 'adjustment_approval_threshold', 'type' => 'decimal', 'default' => '10000', 'description' => 'Adjustment value (at cost) above which a second approver is required.'],
         ['scope' => 'inventory', 'key' => 'count_variance_approval_threshold', 'type' => 'decimal', 'default' => '10000', 'description' => 'Stock-count variance value above which a second approver is required.'],
     ];

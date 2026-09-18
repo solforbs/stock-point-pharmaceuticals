@@ -18,7 +18,7 @@ class RequisitionController extends ApiController
         return response()->json(
             Requisition::where('branch_id', $this->branchId($request))
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
-                ->withCount('lines')->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->withCount('lines')->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 

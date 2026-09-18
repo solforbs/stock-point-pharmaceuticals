@@ -110,6 +110,36 @@ export type Product = {
   stock?: { on_hand: Decimal; reserved: Decimal; free_to_sell: Decimal; nearest_expiry: string | null }
 }
 
+export type Alert = {
+  id: string
+  branch_id: string
+  alert_key: string
+  category: 'RECEIVABLE' | 'PAYABLE' | 'EXPIRY'
+  type: string
+  severity: 'INFO' | 'WARNING' | 'CRITICAL'
+  title: string
+  detail: string | null
+  entity_type: string | null
+  entity_id: string | null
+  due_date: string | null
+  days_to_due: number | null
+  amount: Decimal | null
+  link: string | null
+  permission: string
+  first_seen_at: string
+  last_seen_at: string
+  resolved_at: string | null
+  acknowledged_by: number | null
+  acknowledged_at: string | null
+}
+
+export type AlertSummary = {
+  total: number
+  critical: number
+  by_category: Record<Alert['category'], { total: number; critical: number; warning: number; info: number }>
+  last_scan_at: string | null
+}
+
 export type DosageForm = { id: string; code: string; name: string }
 
 export type StorageCondition = {

@@ -132,6 +132,7 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'pricing-rules', label: 'Pricing Rules', path: '/admin/pricing-rules' },
       { key: 'number-sequences', label: 'Number Sequences', path: '/admin/number-sequences' },
       { key: 'audit-log', label: 'Audit Log', path: '/admin/audit-log' },
+      { key: 'alerts', label: 'Alerts', path: '/admin/alerts' },
       { key: 'sync-centre', label: 'Sync Centre', path: '/admin/sync-centre' },
       { key: 'system-health', label: 'System Health', path: '/admin/system-health' },
       { key: 'backup', label: 'Backup', path: '/admin/backup' },

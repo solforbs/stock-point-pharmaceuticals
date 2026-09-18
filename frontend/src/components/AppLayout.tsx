@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useBranchStore } from '../lib/branch'
 import { formatDate, todayIso } from '../lib/format'
+import { AlertBell } from './AlertBell'
 import Sidebar from './Sidebar'
 import { ProductTour } from './tour/ProductTour'
 import { useTourStore } from './tour/useTourStore'
@@ -120,6 +121,8 @@ export default function AppLayout() {
               <Compass size={14} className="text-blue-600" />
               <span>Tour</span>
             </button>
+
+            <AlertBell />
 
             {/* Keyboard Shortcuts Help Button */}
             <button

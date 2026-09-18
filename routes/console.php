@@ -15,6 +15,10 @@ Schedule::command('finance:open-periods')->dailyAt('00:01');
 // Part 7.1 / 12.4 — the reconciliation that must return zero rows.
 Schedule::command('inventory:reconcile-ledger')->dailyAt('00:30');
 
+// Part 17 — payment deadlines and shelf-life risk, recomputed before the
+// counter opens so the morning's alerts are the day's truth.
+Schedule::command('alerts:scan')->dailyAt('05:30')->withoutOverlapping();
+
 // Part 20.3 — scheduled reports are mailed when due (run_at is HH:MM, so a quarter-hour tick is enough).
 Schedule::command('reports:run-scheduled')->everyFifteenMinutes()->withoutOverlapping();
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdrReportController;
+use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\ColdChainController;
 use App\Http\Controllers\Api\ControlledDocumentController;
 use App\Http\Controllers\Api\CustomerContactController;
@@ -333,6 +334,13 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
 
     // 21.16 Dashboard and administration (Parts 16.3, 17, 18, 19)
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
+
+    // Part 17 — standing alerts: payment deadlines and shelf-life risk.
+    Route::get('/alerts', [AlertController::class, 'index']);
+    Route::get('/alerts/summary', [AlertController::class, 'summary']);
+    Route::post('/alerts/scan', [AlertController::class, 'scan']);
+    Route::post('/alerts/acknowledge-all', [AlertController::class, 'acknowledgeAll']);
+    Route::post('/alerts/{alert}/acknowledge', [AlertController::class, 'acknowledge']);
     Route::get('/admin/users', [AdminController::class, 'users']);
     Route::post('/admin/users', [AdminController::class, 'storeUser']);
     Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);

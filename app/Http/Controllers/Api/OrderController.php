@@ -157,7 +157,7 @@ class OrderController extends ApiController
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->when($request->input('customer_id'), fn ($q, $v) => $q->where('customer_id', $v))
                 ->with('customer:id,code,name')->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 

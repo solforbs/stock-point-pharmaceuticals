@@ -22,7 +22,7 @@ class ReturnController extends ApiController
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->when($request->input('sale_id'), fn ($q, $v) => $q->where('sale_id', $v))
                 ->with(['customer:id,code,name', 'sale:id,doc_number,sale_mode'])->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 
@@ -110,7 +110,7 @@ class ReturnController extends ApiController
         return response()->json(
             SupplierReturn::where('branch_id', $this->branchId($request))
                 ->with(['supplier:id,code,name', 'store:id,code'])->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 
