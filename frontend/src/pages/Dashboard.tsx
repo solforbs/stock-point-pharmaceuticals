@@ -6,7 +6,7 @@ import { DashboardHeader } from '../features/dashboard/components/DashboardHeade
 import { DashboardKpis } from '../features/dashboard/components/DashboardKpis'
 import { HeroSalesChartCard } from '../features/dashboard/components/HeroSalesChartCard'
 import { LatestSalesSection } from '../features/dashboard/components/LatestSalesSection'
-import { SalesActivityCard } from '../features/dashboard/components/SalesActivityCard'
+import { QuickActionsSection } from '../features/dashboard/components/QuickActionsSection'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { apiGet } from '../lib/api'
 import { dCmp, dIsPos, dSum } from '../lib/decimal'
@@ -98,7 +98,7 @@ export default function Dashboard() {
           <HeroSalesChartCard salesToday={salesToday} salesList={todayRows} />
         </div>
         <div>
-          <SalesActivityCard />
+          <QuickActionsSection />
         </div>
       </div>
 
