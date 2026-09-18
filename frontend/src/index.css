@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand colors sampled directly from the Stockpoint logo/signage. */
+  --color-navy: #092065;
+  --color-navy-light: #4a5c93;
+  --color-navy-dark: #071a51;
+  --color-green: #33733c;
+  --color-green-light: #66966d;
+  --color-green-dark: #295c30;
+
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+  --color-purple: #8b5cf6;
+  --color-cold-chain: #0ea5e9;
+
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --surface-2: #eef0f9;
+  --surface-3: #e2e6f4;
+  --border: #ccd3ea;
+  --border-strong: #b3bee0;
+  --input-bg: #f8f9fd;
+  --text: #0d1b3a;
+  --text-secondary: #3d4a6b;
+  --text-muted: #7480a0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #05070f;
+    --card: #0e1220;
+    --surface-2: #12172a;
+    --surface-3: #171d33;
+    --border: #232a47;
+    --border-strong: #2e365a;
+    --input-bg: #0a0d1a;
+    --text: #e8eaf5;
+    --text-secondary: #a3aecb;
+    --text-muted: #6b7591;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+/* Part 1.4 — the nine status colours, defined once, used everywhere. */
+:root {
+  --status-green: #059669;
+  --status-amber: #f59e0b;
+  --status-red: #ef4444;
+  --status-blue: #3b82f6;
+  --status-purple: #8b5cf6;
+  --status-cold: #0ea5e9;
+  --status-slate: #64748b;
+  --status-teal: #0d9488;
+  --mode-retail: #092065;
+  --mode-wholesale: #b45309;
+  --mode-dispensing: #6d28d9;
+}
+
+/* Part 1.3 — every number in a column uses tabular figures. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-input {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 12.5px;
+  outline: none;
+  width: 100%;
+  min-width: 0;
+}
+.ui-input:focus {
+  border-color: var(--color-navy-light);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-navy) 20%, transparent);
+}
+.ui-input:disabled {
+  opacity: 0.6;
+}
+textarea.ui-input {
+  height: auto;
+  padding: 8px 10px;
+}
+
+.ui-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.ui-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.ui-kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+}
+
+.ui-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12.5px;
+}
+.ui-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  user-select: none;
+}
+.ui-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.ui-table tbody tr:hover td {
+  background: var(--surface-2);
+}
+.ui-table tr.is-clickable {
+  cursor: pointer;
+}
+.ui-table tr.is-selected td {
+  background: color-mix(in srgb, var(--color-navy) 10%, var(--card));
+}
+
+.pos-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.pos-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}

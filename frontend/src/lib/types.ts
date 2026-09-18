@@ -1,0 +1,1055 @@
+// Shapes mirror the Laravel API (routes/api.php + app/Http/Controllers/Api).
+// Money and quantities arrive as decimal strings ("1000.0000") and stay
+// strings: the server quote is authoritative; the SPA never does float
+// arithmetic on anything that posts.
+
+export type Decimal = string
+
+export type Paginated<T> = {
+  data: T[]
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+  from: number | null
+  to: number | null
+}
+
+export type SaleMode = 'RETAIL' | 'WHOLESALE' | 'DISPENSING'
+
+export type Branch = {
+  id: string
+  code: string
+  name: string
+  retail_enabled: boolean
+  wholesale_enabled: boolean
+  dispensing_enabled: boolean
+  sale_modes: SaleMode[]
+  default_sale_mode: SaleMode | null
+}
+
+export type CurrentUser = {
+  id: number
+  name: string
+  email: string
+  username?: string | null
+  mfa_required?: boolean
+  roles?: { id: number; name: string }[]
+  permissions: string[]
+  active_branch_id: string | null
+  active_branch: Branch | null
+  branches: Branch[]
+  sale_modes: SaleMode[]
+  default_sale_mode: SaleMode | null
+}
+
+export type Store = {
+  id: string
+  branch_id: string
+  code: string
+  name: string
+  store_type: string
+  is_sellable: boolean
+}
+
+export type Uom = { id: string; code: string; name: string; is_base_candidate?: boolean }
+
+export type ProductUom = {
+  id: string
+  product_id: string
+  uom_id: string
+  factor_to_base: number
+  is_base: boolean
+  is_purchase: boolean
+  is_sales: boolean
+  is_default_sales: boolean
+  barcode: string | null
+  uom?: Uom
+}
+
+export type NamedRef = { id: string; code?: string; name: string }
+
+export type ProductPrice = {
+  id: string
+  price_list_id: string
+  uom_id: string | null
+  factor_type: string
+  unit_price: Decimal
+  factor_value: Decimal | null
+  effective_from: string | null
+  effective_to: string | null
+  price_list?: { id: string; code: string; name: string; sale_mode?: string } | null
+}
+
+export type Product = {
+  id: string
+  code: string
+  sku: string | null
+  gtin: string | null
+  name: string
+  generic_name: string | null
+  strength: string | null
+  is_discrete: boolean
+  pack_integrity: boolean
+  requires_batch: boolean
+  reorder_point: Decimal
+  safety_stock: Decimal
+  lead_time_days: number
+  default_price: Decimal | null
+  is_active: boolean
+  base_uom_id: string
+  base_uom?: Uom | null
+  uoms?: ProductUom[]
+  category?: NamedRef | null
+  manufacturer?: NamedRef | null
+  dosage_form?: NamedRef | null
+  tax_code?: NamedRef | null
+  prices?: ProductPrice[]
+}
+
+export type StockBatchRow = {
+  batch_id: string
+  batch_number: string
+  expiry_date: string
+  status: string
+  on_hand: Decimal
+  reserved: Decimal
+  wac?: Decimal
+}
+
+export type StockStateRow = {
+  product_id: string
+  product_code: string
+  product_name: string
+  store_id: string
+  store_code: string
+  store_name: string
+  on_hand: Decimal
+  reserved: Decimal
+  free_to_sell: Decimal
+  in_transit: Decimal
+  pending_qc: Decimal
+  quarantined: Decimal
+  expired: Decimal
+  recalled: Decimal
+  on_order: Decimal
+  value_at_cost?: Decimal
+  nearest_expiry: string | null
+  reorder_point: Decimal
+  batches: StockBatchRow[]
+}
+
+export type ProductStock = { product: { id: string; code: string; name: string }; stores: StockStateRow[] }
+
+export type LedgerRow = {
+  id: string
+  txn_type: string
+  product_id: string
+  batch_id: string
+  store_id: string
+  qty_base: Decimal
+  unit_cost?: Decimal
+  total_cost?: Decimal
+  source_doc_type: string | null
+  source_doc_id: string | null
+  txn_datetime: string
+  user_id: number | null
+  running_balance?: Decimal
+  product?: NamedRef | null
+  batch?: { id: string; batch_number: string; expiry_date: string } | null
+  store?: { id: string; code: string } | null
+}
+
+export type ProductBatch = {
+  id: string
+  product_id: string
+  batch_number: string
+  manufacturer_batch_ref: string | null
+  expiry_date: string
+  manufacture_date: string | null
+  supplier_id: string | null
+  unit_cost?: Decimal
+  landed_unit_cost?: Decimal
+  status: string
+  qc_released_at: string | null
+  qty_on_hand?: Decimal | null
+  product?: NamedRef | null
+  supplier?: NamedRef | null
+  balances?: { id: string; store_id: string; qty_on_hand: Decimal; qty_reserved: Decimal; wac?: Decimal; store?: NamedRef | null }[]
+  movements?: LedgerRow[]
+  recipients?: BatchRecipient[]
+  distributed_base?: Decimal
+}
+
+export type BatchRecipient = {
+  sale_id: string
+  doc_number: string
+  posted_at: string
+  sale_mode: SaleMode
+  customer_id: string | null
+  customer_code: string | null
+  customer_name: string | null
+  qty_base: Decimal
+  is_bonus: boolean
+}
+
+export type CustomerTier = {
+  id: string
+  code: string
+  name: string
+  default_discount_pct?: Decimal
+  max_discount_pct?: Decimal
+  credit_terms_days?: number
+}
+
+export type CustomerCredit = {
+  customer_id: string
+  credit_limit: Decimal
+  current_balance: Decimal
+  unallocated_receipts: Decimal
+  on_hold: boolean
+  hold_reason: string | null
+  reviewed_at: string | null
+}
+
+export type Customer = {
+  id: string
+  code: string
+  name: string
+  customer_type: string
+  tier_id: string | null
+  tax_status: string | null
+  payment_terms_days: number | null
+  fulfilment_policy: string | null
+  phone: string | null
+  email: string | null
+  address: string | null
+  is_active: boolean
+  tier?: CustomerTier | null
+  credit?: CustomerCredit | null
+  contacts?: { id: string; name: string; role: string | null; phone: string | null; email: string | null; is_primary: boolean }[]
+  available_credit?: Decimal
+  open_order_exposure?: Decimal
+}
+
+export type QuoteLine = {
+  line_ref: string
+  product_id: string
+  product_code: string
+  product_name: string
+  uom_id: string
+  uom_code: string
+  factor_to_base: number
+  quantity: Decimal
+  qty_base: Decimal
+  list_price: Decimal
+  break_price: Decimal
+  price_source: string
+  requested_discount_pct: Decimal | null
+  unit_price: Decimal
+  discount_per_unit: Decimal
+  discount_pct: Decimal
+  discount_amount: Decimal
+  discount_source: string
+  discount_capped_by: string | null
+  discount_reason: string | null
+  line_subtotal: Decimal
+  net_amount: Decimal
+  tax_code_id: string | null
+  tax_code: string | null
+  tax_rate: Decimal
+  tax_amount: Decimal
+  line_total: Decimal
+  bonus_qty: Decimal
+  bonus_product_id: string | null
+  bonus_funded_by: string | null
+  unit_cost: Decimal | null
+  line_cost: Decimal | null
+  gross_profit: Decimal | null
+  margin_pct: Decimal | null
+  effective_margin_pct: Decimal | null
+  floor_price: Decimal | null
+  floor_breached: boolean
+  approval_required: boolean
+  batch_id: string | null
+  explain: string[]
+}
+
+export type QuoteTotals = {
+  subtotal: Decimal
+  discount: Decimal
+  net: Decimal
+  tax: Decimal
+  grand_total: Decimal
+  total_cost: Decimal | null
+  gross_profit: Decimal | null
+  margin_pct: Decimal | null
+}
+
+export type Quote = {
+  quote_id: string | null
+  expires_at: string | null
+  currency: string
+  sale_mode: SaleMode
+  customer_id: string | null
+  min_shelf_life_days?: number | null
+  lines: QuoteLine[]
+  header_discount: string[]
+  totals: QuoteTotals
+  approval_required: boolean
+  floor_breached: boolean
+  quoted_at: string
+}
+
+export type PaymentMethod = 'CASH' | 'MPESA' | 'BANK' | 'CARD' | 'CHEQUE'
+export const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'MPESA', 'BANK', 'CARD', 'CHEQUE']
+
+export type TenderLine = { method: PaymentMethod; amount: Decimal; reference?: string }
+
+export type BatchAllocation = {
+  id: string
+  batch_id: string
+  qty_base: Decimal
+  is_bonus?: boolean
+  unit_cost?: Decimal
+  batch?: { id: string; batch_number: string; expiry_date: string } | null
+}
+
+export type SaleLine = {
+  id: string
+  line_number: number
+  product_id: string
+  uom_id: string
+  qty: Decimal
+  qty_base: Decimal
+  list_price: Decimal
+  unit_price: Decimal
+  discount_amount: Decimal
+  discount_pct: Decimal
+  discount_source: string | null
+  tax_rate: Decimal
+  tax_amount: Decimal
+  line_total: Decimal
+  unit_cost?: Decimal
+  line_cost?: Decimal
+  is_bonus: boolean
+  product?: NamedRef | null
+  batch_allocations?: BatchAllocation[]
+}
+
+export type Sale = {
+  id: string
+  doc_number: string
+  sale_mode: SaleMode
+  sub_type: string | null
+  status: 'DRAFT' | 'POSTED' | 'VOIDED'
+  customer_id: string | null
+  store_id: string
+  quote_id: string | null
+  terminal_id: string | null
+  subtotal: Decimal
+  discount_total: Decimal
+  tax_total: Decimal
+  grand_total: Decimal
+  cost_total?: Decimal
+  void_reason: string | null
+  voided_at: string | null
+  posted_at: string | null
+  created_at?: string
+  customer?: (NamedRef & { customer_type?: string }) | null
+  lines?: SaleLine[]
+}
+
+export type DocLine = {
+  id: string
+  line_number: number
+  product_id: string
+  uom_id: string
+  qty: Decimal
+  qty_base: Decimal
+  list_price: Decimal
+  unit_price: Decimal
+  discount_amount: Decimal
+  discount_pct: Decimal
+  tax_rate: Decimal
+  tax_amount: Decimal
+  line_total: Decimal
+  product?: NamedRef | null
+}
+
+export type Quotation = {
+  id: string
+  doc_number: string
+  status: string
+  customer_id: string
+  store_id: string
+  valid_until: string
+  subtotal: Decimal
+  discount_total: Decimal
+  tax_total: Decimal
+  grand_total: Decimal
+  notes: string | null
+  converted_sales_order_id: string | null
+  created_at?: string
+  lines_count?: number
+  customer?: NamedRef | null
+  lines?: DocLine[]
+}
+
+export type SalesOrderLine = DocLine & {
+  qty_reserved_base: Decimal
+  qty_picked_base: Decimal
+  qty_dispatched_base: Decimal
+}
+
+export type SalesOrder = {
+  id: string
+  doc_number: string
+  status: string
+  customer_id: string
+  store_id: string
+  quotation_id: string | null
+  required_date: string | null
+  subtotal: Decimal
+  discount_total: Decimal
+  tax_total: Decimal
+  grand_total: Decimal
+  cancel_reason: string | null
+  created_at?: string
+  lines_count?: number
+  customer?: NamedRef | null
+  lines?: SalesOrderLine[]
+  quote_id?: string
+  approval_required?: boolean
+}
+
+export type PickingListLine = {
+  id: string
+  sales_order_line_id: string
+  product_id: string
+  batch_id: string
+  store_id: string
+  qty_to_pick_base: Decimal
+  qty_picked_base: Decimal
+  status: 'PENDING' | 'PICKED' | 'SHORT'
+  picked_at: string | null
+  product?: NamedRef | null
+  batch?: { id: string; batch_number: string; expiry_date: string } | null
+}
+
+export type OrderRef = { id: string; doc_number: string; customer_id: string; status?: string; customer?: NamedRef | null }
+
+export type PickingList = {
+  id: string
+  doc_number: string
+  status: string
+  sales_order_id: string
+  store_id: string
+  started_at: string | null
+  completed_at: string | null
+  created_at?: string
+  lines_count?: number
+  sales_order?: OrderRef | null
+  lines: PickingListLine[]
+  delivery_notes?: { id: string; picking_list_id: string; doc_number: string; status: string }[]
+}
+
+export type DeliveryNoteLine = {
+  id: string
+  product_id: string
+  qty_base?: Decimal
+  qty_dispatched_base?: Decimal
+  product?: NamedRef | null
+  batch_allocations?: BatchAllocation[]
+}
+
+export type DeliveryNote = {
+  id: string
+  doc_number: string
+  status: string
+  sales_order_id: string
+  picking_list_id: string
+  customer_id: string
+  vehicle_reg: string | null
+  driver_name: string | null
+  driver_phone: string | null
+  dispatched_at: string | null
+  delivered_at: string | null
+  received_by_name: string | null
+  sale_id: string | null
+  created_at?: string
+  lines_count?: number
+  sales_order?: OrderRef | null
+  lines?: DeliveryNoteLine[]
+}
+
+export type Supplier = {
+  id: string
+  code: string
+  name: string
+  contact_name: string | null
+  email: string | null
+  phone: string | null
+  licence_number: string | null
+  licence_expiry: string | null
+  payment_terms_days: number | null
+  lead_time_days: number | null
+  status: string
+  is_active: boolean
+  payable_balance?: Decimal
+}
+
+export type PurchaseOrderLine = {
+  id: string
+  product_id: string
+  uom_id: string
+  qty_ordered: Decimal
+  unit_price: Decimal
+  tax_code_id: string | null
+  product?: NamedRef | null
+  uom?: Uom | null
+}
+
+export type PurchaseOrder = {
+  id: string
+  doc_number: string
+  supplier_id: string
+  status: string
+  expected_date: string | null
+  sent_at: string | null
+  created_at?: string
+  lines_count?: number
+  supplier?: (NamedRef & { licence_expiry?: string | null; status?: string }) | null
+  lines?: PurchaseOrderLine[]
+  goods_receipts?: { id: string; purchase_order_id: string; doc_number: string; status: string; received_at: string | null }[]
+}
+
+export type UserRef = { id: number; name: string; username: string | null }
+
+export type ProductCategory = { id: string; code: string; name: string; parent_id: string | null }
+
+export type TaxCode = { id: string; code: string; name: string; tax_type: string; is_recoverable: boolean; rate_pct: Decimal | null }
+
+export type GoodsReceiptLine = {
+  id: string
+  purchase_order_line_id: string | null
+  product_id: string
+  uom_id: string
+  qty_ordered: Decimal
+  qty_delivered: Decimal
+  qty_accepted: Decimal
+  qty_rejected: Decimal
+  rejection_reason: string | null
+  batch_number: string
+  expiry_date: string
+  unit_cost: Decimal
+  landed_unit_cost: Decimal | null
+  batch?: ProductBatch | null
+}
+
+export type GoodsReceipt = {
+  id: string
+  doc_number: string
+  purchase_order_id: string | null
+  supplier_id: string
+  store_id: string
+  status: string
+  is_emergency: boolean
+  received_at: string | null
+  created_at?: string
+  lines_count?: number
+  lines: GoodsReceiptLine[]
+  purchase_order?: { id: string; doc_number: string; status?: string } | null
+  supplier?: NamedRef | null
+  store?: NamedRef | null
+}
+
+export type SupplierInvoiceLine = {
+  id: string
+  purchase_order_line_id: string
+  product_id: string
+  qty: Decimal
+  unit_price: Decimal
+  line_total: Decimal
+  product?: NamedRef | null
+  purchase_order_line?: { id: string; purchase_order_id: string; qty_ordered: Decimal; unit_price: Decimal } | null
+}
+
+export type SupplierInvoice = {
+  id: string
+  doc_number: string
+  supplier_id: string
+  invoice_number: string
+  invoice_date: string
+  due_date: string | null
+  subtotal: Decimal
+  tax_total: Decimal
+  grand_total: Decimal
+  match_status: 'UNMATCHED' | 'MATCHED' | 'EXCEPTION'
+  matched_at: string | null
+  lines_count?: number
+  supplier?: NamedRef | null
+  lines?: SupplierInvoiceLine[]
+}
+
+export type MatchResult = { matched: boolean; failures: unknown[]; invoice: SupplierInvoice }
+
+export type StockAdjustmentLine = {
+  id: string
+  product_id: string
+  batch_id: string
+  qty_base: Decimal
+  unit_cost?: Decimal
+  line_value?: Decimal
+  product?: NamedRef | null
+  batch?: BatchRef | null
+}
+
+export type StockAdjustment = {
+  id: string
+  doc_number: string
+  store_id: string
+  reason_code: string
+  approval_status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  total_value?: Decimal
+  notes?: string | null
+  created_at?: string
+  lines_count?: number
+  store?: NamedRef | null
+  lines?: StockAdjustmentLine[]
+}
+
+export type Payment = {
+  id: string
+  customer_id: string
+  method: PaymentMethod
+  reference: string | null
+  amount: Decimal
+  status: string
+  received_at: string | null
+  allocations?: { id: string; sale_id: string; amount: Decimal }[]
+}
+
+export type ArAgeingRow = {
+  customer_id: string
+  code: string
+  name: string
+  customer_type: string
+  payment_terms_days: number | null
+  credit_limit: Decimal
+  exposure: Decimal
+  on_hold: boolean
+  current: Decimal
+  d1_30: Decimal
+  d31_60: Decimal
+  d61_90: Decimal
+  d90_plus: Decimal
+  total: Decimal
+}
+
+export type ArAgeingTotals = Pick<ArAgeingRow, 'current' | 'd1_30' | 'd31_60' | 'd61_90' | 'd90_plus' | 'total'>
+
+export type ArAgeing = { data: ArAgeingRow[]; totals: ArAgeingTotals; as_of: string }
+
+export type JournalLine = {
+  id: string
+  line_number: number
+  account_id: string
+  debit_amount: Decimal
+  credit_amount: Decimal
+  narration: string | null
+  account?: { id: string; code: string; name: string; system_role: string | null } | null
+}
+
+export type JournalEntry = {
+  id: string
+  doc_number: string
+  entry_date: string
+  source_doc_type: string | null
+  source_doc_id: string | null
+  narration: string | null
+  posted_at: string | null
+  lines: JournalLine[]
+}
+
+export type TrialBalance = {
+  as_of: string
+  accounts: { code: string; name: string; account_type: string; system_role: string | null; debit: Decimal; credit: Decimal; net: Decimal }[]
+  total_debit: Decimal
+  total_credit: Decimal
+  balanced: boolean
+}
+
+export type FinancialPeriod = {
+  id: string
+  fiscal_year: number
+  period_no: number
+  start_date: string
+  end_date: string
+  status: 'OPEN' | 'CLOSING' | 'CLOSED' | 'LOCKED'
+  closed_at: string | null
+}
+
+// ---- Transfers, counts, requisitions -----------------------------------
+
+export type BatchRef = { id: string; batch_number: string; expiry_date: string; status?: string }
+
+export type StockTransferLine = {
+  id: string
+  product_id: string
+  batch_id: string
+  qty_dispatched: Decimal
+  qty_received: Decimal | null
+  product?: NamedRef | null
+  batch?: BatchRef | null
+}
+
+export type StockTransfer = {
+  id: string
+  doc_number: string
+  from_store_id: string
+  to_store_id: string
+  status: 'DRAFT' | 'APPROVED' | 'DISPATCHED' | 'RECEIVED' | 'DISCREPANCY'
+  dispatched_at: string | null
+  received_at: string | null
+  created_at?: string
+  lines_count?: number
+  from_store?: NamedRef | null
+  to_store?: NamedRef | null
+  lines?: StockTransferLine[]
+}
+
+export type StockCountLine = {
+  id: string
+  product_id: string
+  batch_id: string
+  system_qty: Decimal
+  counted_qty: Decimal | null
+  variance_qty: Decimal | null
+  variance_value?: Decimal | null
+  reason_code: string | null
+  product?: NamedRef | null
+  batch?: BatchRef | null
+}
+
+export type StockCount = {
+  id: string
+  doc_number: string
+  store_id: string
+  status: 'PLANNED' | 'COUNTING' | 'REVIEW' | 'APPROVED' | 'CLOSED'
+  approved_at: string | null
+  created_at?: string
+  lines_count?: number
+  store?: NamedRef | null
+  lines?: StockCountLine[]
+  variance_reasons?: string[]
+}
+
+export type RequisitionLine = {
+  id: string
+  product_id: string
+  qty_requested: Decimal
+  notes: string | null
+  product?: (NamedRef & { base_uom_id?: string; base_uom?: Uom | null }) | null
+}
+
+export type Requisition = {
+  id: string
+  doc_number: string
+  status: 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'CONVERTED'
+  needed_by: string | null
+  notes: string | null
+  created_at?: string
+  lines_count?: number
+  lines?: RequisitionLine[]
+}
+
+export type ReorderSuggestion = {
+  product_id: string
+  product_code: string
+  product_name: string
+  base_uom: string | null
+  reorder_point: Decimal
+  free_to_sell: Decimal
+  on_order: Decimal
+  coverage: Decimal | null
+  suggested_qty_base: Decimal
+  lead_time_days: number
+  required_by: string
+  nearest_expiry: string | null
+  supplier_id: string | null
+  supplier_code: string | null
+  supplier_name: string | null
+  formula: string
+}
+
+// ---- Returns, waste, recalls -------------------------------------------
+
+export type Disposition = 'RESALEABLE' | 'QUARANTINE' | 'DESTROY' | 'REJECT'
+
+export type CustomerReturnLine = {
+  id: string
+  sale_line_id: string
+  product_id: string
+  batch_id: string
+  qty_base: Decimal
+  disposition: Disposition
+  unit_price: Decimal
+  line_net: Decimal
+  tax_amount: Decimal
+  line_total: Decimal
+  unit_cost?: Decimal
+  line_cost?: Decimal
+  inspection_notes: string | null
+  product?: NamedRef | null
+  batch?: BatchRef | null
+}
+
+export type CustomerReturn = {
+  id: string
+  doc_number: string
+  credit_note_number: string | null
+  status: 'DRAFT' | 'POSTED' | 'REJECTED'
+  sale_id: string
+  customer_id: string | null
+  recall_id: string | null
+  reason: string
+  refund_method: 'CASH' | 'MPESA' | 'BANK' | 'CUSTOMER_ACCOUNT' | null
+  refund_reference: string | null
+  subtotal: Decimal
+  tax_total: Decimal
+  grand_total: Decimal
+  cost_total?: Decimal
+  posted_at: string | null
+  created_at?: string
+  lines_count?: number
+  etims_status?: string | null
+  customer?: NamedRef | null
+  sale?: { id: string; doc_number: string; sale_mode: SaleMode; posted_at?: string | null } | null
+  lines?: CustomerReturnLine[]
+}
+
+export type SupplierReturn = {
+  id: string
+  doc_number: string
+  supplier_id: string
+  store_id: string
+  status: 'DRAFT' | 'POSTED'
+  reason: string
+  total_value?: Decimal
+  created_at?: string
+  lines_count?: number
+  supplier?: NamedRef | null
+  store?: NamedRef | null
+  lines?: { id: string; product_id: string; batch_id: string; qty_base: Decimal; unit_cost: Decimal; product?: NamedRef | null; batch?: BatchRef | null }[]
+}
+
+export type WasteDisposal = {
+  id: string
+  doc_number: string
+  store_id: string
+  status: 'DRAFT' | 'POSTED'
+  reason: 'EXPIRED' | 'DAMAGED' | 'RECALLED' | 'EXCURSION' | 'CONTAMINATED'
+  recall_id: string | null
+  disposal_method: string | null
+  disposal_contractor: string | null
+  certificate_reference: string | null
+  ppb_reference: string | null
+  witnessed_by_1: number | null
+  witnessed_by_2: number | null
+  notes: string | null
+  total_value: Decimal
+  posted_at: string | null
+  created_at?: string
+  lines_count?: number
+  store?: NamedRef | null
+  lines?: { id: string; product_id: string; batch_id: string; qty_base: Decimal; unit_cost: Decimal; line_value: Decimal; product?: NamedRef | null; batch?: BatchRef | null }[]
+}
+
+export type Recall = {
+  id: string
+  doc_number: string
+  status: 'INITIATED' | 'SCOPED' | 'BLOCKED' | 'NOTIFIED' | 'RECOVERING' | 'RECONCILED' | 'DISPOSITIONED' | 'CLOSED'
+  source: 'MANUFACTURER' | 'PPB' | 'INTERNAL'
+  external_reference: string | null
+  reason: string
+  disposition: 'RETURN_TO_SUPPLIER' | 'DESTROY' | null
+  effectiveness_pct: Decimal | null
+  initiated_at: string | null
+  blocked_at: string | null
+  closed_at: string | null
+  batches_count?: number
+  customers_count?: number
+}
+
+export type RecallBatch = {
+  id: string
+  product_id: string
+  batch_id: string
+  status_before: string | null
+  on_hand_at_scope: Decimal
+  in_transit_at_scope: Decimal
+  distributed_qty: Decimal
+  recovered_qty: Decimal
+  disposed_qty: Decimal
+  stock_by_store: { store_id: string; store_code: string | null; on_hand: Decimal }[]
+  on_hand_now: Decimal
+  outstanding_qty: Decimal
+  batch?: BatchRef | null
+  product?: NamedRef | null
+}
+
+export type RecallCustomer = {
+  id: string
+  customer_id: string | null
+  customer_name_snapshot: string
+  contact_snapshot: string | null
+  qty_distributed: Decimal
+  qty_recovered: Decimal
+  notified_at: string | null
+  notification_reference: string | null
+}
+
+export type RecallTrace = {
+  recall: Recall
+  batches: RecallBatch[]
+  customers: RecallCustomer[]
+  distributed_qty: Decimal
+  recovered_qty: Decimal
+  disposed_qty: Decimal
+  effectiveness_pct: Decimal | null
+}
+
+// ---- eTIMS, reports, payroll -------------------------------------------
+
+export type EtimsQueueRow = {
+  type: 'sale' | 'credit_note'
+  id: string
+  doc_number: string
+  credit_note_number?: string | null
+  sale_mode?: SaleMode
+  customer_id: string | null
+  grand_total: Decimal
+  posted_at: string | null
+  etims_status: string
+  etims_control_code: string | null
+  etims_invoice_number: string | null
+  etims_submitted_at: string | null
+  etims_error: string | null
+  customer?: NamedRef | null
+}
+
+export type EtimsQueue = {
+  summary: { pending: number; submitted: number; failed: number; not_configured: number; enabled: boolean; driver: string }
+  status: string
+  data: EtimsQueueRow[]
+}
+
+export type ReportDef = { key: string; title: string; group: string; description: string; filters: string[] }
+export type ReportColumn = { key: string; label: string; type?: string }
+export type ReportResult = {
+  key: string
+  title: string
+  group: string
+  generated_at: string
+  from: string
+  to: string
+  filters: Record<string, unknown>
+  columns: ReportColumn[]
+  rows: Record<string, unknown>[]
+  totals: Record<string, unknown>
+}
+
+export type Employee = {
+  id: string
+  employee_no: string
+  name: string
+  branch_id: string | null
+  user_id: number | null
+  national_id: string | null
+  kra_pin: string | null
+  nssf_no: string | null
+  shif_no: string | null
+  job_title: string | null
+  department: string | null
+  employment_type: 'PERMANENT' | 'CONTRACT' | 'CASUAL' | null
+  date_joined: string | null
+  date_left: string | null
+  basic_salary: Decimal
+  regular_allowances: Decimal | null
+  pension_contribution: Decimal | null
+  bank_name: string | null
+  is_active: boolean
+}
+
+export type PayrollBand = {
+  id: string
+  band_type: string
+  sequence: number
+  effective_from: string
+  effective_to: string | null
+  lower: Decimal | null
+  upper: Decimal | null
+  rate_pct: Decimal | null
+  fixed_amount: Decimal | null
+  meta_json: Record<string, unknown> | null
+  source: string | null
+}
+
+export type PayrollRunLine = {
+  id: string
+  employee_id: string
+  basic: Decimal
+  allowances: Decimal
+  overtime: Decimal
+  gross: Decimal
+  pension_contribution: Decimal
+  taxable: Decimal
+  paye: Decimal
+  nssf_employee: Decimal
+  nssf_employer: Decimal
+  shif: Decimal
+  housing_levy_employee: Decimal
+  housing_levy_employer: Decimal
+  other_deductions: Decimal
+  net: Decimal
+  breakdown_json: {
+    gross_tax_before_relief?: Decimal
+    personal_relief?: Decimal
+    paye_bands?: { band: number; lower: Decimal; upper: Decimal | null; rate_pct: Decimal; amount_in_band: Decimal; tax: Decimal }[]
+    nssf_tiers?: { tier: number; pensionable: Decimal; rate_pct: Decimal; contribution: Decimal }[]
+  } | null
+  employee?: Pick<Employee, 'id' | 'employee_no' | 'name' | 'job_title' | 'department'> | null
+}
+
+export type PayrollRun = {
+  id: string
+  doc_number: string
+  period_year: number
+  period_month: number
+  status: 'DRAFT' | 'COMPUTED' | 'APPROVED' | 'POSTED' | 'PAID'
+  bands_as_of: string | null
+  total_gross: Decimal
+  total_paye: Decimal
+  total_nssf_employee: Decimal
+  total_nssf_employer: Decimal
+  total_shif: Decimal
+  total_housing_levy_employee: Decimal
+  total_housing_levy_employer: Decimal
+  total_other_deductions: Decimal
+  total_net: Decimal
+  journal_id: string | null
+  payment_journal_id: string | null
+  computed_at: string | null
+  approved_at: string | null
+  posted_at: string | null
+  paid_at: string | null
+  lines_count?: number
+  lines?: PayrollRunLine[]
+}
+
+export type Payslip = {
+  run: Pick<PayrollRun, 'id' | 'doc_number' | 'period_year' | 'period_month' | 'status' | 'bands_as_of'>
+  employee: Pick<Employee, 'id' | 'employee_no' | 'name' | 'job_title' | 'department' | 'kra_pin' | 'nssf_no' | 'shif_no' | 'bank_name'> | null
+  line: PayrollRunLine
+}
