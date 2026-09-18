@@ -231,6 +231,8 @@ export function CartPanel({
         onSetHeaderDiscount={setHeaderDiscount}
         onOpenPayment={onOpenPayment}
         onHold={onHold}
+        onFocusCustomer={() => customerInputRef.current?.focus()}
+        onSwitchToRetail={() => setSaleMode('RETAIL')}
       />
 
       <ConfirmDialog

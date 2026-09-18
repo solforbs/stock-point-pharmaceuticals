@@ -1,4 +1,4 @@
-import { Clock, Tag } from 'lucide-react'
+import { AlertCircle, Clock, Tag, UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { MoneyCell } from '../../components/ui/MoneyCell'
 import { formatMoney, formatPct } from '../../lib/money'
@@ -21,6 +21,8 @@ export interface CartTotalsCardProps {
   onSetHeaderDiscount: (amt: string, reason: string) => void
   onOpenPayment: () => void
   onHold: () => void
+  onFocusCustomer?: () => void
+  onSwitchToRetail?: () => void
 }
 
 export function CartTotalsCard({
@@ -40,6 +42,8 @@ export function CartTotalsCard({
   onSetHeaderDiscount,
   onOpenPayment,
   onHold,
+  onFocusCustomer,
+  onSwitchToRetail,
 }: CartTotalsCardProps) {
   const [headerOpen, setHeaderOpen] = useState(!!headerDiscount)
 
@@ -146,8 +150,16 @@ export function CartTotalsCard({
             ) : expired ? (
               <span className="text-[11px] text-amber-600 font-semibold">Quote expired — re-quote</span>
             ) : (
-              <span className="text-[11px] text-slate-400">
-                {linesCount ? (needsCustomer ? 'Customer required' : 'Local estimate') : 'Cart is empty'}
+              <span className="text-[11.5px] font-semibold text-slate-500">
+                {linesCount ? (
+                  needsCustomer ? (
+                    <span className="text-amber-700 font-bold">⚠️ Customer required for wholesale pricing</span>
+                  ) : (
+                    'Local estimate'
+                  )
+                ) : (
+                  'Cart is empty'
+                )}
               </span>
             )}
           </div>
@@ -160,6 +172,25 @@ export function CartTotalsCard({
           />
         </div>
       </div>
+
+      {/* Customer Guidance Alert when in Wholesale Mode without customer */}
+      {needsCustomer && linesCount > 0 && (
+        <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+          <div className="flex items-center gap-1.5 font-bold min-w-0">
+            <AlertCircle size={14} className="text-amber-600 shrink-0" />
+            <span className="truncate">Wholesale requires a customer account</span>
+          </div>
+          {onSwitchToRetail && (
+            <button
+              type="button"
+              onClick={onSwitchToRetail}
+              className="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-800 font-extrabold border border-amber-300 text-[11px] cursor-pointer transition-colors shadow-2xs shrink-0"
+            >
+              Switch to Retail (Walk-in)
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Side-by-Side Action Buttons */}
       <div className="flex items-center gap-2 pt-0.5">
@@ -175,18 +206,29 @@ export function CartTotalsCard({
           <span>Hold</span>
         </button>
 
-        <button
-          type="button"
-          onClick={onOpenPayment}
-          disabled={!paymentEnabled}
-          title={paymentEnabled ? undefined : 'Complete cart lines and ensure fresh quote to proceed'}
-          className="flex-1 h-11 rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-sm shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 transition-all cursor-pointer"
-        >
-          <span className="px-1.5 py-0.5 rounded bg-white/20 text-white text-[10.5px] font-mono font-bold tracking-wider">
-            F10
-          </span>
-          <span>PROCEED TO PAYMENT</span>
-        </button>
+        {needsCustomer && linesCount > 0 ? (
+          <button
+            type="button"
+            onClick={onFocusCustomer}
+            className="flex-1 h-11 rounded-xl bg-gradient-to-r from-amber-600 via-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-extrabold text-sm shadow-md shadow-amber-500/20 active:scale-[0.99] flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <UserCheck size={16} />
+            <span>SELECT CUSTOMER (F5) TO PROCEED</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenPayment}
+            disabled={!paymentEnabled}
+            title={paymentEnabled ? undefined : linesCount === 0 ? 'Add items to cart' : 'Waiting for price quote…'}
+            className="flex-1 h-11 rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-sm shadow-md shadow-blue-500/20 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <span className="px-1.5 py-0.5 rounded bg-white/20 text-white text-[10.5px] font-mono font-bold tracking-wider">
+              F10
+            </span>
+            <span>PROCEED TO PAYMENT</span>
+          </button>
+        )}
       </div>
     </div>
   )

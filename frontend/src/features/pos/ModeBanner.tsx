@@ -33,10 +33,10 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
   }
 
   return (
-    <div className="h-11 px-4 flex items-center justify-between gap-3 bg-white border-b border-slate-200/80 shrink-0 select-none overflow-x-auto no-scrollbar">
+    <div className="h-11 px-3 sm:px-4 flex items-center justify-between gap-2 bg-white border-b border-slate-200/80 shrink-0 select-none overflow-hidden">
       {/* Left: Mode Toggle Pills */}
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">
+        <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider hidden xl:inline">
           Sale Mode:
         </span>
         <div className="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200/80">
@@ -48,7 +48,7 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
                 type="button"
                 onClick={() => requestSwitch(mode)}
                 disabled={!switchable && !isActive}
-                className={`px-3.5 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
@@ -62,20 +62,20 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
       </div>
 
       {/* Right: Store, Terminal, Cashier & Live Status */}
-      <div className="flex items-center gap-3 shrink-0 text-xs">
+      <div className="flex items-center gap-2 shrink-0 text-xs">
         {/* Store Selector */}
         <div className="flex items-center gap-1.5 text-slate-600">
           <StoreIcon size={14} className="text-blue-600 shrink-0" />
-          <span className="text-[11.5px] font-bold text-slate-500 hidden lg:inline">Stock Store:</span>
+          <span className="text-[11.5px] font-bold text-slate-500 hidden 2xl:inline">Store:</span>
           <select
             value={storeId ?? ''}
             onChange={(e) => setStore(e.target.value)}
             aria-label="Inventory store"
-            className="h-7 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[12px] font-bold px-2 outline-none hover:bg-slate-100 transition-colors cursor-pointer"
+            className="h-7 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[12px] font-bold px-2 outline-none hover:bg-slate-100 transition-colors cursor-pointer max-w-[130px] sm:max-w-none"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>
-                {store.code} · {store.name || 'Store'} {store.is_sellable ? '' : '(view only)'}
+                {store.code} {store.is_sellable ? '' : '(view)'}
               </option>
             ))}
           </select>
@@ -84,24 +84,22 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
         <div className="h-3.5 w-px bg-slate-200" />
 
         {/* Terminal Indicator */}
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-50 border border-slate-200/80 text-[11.5px] text-slate-600 font-semibold">
+        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-slate-50 border border-slate-200/80 text-[11.5px] text-slate-600 font-semibold">
           <Monitor size={11} className="text-slate-400" />
           <input
             value={terminalId}
             onChange={(e) => setTerminal(e.target.value.slice(0, 20))}
-            className="w-9 bg-transparent text-slate-800 font-bold outline-none text-center"
+            className="w-8 bg-transparent text-slate-800 font-bold outline-none text-center"
             aria-label="Terminal id"
           />
         </div>
 
-        <div className="h-3.5 w-px bg-slate-200" />
-
-        {/* Cashier Name */}
-        <span className="hidden md:inline text-[11.5px] text-slate-500">
-          Cashier: <strong className="text-slate-800 font-bold">{user?.name ?? '—'}</strong>
+        {/* Cashier Name - only on wider viewports to prevent overflow */}
+        <span className="hidden xl:inline text-[11.5px] text-slate-500">
+          Cashier: <strong className="text-slate-800 font-bold">{user?.name ? user.name.split(' ')[0] : '—'}</strong>
         </span>
 
-        <div className="h-3.5 w-px bg-slate-200" />
+        <div className="h-3.5 w-px bg-slate-200 hidden xl:block" />
 
         {/* Live Sync Status */}
         <SyncStatusChip />
