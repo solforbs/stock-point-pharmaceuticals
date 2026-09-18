@@ -77,7 +77,7 @@ export default function RecallsPage() {
 
       <Drawer open={creating} onClose={() => setCreating(false)} title="Initiate a recall" width={720}>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Source" required><Select value={source} onChange={(e) => setSource(e.target.value)}>{['MANUFACTURER', 'PPB', 'INTERNAL'].map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}</Select></Field>
             <Field label="External reference"><Input value={extRef} onChange={(e) => setExtRef(e.target.value)} placeholder="PPB/RC/2026/17" /></Field>
             <Field label="Reason" required className="col-span-2"><Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="At least 5 characters" /></Field>

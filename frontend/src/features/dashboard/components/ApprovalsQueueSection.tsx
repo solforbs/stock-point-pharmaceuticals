@@ -22,7 +22,7 @@ export function ApprovalsQueueSection({ approvals }: ApprovalsQueueSectionProps)
   const totalWaiting = activeQueues.reduce((acc, q) => acc + (approvals[q.key] ?? 0), 0)
 
   return (
-    <section className="ui-card flex flex-col overflow-hidden">
+    <section id="tour-approvals-queue" className="ui-card flex flex-col overflow-hidden">
       <header className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-[color-mix(in_srgb,var(--color-navy)_12%,transparent)] text-[var(--color-navy)]">

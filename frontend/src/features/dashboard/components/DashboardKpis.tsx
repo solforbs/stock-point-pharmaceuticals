@@ -44,7 +44,7 @@ export function DashboardKpis({
         label="Sales Today"
         value={formatKes(salesTotal)}
         hint={`${salesCount} posted sale${salesCount === 1 ? '' : 's'}${voidedCount > 0 ? ` · ${voidedCount} voided` : ''}`}
-        trend={{ value: '+18.4% vs yday', isPositive: true }}
+        trend={voidedCount > 0 ? { value: `${voidedCount} voided`, isPositive: false } : undefined}
         to="/sell/invoices"
         tone="#2563eb"
         isLoading={salesLoading}
@@ -56,7 +56,7 @@ export function DashboardKpis({
           label="Receivables Outstanding"
           value={formatKes(arTotal)}
           hint={`90d+ balance: ${formatKes(arD90Plus)}`}
-          trend={{ value: `${arCustomersCount} accounts`, isPositive: true }}
+          trend={arCustomersCount > 0 ? { value: `${arCustomersCount} accounts`, isPositive: true } : undefined}
           to="/finance/receivables"
           tone="#059669"
           isLoading={arLoading}
@@ -68,7 +68,7 @@ export function DashboardKpis({
         label="Batches Expiring ≤ 90d"
         value={`${expiringCount} Batches`}
         hint={`${formatQty(expiringQty)} base units at risk`}
-        trend={{ value: 'Action required', isPositive: false }}
+        trend={expiringCount > 0 ? { value: 'Near Expiry', isPositive: false } : undefined}
         to="/inventory/batches?status=NEAR_EXPIRY"
         tone="#ef4444"
         isLoading={expiringLoading}
@@ -79,7 +79,6 @@ export function DashboardKpis({
         label="Stock Pending QC"
         value={`${formatQty(pendingQcQty)} Units`}
         hint={`${lowStockCount} line${lowStockCount === 1 ? '' : 's'} below reorder threshold`}
-        trend={{ value: 'Inspection', isPositive: true }}
         to="/inventory/stock-on-hand"
         tone="#8b5cf6"
         isLoading={stockLoading}

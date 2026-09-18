@@ -288,7 +288,7 @@ function TierForm({ lists, onDone, onCancel }: { lists: PriceList[]; onDone: () 
   const err = save.isError ? getApiError(save.error) : null
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
         <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="Default price list" className="col-span-2" error={err?.errors.default_price_list_id?.[0]}>
@@ -336,7 +336,7 @@ function PriceListForm({ tiers, onDone, onCancel }: { tiers: CustomerTier[]; onD
   const err = save.isError ? getApiError(save.error) : null
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
         <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="Sale mode" hint="Blank applies to every mode."><Select value={form.sale_mode} onChange={(e) => set({ sale_mode: e.target.value })}><option value="">Any</option>{['RETAIL', 'WHOLESALE', 'DISPENSING'].map((m) => (<option key={m} value={m}>{titleCase(m)}</option>))}</Select></Field>

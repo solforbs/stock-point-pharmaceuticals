@@ -126,7 +126,7 @@ function PolicyForm({ policy, onDone }: { policy: DiscountPolicy | null; onDone:
         <ProductField productId={form.product_id} fallbackName={policy?.product?.name} disabled={!!policy} onChange={(p) => set({ product_id: p?.id ?? '' })} />
       </Field>
       <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={form.discount_allowed} onChange={(e) => set({ discount_allowed: e.target.checked })} /> Manual discounts allowed on this product</label>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Max discount %" required error={err?.errors.max_discount_pct?.[0]} hint="Ceiling for any cashier or rep."><Input inputMode="decimal" className="tabular" value={form.max_discount_pct} onChange={(e) => set({ max_discount_pct: decimalInput(e.target.value) })} disabled={!form.discount_allowed} /></Field>
         <Field label="Max discount (KES / unit)" error={err?.errors.max_discount_amount?.[0]} hint="Optional absolute cap."><Input inputMode="decimal" className="tabular" value={form.max_discount_amount} onChange={(e) => set({ max_discount_amount: decimalInput(e.target.value) })} disabled={!form.discount_allowed} /></Field>
         <Field label="Needs approval above %" error={err?.errors.discount_approval_pct?.[0]} hint="Empty = the default setting."><Input inputMode="decimal" className="tabular" value={form.discount_approval_pct} onChange={(e) => set({ discount_approval_pct: decimalInput(e.target.value) })} /></Field>

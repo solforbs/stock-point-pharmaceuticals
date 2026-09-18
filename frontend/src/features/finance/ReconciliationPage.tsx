@@ -233,7 +233,7 @@ function ReconcileModal({ open, payments, total, onClose, onDone }: { open: bool
       }
     >
       <p className="text-[var(--text-secondary)] mb-3">{payments.length} receipt{payments.length === 1 ? '' : 's'} totalling <MoneyCell value={total} symbol className="font-bold" /> will be marked as appearing on this statement.</p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Statement reference" required error={err?.errors.reconciliation_ref?.[0]}><Input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. KCB-SEP-2026 p.3" autoFocus /></Field>
         <Field label="Statement date" required error={err?.errors.statement_date?.[0]}><Input type="date" value={statementDate} max={todayIso()} onChange={(e) => setStatementDate(e.target.value)} /></Field>
       </div>

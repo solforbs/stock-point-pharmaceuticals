@@ -1,171 +1,195 @@
+import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
+import { PageLoadingSkeleton } from './components/ui/PageLoadingSkeleton'
 import { Toaster } from './components/ui/Toaster'
-import AuditLogPage from './features/admin/AuditLogPage'
-import BranchesPage from './features/admin/BranchesPage'
-import NumberSequencesPage from './features/admin/NumberSequencesPage'
-import PermissionsPage from './features/admin/PermissionsPage'
-import SecurityPage from './features/admin/SecurityPage'
-import SettingsPage from './features/admin/SettingsPage'
-import UsersRolesPage from './features/admin/UsersRolesPage'
-import CreditControlPage from './features/customers/CreditControlPage'
-import CustomersPage from './features/customers/CustomersPage'
-import TiersPage from './features/customers/TiersPage'
-import ChartOfAccountsPage from './features/finance/ChartOfAccountsPage'
-import JournalsPage from './features/finance/JournalsPage'
-import PayablesPage from './features/finance/PayablesPage'
-import PeriodsPage from './features/finance/PeriodsPage'
-import ReceivablesPage from './features/finance/ReceivablesPage'
-import StatementsPage from './features/finance/StatementsPage'
-import TaxCentrePage from './features/finance/TaxCentrePage'
-import AdjustmentsPage from './features/inventory/AdjustmentsPage'
-import BatchesPage from './features/inventory/BatchesPage'
-import CountsPage from './features/inventory/CountsPage'
-import ProductsPage from './features/inventory/ProductsPage'
-import StockLedgerPage from './features/inventory/StockLedgerPage'
-import StockOnHandPage from './features/inventory/StockOnHandPage'
-import TransfersPage from './features/inventory/TransfersPage'
-import ValuationPage from './features/inventory/ValuationPage'
-import OpeningStockPage from './features/inventory/OpeningStockPage'
-import EmployeesPage from './features/people/EmployeesPage'
-import PayrollPage from './features/people/PayrollPage'
-import PosPage from './features/pos/PosPage'
-import GoodsReceiptsPage from './features/procurement/GoodsReceiptsPage'
-import PurchaseOrdersPage from './features/procurement/PurchaseOrdersPage'
-import RequisitionsPage from './features/procurement/RequisitionsPage'
-import SupplierInvoicesPage from './features/procurement/SupplierInvoicesPage'
-import SuppliersPage from './features/procurement/SuppliersPage'
-import QuarantinePage from './features/quality/QuarantinePage'
-import RecallsPage from './features/quality/RecallsPage'
-import WastePage from './features/quality/WastePage'
-import ReportsPage from './features/reports/ReportsPage'
-import InvoicesPage from './features/sales/InvoicesPage'
-import QuotationsPage from './features/sales/QuotationsPage'
-import ReturnsPage from './features/sales/ReturnsPage'
-import SalesOrdersPage from './features/sales/SalesOrdersPage'
-import DeliveriesPage from './features/warehouse/DeliveriesPage'
-import DispatchPage from './features/warehouse/DispatchPage'
-import PickListsPage from './features/warehouse/PickListsPage'
-import LocationsPage from './features/warehouse/LocationsPage'
-import PackingPage from './features/warehouse/PackingPage'
-import ContactsPage from './features/customers/ContactsPage'
-import ReconciliationPage from './features/finance/ReconciliationPage'
-import CustomerStatementsPage from './features/sales/CustomerStatementsPage'
-import SystemHealthPage from './features/admin/SystemHealthPage'
-import BackupPage from './features/admin/BackupPage'
-import SyncCentrePage from './features/admin/SyncCentrePage'
-import ColdChainPage from './features/quality/ColdChainPage'
-import LicencesPage from './features/quality/LicencesPage'
-import PharmacovigilancePage from './features/quality/PharmacovigilancePage'
-import SopsPage from './features/quality/SopsPage'
-import LeavePage from './features/people/LeavePage'
-import AnalyticsPage from './features/reports/AnalyticsPage'
-import ScheduledReportsPage from './features/reports/ScheduledReportsPage'
-import PricingRulesPage from './features/admin/pricing/PricingRulesPage'
-import Dashboard from './pages/Dashboard'
-import Login from './pages/Login'
-import Placeholder from './pages/Placeholder'
+
+// Lazy-loaded route components for high-performance code splitting
+const Login = lazy(() => import('./pages/Login'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Placeholder = lazy(() => import('./pages/Placeholder'))
+
+// Commerce & POS
+const PosPage = lazy(() => import('./features/pos/PosPage'))
+const QuotationsPage = lazy(() => import('./features/sales/QuotationsPage'))
+const SalesOrdersPage = lazy(() => import('./features/sales/SalesOrdersPage'))
+const InvoicesPage = lazy(() => import('./features/sales/InvoicesPage'))
+const ReturnsPage = lazy(() => import('./features/sales/ReturnsPage'))
+const CustomerStatementsPage = lazy(() => import('./features/sales/CustomerStatementsPage'))
+
+// Inventory
+const ProductsPage = lazy(() => import('./features/inventory/ProductsPage'))
+const StockOnHandPage = lazy(() => import('./features/inventory/StockOnHandPage'))
+const StockLedgerPage = lazy(() => import('./features/inventory/StockLedgerPage'))
+const BatchesPage = lazy(() => import('./features/inventory/BatchesPage'))
+const TransfersPage = lazy(() => import('./features/inventory/TransfersPage'))
+const CountsPage = lazy(() => import('./features/inventory/CountsPage'))
+const AdjustmentsPage = lazy(() => import('./features/inventory/AdjustmentsPage'))
+const ValuationPage = lazy(() => import('./features/inventory/ValuationPage'))
+const OpeningStockPage = lazy(() => import('./features/inventory/OpeningStockPage'))
+
+// Procurement
+const RequisitionsPage = lazy(() => import('./features/procurement/RequisitionsPage'))
+const PurchaseOrdersPage = lazy(() => import('./features/procurement/PurchaseOrdersPage'))
+const GoodsReceiptsPage = lazy(() => import('./features/procurement/GoodsReceiptsPage'))
+const SupplierInvoicesPage = lazy(() => import('./features/procurement/SupplierInvoicesPage'))
+const SuppliersPage = lazy(() => import('./features/procurement/SuppliersPage'))
+
+// Warehouse
+const PickListsPage = lazy(() => import('./features/warehouse/PickListsPage'))
+const DispatchPage = lazy(() => import('./features/warehouse/DispatchPage'))
+const DeliveriesPage = lazy(() => import('./features/warehouse/DeliveriesPage'))
+const LocationsPage = lazy(() => import('./features/warehouse/LocationsPage'))
+const PackingPage = lazy(() => import('./features/warehouse/PackingPage'))
+
+// Customers
+const CustomersPage = lazy(() => import('./features/customers/CustomersPage'))
+const TiersPage = lazy(() => import('./features/customers/TiersPage'))
+const CreditControlPage = lazy(() => import('./features/customers/CreditControlPage'))
+const ContactsPage = lazy(() => import('./features/customers/ContactsPage'))
+
+// Finance
+const ReceivablesPage = lazy(() => import('./features/finance/ReceivablesPage'))
+const PayablesPage = lazy(() => import('./features/finance/PayablesPage'))
+const JournalsPage = lazy(() => import('./features/finance/JournalsPage'))
+const ChartOfAccountsPage = lazy(() => import('./features/finance/ChartOfAccountsPage'))
+const StatementsPage = lazy(() => import('./features/finance/StatementsPage'))
+const TaxCentrePage = lazy(() => import('./features/finance/TaxCentrePage'))
+const PeriodsPage = lazy(() => import('./features/finance/PeriodsPage'))
+const ReconciliationPage = lazy(() => import('./features/finance/ReconciliationPage'))
+
+// Quality
+const QuarantinePage = lazy(() => import('./features/quality/QuarantinePage'))
+const WastePage = lazy(() => import('./features/quality/WastePage'))
+const RecallsPage = lazy(() => import('./features/quality/RecallsPage'))
+const ColdChainPage = lazy(() => import('./features/quality/ColdChainPage'))
+const PharmacovigilancePage = lazy(() => import('./features/quality/PharmacovigilancePage'))
+const LicencesPage = lazy(() => import('./features/quality/LicencesPage'))
+const SopsPage = lazy(() => import('./features/quality/SopsPage'))
+
+// People & Reports
+const EmployeesPage = lazy(() => import('./features/people/EmployeesPage'))
+const PayrollPage = lazy(() => import('./features/people/PayrollPage'))
+const LeavePage = lazy(() => import('./features/people/LeavePage'))
+const ReportsPage = lazy(() => import('./features/reports/ReportsPage'))
+const AnalyticsPage = lazy(() => import('./features/reports/AnalyticsPage'))
+const ScheduledReportsPage = lazy(() => import('./features/reports/ScheduledReportsPage'))
+
+// Admin
+const UsersRolesPage = lazy(() => import('./features/admin/UsersRolesPage'))
+const PermissionsPage = lazy(() => import('./features/admin/PermissionsPage'))
+const BranchesPage = lazy(() => import('./features/admin/BranchesPage'))
+const SettingsPage = lazy(() => import('./features/admin/SettingsPage'))
+const SecurityPage = lazy(() => import('./features/admin/SecurityPage'))
+const NumberSequencesPage = lazy(() => import('./features/admin/NumberSequencesPage'))
+const AuditLogPage = lazy(() => import('./features/admin/AuditLogPage'))
+const SystemHealthPage = lazy(() => import('./features/admin/SystemHealthPage'))
+const BackupPage = lazy(() => import('./features/admin/BackupPage'))
+const SyncCentrePage = lazy(() => import('./features/admin/SyncCentrePage'))
+const PricingRulesPage = lazy(() => import('./features/admin/pricing/PricingRulesPage'))
 import { NAV_ITEMS } from './lib/navigation'
 
 function App() {
   return (
     <>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/login" element={<Login />} />
+      <Suspense fallback={<PageLoadingSkeleton />}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/login" element={<Login />} />
 
-        <Route
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
 
-          <Route path="/sell/pos" element={<PosPage />} />
-          <Route path="/sell/quotations" element={<QuotationsPage />} />
-          <Route path="/sell/sales-orders" element={<SalesOrdersPage />} />
-          <Route path="/sell/invoices" element={<InvoicesPage />} />
-          <Route path="/sell/returns" element={<ReturnsPage />} />
+            <Route path="/sell/pos" element={<PosPage />} />
+            <Route path="/sell/quotations" element={<QuotationsPage />} />
+            <Route path="/sell/sales-orders" element={<SalesOrdersPage />} />
+            <Route path="/sell/invoices" element={<InvoicesPage />} />
+            <Route path="/sell/returns" element={<ReturnsPage />} />
 
-          <Route path="/inventory/products" element={<ProductsPage />} />
-          <Route path="/inventory/stock-on-hand" element={<StockOnHandPage />} />
-          <Route path="/inventory/stock-ledger" element={<StockLedgerPage />} />
-          <Route path="/inventory/batches" element={<BatchesPage />} />
-          <Route path="/inventory/transfers" element={<TransfersPage />} />
-          <Route path="/inventory/counts" element={<CountsPage />} />
-          <Route path="/inventory/adjustments" element={<AdjustmentsPage />} />
-          <Route path="/inventory/valuation" element={<ValuationPage />} />
-          <Route path="/inventory/opening-stock" element={<OpeningStockPage />} />
+            <Route path="/inventory/products" element={<ProductsPage />} />
+            <Route path="/inventory/stock-on-hand" element={<StockOnHandPage />} />
+            <Route path="/inventory/stock-ledger" element={<StockLedgerPage />} />
+            <Route path="/inventory/batches" element={<BatchesPage />} />
+            <Route path="/inventory/transfers" element={<TransfersPage />} />
+            <Route path="/inventory/counts" element={<CountsPage />} />
+            <Route path="/inventory/adjustments" element={<AdjustmentsPage />} />
+            <Route path="/inventory/valuation" element={<ValuationPage />} />
+            <Route path="/inventory/opening-stock" element={<OpeningStockPage />} />
 
-          <Route path="/buy/requisitions" element={<RequisitionsPage />} />
-          <Route path="/buy/purchase-orders" element={<PurchaseOrdersPage />} />
-          <Route path="/buy/goods-receipts" element={<GoodsReceiptsPage />} />
-          <Route path="/buy/supplier-invoices" element={<SupplierInvoicesPage />} />
-          <Route path="/buy/three-way-match" element={<Navigate to="/buy/supplier-invoices" replace />} />
-          <Route path="/buy/suppliers" element={<SuppliersPage />} />
+            <Route path="/buy/requisitions" element={<RequisitionsPage />} />
+            <Route path="/buy/purchase-orders" element={<PurchaseOrdersPage />} />
+            <Route path="/buy/goods-receipts" element={<GoodsReceiptsPage />} />
+            <Route path="/buy/supplier-invoices" element={<SupplierInvoicesPage />} />
+            <Route path="/buy/three-way-match" element={<Navigate to="/buy/supplier-invoices" replace />} />
+            <Route path="/buy/suppliers" element={<SuppliersPage />} />
 
-          <Route path="/warehouse/pick-lists" element={<PickListsPage />} />
-          <Route path="/warehouse/dispatch" element={<DispatchPage />} />
-          <Route path="/warehouse/deliveries" element={<DeliveriesPage />} />
+            <Route path="/warehouse/pick-lists" element={<PickListsPage />} />
+            <Route path="/warehouse/dispatch" element={<DispatchPage />} />
+            <Route path="/warehouse/deliveries" element={<DeliveriesPage />} />
 
-          <Route path="/customers/list" element={<CustomersPage />} />
-          <Route path="/customers/tiers" element={<TiersPage />} />
-          <Route path="/customers/credit-control" element={<CreditControlPage />} />
+            <Route path="/customers/list" element={<CustomersPage />} />
+            <Route path="/customers/tiers" element={<TiersPage />} />
+            <Route path="/customers/credit-control" element={<CreditControlPage />} />
 
-          <Route path="/finance/receivables" element={<ReceivablesPage />} />
-          <Route path="/finance/payables" element={<PayablesPage />} />
-          <Route path="/finance/journals" element={<JournalsPage />} />
-          <Route path="/finance/chart-of-accounts" element={<ChartOfAccountsPage />} />
-          <Route path="/finance/statements" element={<StatementsPage />} />
-          <Route path="/finance/tax-centre" element={<TaxCentrePage />} />
-          <Route path="/finance/periods" element={<PeriodsPage />} />
+            <Route path="/finance/receivables" element={<ReceivablesPage />} />
+            <Route path="/finance/payables" element={<PayablesPage />} />
+            <Route path="/finance/journals" element={<JournalsPage />} />
+            <Route path="/finance/chart-of-accounts" element={<ChartOfAccountsPage />} />
+            <Route path="/finance/statements" element={<StatementsPage />} />
+            <Route path="/finance/tax-centre" element={<TaxCentrePage />} />
+            <Route path="/finance/periods" element={<PeriodsPage />} />
 
-          <Route path="/quality/quarantine" element={<QuarantinePage />} />
-          <Route path="/quality/waste" element={<WastePage />} />
-          <Route path="/quality/recalls" element={<RecallsPage />} />
+            <Route path="/quality/quarantine" element={<QuarantinePage />} />
+            <Route path="/quality/waste" element={<WastePage />} />
+            <Route path="/quality/recalls" element={<RecallsPage />} />
 
-          <Route path="/reports/catalogue" element={<ReportsPage />} />
+            <Route path="/reports/catalogue" element={<ReportsPage />} />
 
-          <Route path="/people/employees" element={<EmployeesPage />} />
-          <Route path="/people/payroll" element={<PayrollPage />} />
+            <Route path="/people/employees" element={<EmployeesPage />} />
+            <Route path="/people/payroll" element={<PayrollPage />} />
 
-          <Route path="/admin/users-roles" element={<UsersRolesPage />} />
-          <Route path="/admin/permissions" element={<PermissionsPage />} />
-          <Route path="/admin/branches" element={<BranchesPage />} />
-          <Route path="/admin/settings" element={<SettingsPage />} />
-          <Route path="/admin/security" element={<SecurityPage />} />
-          <Route path="/admin/number-sequences" element={<NumberSequencesPage />} />
-          <Route path="/admin/audit-log" element={<AuditLogPage />} />
+            <Route path="/admin/users-roles" element={<UsersRolesPage />} />
+            <Route path="/admin/permissions" element={<PermissionsPage />} />
+            <Route path="/admin/branches" element={<BranchesPage />} />
+            <Route path="/admin/settings" element={<SettingsPage />} />
+            <Route path="/admin/security" element={<SecurityPage />} />
+            <Route path="/admin/number-sequences" element={<NumberSequencesPage />} />
+            <Route path="/admin/audit-log" element={<AuditLogPage />} />
 
-          <Route path="/warehouse/locations" element={<LocationsPage />} />
-          <Route path="/warehouse/packing" element={<PackingPage />} />
-          <Route path="/customers/contacts" element={<ContactsPage />} />
-          <Route path="/finance/reconciliation" element={<ReconciliationPage />} />
-          <Route path="/sell/statements" element={<CustomerStatementsPage />} />
-          <Route path="/admin/system-health" element={<SystemHealthPage />} />
-          <Route path="/admin/backup" element={<BackupPage />} />
-          <Route path="/admin/sync-centre" element={<SyncCentrePage />} />
-          <Route path="/quality/cold-chain" element={<ColdChainPage />} />
-          <Route path="/quality/pharmacovigilance" element={<PharmacovigilancePage />} />
-          <Route path="/quality/licences" element={<LicencesPage />} />
-          <Route path="/quality/sops" element={<SopsPage />} />
-          <Route path="/people/leave" element={<LeavePage />} />
-          <Route path="/reports/analytics" element={<AnalyticsPage />} />
-          <Route path="/reports/scheduled" element={<ScheduledReportsPage />} />
-          <Route path="/admin/pricing-rules" element={<PricingRulesPage />} />
+            <Route path="/warehouse/locations" element={<LocationsPage />} />
+            <Route path="/warehouse/packing" element={<PackingPage />} />
+            <Route path="/customers/contacts" element={<ContactsPage />} />
+            <Route path="/finance/reconciliation" element={<ReconciliationPage />} />
+            <Route path="/sell/statements" element={<CustomerStatementsPage />} />
+            <Route path="/admin/system-health" element={<SystemHealthPage />} />
+            <Route path="/admin/backup" element={<BackupPage />} />
+            <Route path="/admin/sync-centre" element={<SyncCentrePage />} />
+            <Route path="/quality/cold-chain" element={<ColdChainPage />} />
+            <Route path="/quality/pharmacovigilance" element={<PharmacovigilancePage />} />
+            <Route path="/quality/licences" element={<LicencesPage />} />
+            <Route path="/quality/sops" element={<SopsPage />} />
+            <Route path="/people/leave" element={<LeavePage />} />
+            <Route path="/reports/analytics" element={<AnalyticsPage />} />
+            <Route path="/reports/scheduled" element={<ScheduledReportsPage />} />
+            <Route path="/admin/pricing-rules" element={<PricingRulesPage />} />
 
-          {/* A module header (/sell, /inventory …) opens its first section. */}
-          {NAV_ITEMS.filter((m) => m.children?.length).map((m) => (
-            <Route key={m.key} path={m.path} element={<Navigate to={m.children![0].path} replace />} />
-          ))}
+            {/* A module header (/sell, /inventory …) opens its first section. */}
+            {NAV_ITEMS.filter((m) => m.children?.length).map((m) => (
+              <Route key={m.key} path={m.path} element={<Navigate to={m.children![0].path} replace />} />
+            ))}
 
-          <Route path="/:moduleKey" element={<Placeholder />} />
-          <Route path="/:moduleKey/:sectionKey" element={<Placeholder />} />
-        </Route>
-      </Routes>
+            <Route path="/:moduleKey" element={<Placeholder />} />
+            <Route path="/:moduleKey/:sectionKey" element={<Placeholder />} />
+          </Route>
+        </Routes>
+      </Suspense>
       <Toaster />
     </>
   )

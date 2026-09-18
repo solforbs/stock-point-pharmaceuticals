@@ -127,7 +127,7 @@ export default function CustomerStatementsPage() {
             </div>
           </header>
 
-          <section className="grid grid-cols-2 gap-4 text-[12px]">
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[12px]">
             <div>
               <div className="text-[10.5px] uppercase tracking-wide text-[var(--text-muted)] font-semibold">Customer</div>
               <div className="font-bold text-[13px]">{s.customer.name}</div>

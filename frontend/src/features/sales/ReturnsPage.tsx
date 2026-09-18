@@ -340,7 +340,7 @@ function SupplierReturns() {
 
       <Drawer open={creating} onClose={() => setCreating(false)} title="New supplier return" width={820}>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Supplier" required>
               <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}><option value="">Choose…</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select>
             </Field>

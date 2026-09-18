@@ -82,7 +82,7 @@ function AuthorityForm({ row, onDone }: { row: AuthorityRow; onDone: () => void 
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Max line discount %" required error={err?.errors.max_line_discount_pct?.[0]}><Input inputMode="decimal" className="tabular" value={form.max_line_discount_pct} onChange={(e) => setForm({ ...form, max_line_discount_pct: decimalInput(e.target.value) })} /></Field>
         <Field label="Max whole-sale discount %" required error={err?.errors.max_header_discount_pct?.[0]}><Input inputMode="decimal" className="tabular" value={form.max_header_discount_pct} onChange={(e) => setForm({ ...form, max_header_discount_pct: decimalInput(e.target.value) })} /></Field>
       </div>

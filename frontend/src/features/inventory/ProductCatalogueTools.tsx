@@ -119,7 +119,7 @@ function CategoriesDrawer({ open, onClose, canEdit }: { open: boolean; onClose: 
         {editing !== null && (
           <Card title={editing === 'new' ? 'New category' : `Edit ${editing.code}`}>
             <div className="p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} onChange={(e) => set({ code: e.target.value.toUpperCase() })} placeholder="ANALG" /></Field>
                 <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="Analgesics" /></Field>
                 <Field label="Parent category" error={err?.code === 'CATEGORY_CYCLE' ? err.message : err?.errors.parent_id?.[0]}>

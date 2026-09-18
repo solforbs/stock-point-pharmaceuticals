@@ -166,7 +166,7 @@ function DisposalDrawer({ id, onClose }: { id: string | null; onClose: () => voi
           </table>
           {draft ? (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Disposal method"><Input value={form.disposal_method} onChange={(e) => set({ disposal_method: e.target.value })} /></Field>
                 <Field label="Contractor"><Input value={form.disposal_contractor} onChange={(e) => set({ disposal_contractor: e.target.value })} /></Field>
                 <Field label="Certificate reference"><Input value={form.certificate_reference} onChange={(e) => set({ certificate_reference: e.target.value })} /></Field>

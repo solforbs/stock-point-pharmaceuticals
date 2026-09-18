@@ -340,7 +340,7 @@ function AdrForm({ report, onDone, onCancel }: { report?: AdrReport; onDone: (r:
           <ProductSearch autoFocus onSelect={(p) => set({ product: { id: p.id, code: p.code, name: p.name }, batch_id: '' })} />
         )}
       </Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Batch" hint={!canViewStock ? 'Batch list needs stock view permission.' : 'Links the report to a batch so repeat reports are detected.'} error={err?.errors.batch_id?.[0]}>
           <Select value={form.batch_id} disabled={!form.product || !canViewStock} onChange={(e) => set({ batch_id: e.target.value })}>
             <option value="">{batches.isLoading ? 'Loading…' : 'Unknown / not recorded'}</option>
@@ -351,7 +351,7 @@ function AdrForm({ report, onDone, onCancel }: { report?: AdrReport; onDone: (r:
           <CustomerPicker value={form.customer} onChange={(c) => set({ customer: c })} />
         </Field>
         <Field label="Patient initials" required hint="Anonymised — never the full name." error={err?.errors.patient_initials?.[0]}><Input maxLength={10} value={form.patient_initials} onChange={(e) => set({ patient_initials: e.target.value.toUpperCase() })} /></Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Age" error={err?.errors.patient_age?.[0]}><Input inputMode="numeric" className="tabular" value={form.patient_age} onChange={(e) => set({ patient_age: e.target.value.replace(/\D/g, '').slice(0, 3) })} /></Field>
           <Field label="Sex">
             <Select value={form.patient_sex} onChange={(e) => set({ patient_sex: e.target.value })}>

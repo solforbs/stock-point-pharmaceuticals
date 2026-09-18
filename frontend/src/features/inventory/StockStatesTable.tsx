@@ -27,16 +27,25 @@ export function StockStatesTable({
             key: 'product',
             header: 'Product',
             render: (r: StockStateRow) => (
-              <div>
-                <div className="font-bold text-[var(--text)]">{r.product_name}</div>
-                <div className="text-[10.5px] text-[var(--text-muted)]">{r.product_code}</div>
+              <div className="py-0.5">
+                <div className="font-extrabold text-slate-900 text-[13.5px] tracking-tight">{r.product_name}</div>
+                <div className="text-[11px] font-semibold text-slate-400 tabular mt-0.5">{r.product_code}</div>
               </div>
             ),
             sortValue: (r: StockStateRow) => r.product_name,
           } satisfies Column<StockStateRow>,
         ]
       : []),
-    { key: 'store', header: 'Store', render: (r) => r.store_code, sortValue: (r) => r.store_code },
+    {
+      key: 'store',
+      header: 'Store',
+      render: (r) => (
+        <span className="inline-flex px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 font-bold text-[11px] tracking-wide">
+          {r.store_code}
+        </span>
+      ),
+      sortValue: (r) => r.store_code,
+    },
     { key: 'on_hand', header: 'On hand', align: 'right', render: (r) => <QtyCell value={r.on_hand} />, sortValue: (r) => Number(r.on_hand) },
     { key: 'reserved', header: 'Reserved', align: 'right', render: (r) => <QtyCell value={r.reserved} />, sortValue: (r) => Number(r.reserved) },
     {

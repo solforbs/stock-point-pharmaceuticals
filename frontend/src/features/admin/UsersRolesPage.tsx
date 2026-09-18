@@ -256,7 +256,7 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="Username" required error={err?.errors.username?.[0]}><Input value={form.username} disabled={!!user} onChange={(e) => set({ username: e.target.value })} /></Field>
         <Field label="Email" required error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>

@@ -294,7 +294,7 @@ function RequestForm({ employees, types, onDone }: { employees: LeaveEmployee[];
           {types.map((t) => <option key={t.id} value={t.id}>{t.name}{t.is_paid ? ` · ${days(t.days_per_year)} days/yr` : ' · unpaid'}</option>)}
         </Select>
       </Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="First day" required error={err?.errors.start_date?.[0]}><Input type="date" value={form.start_date} onChange={(e) => set({ start_date: e.target.value, end_date: form.end_date < e.target.value ? e.target.value : form.end_date })} /></Field>
         <Field label="Last day" required error={err?.errors.end_date?.[0]}><Input type="date" value={form.end_date} min={form.start_date} onChange={(e) => set({ end_date: e.target.value })} /></Field>
       </div>

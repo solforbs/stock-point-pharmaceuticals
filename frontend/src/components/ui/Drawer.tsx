@@ -13,6 +13,7 @@ export function Drawer({
   children,
   width = 560,
   actions,
+  footer,
 }: {
   open: boolean
   onClose: () => void
@@ -21,6 +22,7 @@ export function Drawer({
   children: ReactNode
   width?: number
   actions?: ReactNode
+  footer?: ReactNode
 }) {
   useEffect(() => {
     if (!open) return
@@ -34,25 +36,41 @@ export function Drawer({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} aria-hidden />
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        onClick={onClose}
+        aria-hidden
+      />
       <aside
         role="dialog"
         aria-modal="true"
-        className="relative h-full bg-[var(--card)] border-l border-[var(--border)] shadow-2xl flex flex-col max-w-[96vw]"
-        style={{ width }}
+        className="relative h-full w-full bg-slate-50 border-l border-slate-200 shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-250"
+        style={{ maxWidth: `min(100vw, ${width}px)` }}
       >
-        <header className="flex items-start gap-3 px-5 py-3.5 border-b border-[var(--border)] shrink-0">
+        <header className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-slate-200/90 bg-white shrink-0">
           <div className="flex-1 min-w-0">
-            <h2 className="text-[15px] font-bold text-[var(--text)] truncate">{title}</h2>
-            {subtitle && <div className="text-[11.5px] text-[var(--text-muted)] mt-0.5">{subtitle}</div>}
+            <h2 className="text-[17px] font-black text-slate-900 tracking-tight truncate">{title}</h2>
+            {subtitle && <div className="text-[12.5px] text-slate-500 font-medium mt-0.5">{subtitle}</div>}
           </div>
-          {actions}
-          <button type="button" onClick={onClose} aria-label="Close" className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text)]">
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            {actions}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </header>
-        <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</div>
+        {footer && (
+          <footer className="shrink-0 px-4 sm:px-6 py-3.5 border-t border-slate-200 bg-white/95 backdrop-blur-xs flex items-center justify-between gap-3">
+            {footer}
+          </footer>
+        )}
       </aside>
     </div>
   )

@@ -54,7 +54,7 @@ export default function StockOnHandPage() {
           />
         </Field>
       </FilterBar>
-      <div className="ui-card">
+      <div className="ui-card overflow-hidden">
         <StockStatesTable
           rows={stock.data?.data}
           showCost={showCost}

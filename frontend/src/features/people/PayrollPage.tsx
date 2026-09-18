@@ -205,7 +205,7 @@ function PayslipModal({ runId, employeeId, onClose }: { runId: string | null; em
             <StatusBadge status={p.run.status} />
           </div>
           <DescriptionList items={[{ label: 'Employee', value: `${p.employee?.employee_no ?? ''} · ${p.employee?.name ?? ''}` }, { label: 'Position', value: `${p.employee?.job_title ?? '—'}${p.employee?.department ? ` · ${p.employee.department}` : ''}` }, { label: 'KRA PIN', value: p.employee?.kra_pin ?? '—' }, { label: 'NSSF / SHIF', value: `${p.employee?.nssf_no ?? '—'} / ${p.employee?.shif_no ?? '—'}` }, { label: 'Bank', value: p.employee?.bank_name ?? '—' }, { label: 'Bands as of', value: formatDate(p.run.bands_as_of) }]} />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <table className="ui-table"><thead><tr><th colSpan={2}>Earnings</th></tr></thead><tbody>
               <tr><td>Basic</td><td className="text-right"><MoneyCell value={line.basic} /></td></tr>
               <tr><td>Allowances</td><td className="text-right"><MoneyCell value={line.allowances} /></td></tr>

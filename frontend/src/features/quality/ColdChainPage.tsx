@@ -217,7 +217,7 @@ function RecordReadingCard({ stores, defaultStoreId }: { stores: StoreSummary[];
             {stores.map((s) => (<option key={s.store.id} value={s.store.id}>{s.store.code} — {s.store.name}</option>))}
           </Select>
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Temperature °C" required error={err?.errors.temperature_c?.[0]} hint={range ? `Window ${range.min} – ${range.max}` : undefined}>
             <Input inputMode="decimal" className={`tabular ${willBeOut ? 'border-[var(--status-red)]' : ''}`} value={form.temperature_c} onChange={(e) => set({ temperature_c: e.target.value.replace(/[^0-9.-]/g, '') })} />
           </Field>
@@ -226,7 +226,7 @@ function RecordReadingCard({ stores, defaultStoreId }: { stores: StoreSummary[];
           </Field>
         </div>
         {willBeOut && <div className="text-[11.5px] font-semibold text-[var(--status-red)]">This reading is outside the window and will open an excursion.</div>}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Source">
             <Select value={form.source} onChange={(e) => set({ source: e.target.value })}>
               <option value="MANUAL">Manual</option>

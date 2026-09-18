@@ -21,8 +21,8 @@ export function SidebarBranchSelector({ user }: SidebarBranchSelectorProps) {
 
   if (branches.length > 1) {
     return (
-      <div className="space-y-1">
-        <label className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block px-1">
+      <div id="tour-branch-selector" className="space-y-1.5">
+        <label className="text-[11.5px] uppercase tracking-wider text-slate-500 font-bold block px-1">
           Branch Location
         </label>
         <div className="relative">
@@ -33,7 +33,7 @@ export function SidebarBranchSelector({ user }: SidebarBranchSelectorProps) {
           <select
             value={activeBranch?.id ?? ''}
             onChange={(e) => switchBranch(e.target.value)}
-            className="w-full h-9 pl-8 pr-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-[12px] font-semibold border border-slate-200 focus:border-blue-500 transition-colors outline-none cursor-pointer"
+            className="w-full h-9 pl-8 pr-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-900 text-[13px] font-bold border border-slate-200 focus:border-blue-500 transition-colors outline-none cursor-pointer"
             aria-label="Active branch"
           >
             {branches.map((b) => (
