@@ -39,14 +39,27 @@ class DatabaseSeeder extends Seeder
             TaxCodeSeeder::class,
             SupplierSeeder::class,
             UnitOfMeasureSeeder::class,
+            DosageFormSeeder::class,
+            StorageConditionSeeder::class,
             MrlPricelistSeeder::class,
             MrlPricelistRemainderSeeder::class,
             ProductTaxDefaultSeeder::class,
-            KenyanPharmaMasterSeeder::class,
-            KenyanPharmaStockSeeder::class,
-            KenyanPharmaSalesSeeder::class,
-            KenyanPharmaFinanceSeeder::class,
-            KenyanPharmaApprovalsSeeder::class,
         ]);
+
+        // Demo customers, stock, sales, receipts and approvals for training and
+        // local work. They post real ledger and journal rows, so production —
+        // where the books must contain only what the business actually did —
+        // never runs them; load them there deliberately with
+        // `php artisan db:seed --class=KenyanPharmaMasterSeeder` if a demo
+        // environment is wanted.
+        if (! app()->isProduction()) {
+            $this->call([
+                KenyanPharmaMasterSeeder::class,
+                KenyanPharmaStockSeeder::class,
+                KenyanPharmaSalesSeeder::class,
+                KenyanPharmaFinanceSeeder::class,
+                KenyanPharmaApprovalsSeeder::class,
+            ]);
+        }
     }
 }

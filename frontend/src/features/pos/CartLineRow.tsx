@@ -3,9 +3,9 @@ import { useState } from 'react'
 import { PriceBreakdownPopover } from '../../components/PriceBreakdownPopover'
 import { MoneyCell } from '../../components/ui/MoneyCell'
 import { QuantityInput } from '../../components/ui/QuantityInput'
-import { dIsPos } from '../../lib/decimal'
+import { dCmp, dIsPos } from '../../lib/decimal'
 import { formatDate } from '../../lib/format'
-import { useProductStock } from '../../lib/hooks'
+import { useProductStock, useStores } from '../../lib/hooks'
 import { formatMoney, formatPct, formatQty } from '../../lib/money'
 import { previewFefo } from './fefo'
 import { useCartStore, type CartLine } from './cartStore'
@@ -39,9 +39,17 @@ export function CartLineRow({
   const [discountOpen, setDiscountOpen] = useState(!!line.requestedDiscountPct)
 
   const { data: stock } = useProductStock(line.productId)
+  const { data: stores } = useStores()
   const storeRow = stock?.stores.find((row) => row.store_id === storeId)
   const freeToSell = storeRow?.free_to_sell ?? null
   const fefo = previewFefo(storeRow, line.qtyBase)
+
+  // A released batch sitting in the warehouse looks to the cashier exactly
+  // like a batch that was never released, so name the store that holds it.
+  const sellingStoreCode = storeRow?.store_code ?? stores?.find((s) => s.id === storeId)?.code ?? 'this store'
+  const heldElsewhere = (stock?.stores ?? [])
+    .filter((row) => row.store_id !== storeId && dIsPos(row.free_to_sell))
+    .sort((a, b) => dCmp(b.free_to_sell, a.free_to_sell))
 
   const quoted = line.quoted
   const showQuoted = !!quoted && quoteFresh
@@ -152,7 +160,14 @@ export function CartLineRow({
         {fefoOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         ↳ FEFO:{' '}
         {fefo.allocations.length === 0 ? (
-          <span className="text-[var(--status-red)]">no released stock in this store</span>
+          <span className="text-[var(--status-red)]">
+            no released stock in {sellingStoreCode}
+            {heldElsewhere.length > 0 && (
+              <span className="text-[var(--text-secondary)]">
+                {' '}· {heldElsewhere.map((row) => `${formatQty(row.free_to_sell)} in ${row.store_code}`).join(', ')} — transfer it first
+              </span>
+            )}
+          </span>
         ) : (
           fefo.allocations.map((a) => `${a.batch_number} ×${formatQty(a.qty_base)}`).join(', ')
         )}

@@ -13,7 +13,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Card, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
 import { apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { formatDate } from '../../lib/format'
-import { useProduct, useProductCategories, useProductStock, useTaxCodes, useUoms } from '../../lib/hooks'
+import { useDosageForms, useProduct, useProductCategories, useProductStock, useStorageConditions, useTaxCodes, useUoms } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Paginated, Product } from '../../lib/types'
@@ -102,18 +102,22 @@ export default function ProductsPage() {
   )
 }
 
-type EditForm = { name: string; generic_name: string; strength: string; category_id: string; tax_code_id: string; base_uom_id: string; default_price: string; reorder_point: string; safety_stock: string; lead_time_days: string; pack_integrity: boolean; is_active: boolean }
+type EditForm = { name: string; generic_name: string; strength: string; category_id: string; dosage_form_id: string; storage_condition_id: string; tax_code_id: string; base_uom_id: string; default_price: string; reorder_point: string; safety_stock: string; lead_time_days: string; pack_integrity: boolean; is_active: boolean }
 
 function ProductEditForm({ product, onDone }: { product: Product; onDone: () => void }) {
   const queryClient = useQueryClient()
   const uoms = useUoms()
   const categories = useProductCategories()
+  const dosageForms = useDosageForms()
+  const storageConditions = useStorageConditions()
   const taxCodes = useTaxCodes()
   const [form, setForm] = useState<EditForm>({
     name: product.name,
     generic_name: product.generic_name ?? '',
     strength: product.strength ?? '',
     category_id: product.category?.id ?? '',
+    dosage_form_id: product.dosage_form?.id ?? '',
+    storage_condition_id: product.storage_condition?.id ?? '',
     tax_code_id: product.tax_code?.id ?? '',
     base_uom_id: product.base_uom_id,
     default_price: product.default_price ? String(Number(product.default_price)) : '',
@@ -133,6 +137,8 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
         generic_name: form.generic_name || null,
         strength: form.strength || null,
         category_id: form.category_id || null,
+        dosage_form_id: form.dosage_form_id || null,
+        storage_condition_id: form.storage_condition_id || null,
         tax_code_id: form.tax_code_id || null,
         ...(form.base_uom_id !== product.base_uom_id ? { base_uom_id: form.base_uom_id } : {}),
         default_price: form.default_price || null,
@@ -157,6 +163,8 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
         <Field label="Generic name"><Input value={form.generic_name} onChange={(e) => set({ generic_name: e.target.value })} /></Field>
         <Field label="Strength"><Input value={form.strength} onChange={(e) => set({ strength: e.target.value })} /></Field>
         <Field label="Category"><Select value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}><option value="">None</option>{(categories.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.code} · {c.name}</option>))}</Select></Field>
+        <Field label="Dosage form"><Select value={form.dosage_form_id} onChange={(e) => set({ dosage_form_id: e.target.value })}><option value="">None</option>{(dosageForms.data ?? []).map((d) => (<option key={d.id} value={d.id}>{d.code} · {d.name}</option>))}</Select></Field>
+        <Field label="Storage condition" hint="What cold-chain monitoring holds this product to (Part 8.5)."><Select value={form.storage_condition_id} onChange={(e) => set({ storage_condition_id: e.target.value })}><option value="">None</option>{(storageConditions.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}</Select></Field>
         <Field label="Tax code" hint="VAT treatment used by every quote (Part 13); none means 0% until set."><Select value={form.tax_code_id} onChange={(e) => set({ tax_code_id: e.target.value })}><option value="">None (untaxed)</option>{(taxCodes.data ?? []).map((t) => (<option key={t.id} value={t.id}>{t.code} · {t.name}{t.rate_pct != null ? ` · ${Number(t.rate_pct)}%` : ''}</option>))}</Select></Field>
         <Field label="Base UOM" hint="Locked once stock has moved (BASE_UOM_LOCKED)." error={err?.code === 'BASE_UOM_LOCKED' ? err.message : err?.errors.base_uom_id?.[0]}>
           <Select value={form.base_uom_id} onChange={(e) => set({ base_uom_id: e.target.value })}>{(uoms.data ?? []).map((u) => (<option key={u.id} value={u.id}>{u.code} · {u.name}</option>))}</Select>
@@ -287,8 +295,10 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
   const queryClient = useQueryClient()
   const uoms = useUoms()
   const categories = useProductCategories()
+  const dosageForms = useDosageForms()
+  const storageConditions = useStorageConditions()
   const taxCodes = useTaxCodes()
-  const [form, setForm] = useState({ code: '', name: '', generic_name: '', strength: '', sku: '', gtin: '', category_id: '', tax_code_id: '', base_uom_id: '', default_price: '', reorder_point: '0', safety_stock: '0', lead_time_days: '0', is_discrete: true, pack_integrity: false, requires_batch: true })
+  const [form, setForm] = useState({ code: '', name: '', generic_name: '', strength: '', sku: '', gtin: '', category_id: '', dosage_form_id: '', storage_condition_id: '', tax_code_id: '', base_uom_id: '', default_price: '', reorder_point: '0', safety_stock: '0', lead_time_days: '0', is_discrete: true, pack_integrity: false, requires_batch: true })
   const [rows, setRows] = useState<UomRow[]>([])
 
   const create = useMutation({
@@ -301,6 +311,8 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
         sku: form.sku || null,
         gtin: form.gtin || null,
         category_id: form.category_id || null,
+        dosage_form_id: form.dosage_form_id || null,
+        storage_condition_id: form.storage_condition_id || null,
         tax_code_id: form.tax_code_id || null,
         default_price: form.default_price || null,
         lead_time_days: Number(form.lead_time_days || 0),
@@ -327,6 +339,8 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
           <Field label="SKU" error={err?.errors.sku?.[0]}><Input value={form.sku} onChange={(e) => set({ sku: e.target.value })} /></Field>
           <Field label="GTIN"><Input value={form.gtin} onChange={(e) => set({ gtin: e.target.value })} /></Field>
           <Field label="Category"><Select value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}><option value="">None</option>{(categories.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.code} · {c.name}</option>))}</Select></Field>
+          <Field label="Dosage form"><Select value={form.dosage_form_id} onChange={(e) => set({ dosage_form_id: e.target.value })}><option value="">None</option>{(dosageForms.data ?? []).map((d) => (<option key={d.id} value={d.id}>{d.code} · {d.name}</option>))}</Select></Field>
+          <Field label="Storage condition" hint="What cold-chain monitoring holds this product to (Part 8.5)."><Select value={form.storage_condition_id} onChange={(e) => set({ storage_condition_id: e.target.value })}><option value="">None</option>{(storageConditions.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}</Select></Field>
           <Field label="Tax code" hint="VAT treatment used by every quote (Part 13); none means 0% until set."><Select value={form.tax_code_id} onChange={(e) => set({ tax_code_id: e.target.value })}><option value="">None (untaxed)</option>{(taxCodes.data ?? []).map((t) => (<option key={t.id} value={t.id}>{t.code} · {t.name}{t.rate_pct != null ? ` · ${Number(t.rate_pct)}%` : ''}</option>))}</Select></Field>
           <Field label="Base UOM" required hint="Immutable once stock moves (Part 5.3)." error={err?.errors.base_uom_id?.[0]}>
             <Select value={form.base_uom_id} onChange={(e) => set({ base_uom_id: e.target.value })}>

@@ -6,6 +6,8 @@ use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\CustomerCredit;
 use App\Models\CustomerTier;
+use App\Models\DosageForm;
+use App\Models\StorageCondition;
 use App\Models\Store;
 use App\Models\TaxCode;
 use App\Models\UnitOfMeasure;
@@ -132,6 +134,27 @@ class MasterDataController extends ApiController
         $this->requirePermission($request, 'product.view');
 
         return response()->json(UnitOfMeasure::orderBy('code')->get());
+    }
+
+    /** GET /api/dosage-forms — the forms the product form offers (Part 5.2). */
+    public function dosageForms(Request $request): JsonResponse
+    {
+        $this->requirePermission($request, 'product.view');
+
+        return response()->json(DosageForm::orderBy('name')->get());
+    }
+
+    /**
+     * GET /api/storage-conditions — the temperature ranges a store or product
+     * is held to, and what cold-chain monitoring measures against (Part 8.5).
+     */
+    public function storageConditions(Request $request): JsonResponse
+    {
+        $this->requirePermission($request, 'product.view');
+
+        return response()->json(
+            StorageCondition::where('organisation_id', $this->organisationId($request))->orderBy('code')->get()
+        );
     }
 
     /** GET /api/tax-codes — every active code with the rate in force today, for the product form (Part 13). */

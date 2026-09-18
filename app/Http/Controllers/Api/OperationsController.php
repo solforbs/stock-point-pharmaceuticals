@@ -134,9 +134,10 @@ class OperationsController extends ApiController
         $since = now()->subDay();
         $branch = Branch::find($branchId);
 
-        $terminals = DB::table('sales')->where('branch_id', $branchId)->where('created_at', '>=', $since)
+        // A sale is stamped with posted_at, not created_at (it is never a draft).
+        $terminals = DB::table('sales')->where('branch_id', $branchId)->where('posted_at', '>=', $since)
             ->groupBy('terminal_id')
-            ->selectRaw('terminal_id, COUNT(*) as sales, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as voided, MAX(created_at) as last_posted_at', ['VOIDED'])
+            ->selectRaw('terminal_id, COUNT(*) as sales, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as voided, MAX(posted_at) as last_posted_at', ['VOIDED'])
             ->orderByDesc('last_posted_at')->get()
             ->map(fn (object $row) => [
                 'terminal_id' => $row->terminal_id,
@@ -145,7 +146,7 @@ class OperationsController extends ApiController
                 'last_posted_at' => $row->last_posted_at ? Carbon::parse($row->last_posted_at)->toIso8601String() : null,
             ])->values();
 
-        $count = fn (string $table) => DB::table($table)->where('branch_id', $branchId)->where('created_at', '>=', $since)->count();
+        $count = fn (string $table, string $column = 'created_at') => DB::table($table)->where('branch_id', $branchId)->where($column, '>=', $since)->count();
 
         return response()->json([
             'server_time' => now()->toIso8601String(),
@@ -169,7 +170,7 @@ class OperationsController extends ApiController
             ],
             'activity_24h' => [
                 'since' => $since->toIso8601String(),
-                'sales' => $count('sales'),
+                'sales' => $count('sales', 'posted_at'),
                 'quotations' => $count('quotations'),
                 'sales_orders' => $count('sales_orders'),
                 'payments' => $count('payments'),

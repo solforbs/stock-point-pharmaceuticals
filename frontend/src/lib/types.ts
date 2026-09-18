@@ -103,10 +103,23 @@ export type Product = {
   category?: NamedRef | null
   manufacturer?: NamedRef | null
   dosage_form?: NamedRef | null
+  storage_condition?: StorageCondition | null
   tax_code?: NamedRef | null
   prices?: ProductPrice[]
   /** Active-branch stock, present when the user holds stock.view (GET /api/products). */
   stock?: { on_hand: Decimal; reserved: Decimal; free_to_sell: Decimal; nearest_expiry: string | null }
+}
+
+export type DosageForm = { id: string; code: string; name: string }
+
+export type StorageCondition = {
+  id: string
+  code: string
+  name: string
+  min_temp_c: Decimal | null
+  max_temp_c: Decimal | null
+  max_excursion_minutes: number | null
+  requires_cold_chain: boolean
 }
 
 export type StockBatchRow = {
@@ -1069,6 +1082,8 @@ export type DashboardSummary = {
   inventory: null | { pending_qc_batches: number; quarantined_batches: number; expiring_90d_batches: number; expired_batches_on_hand: number; transfers_in_transit: number }
   procurement: null | { open_purchase_orders: number; suppliers_licence_expired: number; suppliers_licence_expiring_30d: number }
   compliance: null | { etims_failed: number; etims_pending: number }
+  quality: null | Partial<{ cold_chain_open_excursions: number; adr_draft_reports: number; licences_expired: number; licences_expiring_60d: number; documents_to_acknowledge: number }>
+  people: null | Partial<{ leave_pending: number }>
   finance: null | { open_period: null | Pick<FinancialPeriod, 'id' | 'fiscal_year' | 'period_no' | 'start_date' | 'end_date'>; period_open_for_today: boolean }
 }
 

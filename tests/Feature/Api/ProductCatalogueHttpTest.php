@@ -6,6 +6,8 @@ use App\Models\AuditLog;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\TaxCode;
+use Database\Seeders\DosageFormSeeder;
+use Database\Seeders\StorageConditionSeeder;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -167,12 +169,42 @@ class ProductCatalogueHttpTest extends TestCase
 
     public function test_catalogue_maintenance_requires_product_edit(): void
     {
-        $this->user->roles()->detach();
+        $this->revokeAllRoles();
         $this->grantPermissions(['product.view'], 'Viewer');
 
         $this->postJson('/api/product-categories', ['code' => 'X', 'name' => 'X'])->assertForbidden();
         $this->patchJson('/api/product-categories/'.ProductCategory::create(['code' => 'Y', 'name' => 'Y'])->id, ['name' => 'Z'])->assertForbidden();
         $this->postJson('/api/products/import', ['rows' => [['code' => 'PARA500']]])->assertForbidden();
         $this->get('/api/products/export')->assertOk();
+    }
+
+    /**
+     * Part 5.2 / 8.5 — the reference lists the product form depends on. Both
+     * ship seeded, and a product can be given a dosage form and the storage
+     * condition cold-chain monitoring measures it against.
+     */
+    public function test_dosage_forms_and_storage_conditions_are_listed_and_set_on_a_product(): void
+    {
+        (new DosageFormSeeder)->run();
+        (new StorageConditionSeeder)->run();
+
+        $forms = $this->getJson('/api/dosage-forms')->assertOk()->json();
+        $conditions = $this->getJson('/api/storage-conditions')->assertOk()->json();
+
+        $this->assertSame(count(DosageFormSeeder::FORMS), count($forms));
+        $cold = collect($conditions)->firstWhere('code', 'COLD');
+        $this->assertSame('2.00', $cold['min_temp_c']);
+        $this->assertSame('8.00', $cold['max_temp_c']);
+        $this->assertTrue($cold['requires_cold_chain']);
+
+        $tablet = collect($forms)->firstWhere('code', 'TAB');
+        $this->patchJson("/api/products/{$this->para->id}", ['dosage_form_id' => $tablet['id'], 'storage_condition_id' => $cold['id']])->assertOk();
+
+        $this->para->refresh();
+        $this->assertSame($tablet['id'], $this->para->dosage_form_id);
+        $this->assertSame($cold['id'], $this->para->storage_condition_id);
+
+        // Stores are told their range, so an excursion can be detected at all.
+        $this->assertSame('AMBIENT', $this->store->fresh()->storageCondition->code);
     }
 }

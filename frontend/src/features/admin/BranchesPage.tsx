@@ -8,7 +8,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Card, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
 import { apiPatch, apiPost, getApiError } from '../../lib/api'
 import { titleCase } from '../../lib/format'
-import { useAdminBranches } from '../../lib/hooks'
+import { useAdminBranches, useStorageConditions } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import { STORE_TYPES, type AdminBranch, type AdminStore } from '../../lib/types'
@@ -160,12 +160,13 @@ function BranchForm({ branch, onDone, onCancel }: { branch?: AdminBranch; onDone
 
 function StoreForm({ branch, onDone, onCancel }: { branch: AdminBranch; onDone: () => void; onCancel: () => void }) {
   const queryClient = useQueryClient()
-  const [form, setForm] = useState({ code: '', name: '', store_type: 'MAIN', is_sellable: true })
+  const conditions = useStorageConditions()
+  const [form, setForm] = useState({ code: '', name: '', store_type: 'MAIN', storage_condition_id: '', is_sellable: true })
   const set = (patch: Partial<typeof form>) => setForm({ ...form, ...patch })
 
   const save = useMutation({
     meta: { silent: true },
-    mutationFn: () => apiPost<AdminStore>(`/api/admin/branches/${branch.id}/stores`, form),
+    mutationFn: () => apiPost<AdminStore>(`/api/admin/branches/${branch.id}/stores`, { ...form, storage_condition_id: form.storage_condition_id || null }),
     onSuccess: (s) => {
       toast.success(`Store ${branch.code}/${s.code} created`)
       queryClient.invalidateQueries({ queryKey: ['admin', 'branches'] })
@@ -178,12 +179,18 @@ function StoreForm({ branch, onDone, onCancel }: { branch: AdminBranch; onDone: 
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} maxLength={20} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
         <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="Type" required error={err?.errors.store_type?.[0]}>
           <Select value={form.store_type} onChange={(e) => set({ store_type: e.target.value, is_sellable: e.target.value === 'QUARANTINE' || e.target.value === 'TRANSIT' ? false : form.is_sellable })}>
             {STORE_TYPES.map((t) => (<option key={t} value={t}>{titleCase(t)}</option>))}
+          </Select>
+        </Field>
+        <Field label="Storage condition" hint="The range cold-chain monitoring holds this store to (Part 8.5).">
+          <Select value={form.storage_condition_id} onChange={(e) => set({ storage_condition_id: e.target.value })}>
+            <option value="">None</option>
+            {(conditions.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </Select>
         </Field>
       </div>

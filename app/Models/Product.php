@@ -18,6 +18,7 @@ class Product extends Model
         'tax_code_id', 'storage_condition_id',
         'is_discrete', 'pack_integrity', 'requires_batch',
         'reorder_point', 'safety_stock', 'lead_time_days', 'default_price', 'is_active',
+        'created_by', 'updated_by',
     ];
 
     protected function casts(): array

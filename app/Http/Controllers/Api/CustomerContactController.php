@@ -52,7 +52,9 @@ class CustomerContactController extends ApiController
                 CustomerContact::where('customer_id', $data['customer_id'])->update(['is_primary' => false]);
             }
 
-            return CustomerContact::create($data);
+            // Default it here rather than relying on the column default, so the
+            // created row comes back with the flag already set.
+            return CustomerContact::create($data + ['is_primary' => false]);
         });
 
         AuditLog::record('CUSTOMER_CONTACT_CREATED', 'customer_contact', (string) $contact->id, ['reference' => $contact->name, 'after_json' => $contact->toArray()]);

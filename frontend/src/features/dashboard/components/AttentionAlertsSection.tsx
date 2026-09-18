@@ -37,6 +37,21 @@ function resolveAttention(s?: DashboardSummary): Attention[] {
   if (s.compliance && s.compliance.etims_failed > 0) {
     items.push({ key: 'etims', label: 'KRA eTIMS submissions failed', count: s.compliance.etims_failed, to: '/finance/tax-centre', tone: 'red' })
   }
+  const q = s.quality
+  if (q) {
+    if (q.cold_chain_open_excursions)
+      items.push({ key: 'coldchain', label: 'Cold-chain excursions to review', count: q.cold_chain_open_excursions, to: '/quality/cold-chain', tone: 'red' })
+    if (q.licences_expired)
+      items.push({ key: 'own-lic-expired', label: 'Own licences expired', count: q.licences_expired, to: '/quality/licences', tone: 'red' })
+    if (q.licences_expiring_60d)
+      items.push({ key: 'own-lic-expiring', label: 'Own licences expiring ≤ 60 days', count: q.licences_expiring_60d, to: '/quality/licences', tone: 'amber' })
+    if (q.adr_draft_reports)
+      items.push({ key: 'adr', label: 'Adverse-reaction reports in draft', count: q.adr_draft_reports, to: '/quality/pharmacovigilance', tone: 'amber' })
+    if (q.documents_to_acknowledge)
+      items.push({ key: 'sops', label: 'SOPs you have not read yet', count: q.documents_to_acknowledge, to: '/quality/sops', tone: 'blue' })
+  }
+  if (s.people?.leave_pending)
+    items.push({ key: 'leave', label: 'Leave requests awaiting approval', count: s.people.leave_pending, to: '/people/leave', tone: 'amber' })
   return items
 }
 
