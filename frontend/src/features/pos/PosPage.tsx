@@ -172,31 +172,77 @@ export default function PosPage() {
   if (stores.data && stores.data.length === 0) return <EmptyState title="No stores in this branch" hint="A store must exist before anything can be sold." />
   if (enabledModes.length === 0 && user) return <EmptyState title="Commerce is disabled for this branch" hint="Neither retail nor wholesale mode is enabled." />
 
+  const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('cart')
+
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
       <ModeBanner stores={stores.data ?? []} />
 
-      <div className="flex flex-1 min-h-0">
-        <SearchPanel inputRef={searchRef} onAdded={() => searchRef.current?.focus()} />
-        <CartPanel
-          quoteState={quoteState}
-          customerInputRef={customerRef}
-          onOpenPayment={openPayment}
-          onHold={() => setHoldOpen(true)}
-          onApprove={openPayment}
-          approvePending={checkout.isPending}
-        />
-        <PaymentPanel
-          open={paymentOpen && status !== 'POSTED'}
-          onClose={() => {
-            setPaymentOpen(false)
-            setStatus('BUILDING')
-          }}
-          onPost={(approve) => checkout.mutate({ approve })}
-          isPosting={checkout.isPending}
-          quoteFresh={quoteState.isFresh}
-        />
+      {/* Mobile Tab Bar (only visible on mobile/small tablets) */}
+      <div className="md:hidden flex border-b border-slate-200 bg-white shrink-0">
+        <button
+          type="button"
+          onClick={() => setMobileTab('catalog')}
+          className={`flex-1 py-2.5 text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileTab === 'catalog'
+              ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <span>🔍 Catalog & Search</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('cart')}
+          className={`flex-1 py-2.5 text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileTab === 'cart'
+              ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <span>🛒 Cart</span>
+          {lines.length > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full bg-blue-600 text-white text-[11px] tabular font-black">
+              {lines.length}
+            </span>
+          )}
+        </button>
       </div>
+
+      {/* Main Work Area: 2-column on desktop, tabbed on mobile */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className={`${mobileTab === 'catalog' ? 'flex' : 'hidden'} md:flex flex-col shrink-0 min-h-0 w-full md:w-auto`}>
+          <SearchPanel
+            inputRef={searchRef}
+            onAdded={() => {
+              searchRef.current?.focus()
+              if (window.innerWidth < 768) setMobileTab('cart')
+            }}
+          />
+        </div>
+        <div className={`${mobileTab === 'cart' ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 flex-col min-h-0`}>
+          <CartPanel
+            quoteState={quoteState}
+            customerInputRef={customerRef}
+            onOpenPayment={openPayment}
+            onHold={() => setHoldOpen(true)}
+            onApprove={openPayment}
+            approvePending={checkout.isPending}
+          />
+        </div>
+      </div>
+
+      {/* Payment Drawer (Slide-Over Sheet with backdrop - Never squashes CartPanel) */}
+      <PaymentPanel
+        open={paymentOpen && status !== 'POSTED'}
+        onClose={() => {
+          setPaymentOpen(false)
+          setStatus('BUILDING')
+        }}
+        onPost={(approve) => checkout.mutate({ approve })}
+        isPosting={checkout.isPending}
+        quoteFresh={quoteState.isFresh}
+      />
 
       <KeyboardHintBar
         hints={POS_SHORTCUTS.map((s) => ({ ...s, disabled: s.key === 'F6' && !canDiscount }))}

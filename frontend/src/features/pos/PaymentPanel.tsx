@@ -1,4 +1,4 @@
-import { CheckCircle2, CreditCard, DollarSign, Plus, Split, Trash2, X } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, CreditCard, DollarSign, Plus, Split, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { MoneyCell } from '../../components/ui/MoneyCell'
 import { dCmp, dEq, dIsPos, dSub, dSum, isValidDecimal } from '../../lib/decimal'
@@ -75,26 +75,44 @@ export function PaymentPanel({
   }
 
   return (
-    <div className="w-[390px] shrink-0 border-l border-slate-200/90 bg-white flex flex-col min-h-0 shadow-xl z-20" data-payment-panel>
-      {/* Header */}
-      <header className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/70">
-        <div>
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-            Payment Due
-          </span>
-          <div className="text-[24px] font-black tracking-tight text-slate-900 tabular">
-            KES {formatMoney(total)}
+    <div className="fixed inset-0 z-50 flex justify-end" data-payment-panel>
+      {/* Dimmed backdrop */}
+      <div
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        onClick={onClose}
+      />
+
+      {/* Slide-over Drawer Panel (480px on desktop, full-width on mobile) */}
+      <div className="relative z-10 w-full sm:w-[480px] h-full bg-white shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
+        {/* Header */}
+        <header className="flex items-center justify-between px-5 py-4 border-b border-slate-200/90 bg-slate-50/80">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 -ml-1 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 transition-colors cursor-pointer"
+              title="Back to cart (Esc)"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                Checkout & Tender
+              </span>
+              <div className="text-[24px] font-black tracking-tight text-slate-900 tabular leading-none mt-0.5">
+                KES {formatMoney(total)}
+              </div>
+            </div>
           </div>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close payment"
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
-        >
-          <X size={18} />
-        </button>
-      </header>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close payment"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-colors cursor-pointer"
+          >
+            <X size={20} />
+          </button>
+        </header>
 
       {/* Tender Mode Selection Tabs */}
       <div className="flex gap-1.5 p-3 border-b border-slate-100 bg-white">
@@ -358,6 +376,7 @@ export function PaymentPanel({
           Receipt prints automatically and inventory is updated immediately.
         </p>
       </footer>
+      </div>
     </div>
   )
 }
