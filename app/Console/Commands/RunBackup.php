@@ -14,14 +14,16 @@ use Illuminate\Console\Command;
  */
 class RunBackup extends Command
 {
-    protected $signature = 'backup:run {--no-prune : Keep old backups}';
+    protected $signature = 'backup:run
+        {--no-prune : Keep old backups}
+        {--full : Database and uploaded files together in one downloadable zip}';
 
     protected $description = 'Dump the database to the backup directory and prune backups past retention (nightly)';
 
     public function handle(BackupService $backups): int
     {
         try {
-            $file = $backups->create();
+            $file = $this->option('full') ? $backups->createFull() : $backups->create();
         } catch (BackupFailedException $e) {
             $this->error($e->getMessage());
 

@@ -6,6 +6,7 @@ use Illuminate\Support\Carbon;
 use Symfony\Component\Process\Exception\ProcessStartFailedException;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
+use ZipArchive;
 
 /**
  * Part 17 — operations: consistent gzip-compressed MySQL dumps written to
@@ -16,8 +17,17 @@ use Symfony\Component\Process\Process;
  */
 class BackupService
 {
-    /** Files this service will list, download or prune: db dumps and deploy/backup.sh's files archives. */
-    public const NAME_PATTERN = '/^(db|files)-\d{8}-\d{6}\.(sql\.gz|tar\.gz)$/';
+    /** Files this service will list, download or prune: db dumps, deploy/backup.sh's files archives and full zips. */
+    public const NAME_PATTERN = '/^(db|files)-\d{8}-\d{6}\.(sql\.gz|tar\.gz)$|^full-\d{8}-\d{6}\.zip$/';
+
+    /**
+     * Directories inside storage/app taken into a full backup: everything a
+     * user put there (licence scans, certificates of analysis, ADR
+     * attachments) and nothing the code can rebuild.
+     *
+     * @var list<string>
+     */
+    public const FILE_ROOTS = ['private', 'public'];
 
     private const XAMPP_MYSQLDUMP = 'C:\\xampp\\mysql\\bin\\mysqldump.exe';
 
@@ -52,10 +62,7 @@ class BackupService
      */
     public function create(): array
     {
-        $directory = $this->directory();
-        if (! is_dir($directory) && ! @mkdir($directory, 0700, true) && ! is_dir($directory)) {
-            throw new BackupFailedException("The backup directory {$directory} does not exist and could not be created. Check BACKUP_PATH and its permissions.");
-        }
+        $directory = $this->ensureDirectory();
 
         $name = 'db-'.now()->format('Ymd-His').'.sql.gz';
         $target = $directory.DIRECTORY_SEPARATOR.$name;
@@ -78,6 +85,109 @@ class BackupService
         clearstatcache(true, $target);
 
         return $this->entry($target);
+    }
+
+    /**
+     * A full backup: the database dump and every uploaded file in one zip,
+     * ready to download. Code and configuration are deliberately left out —
+     * code comes from the repository, and an archive that travels off the
+     * server must not carry the credentials in .env.
+     *
+     * @return array{name: string, size: int, created_at: string, kind: string}
+     *
+     * @throws BackupFailedException
+     */
+    public function createFull(): array
+    {
+        $directory = $this->ensureDirectory();
+        $stamp = now()->format('Ymd-His');
+        $name = "full-{$stamp}.zip";
+        $target = $directory.DIRECTORY_SEPARATOR.$name;
+
+        $zip = new ZipArchive;
+        if ($zip->open($target, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            throw new BackupFailedException("Cannot write {$target}. Check the backup directory's permissions.");
+        }
+
+        try {
+            $sql = '';
+            $this->runDump(function (string $chunk) use (&$sql): void {
+                $sql .= $chunk;
+            });
+            $zip->addFromString("database-{$stamp}.sql", $sql);
+
+            $files = $this->collectFiles();
+            foreach ($files as $relative => $path) {
+                $zip->addFile($path, 'files/'.$relative);
+            }
+
+            $zip->addFromString('MANIFEST.txt', $this->manifest($stamp, strlen($sql), count($files)));
+        } catch (\Throwable $e) {
+            $zip->close();
+            @unlink($target);
+
+            throw $e instanceof BackupFailedException ? $e : new BackupFailedException($e->getMessage(), 0, $e);
+        }
+
+        if (! $zip->close()) {
+            @unlink($target);
+
+            throw new BackupFailedException('The backup archive could not be finalised; the disk may be full.');
+        }
+
+        clearstatcache(true, $target);
+
+        return $this->entry($target);
+    }
+
+    /**
+     * Uploaded files, keyed by the path they take inside the archive. The
+     * backup directory itself is skipped, so a full backup never swallows
+     * the backups that came before it.
+     *
+     * @return array<string, string>
+     */
+    public function collectFiles(): array
+    {
+        // Both the configured directory and the conventional one: on a server
+        // BACKUP_PATH usually points outside storage, but storage/app/private/
+        // backups can still hold older dumps, and a backup must never contain
+        // the backups that came before it.
+        $excluded = array_filter([
+            realpath($this->directory()) ?: $this->directory(),
+            realpath(storage_path('app/private/backups')) ?: null,
+        ]);
+        $found = [];
+
+        foreach (self::FILE_ROOTS as $root) {
+            $base = storage_path('app'.DIRECTORY_SEPARATOR.$root);
+            if (! is_dir($base)) {
+                continue;
+            }
+
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST
+            );
+
+            /** @var \SplFileInfo $item */
+            foreach ($iterator as $item) {
+                $path = $item->getPathname();
+                if (! $item->isFile()) {
+                    continue;
+                }
+                foreach ($excluded as $directory) {
+                    if (str_starts_with($path, $directory)) {
+                        continue 2; // the next file, not the next root
+                    }
+                }
+                $found[$root.'/'.str_replace('\\', '/', substr($path, strlen($base) + 1))] = $path;
+            }
+        }
+
+        ksort($found);
+
+        return $found;
     }
 
     /**
@@ -163,7 +273,7 @@ class BackupService
         }
         $command[] = (string) ($db['database'] ?? '');
 
-        $process = new Process($command, null, ['MYSQL_PWD' => (string) ($db['password'] ?? '')], null, (float) config('backup.timeout_seconds', 900));
+        $process = new Process($command, null, $this->dumpEnvironment((string) ($db['password'] ?? '')), null, (float) config('backup.timeout_seconds', 900));
         $stderr = '';
         $bytes = 0;
 
@@ -188,6 +298,75 @@ class BackupService
     }
 
     /**
+     * @throws BackupFailedException
+     */
+    private function ensureDirectory(): string
+    {
+        $directory = $this->directory();
+        if (! is_dir($directory) && ! @mkdir($directory, 0700, true) && ! is_dir($directory)) {
+            throw new BackupFailedException("The backup directory {$directory} does not exist and could not be created. Check BACKUP_PATH and its permissions.");
+        }
+
+        return $directory;
+    }
+
+    /** A plain note inside the archive saying what it holds and how to put it back. */
+    private function manifest(string $stamp, int $sqlBytes, int $fileCount): string
+    {
+        $database = (string) config('database.connections.'.config('backup.connection', 'mysql').'.database');
+
+        return implode("\n", [
+            config('app.name').' — full backup',
+            'Taken: '.now()->toDayDateTimeString(),
+            "Database: {$database} (database-{$stamp}.sql, ".number_format($sqlBytes).' bytes)',
+            "Uploaded files: {$fileCount} under files/ (from storage/app)",
+            '',
+            'Restore:',
+            "  mysql -u <user> -p {$database} < database-{$stamp}.sql",
+            '  copy files/private and files/public back into storage/app/',
+            '',
+            'Application code comes from the Git repository and configuration',
+            'from .env; neither is in this archive, so it carries no passwords.',
+            '',
+        ]);
+    }
+
+    /**
+     * The environment mysqldump runs in.
+     *
+     * mysqldump opens a TCP socket, and on Windows Winsock cannot start
+     * without SystemRoot. Apache does not pass it to PHP, so the dump fails
+     * from the browser with "Can't create TCP/IP socket (10106)" while
+     * working perfectly from the console. Naming the variables explicitly
+     * makes both contexts behave the same.
+     *
+     * @return array<string, string>
+     */
+    protected function dumpEnvironment(string $password): array
+    {
+        $env = ['MYSQL_PWD' => $password];
+
+        if (PHP_OS_FAMILY !== 'Windows') {
+            return $env;
+        }
+
+        foreach (['SystemRoot', 'windir', 'SystemDrive', 'ComSpec', 'PATH', 'TEMP', 'TMP', 'ProgramData'] as $name) {
+            $value = getenv($name);
+            if ($value === false || $value === '') {
+                $value = $_SERVER[$name] ?? null;
+            }
+            if (is_string($value) && $value !== '') {
+                $env[$name] = $value;
+            }
+        }
+
+        $env['SystemRoot'] ??= 'C:\Windows';
+        $env['windir'] ??= $env['SystemRoot'];
+
+        return $env;
+    }
+
+    /**
      * @return array{name: string, size: int, created_at: string, kind: string}
      */
     private function entry(string $path): array
@@ -198,7 +377,11 @@ class BackupService
             'name' => $name,
             'size' => (int) filesize($path),
             'created_at' => Carbon::createFromTimestamp((int) filemtime($path))->toIso8601String(),
-            'kind' => str_starts_with($name, 'db-') ? 'database' : 'files',
+            'kind' => match (true) {
+                str_starts_with($name, 'db-') => 'database',
+                str_starts_with($name, 'full-') => 'full',
+                default => 'files',
+            },
         ];
     }
 }

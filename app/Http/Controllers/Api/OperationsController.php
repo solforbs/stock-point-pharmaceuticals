@@ -90,9 +90,10 @@ class OperationsController extends ApiController
     public function createBackup(Request $request, BackupService $backups): JsonResponse
     {
         $this->requirePermission($request, 'admin.settings');
+        $data = $request->validate(['kind' => ['nullable', 'in:database,full']]);
 
         try {
-            $file = $backups->create();
+            $file = ($data['kind'] ?? 'database') === 'full' ? $backups->createFull() : $backups->create();
         } catch (BackupFailedException $e) {
             return $this->error('BACKUP_FAILED', $e->getMessage(), 422);
         }
@@ -114,7 +115,9 @@ class OperationsController extends ApiController
 
         AuditLog::record('BACKUP_DOWNLOADED', 'backup', $name, ['reference' => $name]);
 
-        return response()->download($path, $name, ['Content-Type' => 'application/gzip']);
+        return response()->download($path, $name, [
+            'Content-Type' => str_ends_with($name, '.zip') ? 'application/zip' : 'application/gzip',
+        ]);
     }
 
     /**

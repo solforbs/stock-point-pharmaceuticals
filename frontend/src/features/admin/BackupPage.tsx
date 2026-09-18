@@ -13,7 +13,7 @@ import { formatDateTime } from '../../lib/format'
 import { usePermission } from '../../lib/permissions'
 import { toast, toastApiError } from '../../lib/toast'
 
-type BackupFile = { name: string; size: number; created_at: string; kind: 'database' | 'files' }
+type BackupFile = { name: string; size: number; created_at: string; kind: 'database' | 'files' | 'full' }
 type BackupListing = { data: BackupFile[]; retention_days: number; mysqldump_available: boolean; schedule: string }
 
 /** Part 17 — database backups: what exists, taking one now, and getting a copy off the server. */
@@ -25,7 +25,7 @@ export default function BackupPage() {
 
   const create = useMutation({
     meta: { silent: true },
-    mutationFn: () => apiPost<BackupFile>('/api/admin/backups'),
+    mutationFn: (kind: 'database' | 'full' = 'database') => apiPost<BackupFile>('/api/admin/backups', { kind }),
     onSuccess: (f) => {
       toast.success(`Backup ${f.name} written (${formatBytes(f.size)})`)
       queryClient.invalidateQueries({ queryKey: ['admin', 'backups'] })
@@ -39,7 +39,7 @@ export default function BackupPage() {
     setDownloading(file.name)
     try {
       const { data } = await api.get<Blob>(`/api/admin/backups/${encodeURIComponent(file.name)}/download`, { responseType: 'blob' })
-      downloadBlob(data, file.name, 'application/gzip')
+      downloadBlob(data, file.name, file.name.endsWith('.zip') ? 'application/zip' : 'application/gzip')
     } catch (e) {
       toastApiError(e, 'Download failed')
     } finally {
@@ -53,7 +53,17 @@ export default function BackupPage() {
 
   const columns: Column<BackupFile>[] = [
     { key: 'name', header: 'File', render: (f) => <span className="font-semibold tabular">{f.name}</span>, sortValue: (f) => f.name },
-    { key: 'kind', header: 'Contents', render: (f) => <StatusBadge status={f.kind} tone={f.kind === 'database' ? 'blue' : 'slate'} label={f.kind === 'database' ? 'Database' : 'Files + .env'} /> },
+    {
+      key: 'kind',
+      header: 'Contents',
+      render: (f) => (
+        <StatusBadge
+          status={f.kind}
+          tone={f.kind === 'database' ? 'blue' : f.kind === 'full' ? 'green' : 'slate'}
+          label={f.kind === 'database' ? 'Database' : f.kind === 'full' ? 'Database + files' : 'Files'}
+        />
+      ),
+    },
     { key: 'created', header: 'Taken', render: (f) => <span className="tabular">{formatDateTime(f.created_at)}</span>, sortValue: (f) => f.created_at },
     { key: 'size', header: 'Size', align: 'right', render: (f) => <span className="tabular">{formatBytes(f.size)}</span>, sortValue: (f) => f.size },
     {
@@ -70,9 +80,14 @@ export default function BackupPage() {
         title="Backup"
         subtitle={l ? `${l.schedule} Backups older than ${l.retention_days} days are deleted automatically.` : 'Compressed MySQL dumps of the whole database.'}
         actions={
-          <Button variant="primary" disabled={create.isPending || l?.mysqldump_available === false} onClick={() => create.mutate()}>
-            <DatabaseBackup size={13} /> {create.isPending ? 'Backing up…' : 'Back up now'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button disabled={create.isPending || l?.mysqldump_available === false} onClick={() => create.mutate('database')}>
+              <DatabaseBackup size={13} /> {create.isPending && create.variables === 'database' ? 'Backing up…' : 'Database only'}
+            </Button>
+            <Button variant="primary" disabled={create.isPending || l?.mysqldump_available === false} onClick={() => create.mutate('full')}>
+              <DatabaseBackup size={13} /> {create.isPending && create.variables === 'full' ? 'Backing up…' : 'Full backup (zip)'}
+            </Button>
+          </div>
         }
       />
 

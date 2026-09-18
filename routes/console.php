@@ -28,3 +28,7 @@ Schedule::call(fn () => Cache::forever('scheduler:last_run', now()->toIso8601Str
 
 // Part 17 — operations: nightly database backup, pruned to BACKUP_RETENTION_DAYS.
 Schedule::command('backup:run')->dailyAt('02:00');
+
+// Part 17 — once a week the uploaded files (licence scans, certificates of
+// analysis) go with the database in one restorable zip.
+Schedule::command('backup:run --full --no-prune')->weeklyOn(7, '02:30');
