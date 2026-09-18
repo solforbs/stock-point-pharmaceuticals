@@ -12,11 +12,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
          'namespace' => 'App\\Console\\Commands',
          'uses' => 
         array (
-          'chartofaccount' => 'App\\Models\\ChartOfAccount',
-          'journalentryline' => 'App\\Models\\JournalEntryLine',
-          'organisation' => 'App\\Models\\Organisation',
+          'ledgerreconciliation' => 'App\\Services\\Inventory\\LedgerReconciliation',
           'command' => 'Illuminate\\Console\\Command',
-          'db' => 'Illuminate\\Support\\Facades\\DB',
         ),
          'className' => 'App\\Console\\Commands\\ReconcileLedger',
          'functionName' => NULL,
@@ -39,11 +36,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
          'namespace' => 'App\\Console\\Commands',
          'uses' => 
         array (
-          'chartofaccount' => 'App\\Models\\ChartOfAccount',
-          'journalentryline' => 'App\\Models\\JournalEntryLine',
-          'organisation' => 'App\\Models\\Organisation',
+          'ledgerreconciliation' => 'App\\Services\\Inventory\\LedgerReconciliation',
           'command' => 'Illuminate\\Console\\Command',
-          'db' => 'Illuminate\\Support\\Facades\\DB',
         ),
          'className' => 'App\\Console\\Commands\\ReconcileLedger',
          'functionName' => 'handle',
@@ -55,11 +49,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
            'namespace' => 'App\\Console\\Commands',
            'uses' => 
           array (
-            'chartofaccount' => 'App\\Models\\ChartOfAccount',
-            'journalentryline' => 'App\\Models\\JournalEntryLine',
-            'organisation' => 'App\\Models\\Organisation',
+            'ledgerreconciliation' => 'App\\Services\\Inventory\\LedgerReconciliation',
             'command' => 'Illuminate\\Console\\Command',
-            'db' => 'Illuminate\\Support\\Facades\\DB',
           ),
            'className' => 'App\\Console\\Commands\\ReconcileLedger',
            'functionName' => NULL,
@@ -90,7 +81,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     1 => 
     array (
-      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Console\\Commands\\ReconcileLedger.php' => 'fb9ec051656c9d64cb418c99102bf21c97d4bf0065a8bed8ff33e47a21dd2b21',
+      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Console\\Commands\\ReconcileLedger.php' => '19eae31d54c5845a47d45980f2f64865c2014bf9828feea1b29cda64135e8e75',
     ),
   ),
 ));

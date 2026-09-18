@@ -23,7 +23,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\DatabaseSeeder.php' => 
     array (
-      0 => '159fc2b65d94af5751457d911edfd123560f7f6ad23fc33e38e6eb17f1436890',
+      0 => '1e0b132ce1c3a9ecbaf7ed6f509b523106ee68329597448cf79ba8da54c6bb2e',
       1 => 
       array (
         0 => 'database\\seeders\\databaseseeder',
@@ -38,7 +38,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\OrganisationSeeder.php' => 
     array (
-      0 => 'f2304610425d31ad4741acaa424fbe9131f3ff670a2809a3212484720a93f163',
+      0 => 'a45401459c77b7a4387c59e45f481301b1020cd758d48e77168112f30bb15a6f',
       1 => 
       array (
         0 => 'database\\seeders\\organisationseeder',
@@ -53,7 +53,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\PermissionSeeder.php' => 
     array (
-      0 => '417b5a67848b4ab01ea29d16022e60842764863fb67503cd5013bb44279b0258',
+      0 => '7c8857b71f380cf27d4233caebea5da84eec190f333146624e7af6bbfb206931',
       1 => 
       array (
         0 => 'database\\seeders\\permissionseeder',
@@ -68,7 +68,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\RoleSeeder.php' => 
     array (
-      0 => '18b6956983872dd63309d4499994220fd81e5e7a5fedd3768b92d40672758dec',
+      0 => '3369d5f34cb1d8e6c53bb7eacd760ce9c3dd5e5aa899f551eb2f6446ca6f97f9',
       1 => 
       array (
         0 => 'database\\seeders\\roleseeder',
@@ -128,7 +128,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\MrlPricelistSeeder.php' => 
     array (
-      0 => 'b5e5d223b763793fd22a7f2a986d16b0bdf8fac3b2941a0fbf8c8cb92965c6f4',
+      0 => '2e08412ad1266835870f0a3da898d45ae48d1edbc96ed4b81bb011fbc6385821',
       1 => 
       array (
         0 => 'database\\seeders\\mrlpricelistseeder',
@@ -136,6 +136,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
       2 => 
       array (
         0 => 'database\\seeders\\run',
+        1 => 'database\\seeders\\seeditems',
       ),
       3 => 
       array (
@@ -158,7 +159,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\MrlPricelistRemainderSeeder.php' => 
     array (
-      0 => '8b713993b07dd8d2a7df3298af563df57a03f0688c60e3f8f6ed8449e32d554e',
+      0 => '61044c32fc553e581dc0b6c98230e6b83b4f02444f2913053a76e598a70cb831',
       1 => 
       array (
         0 => 'database\\seeders\\mrlpricelistremainderseeder',
@@ -211,6 +212,22 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
       2 => 
       array (
         0 => 'database\\seeders\\run',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\LeaveTypesSeeder.php' => 
+    array (
+      0 => '33c1d590313c4f56b2d13ead14bd88b2f00207b753c7c2305ae608dbd2425457',
+      1 => 
+      array (
+        0 => 'database\\seeders\\leavetypesseeder',
+      ),
+      2 => 
+      array (
+        0 => 'database\\seeders\\run',
+        1 => 'database\\seeders\\seedfor',
       ),
       3 => 
       array (

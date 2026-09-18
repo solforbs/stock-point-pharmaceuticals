@@ -651,7 +651,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     1 => 
     array (
-      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\SalesOrder.php' => '2faf5da61b4a53e81581ac0229fd5ea45a861b8d0de3598fd9450e5933e4a908',
+      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\SalesOrder.php' => '0b50f337b783778af4092d328c0a7affef590dd259216da5928f18fd2d133f42',
       'C:\\xampp\\htdocs\\pharmacy_erp\\vendor\\composer\\..\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Concerns\\HasUuids.php' => 'f75b8db33aafd61f17652a5e4bb5b8989e62197b306e9f7ae60bb3ac2c34d534',
       'C:\\xampp\\htdocs\\pharmacy_erp\\vendor\\composer\\..\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Concerns\\HasUniqueStringIds.php' => '3d5612d3c0a56c6c9f19e628b02085d4d68a64d9d07656742725cec78d4a79c5',
     ),

@@ -12,7 +12,9 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
          'namespace' => 'Database\\Seeders',
          'uses' => 
         array (
+          'createadminuser' => 'App\\Console\\Commands\\CreateAdminUser',
           'seeder' => 'Illuminate\\Database\\Seeder',
+          'permission' => 'Spatie\\Permission\\Models\\Permission',
           'role' => 'Spatie\\Permission\\Models\\Role',
           'permissionregistrar' => 'Spatie\\Permission\\PermissionRegistrar',
         ),
@@ -37,7 +39,9 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
          'namespace' => 'Database\\Seeders',
          'uses' => 
         array (
+          'createadminuser' => 'App\\Console\\Commands\\CreateAdminUser',
           'seeder' => 'Illuminate\\Database\\Seeder',
+          'permission' => 'Spatie\\Permission\\Models\\Permission',
           'role' => 'Spatie\\Permission\\Models\\Role',
           'permissionregistrar' => 'Spatie\\Permission\\PermissionRegistrar',
         ),
@@ -60,7 +64,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     1 => 
     array (
-      'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\RoleSeeder.php' => '18b6956983872dd63309d4499994220fd81e5e7a5fedd3768b92d40672758dec',
+      'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\RoleSeeder.php' => '3369d5f34cb1d8e6c53bb7eacd760ce9c3dd5e5aa899f551eb2f6446ca6f97f9',
     ),
   ),
 ));

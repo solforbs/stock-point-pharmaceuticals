@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { CreditLimitResolver, type CreditResolution } from '../../components/CreditLimitResolver'
 import { CustomerPicker } from '../../components/CustomerPicker'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
@@ -11,9 +12,10 @@ import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
-import { apiGet, apiPost, newIdempotencyKey, withIdempotency } from '../../lib/api'
+import { apiGet, apiPost, getApiError, newIdempotencyKey, withIdempotency } from '../../lib/api'
 import { formatDate, formatDateTime } from '../../lib/format'
 import { useStores } from '../../lib/hooks'
+import { PAYMENT_TERMS_LABEL } from '../../lib/paymentTerms'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Customer, Paginated, SalesOrder } from '../../lib/types'
@@ -34,6 +36,7 @@ export default function SalesOrdersPage() {
   const [requiredDate, setRequiredDate] = useState('')
   const [lines, setLines] = useState<EditableLine[]>([])
   const [attemptKey, setAttemptKey] = useState(() => newIdempotencyKey())
+  const [paymentTerms, setPaymentTerms] = useState('')
   const selectedId = params.get('order')
   const effectiveStore = storeId || stores.data?.find((s) => s.is_sellable)?.id || ''
 
@@ -48,7 +51,7 @@ export default function SalesOrdersPage() {
     mutationFn: () =>
       apiPost<SalesOrder>(
         '/api/sales-orders',
-        { customer_id: customer?.id, store_id: effectiveStore, required_date: requiredDate || null, lines: linesPayload(lines) },
+        { customer_id: customer?.id, store_id: effectiveStore, required_date: requiredDate || null, payment_terms: paymentTerms || null, lines: linesPayload(lines) },
         withIdempotency(attemptKey),
       ),
     onSuccess: (order) => {
@@ -118,6 +121,13 @@ export default function SalesOrdersPage() {
             <Field label="Required date">
               <Input type="date" value={requiredDate} onChange={(e) => setRequiredDate(e.target.value)} />
             </Field>
+            <Field label="Payment terms" hint="Automatic: on account when the customer has a credit limit, otherwise cash on delivery.">
+              <Select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)}>
+                <option value="">Automatic</option>
+                <option value="ACCOUNT">{PAYMENT_TERMS_LABEL.ACCOUNT}</option>
+                <option value="CASH_ON_DELIVERY">{PAYMENT_TERMS_LABEL.CASH_ON_DELIVERY}</option>
+              </Select>
+            </Field>
           </div>
           <Field label="Lines" required>
             <DocLinesEditor lines={lines} onChange={setLines} canDiscount={canDiscount} />
@@ -149,7 +159,8 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
   }
 
   const confirm = useMutation({
-    mutationFn: () => apiPost<SalesOrder>(`/api/sales-orders/${id}/confirm`),
+    meta: { silent: true },
+    mutationFn: (resolution: CreditResolution = {}) => apiPost<SalesOrder>(`/api/sales-orders/${id}/confirm`, resolution),
     onSuccess: (o) => {
       toast.success(`${o.doc_number} confirmed`, 'Stock reserved.')
       invalidate()
@@ -177,7 +188,7 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
         o ? (
           <div className="flex gap-2">
             {o.status === 'DRAFT' && (
-              <Button variant="success" size="sm" onClick={() => confirm.mutate()} disabled={confirm.isPending}>
+              <Button variant="success" size="sm" onClick={() => confirm.mutate({})} disabled={confirm.isPending}>
                 Confirm & reserve
               </Button>
             )}
@@ -197,13 +208,25 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
     >
       {order.isLoading && <LoadingSkeleton />}
       {order.isError && <InlineError error={order.error} />}
+      {confirm.isError && (
+        <div className="mb-3 space-y-2">
+          <CreditLimitResolver error={confirm.error} pending={confirm.isPending} onResolve={(r) => confirm.mutate(r)} />
+          {getApiError(confirm.error).code !== 'CREDIT_LIMIT_EXCEEDED' && <InlineError error={confirm.error} />}
+        </div>
+      )}
       {o && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <StatusBadge status={o.status} />
             {o.cancel_reason && <span className="text-[11.5px] text-[var(--status-red)]">Cancelled: {o.cancel_reason}</span>}
           </div>
-          <DescriptionList items={[{ label: 'Required', value: formatDate(o.required_date) }, { label: 'Quotation', value: o.quotation_id ?? '—' }]} />
+          <DescriptionList
+            items={[
+              { label: 'Required', value: formatDate(o.required_date) },
+              { label: 'Payment terms', value: `${PAYMENT_TERMS_LABEL[o.payment_terms ?? 'ACCOUNT']}${o.credit_override_reason ? ` · limit overridden: ${o.credit_override_reason}` : ''}` },
+              { label: 'Quotation', value: o.quotation_id ?? '—' },
+            ]}
+          />
           <table className="ui-table">
             <thead>
               <tr>

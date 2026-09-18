@@ -1,0 +1,181 @@
+import { useQuery } from '@tanstack/react-query'
+import { Printer } from 'lucide-react'
+import { useState } from 'react'
+import { CustomerPicker } from '../../components/CustomerPicker'
+import { DataTable, type Column } from '../../components/ui/DataTable'
+import { MoneyCell } from '../../components/ui/MoneyCell'
+import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
+import { EmptyState, ErrorState, LoadingSkeleton, NoAccess } from '../../components/ui/States'
+import { Button, Field, Input } from '../../components/ui/primitives'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
+import { apiGet } from '../../lib/api'
+import { formatDate, formatDateTime, titleCase, todayIso } from '../../lib/format'
+import { formatKes } from '../../lib/money'
+import { usePermission } from '../../lib/permissions'
+import type { Customer } from '../../lib/types'
+
+type StatementRow = { date: string; type: string; reference: string; debit: string; credit: string; balance: string }
+
+type Ageing = { current: string; d1_30: string; d31_60: string; d61_90: string; d90_plus: string; total: string }
+
+type CustomerStatement = {
+  from: string
+  to: string
+  generated_at: string
+  organisation: { id: string; name: string; legal_name: string | null; kra_pin: string | null } | null
+  branch: { id: string; code: string; name: string; address: string | null }
+  customer: { id: string; code: string; name: string; phone: string | null; email: string | null; address: string | null; payment_terms_days: number | null; credit_limit: string }
+  rows: StatementRow[]
+  opening_balance: string
+  closing_balance: string
+  total_debit: string
+  total_credit: string
+  ageing: Ageing
+}
+
+const AGEING_BUCKETS: { key: keyof Ageing; label: string }[] = [
+  { key: 'current', label: 'Current' },
+  { key: 'd1_30', label: '1–30 days' },
+  { key: 'd31_60', label: '31–60 days' },
+  { key: 'd61_90', label: '61–90 days' },
+  { key: 'd90_plus', label: 'Over 90 days' },
+  { key: 'total', label: 'Total due' },
+]
+
+/*
+ * Print only the statement: everything else on the page is hidden and the
+ * statement is laid out on a plain white sheet.
+ */
+const PRINT_CSS = `
+@media print {
+  body * { visibility: hidden !important; }
+  #customer-statement-sheet, #customer-statement-sheet * { visibility: visible !important; }
+  #customer-statement-sheet { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; box-shadow: none; border: none; background: #fff; color: #000; }
+  #customer-statement-sheet .no-print { display: none !important; }
+  #customer-statement-sheet table { font-size: 10.5pt; }
+  #customer-statement-sheet tr { break-inside: avoid; }
+  @page { size: A4; margin: 14mm; }
+}
+@media screen { #customer-statement-sheet .print-only { display: none; } }
+`
+
+function monthStartIso(): string {
+  return `${todayIso().slice(0, 8)}01`
+}
+
+/** Part 12.4 — a customer's statement: every invoice, receipt and credit note with a running balance, and the debt by age. */
+export default function CustomerStatementsPage() {
+  const canSales = usePermission('sale.view')
+  const canAr = usePermission('finance.ar.view')
+  const { data: user } = useCurrentUser()
+  const [customer, setCustomer] = useState<Customer | null>(null)
+  const [from, setFrom] = useState(monthStartIso)
+  const [to, setTo] = useState(todayIso)
+
+  const statement = useQuery({
+    queryKey: ['customers', 'statement', customer?.id, from, to],
+    queryFn: () => apiGet<CustomerStatement>(`/api/customers/${customer?.id}/statement`, { from, to }),
+    enabled: !!customer && canSales && canAr,
+  })
+
+  if (!canSales) return <NoAccess permission="sale.view" />
+  if (!canAr) return <NoAccess permission="finance.ar.view" />
+
+  const s = statement.data
+  const columns: Column<StatementRow>[] = [
+    { key: 'date', header: 'Date', render: (r) => <span className="tabular">{r.type === 'OPENING_BALANCE' ? formatDate(r.date) : formatDateTime(r.date)}</span> },
+    { key: 'type', header: 'Type', render: (r) => (r.type === 'OPENING_BALANCE' ? <span className="font-semibold">Balance brought forward</span> : titleCase(r.type)) },
+    { key: 'reference', header: 'Reference', render: (r) => <span className="tabular">{r.reference || '—'}</span> },
+    { key: 'debit', header: 'Debit', align: 'right', render: (r) => (Number(r.debit) ? <MoneyCell value={r.debit} /> : null) },
+    { key: 'credit', header: 'Credit', align: 'right', render: (r) => (Number(r.credit) ? <MoneyCell value={r.credit} /> : null) },
+    { key: 'balance', header: 'Balance', align: 'right', render: (r) => <MoneyCell value={r.balance} className="font-semibold" /> },
+  ]
+
+  return (
+    <Page>
+      <style>{PRINT_CSS}</style>
+      <PageHeader
+        parent="Sell"
+        title="Customer Statements"
+        subtitle="Every invoice, receipt and credit note for a customer with a running balance, plus what is owed by age."
+        actions={<Button variant="primary" disabled={!s} onClick={() => window.print()}><Printer size={13} /> Print</Button>}
+      />
+      <FilterBar>
+        <Field label="Customer" className="w-96"><CustomerPicker value={customer} onChange={setCustomer} /></Field>
+        <Field label="From" className="w-40"><Input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></Field>
+        <Field label="To" className="w-40"><Input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></Field>
+      </FilterBar>
+
+      {!customer ? (
+        <div className="ui-card"><EmptyState title="Choose a customer" hint="Pick a customer and a date range to see their statement." /></div>
+      ) : statement.isLoading ? (
+        <div className="ui-card"><LoadingSkeleton rows={8} /></div>
+      ) : statement.error || !s ? (
+        <div className="ui-card"><ErrorState error={statement.error} onRetry={() => statement.refetch()} /></div>
+      ) : (
+        <div id="customer-statement-sheet" className="ui-card p-5 space-y-4">
+          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-3">
+            <div>
+              <div className="text-[16px] font-bold">{s.organisation?.legal_name || s.organisation?.name || user?.active_branch?.name}</div>
+              <div className="text-[11.5px] text-[var(--text-secondary)]">{s.branch.name} ({s.branch.code}){s.branch.address ? ` · ${s.branch.address}` : ''}</div>
+              {s.organisation?.kra_pin && <div className="text-[11.5px] text-[var(--text-secondary)]">KRA PIN {s.organisation.kra_pin}</div>}
+            </div>
+            <div className="text-right">
+              <div className="text-[15px] font-bold uppercase tracking-wide">Statement of account</div>
+              <div className="text-[11.5px] text-[var(--text-secondary)] tabular">{formatDate(s.from)} – {formatDate(s.to)}</div>
+              <div className="text-[10.5px] text-[var(--text-muted)] print-only">Printed {formatDateTime(s.generated_at)}</div>
+            </div>
+          </header>
+
+          <section className="grid grid-cols-2 gap-4 text-[12px]">
+            <div>
+              <div className="text-[10.5px] uppercase tracking-wide text-[var(--text-muted)] font-semibold">Customer</div>
+              <div className="font-bold text-[13px]">{s.customer.name}</div>
+              <div className="tabular">{s.customer.code}</div>
+              {s.customer.address && <div>{s.customer.address}</div>}
+              {(s.customer.phone || s.customer.email) && <div>{[s.customer.phone, s.customer.email].filter(Boolean).join(' · ')}</div>}
+            </div>
+            <div className="text-right space-y-0.5">
+              <div>Payment terms: <span className="font-semibold">{s.customer.payment_terms_days ?? 0} days</span></div>
+              <div>Credit limit: <span className="font-semibold tabular">{formatKes(s.customer.credit_limit)}</span></div>
+              <div>Opening balance: <span className="font-semibold tabular">{formatKes(s.opening_balance)}</span></div>
+              <div className="text-[14px]">Balance due: <span className="font-bold tabular">{formatKes(s.closing_balance)}</span></div>
+            </div>
+          </section>
+
+          <DataTable
+            columns={columns}
+            rows={s.rows}
+            rowKey={(r) => `${r.date}-${r.type}-${r.reference}-${r.balance}`}
+            emptyTitle="No transactions in this period"
+            footer={
+              <tr className="font-bold">
+                <td colSpan={3} className="px-3 py-2 text-right">Totals for the period</td>
+                <td className="px-3 py-2 text-right"><MoneyCell value={s.total_debit} /></td>
+                <td className="px-3 py-2 text-right"><MoneyCell value={s.total_credit} /></td>
+                <td className="px-3 py-2 text-right"><MoneyCell value={s.closing_balance} /></td>
+              </tr>
+            }
+          />
+          {s.rows.length <= 1 && <p className="text-[11.5px] text-[var(--text-muted)]">No invoices, receipts or credit notes between these dates — only the balance brought forward.</p>}
+
+          <section>
+            <div className="text-[10.5px] uppercase tracking-wide text-[var(--text-muted)] font-semibold mb-1">Ageing of the balance due (as of today)</div>
+            <table className="w-full text-[12px] border border-[var(--border)]">
+              <thead>
+                <tr className="bg-[var(--surface-2)]">{AGEING_BUCKETS.map((b) => (<th key={b.key} className="px-3 py-1.5 text-right font-semibold">{b.label}</th>))}</tr>
+              </thead>
+              <tbody>
+                <tr>{AGEING_BUCKETS.map((b) => (<td key={b.key} className={`px-3 py-1.5 text-right tabular ${b.key === 'total' ? 'font-bold' : ''} ${b.key === 'd90_plus' && Number(s.ageing.d90_plus) > 0 ? 'text-[var(--status-red)]' : ''}`}>{formatKes(s.ageing[b.key], { symbol: false })}</td>))}</tr>
+              </tbody>
+            </table>
+          </section>
+
+          <footer className="text-[10.5px] text-[var(--text-muted)] border-t border-[var(--border)] pt-2">
+            Please quote your customer code {s.customer.code} with every payment. Queries on this statement should be raised within 14 days.
+          </footer>
+        </div>
+      )}
+    </Page>
+  )
+}

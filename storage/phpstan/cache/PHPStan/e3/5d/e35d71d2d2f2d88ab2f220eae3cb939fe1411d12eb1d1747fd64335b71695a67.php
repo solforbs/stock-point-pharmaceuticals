@@ -2,7 +2,7 @@
 
 // odsl-C:\xampp\htdocs\pharmacy_erp\app\Models\CustomerPrice.php-PHPStan\BetterReflection\Reflection\ReflectionClass-App\Models\CustomerPrice
 return \PHPStan\Cache\CacheItem::__set_state(array(
-   'variableKey' => 'v2-6.70.0.6-8.3.31-b193426d346de60c1ed5c4f63f0ec32037507a542e8c95cf4b8d8e1ebc8167fe',
+   'variableKey' => 'v2-6.70.0.6-8.3.31-4ebb5aa6d70a1110794248c37d7338e4bcf3b6be44da32fb9932b47a7c3a940a',
    'data' => 
   array (
     'locatedSource' => 
@@ -22,12 +22,15 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     'isEnum' => false,
     'isBackedEnum' => false,
     'modifiers' => 0,
-    'docComment' => NULL,
+    'docComment' => '/**
+ * @property-read Carbon $effective_from
+ * @property-read Carbon $effective_to
+ */',
     'attributes' => 
     array (
     ),
-    'startLine' => 9,
-    'endLine' => 50,
+    'startLine' => 14,
+    'endLine' => 63,
     'startColumn' => 1,
     'endColumn' => 1,
     'parentClassName' => 'Illuminate\\Database\\Eloquent\\Model',
@@ -55,20 +58,20 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
           'code' => '[\'organisation_id\', \'customer_id\', \'product_id\', \'uom_id\', \'unit_price\', \'contract_ref\', \'effective_from\', \'effective_to\', \'approved_by\']',
           'attributes' => 
           array (
-            'startLine' => 13,
-            'endLine' => 16,
-            'startTokenPos' => 43,
-            'startFilePos' => 258,
-            'endTokenPos' => 72,
-            'endFilePos' => 417,
+            'startLine' => 18,
+            'endLine' => 21,
+            'startTokenPos' => 50,
+            'startFilePos' => 377,
+            'endTokenPos' => 79,
+            'endFilePos' => 536,
           ),
         ),
         'docComment' => NULL,
         'attributes' => 
         array (
         ),
-        'startLine' => 13,
-        'endLine' => 16,
+        'startLine' => 18,
+        'endLine' => 21,
         'startColumn' => 5,
         'endColumn' => 6,
         'isPromoted' => false,
@@ -101,8 +104,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         array (
         ),
         'docComment' => NULL,
-        'startLine' => 18,
-        'endLine' => 25,
+        'startLine' => 23,
+        'endLine' => 30,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -138,8 +141,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return BelongsTo<Customer, $this>
  */',
-        'startLine' => 30,
-        'endLine' => 33,
+        'startLine' => 35,
+        'endLine' => 38,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -175,8 +178,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return BelongsTo<Product, $this>
  */',
-        'startLine' => 38,
-        'endLine' => 41,
+        'startLine' => 43,
+        'endLine' => 46,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -212,8 +215,45 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return BelongsTo<UnitOfMeasure, $this>
  */',
-        'startLine' => 46,
-        'endLine' => 49,
+        'startLine' => 51,
+        'endLine' => 54,
+        'startColumn' => 5,
+        'endColumn' => 5,
+        'couldThrow' => false,
+        'isClosure' => false,
+        'isGenerator' => false,
+        'isVariadic' => false,
+        'modifiers' => 1,
+        'namespace' => 'App\\Models',
+        'declaringClassName' => 'App\\Models\\CustomerPrice',
+        'implementingClassName' => 'App\\Models\\CustomerPrice',
+        'currentClassName' => 'App\\Models\\CustomerPrice',
+        'aliasName' => NULL,
+      ),
+      'approver' => 
+      array (
+        'name' => 'approver',
+        'parameters' => 
+        array (
+        ),
+        'returnsReference' => false,
+        'returnType' => 
+        array (
+          'class' => 'PHPStan\\BetterReflection\\Reflection\\ReflectionNamedType',
+          'data' => 
+          array (
+            'name' => 'Illuminate\\Database\\Eloquent\\Relations\\BelongsTo',
+            'isIdentifier' => false,
+          ),
+        ),
+        'attributes' => 
+        array (
+        ),
+        'docComment' => '/**
+ * @return BelongsTo<User, $this>
+ */',
+        'startLine' => 59,
+        'endLine' => 62,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,

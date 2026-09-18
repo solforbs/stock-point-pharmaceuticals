@@ -18,6 +18,7 @@ use App\Services\Pricing\QuoteExpiredException;
 use App\Services\Pricing\QuoteNotFoundException;
 use App\Services\Procurement\InvalidRequisitionStatusException;
 use App\Services\Procurement\SupplierOverpaymentException;
+use App\Services\Quality\InvalidExcursionStatusException;
 use App\Services\Quality\InvalidRecallStatusException;
 use App\Services\Quality\InvalidWasteStatusException;
 use App\Services\Sales\ApprovalRequiredException;
@@ -77,6 +78,7 @@ class ApiErrorMap
             $e instanceof InvalidCountStatusException,
             $e instanceof InvalidRequisitionStatusException,
             $e instanceof InvalidRecallStatusException,
+            $e instanceof InvalidExcursionStatusException,
             $e instanceof InvalidWasteStatusException,
             $e instanceof InvalidReturnStatusException,
             $e instanceof InvalidPayrollStatusException => ['INVALID_STATE', 409, []],

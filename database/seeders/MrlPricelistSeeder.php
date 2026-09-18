@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\UnitOfMeasure;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * First 100 catalogue lines from Medina Remedies Limited's 2026 pricelist
@@ -144,29 +145,73 @@ class MrlPricelistSeeder extends Seeder
             throw new \RuntimeException('UnitOfMeasureSeeder must run before MrlPricelistSeeder (EA unit not found).');
         }
 
-        foreach (self::ITEMS as [$code, $description, $price]) {
-            $product = Product::firstOrCreate(
-                ['organisation_id' => $organisation->id, 'code' => $code],
-                [
-                    'name' => $description,
-                    'base_uom_id' => $eaUomId,
-                    'is_discrete' => true,
-                    'requires_batch' => true,
-                    'default_price' => $price,
-                    'is_active' => true,
-                ]
-            );
+        self::seedItems($organisation->id, $eaUomId, self::ITEMS);
+    }
 
-            ProductUom::firstOrCreate(
-                ['product_id' => $product->id, 'uom_id' => $eaUomId],
-                [
-                    'factor_to_base' => 1,
-                    'is_base' => true,
-                    'is_purchase' => true,
-                    'is_sales' => true,
-                    'is_default_sales' => true,
-                ]
-            );
-        }
+    /**
+     * Inserts the catalogue lines that are not there yet (by code) and their
+     * base EA unit row, 500 at a time. Existing products are never touched,
+     * exactly like firstOrCreate, but ~6,000 lines load in seconds instead of
+     * the ~12,000 round trips a per-row loop costs.
+     *
+     * @param  list<array{0: string, 1: string, 2: string}>  $items  [code, description, price]
+     */
+    public static function seedItems(string $organisationId, string $eaUomId, array $items): void
+    {
+        DB::transaction(function () use ($organisationId, $eaUomId, $items) {
+            $existing = array_fill_keys(Product::where('organisation_id', $organisationId)->pluck('code')->all(), true);
+            $now = now();
+
+            foreach (array_chunk($items, 500) as $chunk) {
+                $rows = [];
+                foreach ($chunk as [$code, $description, $price]) {
+                    if (isset($existing[$code])) {
+                        continue;
+                    }
+                    $existing[$code] = true;
+                    $rows[] = [
+                        'id' => (new Product)->newUniqueId(),
+                        'organisation_id' => $organisationId,
+                        'code' => $code,
+                        'name' => $description,
+                        'base_uom_id' => $eaUomId,
+                        'is_discrete' => true,
+                        'pack_integrity' => true,
+                        'requires_batch' => true,
+                        'reorder_point' => '0',
+                        'safety_stock' => '0',
+                        'lead_time_days' => 0,
+                        'default_price' => $price,
+                        'is_active' => true,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+                if ($rows !== []) {
+                    Product::insert($rows);
+                }
+            }
+
+            // The base unit row every product needs to be sold or converted.
+            Product::where('organisation_id', $organisationId)
+                ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('product_uoms')->whereColumn('product_uoms.product_id', 'products.id')->where('product_uoms.uom_id', $eaUomId))
+                ->where('base_uom_id', $eaUomId)
+                ->pluck('id')
+                ->chunk(500)
+                ->each(function ($ids) use ($eaUomId, $now) {
+                    ProductUom::insert($ids->map(fn ($id) => [
+                        'id' => (new ProductUom)->newUniqueId(),
+                        'product_id' => $id,
+                        'uom_id' => $eaUomId,
+                        'factor_to_base' => 1,
+                        'is_base' => true,
+                        'is_purchase' => true,
+                        'is_sales' => true,
+                        'is_default_sales' => true,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ])->all());
+                });
+        });
     }
 }

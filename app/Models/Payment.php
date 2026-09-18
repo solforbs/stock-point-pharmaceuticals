@@ -20,6 +20,7 @@ class Payment extends Model
     protected $fillable = [
         'organisation_id', 'branch_id', 'customer_id', 'method', 'reference',
         'amount', 'received_by', 'received_at', 'reconciled_at',
+        'reconciled_by', 'reconciliation_ref', 'statement_date', 'statement_amount',
         'status', 'voided_by', 'void_reason', 'voided_at',
     ];
 
@@ -29,6 +30,8 @@ class Payment extends Model
             'amount' => 'decimal:4',
             'received_at' => 'datetime',
             'reconciled_at' => 'datetime',
+            'statement_date' => 'date:Y-m-d',
+            'statement_amount' => 'decimal:4',
             'voided_at' => 'datetime',
         ];
     }
@@ -39,6 +42,22 @@ class Payment extends Model
     public function allocations(): HasMany
     {
         return $this->hasMany(PaymentAllocation::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function receiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function reconciler(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reconciled_by');
     }
 
     /**

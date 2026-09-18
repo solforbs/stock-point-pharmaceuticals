@@ -47,6 +47,22 @@ import SalesOrdersPage from './features/sales/SalesOrdersPage'
 import DeliveriesPage from './features/warehouse/DeliveriesPage'
 import DispatchPage from './features/warehouse/DispatchPage'
 import PickListsPage from './features/warehouse/PickListsPage'
+import LocationsPage from './features/warehouse/LocationsPage'
+import PackingPage from './features/warehouse/PackingPage'
+import ContactsPage from './features/customers/ContactsPage'
+import ReconciliationPage from './features/finance/ReconciliationPage'
+import CustomerStatementsPage from './features/sales/CustomerStatementsPage'
+import SystemHealthPage from './features/admin/SystemHealthPage'
+import BackupPage from './features/admin/BackupPage'
+import SyncCentrePage from './features/admin/SyncCentrePage'
+import ColdChainPage from './features/quality/ColdChainPage'
+import LicencesPage from './features/quality/LicencesPage'
+import PharmacovigilancePage from './features/quality/PharmacovigilancePage'
+import SopsPage from './features/quality/SopsPage'
+import LeavePage from './features/people/LeavePage'
+import AnalyticsPage from './features/reports/AnalyticsPage'
+import ScheduledReportsPage from './features/reports/ScheduledReportsPage'
+import PricingRulesPage from './features/admin/pricing/PricingRulesPage'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
 import Placeholder from './pages/Placeholder'
@@ -122,6 +138,23 @@ function App() {
           <Route path="/admin/security" element={<SecurityPage />} />
           <Route path="/admin/number-sequences" element={<NumberSequencesPage />} />
           <Route path="/admin/audit-log" element={<AuditLogPage />} />
+
+          <Route path="/warehouse/locations" element={<LocationsPage />} />
+          <Route path="/warehouse/packing" element={<PackingPage />} />
+          <Route path="/customers/contacts" element={<ContactsPage />} />
+          <Route path="/finance/reconciliation" element={<ReconciliationPage />} />
+          <Route path="/sell/statements" element={<CustomerStatementsPage />} />
+          <Route path="/admin/system-health" element={<SystemHealthPage />} />
+          <Route path="/admin/backup" element={<BackupPage />} />
+          <Route path="/admin/sync-centre" element={<SyncCentrePage />} />
+          <Route path="/quality/cold-chain" element={<ColdChainPage />} />
+          <Route path="/quality/pharmacovigilance" element={<PharmacovigilancePage />} />
+          <Route path="/quality/licences" element={<LicencesPage />} />
+          <Route path="/quality/sops" element={<SopsPage />} />
+          <Route path="/people/leave" element={<LeavePage />} />
+          <Route path="/reports/analytics" element={<AnalyticsPage />} />
+          <Route path="/reports/scheduled" element={<ScheduledReportsPage />} />
+          <Route path="/admin/pricing-rules" element={<PricingRulesPage />} />
 
           <Route path="/:moduleKey" element={<Placeholder />} />
           <Route path="/:moduleKey/:sectionKey" element={<Placeholder />} />

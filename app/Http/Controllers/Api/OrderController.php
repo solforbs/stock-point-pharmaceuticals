@@ -74,16 +74,23 @@ class OrderController extends ApiController
             return response()->json($existing->load('lines'))->header('X-Idempotent-Replay', 'true');
         }
 
+        $terms = $request->validate([
+            'payment_terms' => ['nullable', 'in:ACCOUNT,CASH_ON_DELIVERY'],
+            'credit_override_reason' => ['nullable', 'string', 'min:5', 'max:255'],
+        ]);
+        $override = $this->creditOverrideReason($request, $terms['credit_override_reason'] ?? null);
+
         // One unit of work: if the credit check or reservation fails, no
         // DRAFT order is left behind under this idempotency key.
-        $order = DB::transaction(function () use ($quotations, $orders, $quotation, $request, $key) {
+        $order = DB::transaction(function () use ($quotations, $orders, $quotation, $request, $key, $terms, $override) {
             $order = $quotations->convertToSalesOrder($quotation, [
                 'user_id' => $request->user()->id,
                 'idempotency_key' => $key,
                 'required_date' => $request->input('required_date'),
+                'payment_terms' => $terms['payment_terms'] ?? null,
             ]);
 
-            return $orders->confirm($order, $request->user()->id);
+            return $orders->confirm($order, $request->user()->id, $override);
         });
 
         return response()->json($order, 201);
@@ -101,6 +108,7 @@ class OrderController extends ApiController
             'customer_id' => ['required', 'uuid', 'exists:customers,id'],
             'store_id' => ['required', 'uuid', 'exists:stores,id'],
             'required_date' => ['nullable', 'date'],
+            'payment_terms' => ['nullable', 'in:ACCOUNT,CASH_ON_DELIVERY'],
             'header_discount' => ['nullable', 'numeric', 'min:0'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
@@ -127,6 +135,7 @@ class OrderController extends ApiController
             'organisation_id' => $organisationId, 'branch_id' => $branchId, 'store_id' => $data['store_id'],
             'sale_mode' => 'WHOLESALE', 'customer_id' => $data['customer_id'], 'user_id' => $request->user()->id,
             'required_date' => $data['required_date'] ?? null, 'idempotency_key' => $key,
+            'payment_terms' => $data['payment_terms'] ?? null,
             'lines' => array_map(fn ($l) => [
                 'product_id' => $l['product_id'], 'uom_id' => $l['uom_id'], 'qty' => $l['quantity'],
                 'list_price' => $l['break_price'], 'unit_price' => $l['unit_price'],
@@ -162,8 +171,27 @@ class OrderController extends ApiController
     public function confirmSalesOrder(Request $request, string $order, SalesOrderService $orders): JsonResponse
     {
         $this->requirePermission($request, 'sale.create');
+        $data = $request->validate([
+            'payment_terms' => ['nullable', 'in:ACCOUNT,CASH_ON_DELIVERY'],
+            'credit_override_reason' => ['nullable', 'string', 'min:5', 'max:255'],
+        ]);
+        $order = $this->findOrder($request, $order);
+        if (! empty($data['payment_terms']) && $order->status === 'DRAFT') {
+            $order->update(['payment_terms' => $data['payment_terms']]);
+        }
 
-        return response()->json($orders->confirm($this->findOrder($request, $order), $request->user()->id));
+        return response()->json($orders->confirm($order, $request->user()->id, $this->creditOverrideReason($request, $data['credit_override_reason'] ?? null)));
+    }
+
+    /** Part 10.4 — only a holder of customer.credit.override may take an order past the limit. */
+    private function creditOverrideReason(Request $request, ?string $reason): ?string
+    {
+        if ($reason === null || trim($reason) === '') {
+            return null;
+        }
+        $this->requirePermission($request, 'customer.credit.override');
+
+        return $reason;
     }
 
     public function cancelSalesOrder(Request $request, string $order, SalesOrderService $orders): JsonResponse

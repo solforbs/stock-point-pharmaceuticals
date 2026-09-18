@@ -1,0 +1,49 @@
+/*
+ * Chart palette — the validated reference categorical order (blue, orange,
+ * aqua, yellow, magenta, green, violet, red), stepped separately for the dark
+ * surface. Marks use these; text always uses the app's text tokens.
+ */
+.viz-root {
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+  --viz-4: #eda100;
+  --viz-5: #e87ba4;
+  --viz-6: #008300;
+  --viz-7: #4a3aa7;
+  --viz-8: #e34948;
+  --viz-grid: color-mix(in srgb, var(--text-muted) 22%, transparent);
+  --viz-surface: var(--card);
+}
+@media (prefers-color-scheme: dark) {
+  .viz-root {
+    --viz-1: #3987e5;
+    --viz-2: #d95926;
+    --viz-3: #199e70;
+    --viz-4: #c98500;
+    --viz-5: #d55181;
+    --viz-6: #008300;
+    --viz-7: #9085e9;
+    --viz-8: #e66767;
+  }
+}
+.viz-root text {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.viz-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  min-width: 120px;
+  max-width: 260px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.14);
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: nowrap;
+}

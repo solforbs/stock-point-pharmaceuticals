@@ -866,7 +866,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     1 => 
     array (
-      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\PayrollController.php' => '1b7d7c19b774fad10bf9a397c4af488634e529ddd4de7eea7a229e8d74cbcece',
+      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\PayrollController.php' => '6c81aa93ee10805076a1a8a3ab67d56f3cf8887a56434d57194a7e8999bb61ce',
     ),
   ),
 ));

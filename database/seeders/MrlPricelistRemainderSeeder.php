@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Organisation;
-use App\Models\Product;
-use App\Models\ProductUom;
 use App\Models\UnitOfMeasure;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
@@ -71,29 +69,6 @@ class MrlPricelistRemainderSeeder extends Seeder
         /** @var list<array{0: string, 1: string, 2: string}> $items */
         $items = json_decode(File::get($path), true, flags: JSON_THROW_ON_ERROR);
 
-        foreach ($items as [$code, $description, $price]) {
-            $product = Product::firstOrCreate(
-                ['organisation_id' => $organisation->id, 'code' => $code],
-                [
-                    'name' => $description,
-                    'base_uom_id' => $eaUomId,
-                    'is_discrete' => true,
-                    'requires_batch' => true,
-                    'default_price' => $price,
-                    'is_active' => true,
-                ]
-            );
-
-            ProductUom::firstOrCreate(
-                ['product_id' => $product->id, 'uom_id' => $eaUomId],
-                [
-                    'factor_to_base' => 1,
-                    'is_base' => true,
-                    'is_purchase' => true,
-                    'is_sales' => true,
-                    'is_default_sales' => true,
-                ]
-            );
-        }
+        MrlPricelistSeeder::seedItems($organisation->id, $eaUomId, $items);
     }
 }

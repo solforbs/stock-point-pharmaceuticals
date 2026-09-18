@@ -5,7 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property-read Carbon $effective_from
+ * @property-read Carbon $effective_to
+ */
 class CustomerPrice extends Model
 {
     use HasUuids;
@@ -46,5 +51,13 @@ class CustomerPrice extends Model
     public function uom(): BelongsTo
     {
         return $this->belongsTo(UnitOfMeasure::class, 'uom_id');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

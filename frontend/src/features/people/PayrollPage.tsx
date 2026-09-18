@@ -139,7 +139,7 @@ function RunDrawer({ id, onClose }: { id: string | null; onClose: () => void }) 
       {anyError && <InlineError error={anyError} className="mb-3" />}
       {r && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={r.status} /><span className="text-[11.5px] text-[var(--text-muted)]">Separation of duties: the person who computes cannot approve.</span></div>
+          <div className="flex items-center gap-2"><StatusBadge status={r.status} /><span className="text-[11.5px] text-[var(--text-muted)]">{perms.has('payroll.approve.own') ? 'You may approve runs you prepared yourself; that is recorded in the audit log.' : 'Separation of duties: the person who prepared the run cannot approve it.'}</span></div>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-center">
             {[['Gross', r.total_gross], ['PAYE', r.total_paye], ['NSSF (ee)', r.total_nssf_employee], ['SHIF', r.total_shif], ['Housing levy (ee)', r.total_housing_levy_employee], ['Net pay', r.total_net]].map(([label, value]) => (
               <div key={label} className="ui-card p-2"><div className="ui-label !mb-0">{label}</div><div className="text-[14px] font-extrabold tabular">{formatMoney(value)}</div></div>

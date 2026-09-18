@@ -103,14 +103,24 @@ class PayrollService
         });
     }
 
-    public function approve(PayrollRun $run, int $approverId): PayrollRun
+    /**
+     * Part 18.3 — a second person approves what one prepared. A holder of
+     * payroll.approve.own (the owner/administrator of a small business that
+     * has no second payroll officer) may approve their own run; that is
+     * recorded on the audit row so the waiver is visible afterwards.
+     */
+    public function approve(PayrollRun $run, int $approverId, bool $mayApproveOwn = false): PayrollRun
     {
         $this->assertStatus($run, ['COMPUTED']);
-        if ((int) $run->created_by === $approverId) {
+        $selfApproved = (int) $run->created_by === $approverId;
+        if ($selfApproved && ! $mayApproveOwn) {
             throw new \DomainException('Payroll must be approved by someone other than the person who prepared it (Part 18.3 separation of duties).');
         }
         $run->update(['status' => 'APPROVED', 'approved_by' => $approverId, 'approved_at' => now()]);
-        AuditLog::record('PAYROLL_APPROVED', 'payroll_run', $run->id, ['user_id' => $approverId, 'branch_id' => $run->branch_id, 'reference' => $run->doc_number]);
+        AuditLog::record('PAYROLL_APPROVED', 'payroll_run', $run->id, [
+            'user_id' => $approverId, 'branch_id' => $run->branch_id, 'reference' => $run->doc_number,
+            'after_json' => ['self_approved' => $selfApproved],
+        ]);
 
         return $run->fresh(['lines']);
     }

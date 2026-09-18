@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Console\Commands\CreateAdminUser;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -21,31 +23,47 @@ class RoleSeeder extends Seeder
             'report.view', 'report.financial.view', 'admin.settings', 'sale.discount.approve',
             'stock.adjust.approve', 'po.approve', 'period.close', 'recall.initiate',
             'waste.approve', 'customer.credit.override', 'payroll.view', 'audit.view',
+            'licence.view', 'licence.manage', 'document.manage',
+            // A small business's owner prepares and approves payroll alone (decision 2026-09-18).
+            'payroll.process', 'payroll.approve.own',
+            'payment.reconcile',
+            'leave.request', 'leave.approve', 'report.schedule', 'price.manage', 'price.simulate',
         ],
         'Operations Manager' => [
             'sale.view', 'product.view', 'product.edit', 'customer.manage', 'supplier.view', 'supplier.manage',
             'warehouse.pick', 'warehouse.dispatch', 'finance.ar.view',
+            'location.manage',
             'sale.create', 'sale.void', 'sale.discount.approve', 'sale.mode.switch',
             'stock.view', 'stock.adjust', 'stock.adjust.approve', 'stock.count.post',
             'stock.transfer.create', 'stock.transfer.approve', 'stock.transfer.dispatch', 'stock.transfer.receive',
             'stock.count.enter', 'stock.fefo.override', 'requisition.view', 'requisition.create', 'requisition.approve', 'po.create', 'po.approve',
             'grn.create', 'quality.release', 'recall.initiate', 'waste.approve', 'return.create', 'return.post', 'supplier.return',
+            'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view', 'licence.manage', 'document.manage',
             'report.view', 'report.financial.view',
+            'leave.approve', 'report.schedule', 'price.manage', 'price.simulate',
         ],
         'Pharmacist' => [
             'sale.view', 'product.view', 'requisition.view', 'requisition.create', 'sale.create', 'stock.view', 'stock.fefo.override', 'quality.release',
             'grn.qc.release', 'recall.initiate', 'waste.approve', 'return.post', 'stock.adjust',
+            'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view',
+            'leave.request',
         ],
         'Senior Cashier' => [
             'sale.view', 'product.view', 'payment.record', 'return.create', 'sale.create', 'sale.void', 'sale.discount.apply', 'sale.mode.switch', 'stock.view',
+            'adr.report',
+            'leave.request', 'price.simulate',
         ],
         'Cashier' => [
             'sale.view', 'product.view', 'sale.create', 'sale.discount.apply', 'stock.view',
+            'leave.request',
         ],
         'Storekeeper' => [
             'product.view', 'warehouse.pick', 'warehouse.dispatch', 'stock.view', 'stock.adjust', 'stock.count.post', 'stock.count.enter',
             'stock.transfer.create', 'stock.transfer.dispatch', 'stock.transfer.receive',
             'requisition.view', 'requisition.create', 'grn.create', 'product.create', 'return.create', 'supplier.return',
+            'coldchain.record',
+            'location.manage',
+            'leave.request',
         ],
         'Procurement Officer' => [
             'product.view', 'supplier.view', 'supplier.manage', 'stock.view', 'requisition.view', 'requisition.approve', 'supplier.return', 'report.view', 'po.create', 'grn.create', 'invoice.match', 'product.create',
@@ -54,12 +72,17 @@ class RoleSeeder extends Seeder
             'sale.view', 'product.view', 'supplier.view', 'finance.ar.view', 'finance.ap.view', 'customer.credit.override', 'report.view',
             'payment.record', 'journal.post', 'journal.reverse', 'invoice.match', 'tax.etims.manage', 'payroll.view', 'payroll.process',
             'report.financial.view', 'product.cost.view',
+            'payment.reconcile',
+            'leave.request', 'leave.approve', 'report.schedule',
         ],
         'Auditor' => [
             'sale.view', 'product.view', 'supplier.view', 'finance.ar.view', 'finance.ap.view', 'audit.view', 'report.view', 'report.financial.view', 'stock.view', 'product.cost.view', 'payroll.view',
+            'licence.view',
+            'leave.request',
         ],
         'System Administrator' => [
             'admin.users', 'admin.settings', 'audit.view',
+            'licence.view', 'licence.manage', 'document.manage',
         ],
     ];
 
@@ -75,5 +98,12 @@ class RoleSeeder extends Seeder
             );
             $role->syncPermissions($permissions);
         }
+
+        // The setup/owner role from `user:create-admin --full-access` holds
+        // every permission, including ones added after it was created.
+        Role::where('name', CreateAdminUser::SUPER_ADMINISTRATOR)->where('guard_name', 'web')->whereNull('branch_id')->first()
+            ?->syncPermissions(Permission::where('guard_name', 'web')->get());
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

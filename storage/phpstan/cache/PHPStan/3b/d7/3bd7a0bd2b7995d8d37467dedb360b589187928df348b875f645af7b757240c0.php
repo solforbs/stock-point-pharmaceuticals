@@ -2,7 +2,7 @@
 
 // odsl-C:\xampp\htdocs\pharmacy_erp\app\Models\Promotion.php-PHPStan\BetterReflection\Reflection\ReflectionClass-App\Models\Promotion
 return \PHPStan\Cache\CacheItem::__set_state(array(
-   'variableKey' => 'v2-6.70.0.6-8.3.31-dd1614e1d64dbc9c4416012a315b14fd50a26527bee72cdedcc6aa25bd4df5e2',
+   'variableKey' => 'v2-6.70.0.6-8.3.31-63b106e1585af99b2ddf607dd2c664c8162d0335c3aa01f12252318239d275b9',
    'data' => 
   array (
     'locatedSource' => 
@@ -25,12 +25,16 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     'docComment' => '/**
  * @property-read string $promo_type
  * @property-read string $funded_by
+ * @property-read Carbon $effective_from
+ * @property-read Carbon $effective_to
+ * @property-read string|null $customer_scope
+ * @property-read string|null $branch_scope
  */',
     'attributes' => 
     array (
     ),
-    'startLine' => 14,
-    'endLine' => 56,
+    'startLine' => 19,
+    'endLine' => 61,
     'startColumn' => 1,
     'endColumn' => 1,
     'parentClassName' => 'Illuminate\\Database\\Eloquent\\Model',
@@ -58,20 +62,20 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
           'code' => '[\'organisation_id\', \'code\', \'name\', \'promo_type\', \'effective_from\', \'effective_to\', \'customer_scope\', \'branch_scope\', \'funded_by\', \'supplier_id\', \'is_active\']',
           'attributes' => 
           array (
-            'startLine' => 18,
-            'endLine' => 21,
-            'startTokenPos' => 50,
-            'startFilePos' => 387,
-            'endTokenPos' => 85,
-            'endFilePos' => 567,
+            'startLine' => 23,
+            'endLine' => 26,
+            'startTokenPos' => 55,
+            'startFilePos' => 588,
+            'endTokenPos' => 90,
+            'endFilePos' => 768,
           ),
         ),
         'docComment' => NULL,
         'attributes' => 
         array (
         ),
-        'startLine' => 18,
-        'endLine' => 21,
+        'startLine' => 23,
+        'endLine' => 26,
         'startColumn' => 5,
         'endColumn' => 6,
         'isPromoted' => false,
@@ -104,8 +108,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         array (
         ),
         'docComment' => NULL,
-        'startLine' => 23,
-        'endLine' => 30,
+        'startLine' => 28,
+        'endLine' => 35,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -141,8 +145,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return HasMany<PromotionLine, $this>
  */',
-        'startLine' => 35,
-        'endLine' => 38,
+        'startLine' => 40,
+        'endLine' => 43,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -178,8 +182,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return BelongsTo<Supplier, $this>
  */',
-        'startLine' => 43,
-        'endLine' => 46,
+        'startLine' => 48,
+        'endLine' => 51,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -206,12 +210,12 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
               'code' => 'null',
               'attributes' => 
               array (
-                'startLine' => 48,
-                'endLine' => 48,
-                'startTokenPos' => 202,
-                'startFilePos' => 1159,
-                'endTokenPos' => 202,
-                'endFilePos' => 1162,
+                'startLine' => 53,
+                'endLine' => 53,
+                'startTokenPos' => 207,
+                'startFilePos' => 1360,
+                'endTokenPos' => 207,
+                'endFilePos' => 1363,
               ),
             ),
             'type' => 
@@ -248,8 +252,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
             'attributes' => 
             array (
             ),
-            'startLine' => 48,
-            'endLine' => 48,
+            'startLine' => 53,
+            'endLine' => 53,
             'startColumn' => 39,
             'endColumn' => 70,
             'parameterIndex' => 0,
@@ -270,8 +274,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         array (
         ),
         'docComment' => NULL,
-        'startLine' => 48,
-        'endLine' => 55,
+        'startLine' => 53,
+        'endLine' => 60,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,

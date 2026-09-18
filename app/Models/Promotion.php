@@ -6,10 +6,15 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property-read string $promo_type
  * @property-read string $funded_by
+ * @property-read Carbon $effective_from
+ * @property-read Carbon $effective_to
+ * @property-read string|null $customer_scope
+ * @property-read string|null $branch_scope
  */
 class Promotion extends Model
 {

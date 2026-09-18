@@ -1,26 +1,18 @@
-import { useParams } from 'react-router-dom'
-import { NAV_ITEMS } from '../lib/navigation'
+import { Link, useLocation } from 'react-router-dom'
 
-function titleCase(slug: string) {
-  return slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
+/**
+ * Catch-all for addresses that are not a screen. Every sidebar entry has a
+ * real page, so reaching this means a mistyped or outdated link.
+ */
 export default function Placeholder() {
-  const { moduleKey = '', sectionKey } = useParams()
-
-  const module = NAV_ITEMS.find((m) => m.key === moduleKey)
-  const section = module?.children?.find((c) => c.key === sectionKey)
-
-  const title = section?.label ?? module?.label ?? titleCase(moduleKey)
-  const parent = section ? module?.label : undefined
+  const { pathname } = useLocation()
 
   return (
     <div className="p-7">
-      {parent && <div className="text-[11px] text-[var(--text-muted)] mb-1">{parent}</div>}
-      <h1 className="text-[19px] font-extrabold text-[var(--text)]">{title}</h1>
-      <p className="text-[11px] text-[var(--text-muted)] mt-2 max-w-md">
-        This workspace is on the build roadmap but not implemented yet — the sidebar link is
-        live so navigation can be reviewed end to end before each module's screens are built.
+      <h1 className="text-[19px] font-extrabold text-[var(--text)]">Page not found</h1>
+      <p className="text-[12px] text-[var(--text-muted)] mt-2 max-w-md">
+        There is no screen at <span className="tabular font-semibold">{pathname}</span>. Use the menu on the left, or go back to the{' '}
+        <Link to="/dashboard" className="underline">dashboard</Link>.
       </p>
     </div>
   )

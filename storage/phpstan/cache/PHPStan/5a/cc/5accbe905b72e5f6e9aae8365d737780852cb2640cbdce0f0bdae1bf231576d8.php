@@ -2,7 +2,7 @@
 
 // odsl-C:\xampp\htdocs\pharmacy_erp\app\Models\PickingList.php-PHPStan\BetterReflection\Reflection\ReflectionClass-App\Models\PickingList
 return \PHPStan\Cache\CacheItem::__set_state(array(
-   'variableKey' => 'v2-6.70.0.6-8.3.31-307f1165cb94f3a1faa70c235880f44410eaa7c1c2245e0611255e42724ee28e',
+   'variableKey' => 'v2-6.70.0.6-8.3.31-7b37813bd0893fcba297c35991b07d38812da2d87c4e953bbd069b80e6cf9db8',
    'data' => 
   array (
     'locatedSource' => 
@@ -29,7 +29,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     array (
     ),
     'startLine' => 13,
-    'endLine' => 53,
+    'endLine' => 65,
     'startColumn' => 1,
     'endColumn' => 1,
     'parentClassName' => 'Illuminate\\Database\\Eloquent\\Model',
@@ -54,15 +54,15 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'type' => NULL,
         'default' => 
         array (
-          'code' => '[\'organisation_id\', \'branch_id\', \'store_id\', \'sales_order_id\', \'doc_number\', \'status\', \'assigned_picker_id\', \'started_at\', \'completed_at\']',
+          'code' => '[\'organisation_id\', \'branch_id\', \'store_id\', \'sales_order_id\', \'doc_number\', \'status\', \'assigned_picker_id\', \'started_at\', \'completed_at\', \'packed_at\', \'packed_by\', \'package_count\', \'total_weight_kg\', \'packing_notes\']',
           'attributes' => 
           array (
             'startLine' => 17,
-            'endLine' => 20,
+            'endLine' => 21,
             'startTokenPos' => 50,
             'startFilePos' => 349,
-            'endTokenPos' => 79,
-            'endFilePos' => 509,
+            'endTokenPos' => 94,
+            'endFilePos' => 596,
           ),
         ),
         'docComment' => NULL,
@@ -70,7 +70,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         array (
         ),
         'startLine' => 17,
-        'endLine' => 20,
+        'endLine' => 21,
         'startColumn' => 5,
         'endColumn' => 6,
         'isPromoted' => false,
@@ -103,8 +103,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         array (
         ),
         'docComment' => NULL,
-        'startLine' => 22,
-        'endLine' => 28,
+        'startLine' => 23,
+        'endLine' => 32,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -140,8 +140,45 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return BelongsTo<SalesOrder, $this>
  */',
-        'startLine' => 33,
-        'endLine' => 36,
+        'startLine' => 37,
+        'endLine' => 40,
+        'startColumn' => 5,
+        'endColumn' => 5,
+        'couldThrow' => false,
+        'isClosure' => false,
+        'isGenerator' => false,
+        'isVariadic' => false,
+        'modifiers' => 1,
+        'namespace' => 'App\\Models',
+        'declaringClassName' => 'App\\Models\\PickingList',
+        'implementingClassName' => 'App\\Models\\PickingList',
+        'currentClassName' => 'App\\Models\\PickingList',
+        'aliasName' => NULL,
+      ),
+      'packer' => 
+      array (
+        'name' => 'packer',
+        'parameters' => 
+        array (
+        ),
+        'returnsReference' => false,
+        'returnType' => 
+        array (
+          'class' => 'PHPStan\\BetterReflection\\Reflection\\ReflectionNamedType',
+          'data' => 
+          array (
+            'name' => 'Illuminate\\Database\\Eloquent\\Relations\\BelongsTo',
+            'isIdentifier' => false,
+          ),
+        ),
+        'attributes' => 
+        array (
+        ),
+        'docComment' => '/**
+ * @return BelongsTo<User, $this>
+ */',
+        'startLine' => 45,
+        'endLine' => 48,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -177,8 +214,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return HasMany<DeliveryNote, $this>
  */',
-        'startLine' => 41,
-        'endLine' => 44,
+        'startLine' => 53,
+        'endLine' => 56,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -214,8 +251,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return HasMany<PickingListLine, $this>
  */',
-        'startLine' => 49,
-        'endLine' => 52,
+        'startLine' => 61,
+        'endLine' => 64,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,

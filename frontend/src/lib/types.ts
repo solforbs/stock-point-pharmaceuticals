@@ -105,6 +105,8 @@ export type Product = {
   dosage_form?: NamedRef | null
   tax_code?: NamedRef | null
   prices?: ProductPrice[]
+  /** Active-branch stock, present when the user holds stock.view (GET /api/products). */
+  stock?: { on_hand: Decimal; reserved: Decimal; free_to_sell: Decimal; nearest_expiry: string | null }
 }
 
 export type StockBatchRow = {
@@ -410,6 +412,8 @@ export type SalesOrder = {
   store_id: string
   quotation_id: string | null
   required_date: string | null
+  payment_terms?: 'ACCOUNT' | 'CASH_ON_DELIVERY'
+  credit_override_reason?: string | null
   subtotal: Decimal
   discount_total: Decimal
   tax_total: Decimal

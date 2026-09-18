@@ -5,6 +5,7 @@ import { Page, PageHeader } from '../../components/ui/PageHeader'
 import { InlineError, NoAccess } from '../../components/ui/States'
 import { Button, Card, Field, Select } from '../../components/ui/primitives'
 import { apiPost, getApiError } from '../../lib/api'
+import { downloadBlob, parseCsv } from '../../lib/csv'
 import { useStores } from '../../lib/hooks'
 import { formatKes, formatQty } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
@@ -15,33 +16,6 @@ type Summary = { reference: string; lines: number; total_qty: string; total_valu
 
 const REQUIRED = ['product_code', 'batch_number', 'expiry_date', 'qty', 'unit_cost'] as const
 const TEMPLATE = 'product_code,batch_number,expiry_date,qty,unit_cost\nA0001,AB1234,2027-06-30,24,1250.00\n'
-
-/** RFC 4180-ish CSV: quoted fields, doubled quotes, commas inside quotes ("2,500"). */
-function parseCsv(text: string): string[][] {
-  const rows: string[][] = []
-  let row: string[] = []
-  let cell = ''
-  let quoted = false
-  const src = text.replace(/^﻿/, '')
-  for (let i = 0; i < src.length; i++) {
-    const c = src[i]
-    if (quoted) {
-      if (c === '"' && src[i + 1] === '"') { cell += '"'; i++ }
-      else if (c === '"') quoted = false
-      else cell += c
-    } else if (c === '"') quoted = true
-    else if (c === ',') { row.push(cell); cell = '' }
-    else if (c === '\n' || c === '\r') {
-      if (c === '\r' && src[i + 1] === '\n') i++
-      row.push(cell); cell = ''
-      if (row.some((v) => v.trim() !== '')) rows.push(row)
-      row = []
-    } else cell += c
-  }
-  row.push(cell)
-  if (row.some((v) => v.trim() !== '')) rows.push(row)
-  return rows
-}
 
 function toRows(text: string): { rows: Row[]; missing: string[] } {
   const [header = [], ...body] = parseCsv(text)
@@ -99,14 +73,7 @@ export default function OpeningStockPage() {
     post.reset()
   }
 
-  const downloadTemplate = () => {
-    const url = URL.createObjectURL(new Blob([TEMPLATE], { type: 'text/csv' }))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'opening-stock-template.csv'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+  const downloadTemplate = () => downloadBlob(TEMPLATE, 'opening-stock-template.csv')
 
   const totalValue = rows.reduce((sum, r) => sum + (Number(r.qty.replace(/,/g, '')) || 0) * (Number(r.unit_cost.replace(/,/g, '')) || 0), 0)
 

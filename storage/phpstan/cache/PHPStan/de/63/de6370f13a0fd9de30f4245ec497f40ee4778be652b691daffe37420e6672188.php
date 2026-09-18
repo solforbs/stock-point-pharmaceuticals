@@ -542,6 +542,77 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
          'typeAliasClassName' => NULL,
          'traitData' => NULL,
       )),
+      '09ac7beea2017326cb893c0925d8f821' => 
+      \PHPStan\Analyser\IntermediaryNameScope::__set_state(array(
+         'namespace' => 'App\\Services\\Sales',
+         'uses' => 
+        array (
+          'auditlog' => 'App\\Models\\AuditLog',
+          'customercredit' => 'App\\Models\\CustomerCredit',
+          'numbersequence' => 'App\\Models\\NumberSequence',
+          'product' => 'App\\Models\\Product',
+          'productuom' => 'App\\Models\\ProductUom',
+          'quotation' => 'App\\Models\\Quotation',
+          'quotationline' => 'App\\Models\\QuotationLine',
+          'salesorder' => 'App\\Models\\SalesOrder',
+          'salesorderline' => 'App\\Models\\SalesOrderLine',
+          'stockbalance' => 'App\\Models\\StockBalance',
+          'stockreservation' => 'App\\Models\\StockReservation',
+          'store' => 'App\\Models\\Store',
+          'fefoallocator' => 'App\\Services\\Inventory\\FefoAllocator',
+          'db' => 'Illuminate\\Support\\Facades\\DB',
+        ),
+         'className' => 'App\\Services\\Sales\\SalesOrderService',
+         'functionName' => 'defaultPaymentTerms',
+         'templatePhpDocNodes' => 
+        array (
+        ),
+         'parent' => 
+        \PHPStan\Analyser\IntermediaryNameScope::__set_state(array(
+           'namespace' => 'App\\Services\\Sales',
+           'uses' => 
+          array (
+            'auditlog' => 'App\\Models\\AuditLog',
+            'customercredit' => 'App\\Models\\CustomerCredit',
+            'numbersequence' => 'App\\Models\\NumberSequence',
+            'product' => 'App\\Models\\Product',
+            'productuom' => 'App\\Models\\ProductUom',
+            'quotation' => 'App\\Models\\Quotation',
+            'quotationline' => 'App\\Models\\QuotationLine',
+            'salesorder' => 'App\\Models\\SalesOrder',
+            'salesorderline' => 'App\\Models\\SalesOrderLine',
+            'stockbalance' => 'App\\Models\\StockBalance',
+            'stockreservation' => 'App\\Models\\StockReservation',
+            'store' => 'App\\Models\\Store',
+            'fefoallocator' => 'App\\Services\\Inventory\\FefoAllocator',
+            'db' => 'Illuminate\\Support\\Facades\\DB',
+          ),
+           'className' => 'App\\Services\\Sales\\SalesOrderService',
+           'functionName' => NULL,
+           'templatePhpDocNodes' => 
+          array (
+          ),
+           'parent' => NULL,
+           'typeAliasesMap' => 
+          array (
+          ),
+           'bypassTypeAliases' => false,
+           'constUses' => 
+          array (
+          ),
+           'typeAliasClassName' => NULL,
+           'traitData' => NULL,
+        )),
+         'typeAliasesMap' => 
+        array (
+        ),
+         'bypassTypeAliases' => false,
+         'constUses' => 
+        array (
+        ),
+         'typeAliasClassName' => NULL,
+         'traitData' => NULL,
+      )),
       'ef1e772321378fc349894fa55e80d0e4' => 
       \PHPStan\Analyser\IntermediaryNameScope::__set_state(array(
          'namespace' => 'App\\Services\\Sales',
@@ -758,7 +829,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     1 => 
     array (
-      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Sales\\SalesOrderService.php' => '5f888b3c73dcc9f08d6ec714374a86e9910330a35bc96bbaae27d0143a389958',
+      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Sales\\SalesOrderService.php' => 'a7663d681adb14f0f8c06984ec10afc94cfe8478edf3237d5f0ed3a6a223ab3a',
     ),
   ),
 ));

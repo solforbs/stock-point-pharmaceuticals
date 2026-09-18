@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { CreditLimitResolver, type CreditResolution } from '../../components/CreditLimitResolver'
 import { CustomerPicker } from '../../components/CustomerPicker'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
@@ -10,7 +11,7 @@ import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, Field, Input, Select, Textarea } from '../../components/ui/primitives'
-import { apiGet, apiPost, newIdempotencyKey, withIdempotency } from '../../lib/api'
+import { apiGet, apiPost, getApiError, newIdempotencyKey, withIdempotency } from '../../lib/api'
 import { addDaysIso, formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { useStores } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
@@ -133,7 +134,7 @@ function QuotationDrawer({ id, onClose, onAccepted }: { id: string | null; onClo
 
   const accept = useMutation({
     meta: { silent: true },
-    mutationFn: () => apiPost<SalesOrder>(`/api/quotations/${id}/accept`, {}, withIdempotency(attemptKey)),
+    mutationFn: (resolution: CreditResolution = {}) => apiPost<SalesOrder>(`/api/quotations/${id}/accept`, resolution, withIdempotency(attemptKey)),
     onSuccess: (order) => {
       toast.success(`Sales order ${order.doc_number} confirmed`, 'Stock reserved under the credit check.')
       queryClient.invalidateQueries({ queryKey: ['quotations'] })
@@ -153,11 +154,16 @@ function QuotationDrawer({ id, onClose, onAccepted }: { id: string | null; onClo
       title={q?.doc_number ?? 'Quotation'}
       subtitle={q ? `${q.customer?.name ?? ''} · valid until ${formatDate(q.valid_until)}` : undefined}
       width={760}
-      actions={q && acceptable ? <Button variant="success" size="sm" onClick={() => accept.mutate()} disabled={accept.isPending}>{accept.isPending ? 'Accepting…' : 'Accept → sales order'}</Button> : null}
+      actions={q && acceptable ? <Button variant="success" size="sm" onClick={() => accept.mutate({})} disabled={accept.isPending}>{accept.isPending ? 'Accepting…' : 'Accept → sales order'}</Button> : null}
     >
       {quotation.isLoading && <LoadingSkeleton />}
       {quotation.isError && <InlineError error={quotation.error} />}
-      {accept.isError && <InlineError error={accept.error} className="mb-3" />}
+      {accept.isError && (
+        <div className="mb-3 space-y-2">
+          <CreditLimitResolver error={accept.error} pending={accept.isPending} onResolve={(r) => accept.mutate(r)} />
+          {getApiError(accept.error).code !== 'CREDIT_LIMIT_EXCEEDED' && <InlineError error={accept.error} />}
+        </div>
+      )}
       {q && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">

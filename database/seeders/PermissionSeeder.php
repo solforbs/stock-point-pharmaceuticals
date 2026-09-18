@@ -18,6 +18,7 @@ class PermissionSeeder extends Seeder
         'product.view', 'product.create', 'product.edit', 'product.cost.view',
         'customer.manage', 'supplier.view', 'supplier.manage',
         'warehouse.pick', 'warehouse.dispatch',
+        'location.manage', 'payment.reconcile',
         'finance.ar.view', 'finance.ap.view',
         'price.manage', 'price.simulate',
         'customer.credit.override',
@@ -27,7 +28,9 @@ class PermissionSeeder extends Seeder
         'payment.record',
         'journal.post', 'journal.reverse', 'period.close', 'tax.etims.manage',
         'quality.release', 'recall.initiate', 'waste.approve',
-        'payroll.view', 'payroll.process',
+        'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view', 'licence.manage', 'document.manage',
+        'payroll.view', 'payroll.process', 'payroll.approve.own',
+        'leave.request', 'leave.approve', 'report.schedule',
         'admin.users', 'admin.settings',
         'audit.view', 'report.view', 'report.financial.view',
     ];

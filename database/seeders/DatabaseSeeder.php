@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
             ChartOfAccountsSeeder::class,
             DiscountAuthoritySeeder::class,
             PayrollBandsSeeder::class,
+            LeaveTypesSeeder::class,
             TaxCodeSeeder::class,
             SupplierSeeder::class,
             UnitOfMeasureSeeder::class,

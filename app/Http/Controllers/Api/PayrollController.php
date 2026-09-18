@@ -118,7 +118,7 @@ class PayrollController extends ApiController
     {
         $this->requirePermission($request, 'payroll.process');
 
-        return response()->json($payroll->approve($this->find($request, $run), $request->user()->id));
+        return response()->json($payroll->approve($this->find($request, $run), $request->user()->id, $request->user()->can('payroll.approve.own')));
     }
 
     public function post(Request $request, string $run, PayrollService $payroll): JsonResponse

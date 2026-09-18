@@ -181,14 +181,15 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\Location.php' => 
     array (
-      0 => '3433d80b37d77f6852f414e81a530c94d3a3909ce28fd4d6b8fc8fe4504aea61',
+      0 => 'cecfb6883bc24269ea8a571682e4dfaa9f3e9a6b646b3284c4234dfe254c388e',
       1 => 
       array (
         0 => 'app\\models\\location',
       ),
       2 => 
       array (
-        0 => 'app\\models\\store',
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\store',
       ),
       3 => 
       array (
@@ -450,7 +451,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\CustomerPrice.php' => 
     array (
-      0 => 'b193426d346de60c1ed5c4f63f0ec32037507a542e8c95cf4b8d8e1ebc8167fe',
+      0 => '4ebb5aa6d70a1110794248c37d7338e4bcf3b6be44da32fb9932b47a7c3a940a',
       1 => 
       array (
         0 => 'app\\models\\customerprice',
@@ -461,6 +462,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         1 => 'app\\models\\customer',
         2 => 'app\\models\\product',
         3 => 'app\\models\\uom',
+        4 => 'app\\models\\approver',
       ),
       3 => 
       array (
@@ -554,7 +556,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\Promotion.php' => 
     array (
-      0 => 'dd1614e1d64dbc9c4416012a315b14fd50a26527bee72cdedcc6aa25bd4df5e2',
+      0 => '63b106e1585af99b2ddf607dd2c664c8162d0335c3aa01f12252318239d275b9',
       1 => 
       array (
         0 => 'app\\models\\promotion',
@@ -1209,7 +1211,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\Payment.php' => 
     array (
-      0 => '046ecc2c8cdb8a556ae90496254a7267b697ab6425c9f7f8b99767cad6c6a4e0',
+      0 => '570f50cebe47035dc762a758227dc2b2374447bbeca018c596acbd4fdcfaedff',
       1 => 
       array (
         0 => 'app\\models\\payment',
@@ -1218,7 +1220,9 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
       array (
         0 => 'app\\models\\casts',
         1 => 'app\\models\\allocations',
-        2 => 'app\\models\\customer',
+        2 => 'app\\models\\receiver',
+        3 => 'app\\models\\reconciler',
+        4 => 'app\\models\\customer',
       ),
       3 => 
       array (
@@ -1432,7 +1436,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\PickingList.php' => 
     array (
-      0 => '307f1165cb94f3a1faa70c235880f44410eaa7c1c2245e0611255e42724ee28e',
+      0 => '7b37813bd0893fcba297c35991b07d38812da2d87c4e953bbd069b80e6cf9db8',
       1 => 
       array (
         0 => 'app\\models\\pickinglist',
@@ -1441,8 +1445,9 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
       array (
         0 => 'app\\models\\casts',
         1 => 'app\\models\\salesorder',
-        2 => 'app\\models\\deliverynotes',
-        3 => 'app\\models\\lines',
+        2 => 'app\\models\\packer',
+        3 => 'app\\models\\deliverynotes',
+        4 => 'app\\models\\lines',
       ),
       3 => 
       array (
@@ -1503,7 +1508,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\SalesOrder.php' => 
     array (
-      0 => '2faf5da61b4a53e81581ac0229fd5ea45a861b8d0de3598fd9450e5933e4a908',
+      0 => '0b50f337b783778af4092d328c0a7affef590dd259216da5928f18fd2d133f42',
       1 => 
       array (
         0 => 'app\\models\\salesorder',
@@ -1602,7 +1607,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Sales\\SalesOrderService.php' => 
     array (
-      0 => '5f888b3c73dcc9f08d6ec714374a86e9910330a35bc96bbaae27d0143a389958',
+      0 => 'af9c420ab5fd23049113aa589525c9717855b19773ac61ef4d703d9875d9791e',
       1 => 
       array (
         0 => 'app\\services\\sales\\invalidsalesorderstatusexception',
@@ -1618,9 +1623,10 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         3 => 'app\\services\\sales\\createfromquotation',
         4 => 'app\\services\\sales\\confirm',
         5 => 'app\\services\\sales\\cancel',
-        6 => 'app\\services\\sales\\checkcredit',
-        7 => 'app\\services\\sales\\buildline',
-        8 => 'app\\services\\sales\\adjustreserved',
+        6 => 'app\\services\\sales\\defaultpaymentterms',
+        7 => 'app\\services\\sales\\checkcredit',
+        8 => 'app\\services\\sales\\buildline',
+        9 => 'app\\services\\sales\\adjustreserved',
       ),
       3 => 
       array (
@@ -1670,7 +1676,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\ProductController.php' => 
     array (
-      0 => '731de38a2df879d616ed94bb381ea254e40e34d5a6af7dd9fca95bdb3835718d',
+      0 => 'ca336cbe44b30a47212c87d46d91c4333279f308ab09b837679bcde88849d76b',
       1 => 
       array (
         0 => 'app\\http\\controllers\\api\\productcontroller',
@@ -1678,10 +1684,12 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
       2 => 
       array (
         0 => 'app\\http\\controllers\\api\\index',
-        1 => 'app\\http\\controllers\\api\\show',
-        2 => 'app\\http\\controllers\\api\\stock',
-        3 => 'app\\http\\controllers\\api\\store',
-        4 => 'app\\http\\controllers\\api\\update',
+        1 => 'app\\http\\controllers\\api\\branchstockquery',
+        2 => 'app\\http\\controllers\\api\\freetosellsql',
+        3 => 'app\\http\\controllers\\api\\show',
+        4 => 'app\\http\\controllers\\api\\stock',
+        5 => 'app\\http\\controllers\\api\\store',
+        6 => 'app\\http\\controllers\\api\\update',
       ),
       3 => 
       array (
@@ -1828,7 +1836,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Console\\Commands\\ReconcileLedger.php' => 
     array (
-      0 => 'fb9ec051656c9d64cb418c99102bf21c97d4bf0065a8bed8ff33e47a21dd2b21',
+      0 => '19eae31d54c5845a47d45980f2f64865c2014bf9828feea1b29cda64135e8e75',
       1 => 
       array (
         0 => 'app\\console\\commands\\reconcileledger',
@@ -1908,7 +1916,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Exceptions\\ApiErrorMap.php' => 
     array (
-      0 => '84f2cada4431517b93a1c8390792642edb9cb1540af42e3b651e2aaf1b6a8b1b',
+      0 => 'a807efc6030600ddbe4f5ebb3b2323d68b2af1b164231f6fa0de65a62fa51c6c',
       1 => 
       array (
         0 => 'app\\exceptions\\apierrormap',
@@ -2008,7 +2016,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\OrderController.php' => 
     array (
-      0 => '2c82b309e8c3652f1efde50d26501934adf362a3f9e6cec15bcec8817a342ed6',
+      0 => '75121e06e345763fa9e71c98e26a19e265986c0b099fdad9c33a5b47ffb38249',
       1 => 
       array (
         0 => 'app\\http\\controllers\\api\\ordercontroller',
@@ -2022,14 +2030,15 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         4 => 'app\\http\\controllers\\api\\salesorders',
         5 => 'app\\http\\controllers\\api\\salesorder',
         6 => 'app\\http\\controllers\\api\\confirmsalesorder',
-        7 => 'app\\http\\controllers\\api\\cancelsalesorder',
-        8 => 'app\\http\\controllers\\api\\pick',
-        9 => 'app\\http\\controllers\\api\\pickline',
-        10 => 'app\\http\\controllers\\api\\completepicking',
-        11 => 'app\\http\\controllers\\api\\dispatch',
-        12 => 'app\\http\\controllers\\api\\proofofdelivery',
-        13 => 'app\\http\\controllers\\api\\findorder',
-        14 => 'app\\http\\controllers\\api\\requirewholesalebranch',
+        7 => 'app\\http\\controllers\\api\\creditoverridereason',
+        8 => 'app\\http\\controllers\\api\\cancelsalesorder',
+        9 => 'app\\http\\controllers\\api\\pick',
+        10 => 'app\\http\\controllers\\api\\pickline',
+        11 => 'app\\http\\controllers\\api\\completepicking',
+        12 => 'app\\http\\controllers\\api\\dispatch',
+        13 => 'app\\http\\controllers\\api\\proofofdelivery',
+        14 => 'app\\http\\controllers\\api\\findorder',
+        15 => 'app\\http\\controllers\\api\\requirewholesalebranch',
       ),
       3 => 
       array (
@@ -3019,7 +3028,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\PayrollController.php' => 
     array (
-      0 => '1b7d7c19b774fad10bf9a397c4af488634e529ddd4de7eea7a229e8d74cbcece',
+      0 => '6c81aa93ee10805076a1a8a3ab67d56f3cf8887a56434d57194a7e8999bb61ce',
       1 => 
       array (
         0 => 'app\\http\\controllers\\api\\payrollcontroller',
@@ -3131,7 +3140,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Payroll\\PayrollService.php' => 
     array (
-      0 => '16627701132bdeb6a867f5198d59b8c7d2a9fd6c5f1c0fd0d971ade0cbaba1c8',
+      0 => 'c1381d7bb4a42e2678e7a935dcf76f14273d68c28325ea132e08e07e3d6b08f5',
       1 => 
       array (
         0 => 'app\\services\\payroll\\invalidpayrollstatusexception',
@@ -3312,6 +3321,790 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         3 => 'app\\services\\inventory\\validateonly',
         4 => 'app\\services\\inventory\\validate',
         5 => 'app\\services\\inventory\\decimal',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Console\\Commands\\RunBackup.php' => 
+    array (
+      0 => '0b7533a7d01da435328261c1df38b225cddf215038d191f59c911c6279788c99',
+      1 => 
+      array (
+        0 => 'app\\console\\commands\\runbackup',
+      ),
+      2 => 
+      array (
+        0 => 'app\\console\\commands\\handle',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Console\\Commands\\RunScheduledReports.php' => 
+    array (
+      0 => '5023eabbcf4e6682b7514d02728f46b886858b733fc3a18340378e2a0955b68b',
+      1 => 
+      array (
+        0 => 'app\\console\\commands\\runscheduledreports',
+      ),
+      2 => 
+      array (
+        0 => 'app\\console\\commands\\handle',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\AdrReportController.php' => 
+    array (
+      0 => '99751f1ea60272613b3ee4a952d11baf90d8ea1738bb3aad516746ef57402a8c',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\adrreportcontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\index',
+        1 => 'app\\http\\controllers\\api\\show',
+        2 => 'app\\http\\controllers\\api\\store',
+        3 => 'app\\http\\controllers\\api\\update',
+        4 => 'app\\http\\controllers\\api\\submit',
+        5 => 'app\\http\\controllers\\api\\close',
+        6 => 'app\\http\\controllers\\api\\rules',
+        7 => 'app\\http\\controllers\\api\\assertbatchbelongstoproduct',
+        8 => 'app\\http\\controllers\\api\\requireanyadrpermission',
+        9 => 'app\\http\\controllers\\api\\withdetail',
+        10 => 'app\\http\\controllers\\api\\findreport',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\ColdChainController.php' => 
+    array (
+      0 => 'a5a1c863dfae91e693a35984f75f6ca8ce4ab253011f02cacb0aee3fab21960b',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\coldchaincontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\summary',
+        1 => 'app\\http\\controllers\\api\\readings',
+        2 => 'app\\http\\controllers\\api\\storereading',
+        3 => 'app\\http\\controllers\\api\\excursions',
+        4 => 'app\\http\\controllers\\api\\excursion',
+        5 => 'app\\http\\controllers\\api\\reviewexcursion',
+        6 => 'app\\http\\controllers\\api\\closeexcursion',
+        7 => 'app\\http\\controllers\\api\\findexcursion',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\ControlledDocumentController.php' => 
+    array (
+      0 => '4352adad355b259eff23349835eb308e9c9100291f93b03c9faed293f3a3eb20',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\controlleddocumentcontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\index',
+        1 => 'app\\http\\controllers\\api\\show',
+        2 => 'app\\http\\controllers\\api\\store',
+        3 => 'app\\http\\controllers\\api\\update',
+        4 => 'app\\http\\controllers\\api\\storeversion',
+        5 => 'app\\http\\controllers\\api\\activate',
+        6 => 'app\\http\\controllers\\api\\retire',
+        7 => 'app\\http\\controllers\\api\\download',
+        8 => 'app\\http\\controllers\\api\\acknowledge',
+        9 => 'app\\http\\controllers\\api\\acknowledgements',
+        10 => 'app\\http\\controllers\\api\\versionrules',
+        11 => 'app\\http\\controllers\\api\\addversion',
+        12 => 'app\\http\\controllers\\api\\transition',
+        13 => 'app\\http\\controllers\\api\\findvisible',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\CustomerContactController.php' => 
+    array (
+      0 => 'a4164f412b79f960894f4646c235d9f37cce01118b38a537a2de9f150b6a0cdc',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\customercontactcontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\index',
+        1 => 'app\\http\\controllers\\api\\store',
+        2 => 'app\\http\\controllers\\api\\update',
+        3 => 'app\\http\\controllers\\api\\interactions',
+        4 => 'app\\http\\controllers\\api\\storeinteraction',
+        5 => 'app\\http\\controllers\\api\\updateinteraction',
+        6 => 'app\\http\\controllers\\api\\contactrules',
+        7 => 'app\\http\\controllers\\api\\organisationcustomers',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\CustomerStatementController.php' => 
+    array (
+      0 => 'a0dd849e35992875f48c40fff4b43677085f92206304c58a148b5c9c45d0da62',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\customerstatementcontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\show',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\LeaveController.php' => 
+    array (
+      0 => 'e980611a8a96fdae642f402bac8c1b2847c20ecae8f483b1bfa662659bdb081d',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\leavecontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\__construct',
+        1 => 'app\\http\\controllers\\api\\types',
+        2 => 'app\\http\\controllers\\api\\employees',
+        3 => 'app\\http\\controllers\\api\\index',
+        4 => 'app\\http\\controllers\\api\\store',
+        5 => 'app\\http\\controllers\\api\\approve',
+        6 => 'app\\http\\controllers\\api\\reject',
+        7 => 'app\\http\\controllers\\api\\cancel',
+        8 => 'app\\http\\controllers\\api\\balances',
+        9 => 'app\\http\\controllers\\api\\requireanyleavepermission',
+        10 => 'app\\http\\controllers\\api\\visibleemployees',
+        11 => 'app\\http\\controllers\\api\\find',
+        12 => 'app\\http\\controllers\\api\\withrelations',
+        13 => 'app\\http\\controllers\\api\\attempt',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\LicenceController.php' => 
+    array (
+      0 => '8bfbd2e240b3e451b9dba32097d2afbce7d94961cbb35bba269e1b906dafb0f1',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\licencecontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\index',
+        1 => 'app\\http\\controllers\\api\\holders',
+        2 => 'app\\http\\controllers\\api\\store',
+        3 => 'app\\http\\controllers\\api\\update',
+        4 => 'app\\http\\controllers\\api\\document',
+        5 => 'app\\http\\controllers\\api\\rules',
+        6 => 'app\\http\\controllers\\api\\resolveholder',
+        7 => 'app\\http\\controllers\\api\\assertdatesinorder',
+        8 => 'app\\http\\controllers\\api\\attachdocument',
+        9 => 'app\\http\\controllers\\api\\holdernames',
+        10 => 'app\\http\\controllers\\api\\requireviewpermission',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\LocationController.php' => 
+    array (
+      0 => '54ff826e04fc76d7383447ba129890f46029d8be34dbbaa8c9886168e015fd7f',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\locationcontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\index',
+        1 => 'app\\http\\controllers\\api\\store',
+        2 => 'app\\http\\controllers\\api\\update',
+        3 => 'app\\http\\controllers\\api\\stock',
+        4 => 'app\\http\\controllers\\api\\attributerules',
+        5 => 'app\\http\\controllers\\api\\branchstoreids',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\OperationsController.php' => 
+    array (
+      0 => '6f741c7a5b31b6077da4ec978223d0ac33b376931fe0ec937baf81d8ded6d082',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\operationscontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\systemhealth',
+        1 => 'app\\http\\controllers\\api\\retryfailedjobs',
+        2 => 'app\\http\\controllers\\api\\forgetfailedjob',
+        3 => 'app\\http\\controllers\\api\\backups',
+        4 => 'app\\http\\controllers\\api\\createbackup',
+        5 => 'app\\http\\controllers\\api\\downloadbackup',
+        6 => 'app\\http\\controllers\\api\\syncstatus',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\PackingController.php' => 
+    array (
+      0 => '60e2eb41d0bad7b8b96de1529dcf171b23a9cd3504e23d93f97249bb27182eb6',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\packingcontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\queue',
+        1 => 'app\\http\\controllers\\api\\pack',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\PricingRuleController.php' => 
+    array (
+      0 => '4d2ebdd0086bb0491efcf86d8e2cc71fb459d828671ad6908cdbdc64237af92f',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\pricingrulecontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\promotions',
+        1 => 'app\\http\\controllers\\api\\promotion',
+        2 => 'app\\http\\controllers\\api\\storepromotion',
+        3 => 'app\\http\\controllers\\api\\updatepromotion',
+        4 => 'app\\http\\controllers\\api\\activatepromotion',
+        5 => 'app\\http\\controllers\\api\\deactivatepromotion',
+        6 => 'app\\http\\controllers\\api\\pricebreaks',
+        7 => 'app\\http\\controllers\\api\\storepricebreak',
+        8 => 'app\\http\\controllers\\api\\updatepricebreak',
+        9 => 'app\\http\\controllers\\api\\destroypricebreak',
+        10 => 'app\\http\\controllers\\api\\discountpolicies',
+        11 => 'app\\http\\controllers\\api\\storediscountpolicy',
+        12 => 'app\\http\\controllers\\api\\updatediscountpolicy',
+        13 => 'app\\http\\controllers\\api\\destroydiscountpolicy',
+        14 => 'app\\http\\controllers\\api\\discountauthorities',
+        15 => 'app\\http\\controllers\\api\\upsertdiscountauthority',
+        16 => 'app\\http\\controllers\\api\\destroydiscountauthority',
+        17 => 'app\\http\\controllers\\api\\customerprices',
+        18 => 'app\\http\\controllers\\api\\storecustomerprice',
+        19 => 'app\\http\\controllers\\api\\updatecustomerprice',
+        20 => 'app\\http\\controllers\\api\\destroycustomerprice',
+        21 => 'app\\http\\controllers\\api\\test',
+        22 => 'app\\http\\controllers\\api\\requireread',
+        23 => 'app\\http\\controllers\\api\\promotionrules',
+        24 => 'app\\http\\controllers\\api\\promotionlinerules',
+        25 => 'app\\http\\controllers\\api\\validatepromotionlines',
+        26 => 'app\\http\\controllers\\api\\replacelines',
+        27 => 'app\\http\\controllers\\api\\setpromotionactive',
+        28 => 'app\\http\\controllers\\api\\findpromotion',
+        29 => 'app\\http\\controllers\\api\\loadpromotion',
+        30 => 'app\\http\\controllers\\api\\promotionsnapshot',
+        31 => 'app\\http\\controllers\\api\\pricebreakrules',
+        32 => 'app\\http\\controllers\\api\\assertbreakfits',
+        33 => 'app\\http\\controllers\\api\\findproductprice',
+        34 => 'app\\http\\controllers\\api\\findpricebreak',
+        35 => 'app\\http\\controllers\\api\\discountpolicyrules',
+        36 => 'app\\http\\controllers\\api\\findpolicy',
+        37 => 'app\\http\\controllers\\api\\assertsalesuom',
+        38 => 'app\\http\\controllers\\api\\assertnocontractoverlap',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\ProductCatalogueController.php' => 
+    array (
+      0 => 'a2d1e2e5c6eaa6b16d5316e6da5f7120c4127946ebb4b682bbed58f6976ee474',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\productcataloguecontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\categories',
+        1 => 'app\\http\\controllers\\api\\storecategory',
+        2 => 'app\\http\\controllers\\api\\updatecategory',
+        3 => 'app\\http\\controllers\\api\\import',
+        4 => 'app\\http\\controllers\\api\\export',
+        5 => 'app\\http\\controllers\\api\\wouldcycle',
+        6 => 'app\\http\\controllers\\api\\number',
+        7 => 'app\\http\\controllers\\api\\safecell',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\ReconciliationController.php' => 
+    array (
+      0 => '15a1895c5985b810c1481d0eeb48500979b3236e3734a26e3a28264b3c9ca7ec',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\reconciliationcontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\index',
+        1 => 'app\\http\\controllers\\api\\reconcile',
+        2 => 'app\\http\\controllers\\api\\unreconcile',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\ScheduledReportController.php' => 
+    array (
+      0 => '83c4690b506cbb67530f90b10812a0e0ea3a7cc9bad006e73ebde8d3c3dae77b',
+      1 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\scheduledreportcontroller',
+      ),
+      2 => 
+      array (
+        0 => 'app\\http\\controllers\\api\\index',
+        1 => 'app\\http\\controllers\\api\\show',
+        2 => 'app\\http\\controllers\\api\\store',
+        3 => 'app\\http\\controllers\\api\\update',
+        4 => 'app\\http\\controllers\\api\\destroy',
+        5 => 'app\\http\\controllers\\api\\runnow',
+        6 => 'app\\http\\controllers\\api\\validated',
+        7 => 'app\\http\\controllers\\api\\refuseunrunnable',
+        8 => 'app\\http\\controllers\\api\\find',
+        9 => 'app\\http\\controllers\\api\\present',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Mail\\ScheduledReportMail.php' => 
+    array (
+      0 => '1cab87104d290d14c3240d18fc40731731ea13056f37fbda566f3d2c6729610b',
+      1 => 
+      array (
+        0 => 'app\\mail\\scheduledreportmail',
+      ),
+      2 => 
+      array (
+        0 => 'app\\mail\\__construct',
+        1 => 'app\\mail\\envelope',
+        2 => 'app\\mail\\content',
+        3 => 'app\\mail\\attachments',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\AdrReport.php' => 
+    array (
+      0 => '6ddd1392d4863933238e71ef2efc61125781d478b42c18316b4652a4a9fd0a8e',
+      1 => 
+      array (
+        0 => 'app\\models\\adrreport',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\isserious',
+        2 => 'app\\models\\product',
+        3 => 'app\\models\\batch',
+        4 => 'app\\models\\customer',
+        5 => 'app\\models\\creator',
+        6 => 'app\\models\\submitter',
+        7 => 'app\\models\\closer',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\ColdChainExcursion.php' => 
+    array (
+      0 => '9895401c6cfab91f78ce6166a409b751ff21d304a5f0918ef0034f804c9807d5',
+      1 => 
+      array (
+        0 => 'app\\models\\coldchainexcursion',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\getdurationminutesattribute',
+        2 => 'app\\models\\store',
+        3 => 'app\\models\\readings',
+        4 => 'app\\models\\closer',
+        5 => 'app\\models\\reviewer',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\ColdChainReading.php' => 
+    array (
+      0 => '282643ed92fdc3b42868fbd451cb6300e2c4c03a69fb758bb22034c49d98d507',
+      1 => 
+      array (
+        0 => 'app\\models\\coldchainreading',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\store',
+        2 => 'app\\models\\excursion',
+        3 => 'app\\models\\recorder',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\ControlledDocument.php' => 
+    array (
+      0 => 'bca5e68ffbd8ef6cc10ea9a1228c2a247d15a805d54f9469a4d271f653b30361',
+      1 => 
+      array (
+        0 => 'app\\models\\controlleddocument',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\versions',
+        2 => 'app\\models\\currentversion',
+        3 => 'app\\models\\owner',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\CustomerInteraction.php' => 
+    array (
+      0 => 'f172da9af6e6f892c4a4155aed4ab0e3238bbb48bb4f2ec5c0f6e3e35b06b3d7',
+      1 => 
+      array (
+        0 => 'app\\models\\customerinteraction',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\customer',
+        2 => 'app\\models\\contact',
+        3 => 'app\\models\\user',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\DocumentAcknowledgement.php' => 
+    array (
+      0 => '1da33823e51b39a48be6974a7c477b923f7a77948cf8947b0687e575aa8c7846',
+      1 => 
+      array (
+        0 => 'app\\models\\documentacknowledgement',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\version',
+        2 => 'app\\models\\user',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\DocumentVersion.php' => 
+    array (
+      0 => '625127225d2d6db449535250afef08c2049390f264226cba3bcba68cff4788ac',
+      1 => 
+      array (
+        0 => 'app\\models\\documentversion',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\document',
+        2 => 'app\\models\\acknowledgements',
+        3 => 'app\\models\\uploader',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\LeaveRequest.php' => 
+    array (
+      0 => '6c9260272aae599416e7b2cde2103186b5d1634e821c8d26f76fdc3d62b3c0d8',
+      1 => 
+      array (
+        0 => 'app\\models\\leaverequest',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\employee',
+        2 => 'app\\models\\leavetype',
+        3 => 'app\\models\\approver',
+        4 => 'app\\models\\creator',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\LeaveType.php' => 
+    array (
+      0 => 'f188baa9658b11b2459dd6f91c06bca10c2e7fbf3a20db095ac0277b6eefd883',
+      1 => 
+      array (
+        0 => 'app\\models\\leavetype',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\Licence.php' => 
+    array (
+      0 => 'f9f653a9dbd297c1ff463bbca0e7b90e224fd48d9b0790b327a8716eac30a4f5',
+      1 => 
+      array (
+        0 => 'app\\models\\licence',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\statusfor',
+        2 => 'app\\models\\getstatusattribute',
+        3 => 'app\\models\\getdaystoexpiryattribute',
+        4 => 'app\\models\\gethasdocumentattribute',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Models\\ScheduledReport.php' => 
+    array (
+      0 => '750d7b9a26d49f115d3cb1c0c11e0415a66a08174c73d199e0e8bb2dabef7d47',
+      1 => 
+      array (
+        0 => 'app\\models\\scheduledreport',
+      ),
+      2 => 
+      array (
+        0 => 'app\\models\\casts',
+        1 => 'app\\models\\creator',
+        2 => 'app\\models\\branch',
+        3 => 'app\\models\\nextrunafter',
+        4 => 'app\\models\\windowfor',
+        5 => 'app\\models\\nextweekly',
+        6 => 'app\\models\\nextmonthly',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Admin\\BackupFailedException.php' => 
+    array (
+      0 => '08921429cd48928524f1db62321c4b4099d1c6c93feb79b00575fff17a776e9f',
+      1 => 
+      array (
+        0 => 'app\\services\\admin\\backupfailedexception',
+      ),
+      2 => 
+      array (
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Admin\\BackupService.php' => 
+    array (
+      0 => '3153d9f3d9ffc0d820647b5365a5a6c0a89cf962a0ac9f5b47e0f45fd35a6406',
+      1 => 
+      array (
+        0 => 'app\\services\\admin\\backupservice',
+      ),
+      2 => 
+      array (
+        0 => 'app\\services\\admin\\directory',
+        1 => 'app\\services\\admin\\binary',
+        2 => 'app\\services\\admin\\create',
+        3 => 'app\\services\\admin\\list',
+        4 => 'app\\services\\admin\\pathfor',
+        5 => 'app\\services\\admin\\prune',
+        6 => 'app\\services\\admin\\rundump',
+        7 => 'app\\services\\admin\\entry',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Admin\\SystemHealthService.php' => 
+    array (
+      0 => '1f808ffda6460abfb59bf9ec3d5df0da333259caa9cf102cf1851738e1d11a72',
+      1 => 
+      array (
+        0 => 'app\\services\\admin\\systemhealthservice',
+      ),
+      2 => 
+      array (
+        0 => 'app\\services\\admin\\__construct',
+        1 => 'app\\services\\admin\\report',
+        2 => 'app\\services\\admin\\recentfailures',
+        3 => 'app\\services\\admin\\app',
+        4 => 'app\\services\\admin\\version',
+        5 => 'app\\services\\admin\\database',
+        6 => 'app\\services\\admin\\queue',
+        7 => 'app\\services\\admin\\scheduler',
+        8 => 'app\\services\\admin\\reconciliationcheck',
+        9 => 'app\\services\\admin\\storage',
+        10 => 'app\\services\\admin\\backup',
+        11 => 'app\\services\\admin\\financialperiod',
+        12 => 'app\\services\\admin\\check',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Inventory\\LedgerReconciliation.php' => 
+    array (
+      0 => '454f73881f7d5d0885586eed622f1d84138501ee843c5ac735d4d0c5545ef4e9',
+      1 => 
+      array (
+        0 => 'app\\services\\inventory\\ledgerreconciliation',
+      ),
+      2 => 
+      array (
+        0 => 'app\\services\\inventory\\balancedrift',
+        1 => 'app\\services\\inventory\\orphanledgerrows',
+        2 => 'app\\services\\inventory\\negativebalances',
+        3 => 'app\\services\\inventory\\glcomparison',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Inventory\\ProductImportService.php' => 
+    array (
+      0 => 'c06980bcb061f02181c525c19661e163484bda7e2180b440c719adc96859e032',
+      1 => 
+      array (
+        0 => 'app\\services\\inventory\\productimportservice',
+      ),
+      2 => 
+      array (
+        0 => 'app\\services\\inventory\\import',
+        1 => 'app\\services\\inventory\\validate',
+        2 => 'app\\services\\inventory\\diff',
+        3 => 'app\\services\\inventory\\decimal',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Inventory\\ProductImportValidationException.php' => 
+    array (
+      0 => '771bf7c2b9919d317998110e2f350d34b43344a38085aadcc3bbafdc343d32a6',
+      1 => 
+      array (
+        0 => 'app\\services\\inventory\\productimportvalidationexception',
+      ),
+      2 => 
+      array (
+        0 => 'app\\services\\inventory\\__construct',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Leave\\LeaveException.php' => 
+    array (
+      0 => '6989542cabe2da944451b1f821e40118ecd9d6c24509258b8afb6f961d568cac',
+      1 => 
+      array (
+        0 => 'app\\services\\leave\\leaveexception',
+      ),
+      2 => 
+      array (
+        0 => 'app\\services\\leave\\__construct',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Leave\\LeaveService.php' => 
+    array (
+      0 => 'aa0b2ff4738e76e829c9234981678d7471f680b53c71733324beebedaf04b904',
+      1 => 
+      array (
+        0 => 'app\\services\\leave\\leaveservice',
+      ),
+      2 => 
+      array (
+        0 => 'app\\services\\leave\\types',
+        1 => 'app\\services\\leave\\workingdays',
+        2 => 'app\\services\\leave\\entitlement',
+        3 => 'app\\services\\leave\\daysused',
+        4 => 'app\\services\\leave\\balance',
+        5 => 'app\\services\\leave\\request',
+        6 => 'app\\services\\leave\\approve',
+        7 => 'app\\services\\leave\\reject',
+        8 => 'app\\services\\leave\\cancel',
+        9 => 'app\\services\\leave\\assertnooverlap',
+        10 => 'app\\services\\leave\\assertbalance',
+        11 => 'app\\services\\leave\\assertstatus',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Quality\\ColdChainService.php' => 
+    array (
+      0 => '45db31e568f667811d5870c1c32cdfb64d0ee5f401d4be897da5d6b55c42506d',
+      1 => 
+      array (
+        0 => 'app\\services\\quality\\invalidexcursionstatusexception',
+        1 => 'app\\services\\quality\\coldchainservice',
+      ),
+      2 => 
+      array (
+        0 => 'app\\services\\quality\\__construct',
+        1 => 'app\\services\\quality\\rangefor',
+        2 => 'app\\services\\quality\\isinrange',
+        3 => 'app\\services\\quality\\record',
+        4 => 'app\\services\\quality\\startreview',
+        5 => 'app\\services\\quality\\close',
+      ),
+      3 => 
+      array (
+      ),
+    ),
+    'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Services\\Reports\\ScheduledReportService.php' => 
+    array (
+      0 => 'c96f89ba8831c0df44b20b50b61ffe2898dea7315bf3505fe0534bd8a1a48dcc',
+      1 => 
+      array (
+        0 => 'app\\services\\reports\\scheduledreportservice',
+      ),
+      2 => 
+      array (
+        0 => 'app\\services\\reports\\__construct',
+        1 => 'app\\services\\reports\\rundue',
+        2 => 'app\\services\\reports\\run',
       ),
       3 => 
       array (

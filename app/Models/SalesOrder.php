@@ -19,6 +19,7 @@ class SalesOrder extends Model
         'customer_id', 'quotation_id', 'user_id', 'doc_number', 'status', 'required_date',
         'subtotal', 'discount_total', 'tax_total', 'grand_total', 'cost_total', 'idempotency_key',
         'cancelled_by', 'cancel_reason', 'cancelled_at',
+        'payment_terms', 'credit_override_by', 'credit_override_reason', 'credit_override_at',
     ];
 
     protected function casts(): array

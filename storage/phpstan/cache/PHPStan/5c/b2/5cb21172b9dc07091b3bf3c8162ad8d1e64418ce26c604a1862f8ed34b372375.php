@@ -2,7 +2,7 @@
 
 // odsl-C:\xampp\htdocs\pharmacy_erp\app\Models\SalesOrder.php-PHPStan\BetterReflection\Reflection\ReflectionClass-App\Models\SalesOrder
 return \PHPStan\Cache\CacheItem::__set_state(array(
-   'variableKey' => 'v2-6.70.0.6-8.3.31-2faf5da61b4a53e81581ac0229fd5ea45a861b8d0de3598fd9450e5933e4a908',
+   'variableKey' => 'v2-6.70.0.6-8.3.31-0b50f337b783778af4092d328c0a7affef590dd259216da5928f18fd2d133f42',
    'data' => 
   array (
     'locatedSource' => 
@@ -29,7 +29,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     array (
     ),
     'startLine' => 13,
-    'endLine' => 68,
+    'endLine' => 69,
     'startColumn' => 1,
     'endColumn' => 1,
     'parentClassName' => 'Illuminate\\Database\\Eloquent\\Model',
@@ -54,15 +54,15 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'type' => NULL,
         'default' => 
         array (
-          'code' => '[\'organisation_id\', \'branch_id\', \'store_id\', \'sale_mode\', \'sub_type\', \'customer_id\', \'quotation_id\', \'user_id\', \'doc_number\', \'status\', \'required_date\', \'subtotal\', \'discount_total\', \'tax_total\', \'grand_total\', \'cost_total\', \'idempotency_key\', \'cancelled_by\', \'cancel_reason\', \'cancelled_at\']',
+          'code' => '[\'organisation_id\', \'branch_id\', \'store_id\', \'sale_mode\', \'sub_type\', \'customer_id\', \'quotation_id\', \'user_id\', \'doc_number\', \'status\', \'required_date\', \'subtotal\', \'discount_total\', \'tax_total\', \'grand_total\', \'cost_total\', \'idempotency_key\', \'cancelled_by\', \'cancel_reason\', \'cancelled_at\', \'payment_terms\', \'credit_override_by\', \'credit_override_reason\', \'credit_override_at\']',
           'attributes' => 
           array (
             'startLine' => 17,
-            'endLine' => 22,
+            'endLine' => 23,
             'startTokenPos' => 50,
             'startFilePos' => 348,
-            'endTokenPos' => 112,
-            'endFilePos' => 678,
+            'endTokenPos' => 124,
+            'endFilePos' => 773,
           ),
         ),
         'docComment' => NULL,
@@ -70,7 +70,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         array (
         ),
         'startLine' => 17,
-        'endLine' => 22,
+        'endLine' => 23,
         'startColumn' => 5,
         'endColumn' => 6,
         'isPromoted' => false,
@@ -103,8 +103,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         array (
         ),
         'docComment' => NULL,
-        'startLine' => 24,
-        'endLine' => 35,
+        'startLine' => 25,
+        'endLine' => 36,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -140,8 +140,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return BelongsTo<Customer, $this>
  */',
-        'startLine' => 40,
-        'endLine' => 43,
+        'startLine' => 41,
+        'endLine' => 44,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -177,8 +177,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return BelongsTo<Store, $this>
  */',
-        'startLine' => 48,
-        'endLine' => 51,
+        'startLine' => 49,
+        'endLine' => 52,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -214,8 +214,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return HasMany<SalesOrderLine, $this>
  */',
-        'startLine' => 56,
-        'endLine' => 59,
+        'startLine' => 57,
+        'endLine' => 60,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,
@@ -251,8 +251,8 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
         'docComment' => '/**
  * @return HasMany<PickingList, $this>
  */',
-        'startLine' => 64,
-        'endLine' => 67,
+        'startLine' => 65,
+        'endLine' => 68,
         'startColumn' => 5,
         'endColumn' => 5,
         'couldThrow' => false,

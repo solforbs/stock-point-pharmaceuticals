@@ -17,6 +17,7 @@ class PickingList extends Model
     protected $fillable = [
         'organisation_id', 'branch_id', 'store_id', 'sales_order_id', 'doc_number', 'status',
         'assigned_picker_id', 'started_at', 'completed_at',
+        'packed_at', 'packed_by', 'package_count', 'total_weight_kg', 'packing_notes',
     ];
 
     protected function casts(): array
@@ -24,6 +25,9 @@ class PickingList extends Model
         return [
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'packed_at' => 'datetime',
+            'package_count' => 'integer',
+            'total_weight_kg' => 'decimal:3',
         ];
     }
 
@@ -33,6 +37,14 @@ class PickingList extends Model
     public function salesOrder(): BelongsTo
     {
         return $this->belongsTo(SalesOrder::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function packer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'packed_by');
     }
 
     /**

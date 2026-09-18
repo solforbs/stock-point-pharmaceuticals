@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Services\Inventory\InventoryReport;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -31,11 +32,65 @@ class ProductController extends ApiController
             ->when($request->filled('barcode'), fn ($q) => $q->whereHas('uoms', fn ($u) => $u->where('barcode', $request->string('barcode'))))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->string('category_id')))
             ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
-            ->with(['dosageForm', 'category', 'manufacturer', 'baseUom', 'uoms.uom'])
+            ->when($request->filled('stock') && $request->user()->can('stock.view'), function ($q) use ($request) {
+                $inBranch = $this->branchStockQuery($request)->select('sb.product_id');
+                match ((string) $request->string('stock')) {
+                    'in_stock' => $q->whereIn('id', (clone $inBranch)->where('sb.qty_on_hand', '>', 0)),
+                    'out_of_stock' => $q->whereNotIn('id', (clone $inBranch)->where('sb.qty_on_hand', '>', 0)),
+                    'below_reorder' => $q->where('reorder_point', '>', 0)->whereRaw(
+                        'reorder_point > COALESCE(('.$this->freeToSellSql().' AND sb.product_id = products.id), 0)',
+                        [now()->toDateString(), $this->branchId($request)]
+                    ),
+                    default => null,
+                };
+            })
+            ->with(['dosageForm', 'category', 'manufacturer', 'baseUom', 'uoms.uom', 'taxCode:id,code,name'])
             ->orderBy('name')
             ->paginate($request->integer('per_page', 25));
 
+        // Part 7.3 — every product row carries its stock in the active
+        // branch, so the catalogue and the shelf are one screen.
+        if ($request->user()->can('stock.view')) {
+            $ids = $products->getCollection()->pluck('id')->all();
+            $stock = $this->branchStockQuery($request)
+                ->whereIn('sb.product_id', $ids)
+                ->groupBy('sb.product_id')
+                ->selectRaw('sb.product_id')
+                ->selectRaw('SUM(sb.qty_on_hand) as on_hand')
+                ->selectRaw('SUM(sb.qty_reserved) as reserved')
+                ->selectRaw("SUM(CASE WHEN pb.status = 'RELEASED' AND pb.expiry_date >= ? THEN sb.qty_on_hand - sb.qty_reserved - sb.qty_quarantined ELSE 0 END) as free_to_sell", [now()->toDateString()])
+                ->selectRaw("MIN(CASE WHEN pb.status = 'RELEASED' AND sb.qty_on_hand > 0 THEN pb.expiry_date END) as nearest_expiry")
+                ->get()->keyBy('product_id');
+
+            $products->getCollection()->transform(function (Product $p) use ($stock) {
+                $row = $stock->get($p->id);
+
+                return $p->toArray() + ['stock' => [
+                    'on_hand' => number_format((float) ($row->on_hand ?? 0), 4, '.', ''),
+                    'reserved' => number_format((float) ($row->reserved ?? 0), 4, '.', ''),
+                    'free_to_sell' => number_format(max(0, (float) ($row->free_to_sell ?? 0)), 4, '.', ''),
+                    'nearest_expiry' => $row->nearest_expiry ?? null,
+                ]];
+            });
+        }
+
         return response()->json($products);
+    }
+
+    /** stock_balances for the active branch's stores, joined to their batch. */
+    private function branchStockQuery(Request $request): Builder
+    {
+        return DB::table('stock_balances as sb')
+            ->join('product_batches as pb', 'pb.id', '=', 'sb.batch_id')
+            ->join('stores as st', 'st.id', '=', 'sb.store_id')
+            ->where('st.branch_id', $this->branchId($request));
+    }
+
+    /** Correlated free-to-sell for products.id; bindings: today, branch id. */
+    private function freeToSellSql(): string
+    {
+        return "SELECT SUM(CASE WHEN pb.status = 'RELEASED' AND pb.expiry_date >= ? THEN sb.qty_on_hand - sb.qty_reserved - sb.qty_quarantined ELSE 0 END)
+            FROM stock_balances sb JOIN product_batches pb ON pb.id = sb.batch_id JOIN stores st ON st.id = sb.store_id WHERE st.branch_id = ?";
     }
 
     public function show(Request $request, string $product): JsonResponse

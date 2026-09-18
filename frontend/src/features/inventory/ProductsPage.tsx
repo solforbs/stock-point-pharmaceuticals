@@ -17,7 +17,9 @@ import { useProduct, useProductCategories, useProductStock, useTaxCodes, useUoms
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Paginated, Product } from '../../lib/types'
-import { StockStatesTable } from './StockOnHandPage'
+import { ExpiryBadge, StockStatesTable } from './StockOnHandPage'
+import { StockInForm } from './StockInForm'
+import { ProductCatalogueActions } from './ProductCatalogueTools'
 
 export default function ProductsPage() {
   const [params, setParams] = useSearchParams()
@@ -29,10 +31,12 @@ export default function ProductsPage() {
   const dq = useDebounced(q, 250)
   const dbarcode = useDebounced(barcode, 250)
   const selectedId = params.get('product')
+  const canSeeStock = usePermission('stock.view')
+  const [stockFilter, setStockFilter] = useState('')
 
   const list = useQuery({
-    queryKey: ['products', 'list', dq, dbarcode, page],
-    queryFn: () => apiGet<Paginated<Product>>('/api/products', { q: dq, barcode: dbarcode, page, per_page: 50 }),
+    queryKey: ['products', 'list', dq, dbarcode, stockFilter, page],
+    queryFn: () => apiGet<Paginated<Product>>('/api/products', { q: dq, barcode: dbarcode, stock: stockFilter, page, per_page: 50 }),
     placeholderData: (prev) => prev,
   })
 
@@ -43,6 +47,23 @@ export default function ProductsPage() {
     { key: 'base', header: 'Base UOM', render: (p) => p.base_uom?.code ?? '—' },
     { key: 'uoms', header: 'Sales UOMs', render: (p) => (p.uoms ?? []).filter((u) => u.is_sales).map((u) => u.uom?.code).join(', ') },
     { key: 'price', header: 'Default price', align: 'right', render: (p) => <MoneyCell value={p.default_price} />, sortValue: (p) => Number(p.default_price ?? 0) },
+    ...(canSeeStock
+      ? ([
+          { key: 'on_hand', header: 'On hand', align: 'right', render: (p) => <QtyCell value={p.stock?.on_hand ?? '0'} />, sortValue: (p) => Number(p.stock?.on_hand ?? 0) },
+          {
+            key: 'free',
+            header: 'Free to sell',
+            align: 'right',
+            render: (p) => {
+              const free = Number(p.stock?.free_to_sell ?? 0)
+              const low = Number(p.reorder_point) > 0 && free < Number(p.reorder_point)
+              return <span className={low ? 'text-[var(--status-red)] font-semibold' : ''} title={low ? `Below reorder point ${p.reorder_point}` : undefined}><QtyCell value={p.stock?.free_to_sell ?? '0'} /></span>
+            },
+            sortValue: (p) => Number(p.stock?.free_to_sell ?? 0),
+          },
+          { key: 'expiry', header: 'Nearest expiry', render: (p) => (p.stock?.nearest_expiry ? <ExpiryBadge date={p.stock.nearest_expiry} /> : '—'), sortValue: (p) => p.stock?.nearest_expiry ?? '9999' },
+        ] as Column<Product>[])
+      : []),
     { key: 'active', header: 'Status', render: (p) => <StatusBadge status={p.is_active ? 'ACTIVE' : 'INACTIVE'} /> },
   ]
 
@@ -51,7 +72,7 @@ export default function ProductsPage() {
       <PageHeader
         parent="Inventory"
         title="Products"
-        actions={canCreate ? <Button variant="primary" onClick={() => setCreating(true)}>New product</Button> : null}
+        actions={<><ProductCatalogueActions />{canCreate ? <Button variant="primary" onClick={() => setCreating(true)}>New product</Button> : null}</>}
       />
       <FilterBar>
         <Field label="Search" className="w-72">
@@ -60,6 +81,16 @@ export default function ProductsPage() {
         <Field label="Barcode (exact)" className="w-52">
           <Input placeholder="Scan…" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
         </Field>
+        {canSeeStock && (
+          <Field label="Stock" className="w-48">
+            <Select value={stockFilter} onChange={(e) => { setStockFilter(e.target.value); setPage(1) }}>
+              <option value="">All products</option>
+              <option value="in_stock">In stock</option>
+              <option value="out_of_stock">Out of stock</option>
+              <option value="below_reorder">Below reorder point</option>
+            </Select>
+          </Field>
+        )}
       </FilterBar>
       <div className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(p) => p.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(p) => setParams({ product: p.id })} selectedKey={selectedId} emptyTitle="No products match" />
@@ -153,16 +184,26 @@ function ProductDrawer({ id, onClose }: { id: string | null; onClose: () => void
   const stock = useProductStock(id)
   const showCost = usePermission('product.cost.view')
   const canEdit = usePermission('product.edit')
+  const canReceive = usePermission('grn.create')
   const [editing, setEditing] = useState(false)
+  const [stockingIn, setStockingIn] = useState(false)
   const p = product.data
   return (
-    <Drawer open={!!id} onClose={() => { setEditing(false); onClose() }} title={p ? `${p.name}${p.strength ? ` ${p.strength}` : ''}` : 'Product'} subtitle={p?.code} width={820}
-      actions={p && canEdit && !editing ? <Button size="sm" onClick={() => setEditing(true)}>Edit</Button> : null}
+    <Drawer open={!!id} onClose={() => { setEditing(false); setStockingIn(false); onClose() }} title={p ? `${p.name}${p.strength ? ` ${p.strength}` : ''}` : 'Product'} subtitle={p?.code} width={820}
+      actions={
+        p && !editing && !stockingIn ? (
+          <div className="flex gap-2">
+            {canReceive && p.is_active && <Button size="sm" variant="primary" onClick={() => setStockingIn(true)}>Stock in</Button>}
+            {canEdit && <Button size="sm" onClick={() => setEditing(true)}>Edit</Button>}
+          </div>
+        ) : null
+      }
     >
       {product.isLoading && <LoadingSkeleton />}
       {product.isError && <InlineError error={product.error} />}
       {p && editing && <ProductEditForm product={p} onDone={() => setEditing(false)} />}
-      {p && !editing && (
+      {p && stockingIn && <StockInForm product={p} onDone={() => setStockingIn(false)} onCancel={() => setStockingIn(false)} />}
+      {p && !editing && !stockingIn && (
         <div className="space-y-5">
           <DescriptionList
             items={[

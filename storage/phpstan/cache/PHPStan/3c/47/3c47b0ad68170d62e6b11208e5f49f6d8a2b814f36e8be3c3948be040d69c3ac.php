@@ -7,7 +7,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
   array (
     'C:\\xampp\\htdocs\\pharmacy_erp\\routes\\api.php' => 
     array (
-      0 => '27f9a1e4bdcf692632a3bc0b8bdff13dc52e8027810689eafdd2f1233929fded',
+      0 => 'f5eec8b0f8dd9e43ee138638e48911c532d5489f9b899d1684c17ba598f1ea37',
       1 => 
       array (
       ),
@@ -20,7 +20,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\routes\\console.php' => 
     array (
-      0 => '170f22b4daaeb6f4eeb3a5570f705bffc0a14dd6e959eedb10c8390d380d1738',
+      0 => 'df547427092ef203fc1d4311a928bb681adc56990221389b43c080b5b5667f0c',
       1 => 
       array (
       ),
@@ -33,7 +33,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     'C:\\xampp\\htdocs\\pharmacy_erp\\routes\\web.php' => 
     array (
-      0 => '05865474e6a5e4aed06d6a90264d9faa356fb282a0de58c7af1b75432e4a1f73',
+      0 => 'bf23ccbbed45c3995aefd65ced35808efd12f4c011215766d9587ca5e5c8a47b',
       1 => 
       array (
       ),

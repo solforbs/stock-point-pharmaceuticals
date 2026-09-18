@@ -25,7 +25,9 @@ class OrderCreditLimitExceededException extends \RuntimeException
 {
     public function __construct(public readonly string $limit, public readonly string $exposure, public readonly string $shortfall)
     {
-        parent::__construct("Order would exceed credit limit: limit {$limit}, exposure {$exposure}, shortfall {$shortfall}.");
+        parent::__construct(bccomp($limit, '0', 4) === 0
+            ? 'This customer has no credit account (limit 0.00). Choose cash on delivery, set a credit limit in Credit Control, or ask a manager to override.'
+            : "This order would take the customer {$shortfall} over their credit limit of {$limit} (already owed or on order: {$exposure}). Choose cash on delivery, reduce the order, or ask a manager to override.");
     }
 }
 
@@ -44,7 +46,7 @@ class SalesOrderService
      * @param  array{
      *     organisation_id: string, branch_id: string, store_id: string, sale_mode?: string,
      *     sub_type?: ?string, customer_id?: ?string, quotation_id?: ?string, user_id: int,
-     *     required_date?: ?string, idempotency_key: string,
+     *     required_date?: ?string, idempotency_key: string, payment_terms?: ?string,
      *     lines: list<array{
      *         product_id: string, uom_id: string, qty: string, list_price: string, unit_price: string,
      *         discount_amount?: string, discount_pct?: string, discount_source?: ?string,
@@ -71,6 +73,7 @@ class SalesOrderService
                 'doc_number' => NumberSequence::next($data['organisation_id'], 'SALES_ORDER', $data['branch_id'], 'SO'),
                 'status' => 'DRAFT',
                 'required_date' => $data['required_date'] ?? null,
+                'payment_terms' => $data['payment_terms'] ?? self::defaultPaymentTerms($data['customer_id'] ?? null),
                 'idempotency_key' => $data['idempotency_key'],
                 'subtotal' => '0', 'discount_total' => '0', 'tax_total' => '0', 'grand_total' => '0', 'cost_total' => '0',
             ]);
@@ -97,7 +100,7 @@ class SalesOrderService
     }
 
     /**
-     * @param  array{user_id: int, required_date?: ?string, idempotency_key: string}  $meta
+     * @param  array{user_id: int, required_date?: ?string, idempotency_key: string, payment_terms?: ?string}  $meta
      */
     public function createFromQuotation(Quotation $quotation, array $meta): SalesOrder
     {
@@ -129,6 +132,7 @@ class SalesOrderService
                 'quotation_id' => $quotation->id,
                 'user_id' => $meta['user_id'],
                 'required_date' => $meta['required_date'] ?? null,
+                'payment_terms' => $meta['payment_terms'] ?? null,
                 'idempotency_key' => $meta['idempotency_key'],
                 'lines' => $lines,
             ]);
@@ -139,15 +143,21 @@ class SalesOrderService
         });
     }
 
-    public function confirm(SalesOrder $order, int $userId): SalesOrder
+    /**
+     * Part 10.4 — an order on ACCOUNT must fit the customer's credit limit
+     * unless $creditOverrideReason is given (the caller has checked the
+     * customer.credit.override permission); CASH_ON_DELIVERY extends no
+     * credit, so only a credit hold stops it.
+     */
+    public function confirm(SalesOrder $order, int $userId, ?string $creditOverrideReason = null): SalesOrder
     {
         if ($order->status !== 'DRAFT') {
             throw new InvalidSalesOrderStatusException("Sales order {$order->doc_number} is {$order->status}, not DRAFT.");
         }
 
-        return DB::transaction(function () use ($order, $userId) {
+        return DB::transaction(function () use ($order, $userId, $creditOverrideReason) {
             if ($order->customer_id) {
-                $this->checkCredit($order);
+                $this->checkCredit($order, $userId, $creditOverrideReason);
             }
 
             $store = Store::findOrFail($order->store_id);
@@ -237,7 +247,17 @@ class SalesOrderService
         });
     }
 
-    private function checkCredit(SalesOrder $order): void
+    public static function defaultPaymentTerms(?string $customerId): string
+    {
+        if (! $customerId) {
+            return 'CASH_ON_DELIVERY';
+        }
+        $limit = (string) (CustomerCredit::where('customer_id', $customerId)->value('credit_limit') ?? '0');
+
+        return bccomp($limit, '0', 4) > 0 ? 'ACCOUNT' : 'CASH_ON_DELIVERY';
+    }
+
+    private function checkCredit(SalesOrder $order, int $userId, ?string $overrideReason): void
     {
         $credit = CustomerCredit::firstOrCreate(['customer_id' => $order->customer_id], ['credit_limit' => '0']);
 
@@ -245,17 +265,32 @@ class SalesOrderService
             throw new OrderOnCreditHoldException("Customer is on credit hold: {$credit->hold_reason}");
         }
 
+        if ($order->payment_terms === 'CASH_ON_DELIVERY') {
+            return;
+        }
+
         // Part 10.4 — other open orders already count against the limit; the
         // order being confirmed is still DRAFT, so it is not double-counted.
         $exposure = $credit->exposure();
         $projected = bcadd($exposure, (string) $order->grand_total, 4);
-        if (bccomp($projected, (string) $credit->credit_limit, 4) > 0) {
-            throw new OrderCreditLimitExceededException(
-                (string) $credit->credit_limit,
-                $exposure,
-                bcsub($projected, (string) $credit->credit_limit, 4),
-            );
+        if (bccomp($projected, (string) $credit->credit_limit, 4) <= 0) {
+            return;
         }
+
+        $shortfall = bcsub($projected, (string) $credit->credit_limit, 4);
+        if ($overrideReason !== null && trim($overrideReason) !== '') {
+            $order->update(['credit_override_by' => $userId, 'credit_override_reason' => $overrideReason, 'credit_override_at' => now()]);
+            AuditLog::record('CREDIT_LIMIT_OVERRIDDEN', 'sales_order', $order->id, [
+                'user_id' => $userId,
+                'reference' => $order->doc_number,
+                'reason' => $overrideReason,
+                'after_json' => ['limit' => (string) $credit->credit_limit, 'exposure' => $exposure, 'order_total' => (string) $order->grand_total, 'shortfall' => $shortfall],
+            ]);
+
+            return;
+        }
+
+        throw new OrderCreditLimitExceededException((string) $credit->credit_limit, $exposure, $shortfall);
     }
 
     /**

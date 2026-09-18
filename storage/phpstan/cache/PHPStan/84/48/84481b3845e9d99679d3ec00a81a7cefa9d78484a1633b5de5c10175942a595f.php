@@ -13,8 +13,6 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
          'uses' => 
         array (
           'organisation' => 'App\\Models\\Organisation',
-          'product' => 'App\\Models\\Product',
-          'productuom' => 'App\\Models\\ProductUom',
           'unitofmeasure' => 'App\\Models\\UnitOfMeasure',
           'seeder' => 'Illuminate\\Database\\Seeder',
           'file' => 'Illuminate\\Support\\Facades\\File',
@@ -41,8 +39,6 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
          'uses' => 
         array (
           'organisation' => 'App\\Models\\Organisation',
-          'product' => 'App\\Models\\Product',
-          'productuom' => 'App\\Models\\ProductUom',
           'unitofmeasure' => 'App\\Models\\UnitOfMeasure',
           'seeder' => 'Illuminate\\Database\\Seeder',
           'file' => 'Illuminate\\Support\\Facades\\File',
@@ -58,8 +54,6 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
            'uses' => 
           array (
             'organisation' => 'App\\Models\\Organisation',
-            'product' => 'App\\Models\\Product',
-            'productuom' => 'App\\Models\\ProductUom',
             'unitofmeasure' => 'App\\Models\\UnitOfMeasure',
             'seeder' => 'Illuminate\\Database\\Seeder',
             'file' => 'Illuminate\\Support\\Facades\\File',
@@ -93,7 +87,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     1 => 
     array (
-      'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\MrlPricelistRemainderSeeder.php' => '8b713993b07dd8d2a7df3298af563df57a03f0688c60e3f8f6ed8449e32d554e',
+      'C:\\xampp\\htdocs\\pharmacy_erp\\database\\seeders\\MrlPricelistRemainderSeeder.php' => '61044c32fc553e581dc0b6c98230e6b83b4f02444f2913053a76e598a70cb831',
     ),
   ),
 ));

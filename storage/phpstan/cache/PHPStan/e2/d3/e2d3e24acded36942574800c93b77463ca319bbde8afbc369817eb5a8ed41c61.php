@@ -65,6 +65,64 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
          'typeAliasClassName' => NULL,
          'traitData' => NULL,
       )),
+      '475c879f0e81753922c6121e52a5d103' => 
+      \PHPStan\Analyser\IntermediaryNameScope::__set_state(array(
+         'namespace' => 'App\\Http\\Controllers\\Api',
+         'uses' => 
+        array (
+          'product' => 'App\\Models\\Product',
+          'productuom' => 'App\\Models\\ProductUom',
+          'inventoryreport' => 'App\\Services\\Inventory\\InventoryReport',
+          'jsonresponse' => 'Illuminate\\Http\\JsonResponse',
+          'request' => 'Illuminate\\Http\\Request',
+          'db' => 'Illuminate\\Support\\Facades\\DB',
+          'rule' => 'Illuminate\\Validation\\Rule',
+        ),
+         'className' => 'App\\Http\\Controllers\\Api\\ProductController',
+         'functionName' => 'branchStockQuery',
+         'templatePhpDocNodes' => 
+        array (
+        ),
+         'parent' => NULL,
+         'typeAliasesMap' => 
+        array (
+        ),
+         'bypassTypeAliases' => false,
+         'constUses' => 
+        array (
+        ),
+         'typeAliasClassName' => NULL,
+         'traitData' => NULL,
+      )),
+      '83998b0cead5ee35a284b4b75fc950f8' => 
+      \PHPStan\Analyser\IntermediaryNameScope::__set_state(array(
+         'namespace' => 'App\\Http\\Controllers\\Api',
+         'uses' => 
+        array (
+          'product' => 'App\\Models\\Product',
+          'productuom' => 'App\\Models\\ProductUom',
+          'inventoryreport' => 'App\\Services\\Inventory\\InventoryReport',
+          'jsonresponse' => 'Illuminate\\Http\\JsonResponse',
+          'request' => 'Illuminate\\Http\\Request',
+          'db' => 'Illuminate\\Support\\Facades\\DB',
+          'rule' => 'Illuminate\\Validation\\Rule',
+        ),
+         'className' => 'App\\Http\\Controllers\\Api\\ProductController',
+         'functionName' => 'freeToSellSql',
+         'templatePhpDocNodes' => 
+        array (
+        ),
+         'parent' => NULL,
+         'typeAliasesMap' => 
+        array (
+        ),
+         'bypassTypeAliases' => false,
+         'constUses' => 
+        array (
+        ),
+         'typeAliasClassName' => NULL,
+         'traitData' => NULL,
+      )),
       'd8586ca5f601f3209aebf99299dba257' => 
       \PHPStan\Analyser\IntermediaryNameScope::__set_state(array(
          'namespace' => 'App\\Http\\Controllers\\Api',
@@ -184,7 +242,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     1 => 
     array (
-      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\ProductController.php' => '731de38a2df879d616ed94bb381ea254e40e34d5a6af7dd9fca95bdb3835718d',
+      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\ProductController.php' => '1fa1bb9ef9e6edc95e0d096bcd98623af3a61d23befc84e15bf54ee056c8c845',
     ),
   ),
 ));

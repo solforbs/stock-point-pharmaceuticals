@@ -555,6 +555,79 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
          'typeAliasClassName' => NULL,
          'traitData' => NULL,
       )),
+      '7701530a9379140c52951fd35e5c5c37' => 
+      \PHPStan\Analyser\IntermediaryNameScope::__set_state(array(
+         'namespace' => 'App\\Http\\Controllers\\Api',
+         'uses' => 
+        array (
+          'branch' => 'App\\Models\\Branch',
+          'deliverynote' => 'App\\Models\\DeliveryNote',
+          'pickinglist' => 'App\\Models\\PickingList',
+          'pickinglistline' => 'App\\Models\\PickingListLine',
+          'quotation' => 'App\\Models\\Quotation',
+          'salesorder' => 'App\\Models\\SalesOrder',
+          'pricequoteservice' => 'App\\Services\\Pricing\\PriceQuoteService',
+          'dispatchservice' => 'App\\Services\\Sales\\DispatchService',
+          'pickingservice' => 'App\\Services\\Sales\\PickingService',
+          'quotationservice' => 'App\\Services\\Sales\\QuotationService',
+          'salemodes' => 'App\\Services\\Sales\\SaleModes',
+          'salesorderservice' => 'App\\Services\\Sales\\SalesOrderService',
+          'jsonresponse' => 'Illuminate\\Http\\JsonResponse',
+          'request' => 'Illuminate\\Http\\Request',
+          'db' => 'Illuminate\\Support\\Facades\\DB',
+        ),
+         'className' => 'App\\Http\\Controllers\\Api\\OrderController',
+         'functionName' => 'creditOverrideReason',
+         'templatePhpDocNodes' => 
+        array (
+        ),
+         'parent' => 
+        \PHPStan\Analyser\IntermediaryNameScope::__set_state(array(
+           'namespace' => 'App\\Http\\Controllers\\Api',
+           'uses' => 
+          array (
+            'branch' => 'App\\Models\\Branch',
+            'deliverynote' => 'App\\Models\\DeliveryNote',
+            'pickinglist' => 'App\\Models\\PickingList',
+            'pickinglistline' => 'App\\Models\\PickingListLine',
+            'quotation' => 'App\\Models\\Quotation',
+            'salesorder' => 'App\\Models\\SalesOrder',
+            'pricequoteservice' => 'App\\Services\\Pricing\\PriceQuoteService',
+            'dispatchservice' => 'App\\Services\\Sales\\DispatchService',
+            'pickingservice' => 'App\\Services\\Sales\\PickingService',
+            'quotationservice' => 'App\\Services\\Sales\\QuotationService',
+            'salemodes' => 'App\\Services\\Sales\\SaleModes',
+            'salesorderservice' => 'App\\Services\\Sales\\SalesOrderService',
+            'jsonresponse' => 'Illuminate\\Http\\JsonResponse',
+            'request' => 'Illuminate\\Http\\Request',
+            'db' => 'Illuminate\\Support\\Facades\\DB',
+          ),
+           'className' => 'App\\Http\\Controllers\\Api\\OrderController',
+           'functionName' => NULL,
+           'templatePhpDocNodes' => 
+          array (
+          ),
+           'parent' => NULL,
+           'typeAliasesMap' => 
+          array (
+          ),
+           'bypassTypeAliases' => false,
+           'constUses' => 
+          array (
+          ),
+           'typeAliasClassName' => NULL,
+           'traitData' => NULL,
+        )),
+         'typeAliasesMap' => 
+        array (
+        ),
+         'bypassTypeAliases' => false,
+         'constUses' => 
+        array (
+        ),
+         'typeAliasClassName' => NULL,
+         'traitData' => NULL,
+      )),
       'cc4955cf0484db79de02f3397dee3ce8' => 
       \PHPStan\Analyser\IntermediaryNameScope::__set_state(array(
          'namespace' => 'App\\Http\\Controllers\\Api',
@@ -1142,7 +1215,7 @@ return \PHPStan\Cache\CacheItem::__set_state(array(
     ),
     1 => 
     array (
-      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\OrderController.php' => '2c82b309e8c3652f1efde50d26501934adf362a3f9e6cec15bcec8817a342ed6',
+      'C:\\xampp\\htdocs\\pharmacy_erp\\app\\Http\\Controllers\\Api\\OrderController.php' => '75121e06e345763fa9e71c98e26a19e265986c0b099fdad9c33a5b47ffb38249',
     ),
   ),
 ));
