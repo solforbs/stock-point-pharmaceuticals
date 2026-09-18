@@ -175,7 +175,7 @@ export default function PosPage() {
   if (enabledModes.length === 0 && user) return <EmptyState title="Commerce is disabled for this branch" hint="Neither retail nor wholesale mode is enabled." />
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
       <ModeBanner stores={stores.data ?? []} />
 
       {/* Mobile Tab Bar (only visible on mobile/small tablets) */}

@@ -171,8 +171,21 @@ export default function CustomerStatementsPage() {
             </table>
           </section>
 
-          <footer className="text-[10.5px] text-[var(--text-muted)] border-t border-[var(--border)] pt-2">
-            Please quote your customer code {s.customer.code} with every payment. Queries on this statement should be raised within 14 days.
+          {Number(s.ageing.d90_plus) > 0 || Number(s.ageing.d61_90) > 0 ? (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-[11.5px] space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <span>⚠️ OVERDUE PAYMENT NOTICE:</span>
+                <span>Immediate settlement required</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-rose-800">
+                Invoices exceeding the agreed {s.customer.payment_terms_days ?? 30}-day credit terms attract a contractual late payment penalty interest of 2% per month in accordance with the credit facility agreement. Please remit payment promptly to avoid temporary credit hold.
+              </p>
+            </div>
+          ) : null}
+
+          <footer className="text-[10.5px] text-[var(--text-muted)] border-t border-[var(--border)] pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <span>Please quote your customer code <strong className="text-slate-700">{s.customer.code}</strong> with every payment.</span>
+            <span>Queries on this statement should be raised within 14 days of receipt.</span>
           </footer>
         </div>
       )}
