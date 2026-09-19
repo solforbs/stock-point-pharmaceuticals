@@ -9,13 +9,15 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Card, DescriptionList } from '../../components/ui/primitives'
 import { apiGet } from '../../lib/api'
 import { formatDateTime } from '../../lib/format'
+import { usePendingCount } from '../../lib/offline/outbox'
 import { usePermissions } from '../../lib/permissions'
+import { DeviceOutboxCard, ServerOfflineSalesCard } from './OfflineSalesPanels'
 
 type TerminalRow = { terminal_id: string | null; sales: number; voided: number; last_posted_at: string | null }
 type SyncStatus = {
   server_time: string
   session: { user_id: number; name: string; username: string | null; branch: { id: string; code: string; name: string } | null; ip: string | null; user_agent: string | null; auth: 'session' | 'token' }
-  offline_queue: { available: boolean; pending: number; note: string }
+  offline_queue: { available: boolean; conflicts: number; posted_24h: number; price_variances_24h: number; note: string }
   replays: { recorded: boolean; note: string }
   activity_24h: { since: string; sales: number; quotations: number; sales_orders: number; payments: number; terminals: TerminalRow[] }
   etims: { pending: number; submitted: number; failed: number; not_configured: number; enabled: boolean; driver: string }
@@ -42,14 +44,16 @@ async function pingServer(): Promise<Ping> {
 }
 
 /**
- * Part 17.5 — the Sync Centre. Offline selling is not built yet, so this is
- * honest about it: it shows whether this device can reach the server, how
- * quickly, what each till posted in the last 24 hours and the eTIMS queue.
+ * Part 17.5 — the Sync Centre: whether this device can reach the server and
+ * how quickly, what is still waiting on this device after an outage, the
+ * offline sales that need a supervisor, what each till posted in the last
+ * 24 hours, and the eTIMS queue.
  */
 export default function SyncCentrePage() {
   const permissions = usePermissions()
   const canView = permissions.has('admin.settings') || permissions.has('sale.view')
   const online = useOnline()
+  const pending = usePendingCount()
   const ping = useQuery({ queryKey: ['sync', 'ping'], queryFn: pingServer, refetchInterval: 15_000, enabled: canView })
   const status = useQuery({ queryKey: ['sync', 'status'], queryFn: () => apiGet<SyncStatus>('/api/admin/sync-status'), refetchInterval: 30_000, enabled: canView })
 
@@ -91,11 +95,22 @@ export default function SyncCentrePage() {
             <p className="text-[11.5px] text-[var(--text-secondary)] mt-1">{reach.hint}</p>
             {p && <div className="text-[10.5px] text-[var(--text-muted)] mt-1">Checked {formatDateTime(p.checked_at)} · every 15 seconds</div>}
           </section>
-          <section className="ui-card p-4 border-l-4" style={{ borderLeftColor: 'var(--status-slate)' }}>
-            <div className="flex items-center justify-between"><h2 className="text-[13px] font-bold">Offline queue</h2><StatusBadge status="0 pending" tone="slate" label="0 pending" /></div>
-            <p className="text-[11.5px] text-[var(--text-secondary)] mt-1">{s?.offline_queue.note ?? 'Offline selling is not built yet: every sale posts straight to the server, so nothing waits on a device.'}</p>
+          <section className="ui-card p-4 border-l-4" style={{ borderLeftColor: `var(--status-${s?.offline_queue.conflicts ? 'red' : pending > 0 ? 'amber' : 'green'})` }}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-[13px] font-bold">Offline queue</h2>
+              <StatusBadge status="QUEUE" tone={pending > 0 ? 'amber' : 'slate'} label={`${pending} on this device`} />
+            </div>
+            {s && (
+              <p className="text-[11.5px] text-[var(--text-secondary)] mt-1">
+                {s.offline_queue.conflicts} {s.offline_queue.conflicts === 1 ? 'conflict needs' : 'conflicts need'} a supervisor · {s.offline_queue.posted_24h} synced in 24h
+                {s.offline_queue.price_variances_24h > 0 && ` (${s.offline_queue.price_variances_24h} at a different price)`}. {s.offline_queue.note}
+              </p>
+            )}
           </section>
         </div>
+
+        <DeviceOutboxCard />
+        <ServerOfflineSalesCard />
 
         {status.isLoading && <div className="ui-card"><LoadingSkeleton rows={6} /></div>}
         {status.isError && <div className="ui-card"><ErrorState error={status.error} onRetry={() => status.refetch()} /></div>}

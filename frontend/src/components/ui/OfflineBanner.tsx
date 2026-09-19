@@ -28,12 +28,12 @@ export function OfflineBanner() {
             {!isOnline ? (
               <>
                 <WifiOff size={16} className="animate-pulse shrink-0" />
-                <span>Working in Offline Mode — changes will queue for automatic eTIMS sync when reconnected</span>
+                <span>Offline: the POS keeps selling walk-in retail sales and syncs them on reconnect. Everything else waits for the connection.</span>
               </>
             ) : (
               <>
                 <CheckCircle2 size={16} className="shrink-0 text-emerald-200" />
-                <span>Internet Reconnected — syncing live inventory ledgers</span>
+                <span>Back online: sending any offline sales to the server</span>
                 <RefreshCw size={13} className="animate-spin text-emerald-200 ml-1" />
               </>
             )}

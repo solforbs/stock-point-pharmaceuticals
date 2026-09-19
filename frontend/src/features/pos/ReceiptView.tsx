@@ -21,6 +21,7 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
   const cashTendered = useCartStore((s) => s.cashTendered)
   const customer = useCartStore((s) => s.customer)
   const terminalId = useCartStore((s) => s.terminalId)
+  const offline = useCartStore((s) => s.postedOffline)
 
   if (!sale) return null
 
@@ -30,7 +31,7 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
   const nameByProduct = new Map(lines.map((l) => [l.productId, l]))
 
   return (
-    <Modal open onClose={onNewSale} title={<span className="flex items-center gap-2">Receipt {sale.doc_number} <StatusBadge status={sale.status} /></span>} width={520}>
+    <Modal open onClose={onNewSale} title={<span className="flex items-center gap-2">Receipt {sale.doc_number} {offline ? <StatusBadge status="PENDING_SYNC" tone="amber" label="Waiting to sync" /> : <StatusBadge status={sale.status} />}</span>} width={520}>
       <div className="font-mono text-[12px] tabular" id="pos-receipt">
         <div className="text-center mb-3">
           <div className="font-bold text-[14px]">STOCKPOINT PHARMA</div>
@@ -102,6 +103,12 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
             </>
           )}
         </div>
+        {offline && (
+          <div className="text-center mt-3 font-bold">
+            OFFLINE SALE: NOT A TAX INVOICE.
+            <div className="font-normal">The eTIMS invoice is issued when this sale reaches the server.</div>
+          </div>
+        )}
         <div className="text-center mt-3 text-[var(--text-muted)]">Thank you. Goods sold in good condition; keep this receipt.</div>
       </div>
       <div className="flex items-center gap-2 mt-4">
@@ -111,9 +118,11 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
         <Button size="lg" onClick={() => window.print()}>
           <Printer size={14} /> Print
         </Button>
-        <Link to="/sell/invoices" className="text-[11.5px] text-[var(--color-navy)] underline ml-2">
-          Open in Invoices
-        </Link>
+        {!offline && (
+          <Link to="/sell/invoices" className="text-[11.5px] text-[var(--color-navy)] underline ml-2">
+            Open in Invoices
+          </Link>
+        )}
       </div>
     </Modal>
   )

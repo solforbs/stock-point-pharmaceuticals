@@ -4,10 +4,13 @@ import { ConfirmDialog } from '../../components/ui/Modal'
 import { EmptyState, LoadingSkeleton } from '../../components/ui/States'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { useStores } from '../../lib/hooks'
+import { useIsOffline } from '../../lib/offline/connectivity'
+import { useLocalStock, usePricePack } from '../../lib/offline/pack'
 import { usePermission } from '../../lib/permissions'
 import { CartPanel } from './CartPanel'
 import { ModeBanner } from './ModeBanner'
 import { PaymentPanel } from './PaymentPanel'
+import { PosOfflineStrip } from './PosOfflineStrip'
 import { PosHeldCartsDrawer } from './PosHeldCartsDrawer'
 import { PosHoldCartModal } from './PosHoldCartModal'
 import { PosPriceChangeModal } from './PosPriceChangeModal'
@@ -51,8 +54,14 @@ export default function PosPage() {
 
   const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('cart')
 
-  const quoteState = useQuote()
-  const checkout = useCheckout()
+  // Part 16.7 — the offline price pack is kept fresh while online, and
+  // takes over pricing and search the moment the server stops answering.
+  const offline = useIsOffline()
+  const pack = usePricePack(storeId)
+  const stock = useLocalStock(pack)
+
+  const quoteState = useQuote({ offline, pack, stock })
+  const checkout = useCheckout(user)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [holdOpen, setHoldOpen] = useState(false)
@@ -180,7 +189,8 @@ export default function PosPage() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
-      <ModeBanner stores={stores.data ?? []} />
+      <ModeBanner stores={stores.data ?? (pack ? [{ ...pack.store, branch_id: pack.branchId, store_type: '', is_sellable: true }] : [])} />
+      <PosOfflineStrip offline={offline} pack={pack} />
 
       {/* Mobile Tab Bar (only visible on mobile/small tablets) */}
       <div className="md:hidden flex border-b border-slate-200 bg-white shrink-0">
@@ -218,6 +228,9 @@ export default function PosPage() {
         <div className={`${mobileTab === 'catalog' ? 'flex' : 'hidden'} md:flex flex-col shrink-0 min-h-0 w-full md:w-auto`}>
           <SearchPanel
             inputRef={searchRef}
+            offline={offline}
+            pack={pack}
+            stock={stock}
             onAdded={() => {
               searchRef.current?.focus()
               if (window.innerWidth < 768) setMobileTab('cart')

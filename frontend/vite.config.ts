@@ -32,6 +32,8 @@ export default defineConfig(({ command }) => ({
       '/sanctum': { target: 'http://localhost:8000', changeOrigin: true },
       '/auth': { target: 'http://localhost:8000', changeOrigin: true },
       '/broadcasting': { target: 'http://localhost:8000', changeOrigin: true },
+      // Laravel's health route: the POS probes it to tell when the server is back.
+      '/up': { target: 'http://localhost:8000', changeOrigin: true },
     },
   },
 }))

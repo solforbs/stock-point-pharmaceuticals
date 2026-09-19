@@ -25,6 +25,10 @@ Schedule::command('deploy:check-release')->dailyAt('06:00')->withoutOverlapping(
 // Part 20.3 — scheduled reports are mailed when due (run_at is HH:MM, so a quarter-hour tick is enough).
 Schedule::command('reports:run-scheduled')->everyFifteenMinutes()->withoutOverlapping();
 
+// Part 16.7 — the tills' offline price packs read prices from this cache, so a
+// price change reaches them within a quarter hour and a pack request is fast.
+Schedule::command('pos:warm-price-packs')->everyFifteenMinutes()->withoutOverlapping();
+
 // Part 17 — operations: the System Health screen reads this heartbeat to
 // prove the scheduler cron is installed and running.
 Schedule::call(fn () => Cache::forever('scheduler:last_run', now()->toIso8601String()))->everyMinute()->name('scheduler-heartbeat');

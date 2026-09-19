@@ -7,6 +7,7 @@ import { dAdd, dCmp, dIsPos, dSub } from '../../lib/decimal'
 import { formatDate } from '../../lib/format'
 import { useProductStock, useStores } from '../../lib/hooks'
 import { formatMoney, formatQty } from '../../lib/money'
+import { useIsOffline } from '../../lib/offline/connectivity'
 import { previewFefo } from './fefo'
 import { useCartStore, type CartLine } from './cartStore'
 
@@ -41,6 +42,7 @@ export function CartLineRow({
   const [discountOpen, setDiscountOpen] = useState(!!line.requestedDiscountPct)
 
   const { data: stock } = useProductStock(line.productId)
+  const offline = useIsOffline()
   const { data: stores } = useStores()
   const storeRow = stock?.stores.find((row) => row.store_id === storeId)
   const freeToSell = storeRow?.free_to_sell ?? null
@@ -220,7 +222,10 @@ export function CartLineRow({
         >
           {fefoOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           <span>Batch: </span>
-          {fefo.allocations.length === 0 ? (
+          {!stock ? (
+            // Not loaded (or offline): say nothing about stock rather than "none".
+            <span className="text-slate-500">{offline ? 'allocated when the sale syncs' : 'checking…'}</span>
+          ) : fefo.allocations.length === 0 ? (
             <span className="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80">
               No released stock in {sellingStoreCode}
               {heldElsewhere.length > 0 && (
@@ -234,7 +239,7 @@ export function CartLineRow({
               {fefo.allocations.map((a) => `${a.batch_number} (×${formatQty(a.qty_base)})`).join(', ')}
             </span>
           )}
-          {dIsPos(fefo.shortfall) && (
+          {stock && dIsPos(fefo.shortfall) && (
             <span className="text-rose-600 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200/80 ml-1">
               Short by {formatQty(fefo.shortfall)}
             </span>

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LogOut, ShieldCheck, User } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { forgetCachedUser } from '../../hooks/useCurrentUser'
 import { api } from '../../lib/api'
 import type { CurrentUser } from '../../lib/types'
 
@@ -16,6 +17,7 @@ export function SidebarUserProfile({ user, collapsed }: SidebarUserProfileProps)
   const logout = useMutation({
     mutationFn: () => api.post('/auth/logout'),
     onSuccess: () => {
+      forgetCachedUser()
       queryClient.clear()
       queryClient.setQueryData(['auth', 'user'], null)
       navigate('/login')

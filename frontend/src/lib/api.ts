@@ -1,5 +1,6 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 import { useBranchStore } from './branch'
+import { isUnreachableError, useConnectivityStore } from './offline/connectivity'
 import { queryClient } from './queryClient'
 
 export type { ApiError } from './apiError'
@@ -26,9 +27,19 @@ api.interceptors.request.use((config) => {
 
 // A 401 anywhere means the session is gone: drop the cached user so
 // ProtectedRoute sends the person back to /login.
+// Part 16.7 — any answer proves the server is reachable; no answer at all
+// sends the POS into offline selling until a probe gets through.
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    useConnectivityStore.getState().markReachable()
+    return response
+  },
   (error) => {
+    if (isUnreachableError(error)) {
+      useConnectivityStore.getState().markUnreachable()
+    } else if (axios.isAxiosError(error) && error.response) {
+      useConnectivityStore.getState().markReachable()
+    }
     if (axios.isAxiosError(error) && error.response?.status === 401 && !String(error.config?.url).startsWith('/auth/')) {
       queryClient.setQueryData(['auth', 'user'], null)
     }

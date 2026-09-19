@@ -6,6 +6,10 @@ import { formatMoney } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
 import { PAYMENT_METHODS, type PaymentMethod, type TenderLine } from '../../lib/types'
 import { useCartStore } from './cartStore'
+import { isOfflineQuote } from './offlineQuote'
+
+/** Part 16.7 — what an offline sale can be paid with: nothing that needs the server to clear. */
+const OFFLINE_METHODS: PaymentMethod[] = ['CASH', 'MPESA', 'CARD']
 
 export interface PaymentPanelProps {
   open: boolean
@@ -37,6 +41,7 @@ export function PaymentPanel({
   const cashRef = useRef<HTMLInputElement>(null)
 
   const total = quote?.totals.grand_total ?? '0'
+  const offline = isOfflineQuote(quote)
   const needsApproval = !!quote?.approval_required || status === 'AWAITING_APPROVAL'
 
   useEffect(() => {
@@ -117,7 +122,7 @@ export function PaymentPanel({
       {/* Tender Mode Selection Tabs */}
       <div className="flex gap-1.5 p-3 border-b border-slate-100 bg-white">
         {(['cash', 'split', 'credit'] as const).map((m) => {
-          const disabledTab = m === 'credit' && saleMode !== 'WHOLESALE'
+          const disabledTab = m === 'credit' && (saleMode !== 'WHOLESALE' || offline)
           const isActive = mode === m
           return (
             <button
@@ -130,7 +135,7 @@ export function PaymentPanel({
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80'
               } disabled:opacity-30 disabled:cursor-not-allowed`}
-              title={disabledTab ? 'Credit terms require wholesale mode' : undefined}
+              title={disabledTab ? (offline ? 'Credit needs the server' : 'Credit terms require wholesale mode') : undefined}
             >
               {m === 'cash' ? <DollarSign size={13} /> : m === 'split' ? <Split size={13} /> : <CreditCard size={13} />}
               <span>{m === 'cash' ? 'Cash' : m === 'split' ? 'Split / M-Pesa' : 'On Credit'}</span>
@@ -229,7 +234,7 @@ export function PaymentPanel({
                     onChange={(e) => updateTender(i, { method: e.target.value as PaymentMethod })}
                     className="h-8 px-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800"
                   >
-                    {PAYMENT_METHODS.map((m) => (
+                    {(offline ? OFFLINE_METHODS : PAYMENT_METHODS).map((m) => (
                       <option key={m} value={m}>
                         {m}
                       </option>
@@ -373,7 +378,9 @@ export function PaymentPanel({
           </span>
         </button>
         <p className="text-[12px] text-slate-500 text-center mt-2 font-medium">
-          Receipt prints automatically and inventory is updated immediately.
+          {offline
+            ? 'Offline: the sale is saved on this till and sent to the server when the connection returns.'
+            : 'Receipt prints automatically and inventory is updated immediately.'}
         </p>
       </footer>
       </div>

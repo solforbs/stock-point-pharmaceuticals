@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
 use App\Models\Branch;
+use App\Models\OfflineSale;
 use App\Services\Admin\BackupFailedException;
 use App\Services\Admin\BackupService;
 use App\Services\Admin\SystemHealthService;
@@ -121,9 +122,9 @@ class OperationsController extends ApiController
     }
 
     /**
-     * GET /api/admin/sync-status — Part 17.5. There is no offline queue yet,
-     * so this reports what is real: the session, what each terminal posted in
-     * the last 24 hours, and the eTIMS transmission queue. Idempotent replays
+     * GET /api/admin/sync-status — Part 17.5. Reports what is real: the
+     * session, what each terminal posted in the last 24 hours, what the
+     * terminals replayed after an outage, and the eTIMS transmission queue. Idempotent replays
      * are answered from the original document and are not logged separately.
      */
     public function syncStatus(Request $request, EtimsService $etims): JsonResponse
@@ -162,10 +163,14 @@ class OperationsController extends ApiController
                 'user_agent' => $request->userAgent(),
                 'auth' => $request->bearerToken() !== null ? 'token' : 'session',
             ],
+            // Sales still waiting on a device are only known to that device;
+            // the server reports what the terminals have handed over.
             'offline_queue' => [
-                'available' => false,
-                'pending' => 0,
-                'note' => 'Offline selling is not built yet: every sale posts straight to the server, so nothing waits on a device.',
+                'available' => true,
+                'conflicts' => OfflineSale::where('branch_id', $branchId)->where('status', OfflineSale::Conflict)->count(),
+                'posted_24h' => OfflineSale::where('branch_id', $branchId)->where('status', OfflineSale::Posted)->where('updated_at', '>=', $since)->count(),
+                'price_variances_24h' => OfflineSale::where('branch_id', $branchId)->where('status', OfflineSale::Posted)->where('updated_at', '>=', $since)->where('price_variance', '!=', 0)->count(),
+                'note' => 'Sales rung up while the server was unreachable are replayed by the terminal on reconnect. Conflicts wait here for a supervisor.',
             ],
             'replays' => [
                 'recorded' => false,

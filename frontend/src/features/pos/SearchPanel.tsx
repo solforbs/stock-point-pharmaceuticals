@@ -3,17 +3,27 @@ import { Plus, ScanBarcode, Sparkles } from 'lucide-react'
 import { useState, type KeyboardEvent, type RefObject } from 'react'
 import { lookupBarcode, ProductResultRow, useDebounced, useProductSearch } from '../../components/ProductSearch'
 import { apiGet } from '../../lib/api'
+import type { PricePack } from '../../lib/offline/db'
+import { findByBarcode, searchPack } from '../../lib/offline/pack'
 import { formatDate } from '../../lib/format'
 import { formatMoney, formatQty } from '../../lib/money'
 import type { Paginated, Product, StockStateRow } from '../../lib/types'
 import { useCartStore } from './cartStore'
+import { packToProduct } from './offlineQuote'
 
 export function SearchPanel({
   inputRef,
   onAdded,
+  offline = false,
+  pack,
+  stock: localStock,
 }: {
   inputRef: RefObject<HTMLInputElement | null>
   onAdded: (lineRef: string) => void
+  /** Part 16.7 — search the offline price pack instead of the server. */
+  offline?: boolean
+  pack?: PricePack | null
+  stock?: Map<string, string>
 }) {
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(-1)
@@ -25,17 +35,19 @@ export function SearchPanel({
   const addProduct = useCartStore((s) => s.addProduct)
   const posted = useCartStore((s) => s.status === 'POSTED')
 
-  const { data, isFetching } = useProductSearch(query)
-  const results = data?.data ?? []
+  const { data, isFetching } = useProductSearch(query, !offline)
+  const offlineResults = offline && pack ? searchPack(pack, query).map(packToProduct) : []
+  const results = offline ? offlineResults : (data?.data ?? [])
 
   // Load popular/stocked products to eliminate the empty void
   const popular = useQuery({
     queryKey: ['products', 'pos-popular', storeId],
     queryFn: () => apiGet<Paginated<Product>>('/api/products', { per_page: 30, is_active: 1 }),
     staleTime: 60_000,
+    enabled: !offline,
   })
 
-  const popularList = popular.data?.data ?? []
+  const popularList = offline ? (pack?.products.slice(0, 30).map(packToProduct) ?? []) : (popular.data?.data ?? [])
   const categories = Array.from(
     new Set(popularList.map((p) => p.category?.name).filter((c): c is string => !!c))
   ).slice(0, 5)
@@ -48,11 +60,13 @@ export function SearchPanel({
   const stock = useQuery({
     queryKey: ['inventory', 'stock', { q: debouncedQ, store_id: storeId }],
     queryFn: () => apiGet<{ data: StockStateRow[] }>('/api/inventory/stock', { q: debouncedQ, store_id: storeId }),
-    enabled: debouncedQ.length > 0 && !!storeId,
+    enabled: debouncedQ.length > 0 && !!storeId && !offline,
     staleTime: 15_000,
     placeholderData: (prev) => prev,
   })
-  const stockByProduct = new Map((stock.data?.data ?? []).map((row) => [row.product_id, row]))
+  const stockByProduct: Map<string, Pick<StockStateRow, 'free_to_sell' | 'nearest_expiry'>> = offline
+    ? new Map(offlineResults.map((p) => [p.id, { product_id: p.id, free_to_sell: localStock?.get(p.id) ?? p.stock?.free_to_sell ?? '0', nearest_expiry: null }]))
+    : new Map((stock.data?.data ?? []).map((row) => [row.product_id, row]))
 
   function add(product: Product) {
     const lineRef = addProduct(product)
@@ -82,8 +96,10 @@ export function SearchPanel({
       }
       const term = query.trim()
       if (!term) return
-      const product = await lookupBarcode(term)
+      const packed = offline && pack ? findByBarcode(pack, term) : null
+      const product = offline ? (packed ? packToProduct(packed) : null) : await lookupBarcode(term)
       if (product) add(product)
+      else if (offline) setScanError(`"${term}" is not in the offline price list. Search by name, or wait for the connection.`)
       else setScanError(`Unknown barcode "${term}". Search by name instead, or check the product's barcodes.`)
     } else if (e.key === 'Escape') {
       setQuery('')

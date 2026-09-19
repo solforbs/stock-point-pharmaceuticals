@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\LicenceController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\OfflineSaleController;
 use App\Http\Controllers\Api\OperationsController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganisationController;
@@ -111,6 +112,13 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     // 21.6 POS and sales
     Route::get('/sales', [SaleController::class, 'index']);
     Route::post('/sales/checkout', [SaleController::class, 'checkout']);
+
+    // Part 16.7 / 17.5 — selling through an outage: price pack, outbox replay, conflicts.
+    Route::get('/pos/offline-pack', [OfflineSaleController::class, 'pack']);
+    Route::get('/pos/offline-sales', [OfflineSaleController::class, 'index']);
+    Route::post('/pos/offline-sales', [OfflineSaleController::class, 'store']);
+    Route::post('/pos/offline-sales/{offlineSale}/retry', [OfflineSaleController::class, 'retry']);
+    Route::post('/pos/offline-sales/{offlineSale}/dismiss', [OfflineSaleController::class, 'dismiss']);
     Route::get('/sales/{sale}', [SaleController::class, 'show']);
     Route::post('/sales/{sale}/void', [SaleController::class, 'void']);
 

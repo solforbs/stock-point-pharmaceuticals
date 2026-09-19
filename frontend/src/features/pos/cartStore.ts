@@ -74,6 +74,14 @@ type CartState = {
   priceChange: PriceChange | null
   approvalLines: string[]
   postedSale: Sale | null
+  /** The posted sale went to the outbox, not the server (Part 16.7). */
+  postedOffline: boolean
+  /**
+   * The key of an online checkout that got no answer, and the cart it was
+   * for. It may have posted, so an offline sale of that same cart reuses the
+   * key and the server links the two instead of posting twice.
+   */
+  unconfirmed: { key: string; signature: string } | null
   postedPayments: TenderLine[]
   cashTendered: string
   heldCarts: HeldCart[]
@@ -103,7 +111,8 @@ type CartState = {
   setPriceChange: (change: PriceChange | null) => void
   acceptPriceChange: () => void
   setApprovalLines: (lines: string[]) => void
-  setPostedSale: (sale: Sale) => void
+  setPostedSale: (sale: Sale, offline?: boolean) => void
+  setUnconfirmed: (unconfirmed: { key: string; signature: string } | null) => void
   hold: (name: string) => void
   resume: (id: string) => void
   discardHeld: (id: string) => void
@@ -113,6 +122,7 @@ type CartState = {
 
 const HELD_KEY = 'pos-held-carts'
 const TERMINAL_KEY = 'pos-terminal-id'
+const STORE_KEY = 'pos-store-id'
 
 function readHeld(): HeldCart[] {
   try {
@@ -128,6 +138,14 @@ function persistHeld(carts: HeldCart[]) {
     localStorage.setItem(HELD_KEY, JSON.stringify(carts))
   } catch {
     // per-terminal convenience only
+  }
+}
+
+function readStore(): string | null {
+  try {
+    return localStorage.getItem(STORE_KEY)
+  } catch {
+    return null
   }
 }
 
@@ -197,6 +215,8 @@ const emptyCart = {
   priceChange: null,
   approvalLines: [] as string[],
   postedSale: null,
+  postedOffline: false,
+  unconfirmed: null,
   postedPayments: [] as TenderLine[],
   cashTendered: '',
   modeSwitchNote: null,
@@ -204,7 +224,8 @@ const emptyCart = {
 
 export const useCartStore = create<CartState>((set, get) => ({
   saleMode: 'RETAIL',
-  storeId: null,
+  // Remembered so a till reloaded during an outage still knows its store.
+  storeId: readStore(),
   terminalId: readTerminal(),
   heldCarts: readHeld(),
   lineCounter: 0,
@@ -216,7 +237,14 @@ export const useCartStore = create<CartState>((set, get) => ({
       const note: ModeSwitchNote | null = s.lines.length > 0 ? { from: s.saleMode, to: mode, beforeTotal: s.quote?.totals.grand_total ?? null } : null
       return { saleMode: mode, modeSwitchNote: note, checkoutError: null, status: s.status === 'POSTED' ? s.status : 'BUILDING' }
     }),
-  setStore: (storeId) => set({ storeId }),
+  setStore: (storeId) => {
+    try {
+      localStorage.setItem(STORE_KEY, storeId)
+    } catch {
+      // per-terminal convenience only
+    }
+    set({ storeId })
+  },
   setTerminal: (terminalId) => {
     try {
       localStorage.setItem(TERMINAL_KEY, terminalId)
@@ -346,7 +374,8 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   setApprovalLines: (approvalLines) => set({ approvalLines }),
 
-  setPostedSale: (sale) => set((s) => ({ postedSale: sale, postedPayments: s.payments, status: 'POSTED' })),
+  setPostedSale: (sale, offline = false) => set((s) => ({ postedSale: sale, postedOffline: offline, postedPayments: s.payments, status: 'POSTED' })),
+  setUnconfirmed: (unconfirmed) => set({ unconfirmed }),
 
   hold: (name) => {
     const s = get()

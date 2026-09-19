@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useBranchStore } from '../lib/branch'
 import { formatDate, todayIso } from '../lib/format'
+import { useOutboxReplayer } from '../lib/offline/useOutboxReplayer'
 import { AlertBell } from './AlertBell'
 import { MessagesBell } from './MessagesBell'
 import Sidebar from './Sidebar'
@@ -18,6 +19,7 @@ export default function AppLayout() {
   const isPos = location.pathname.startsWith('/sell/pos')
   const { data: user } = useCurrentUser()
   const activeBranchId = useBranchStore((s) => s.activeBranchId)
+  useOutboxReplayer(user?.id)
   const setActiveBranch = useBranchStore((s) => s.setActiveBranch)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
