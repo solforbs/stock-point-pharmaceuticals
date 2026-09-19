@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { FileText, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useDebounced } from '../../components/ProductSearch'
@@ -6,9 +7,9 @@ import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
 import { ConfirmDialog } from '../../components/ui/Modal'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
-import { InlineError, NoAccess } from '../../components/ui/States'
+import { InlineError, LoadingSkeleton, NoAccess } from '../../components/ui/States'
 import { StatusBadge, type StatusTone } from '../../components/ui/StatusBadge'
-import { Button, DescriptionList, Field, Input, Select, Textarea } from '../../components/ui/primitives'
+import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, Select, Textarea } from '../../components/ui/primitives'
 import { apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { usePermission } from '../../lib/permissions'
@@ -68,6 +69,14 @@ function LicenceExpiry({ licence }: { licence: Licence }) {
   )
 }
 
+export function useLicence(id: string | null | undefined) {
+  return useQuery({
+    queryKey: ['licences', id],
+    queryFn: () => apiGet<Licence>(`/api/licences/${id}`),
+    enabled: !!id,
+  })
+}
+
 /** V6 Part 16.3 — every licence and certificate the business depends on, with expiry warnings at 60 days. */
 export default function LicencesPage() {
   const canView = usePermission('licence.view')
@@ -87,7 +96,8 @@ export default function LicencesPage() {
     enabled: canView || canManage,
     placeholderData: (prev) => prev,
   })
-  const selected = list.data?.data.find((l) => l.id === selectedId) ?? null
+  const single = useLicence(selectedId)
+  const selected = single.data ?? list.data?.data.find((l) => l.id === selectedId) ?? null
 
   if (!canView && !canManage) {
     return (
@@ -146,7 +156,7 @@ export default function LicencesPage() {
       <div className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(l) => l.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(l) => setParams({ licence: l.id })} selectedKey={selectedId} emptyTitle="No licences recorded" emptyHint={canManage ? 'Add the premises licence, practising licences and permits so expiry is never a surprise.' : undefined} />
       </div>
-      <LicenceDrawer licence={selected} onClose={() => setParams({})} />
+      <LicenceDrawer id={selectedId} licence={selected} onClose={() => setParams({})} />
       <Drawer open={creating} onClose={() => setCreating(false)} title="Add licence or certificate" width={640}>
         {creating && <LicenceForm onDone={(l) => { setCreating(false); setParams({ licence: l.id }) }} onCancel={() => setCreating(false)} />}
       </Drawer>
@@ -154,54 +164,56 @@ export default function LicencesPage() {
   )
 }
 
-function LicenceDrawer({ licence, onClose }: { licence: Licence | null; onClose: () => void }) {
+function LicenceDrawer({ id, licence, onClose }: { id: string | null; licence: Licence | null; onClose: () => void }) {
   const queryClient = useQueryClient()
   const canManage = usePermission('licence.manage')
   const [editing, setEditing] = useState(false)
   const [archiving, setArchiving] = useState(false)
+  const single = useLicence(id)
+  const l = licence ?? single.data
+
   const archive = useMutation({
-    mutationFn: (active: boolean) => apiPatch<Licence>(`/api/licences/${licence?.id}`, { is_active: active }),
-    onSuccess: (l) => {
-      toast.success(l.is_active ? 'Licence restored' : 'Licence archived')
+    mutationFn: (active: boolean) => apiPatch<Licence>(`/api/licences/${l?.id}`, { is_active: active }),
+    onSuccess: (updated) => {
+      toast.success(updated.is_active ? 'Licence restored' : 'Licence archived')
       setArchiving(false)
       queryClient.invalidateQueries({ queryKey: ['licences'] })
     },
   })
 
   return (
-    <Drawer open={!!licence} onClose={() => { setEditing(false); onClose() }} title={licence ? typeLabel(licence.licence_type) : ''} subtitle={licence?.holder_name ?? undefined} width={editing ? 640 : 560}>
-      {licence && editing && <LicenceForm licence={licence} onDone={() => setEditing(false)} onCancel={() => setEditing(false)} />}
-      {licence && !editing && (
+    <Drawer open={!!id} onClose={() => { setEditing(false); onClose() }} title={l ? typeLabel(l.licence_type) : 'Licence Details'} subtitle={l?.holder_name ?? undefined} width={editing ? 640 : 560}>
+      {single.isLoading && !l && <LoadingSkeleton />}
+      {single.isError && !l && <InlineError error={single.error} />}
+      {l && editing && <LicenceForm licence={l} onDone={() => setEditing(false)} onCancel={() => setEditing(false)} />}
+      {l && !editing && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-2">
-            <LicenceExpiry licence={licence} />
-            {canManage && !licence.read_only && (
+            <LicenceExpiry licence={l} />
+            {canManage && !l.read_only && (
               <div className="flex gap-2">
                 <Button onClick={() => setEditing(true)}>Edit / renew</Button>
-                {licence.is_active ? <Button variant="danger" onClick={() => setArchiving(true)}>Archive</Button> : <Button disabled={archive.isPending} onClick={() => archive.mutate(true)}>Restore</Button>}
+                {l.is_active ? <Button variant="danger" onClick={() => setArchiving(true)}>Archive</Button> : <Button disabled={archive.isPending} onClick={() => archive.mutate(true)}>Restore</Button>}
               </div>
             )}
           </div>
-          {licence.read_only && (
+          {l.read_only && (
             <div className="text-[11.5px] text-[var(--text-secondary)] rounded-md px-3 py-2 bg-[var(--surface-2)]">
-              This row comes from the supplier master. Change the licence number or expiry on the supplier record (Buy → Suppliers).
+              This licence is maintained on the supplier master (<span className="tabular font-semibold">{l.holder_name}</span>) and reflects regulatory credentials recorded there.
             </div>
           )}
           <DescriptionList
             items={[
-              { label: 'Licence number', value: licence.licence_number ?? '—' },
-              { label: 'Holder', value: `${licence.holder_name ?? '—'} (${titleCase(licence.holder_type)})` },
-              { label: 'Issued by', value: licence.issued_by ?? '—' },
-              { label: 'Issue date', value: formatDate(licence.issue_date) },
-              { label: 'Expiry date', value: formatDate(licence.expiry_date) },
-              { label: 'Notes', value: licence.notes ? <span className="whitespace-pre-wrap">{licence.notes}</span> : '—' },
-              { label: 'Status', value: licence.is_active ? 'Active' : 'Archived' },
-              ...(licence.updated_at ? [{ label: 'Last updated', value: formatDateTime(licence.updated_at) }] : []),
+              { label: 'Holder', value: `${l.holder_name ?? '—'} (${titleCase(l.holder_type)})` },
+              { label: 'Number', value: <span className="tabular font-semibold">{l.licence_number ?? '—'}</span> },
+              { label: 'Issuer', value: l.issued_by ?? '—' },
+              { label: 'Issue date', value: formatDate(l.issue_date) },
+              { label: 'Expiry date', value: formatDate(l.expiry_date) },
+              { label: 'Document', value: l.has_document ? <button type="button" className="text-[var(--color-navy)] underline" onClick={() => void downloadFile(`/api/licences/${l.id}/document`, `${l.licence_number ?? 'licence'}.pdf`)}>Download attached PDF</button> : <span className="text-[var(--text-muted)]">None attached</span> },
+              { label: 'Notes', value: l.notes ?? '—' },
+              { label: 'Last updated', value: formatDateTime(l.updated_at) },
             ]}
           />
-          {licence.has_document && (
-            <Button onClick={() => void downloadFile(`/api/licences/${licence.id}/document`, licence.document_name ?? 'licence.pdf')}>Download {licence.document_name ?? 'document'}</Button>
-          )}
         </div>
       )}
       <ConfirmDialog
@@ -280,51 +292,76 @@ function LicenceForm({ licence, onDone, onCancel }: { licence?: Licence; onDone:
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Holder type" required>
-          <Select value={form.holder_type} onChange={(e) => set({ holder_type: e.target.value as HolderType, holder_id: '' })}>
-            {HOLDER_TYPES.map((h) => (<option key={h} value={h}>{titleCase(h)}</option>))}
-          </Select>
-        </Field>
-        <Field label="Holder" required={form.holder_type !== 'ORGANISATION'} error={err?.errors.holder_id?.[0]}>
-          {form.holder_type === 'ORGANISATION' ? (
-            <Input disabled value="The organisation itself" />
-          ) : (
-            <Select value={form.holder_id} onChange={(e) => set({ holder_id: e.target.value })}>
-              <option value="">{holders.isLoading ? 'Loading…' : holders.data?.length === 0 ? `No ${titleCase(form.holder_type).toLowerCase()}s found` : 'Choose…'}</option>
-              {holders.data?.map((h) => (<option key={h.id} value={h.id}>{h.name}</option>))}
+      <FormSection
+        title="Licence Holder & Classification"
+        description="Select the legal entity or practitioner holding the regulatory permit"
+        icon={ShieldCheck}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Holder type" required>
+            <Select value={form.holder_type} onChange={(e) => set({ holder_type: e.target.value as HolderType, holder_id: '' })}>
+              {HOLDER_TYPES.map((h) => (<option key={h} value={h}>{titleCase(h)}</option>))}
             </Select>
-          )}
+          </Field>
+          <Field label="Holder" required={form.holder_type !== 'ORGANISATION'} error={err?.errors.holder_id?.[0]}>
+            {form.holder_type === 'ORGANISATION' ? (
+              <Input disabled value="The organisation itself" />
+            ) : (
+              <Select value={form.holder_id} onChange={(e) => set({ holder_id: e.target.value })}>
+                <option value="">{holders.isLoading ? 'Loading…' : holders.data?.length === 0 ? `No ${titleCase(form.holder_type).toLowerCase()}s found` : 'Choose…'}</option>
+                {holders.data?.map((h) => (<option key={h.id} value={h.id}>{h.name}</option>))}
+              </Select>
+            )}
+          </Field>
+          <Field label="Licence type" required error={err?.errors.licence_type?.[0]}>
+            <Select value={form.licence_type} onChange={(e) => set({ licence_type: e.target.value })}>
+              {LICENCE_TYPES.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
+            </Select>
+          </Field>
+          <Field label="Licence number" required error={err?.errors.licence_number?.[0]}><Input value={form.licence_number} onChange={(e) => set({ licence_number: e.target.value })} /></Field>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Validity & Issuing Authority"
+        description="Statutory dates and regulatory board details"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Issued by" error={err?.errors.issued_by?.[0]} className="col-span-1 sm:col-span-2"><Input value={form.issued_by} onChange={(e) => set({ issued_by: e.target.value })} /></Field>
+          <Field label="Issue date" error={err?.errors.issue_date?.[0]}><Input type="date" value={form.issue_date} onChange={(e) => set({ issue_date: e.target.value })} /></Field>
+          <Field label="Expiry date" required hint="Shown as expiring 60 days before this date." error={err?.errors.expiry_date?.[0]}><Input type="date" value={form.expiry_date} onChange={(e) => set({ expiry_date: e.target.value })} /></Field>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Documentation & Remarks"
+        description="Supporting PDF or scanned certificate upload"
+        icon={FileText}
+      >
+        <Field label="Notes"><Textarea rows={2} value={form.notes} onChange={(e) => set({ notes: e.target.value })} /></Field>
+        <Field label={licence?.has_document ? 'Replace document' : 'Document'} hint="PDF, JPG or PNG, up to 10 MB." error={fileError ?? err?.errors.document?.[0]}>
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+            className="block text-[12px]"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null
+              setFile(f)
+              setFileError(f && f.size > MAX_UPLOAD_BYTES ? 'The file is larger than 10 MB.' : null)
+            }}
+          />
         </Field>
-        <Field label="Licence type" required error={err?.errors.licence_type?.[0]}>
-          <Select value={form.licence_type} onChange={(e) => set({ licence_type: e.target.value })}>
-            {LICENCE_TYPES.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
-          </Select>
-        </Field>
-        <Field label="Licence number" required error={err?.errors.licence_number?.[0]}><Input value={form.licence_number} onChange={(e) => set({ licence_number: e.target.value })} /></Field>
-        <Field label="Issued by" error={err?.errors.issued_by?.[0]}><Input value={form.issued_by} onChange={(e) => set({ issued_by: e.target.value })} /></Field>
-        <div />
-        <Field label="Issue date" error={err?.errors.issue_date?.[0]}><Input type="date" value={form.issue_date} onChange={(e) => set({ issue_date: e.target.value })} /></Field>
-        <Field label="Expiry date" required hint="Shown as expiring 60 days before this date." error={err?.errors.expiry_date?.[0]}><Input type="date" value={form.expiry_date} onChange={(e) => set({ expiry_date: e.target.value })} /></Field>
-      </div>
-      <Field label="Notes"><Textarea rows={2} value={form.notes} onChange={(e) => set({ notes: e.target.value })} /></Field>
-      <Field label={licence?.has_document ? 'Replace document' : 'Document'} hint="PDF, JPG or PNG, up to 10 MB." error={fileError ?? err?.errors.document?.[0]}>
-        <input
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-          className="block text-[12px]"
-          onChange={(e) => {
-            const f = e.target.files?.[0] ?? null
-            setFile(f)
-            setFileError(f && f.size > MAX_UPLOAD_BYTES ? 'The file is larger than 10 MB.' : null)
-          }}
-        />
-      </Field>
+      </FormSection>
+
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
-      <div className="flex justify-end gap-2">
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" disabled={!valid || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : licence ? 'Save changes' : 'Add licence'}</Button>
-      </div>
+
+      <DrawerFooter
+        onCancel={onCancel}
+        onSubmit={() => save.mutate()}
+        submitLabel={licence ? 'Save changes' : 'Add licence'}
+        disabled={!valid || save.isPending}
+        isPending={save.isPending}
+      />
     </div>
   )
 }

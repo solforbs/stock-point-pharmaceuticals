@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CustomerPicker } from '../../components/CustomerPicker'
@@ -9,7 +10,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, NoAccess } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, Field, Input, Select, Textarea } from '../../components/ui/primitives'
+import { Button, DrawerFooter, Field, FormSection, Input, Select, Textarea } from '../../components/ui/primitives'
 import { apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase, todayIso } from '../../lib/format'
 import { usePermission } from '../../lib/permissions'
@@ -150,19 +151,34 @@ function ContactForm({ contact, defaultCustomer, onDone, onCancel }: { contact?:
 
   return (
     <div className="space-y-4">
-      {!contact && <Field label="Customer" required error={err?.errors.customer_id?.[0]}><CustomerPicker value={customer} onChange={setCustomer} /></Field>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-        <Field label="Role" error={err?.errors.role?.[0]}><Input value={form.role} onChange={(e) => set({ role: e.target.value })} placeholder="Buyer, Accounts, Pharmacist in charge" /></Field>
-        <Field label="Phone" error={err?.errors.phone?.[0]}><Input value={form.phone} onChange={(e) => set({ phone: e.target.value })} /></Field>
-        <Field label="Email" error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
-      </div>
-      <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={form.is_primary} onChange={(e) => set({ is_primary: e.target.checked })} /> Primary contact for this customer</label>
+      <FormSection
+        title="Contact Profile & Details"
+        description="Key communication contact for quotation, billing, and receiving"
+        icon={UserCheck}
+      >
+        <div className="space-y-3">
+          {!contact && <Field label="Customer" required error={err?.errors.customer_id?.[0]}><CustomerPicker value={customer} onChange={setCustomer} /></Field>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
+            <Field label="Role" error={err?.errors.role?.[0]}><Input value={form.role} onChange={(e) => set({ role: e.target.value })} placeholder="Buyer, Accounts, Pharmacist in charge" /></Field>
+            <Field label="Phone" error={err?.errors.phone?.[0]}><Input value={form.phone} onChange={(e) => set({ phone: e.target.value })} /></Field>
+            <Field label="Email" error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
+          </div>
+          <div className="pt-2 border-t border-slate-100 mt-2">
+            <label className="flex items-center gap-2 text-[12px] cursor-pointer"><input type="checkbox" checked={form.is_primary} onChange={(e) => set({ is_primary: e.target.checked })} /> Primary contact for this customer</label>
+          </div>
+        </div>
+      </FormSection>
+
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
-      <div className="flex justify-end gap-2">
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" disabled={!form.name || (!contact && !customer) || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : contact ? 'Save changes' : 'Add contact'}</Button>
-      </div>
+
+      <DrawerFooter
+        onCancel={onCancel}
+        onSubmit={() => save.mutate()}
+        submitLabel={contact ? 'Save changes' : 'Add contact'}
+        disabled={!form.name || (!contact && !customer) || save.isPending}
+        isPending={save.isPending}
+      />
     </div>
   )
 }

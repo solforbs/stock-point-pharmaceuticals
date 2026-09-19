@@ -94,6 +94,7 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/customers', [MasterDataController::class, 'customers']);
     Route::post('/customers', [MasterDataController::class, 'storeCustomer']);
     Route::get('/customers/{customer}', [MasterDataController::class, 'customer']);
+    Route::patch('/customers/{customer}', [MasterDataController::class, 'updateCustomer'])->whereUuid('customer');
     Route::patch('/customers/{customer}/credit', [MasterDataController::class, 'updateCredit']);
     Route::get('/customer-tiers', [MasterDataController::class, 'tiers']);
     Route::post('/customer-tiers', [PriceListController::class, 'storeTier']);
@@ -170,6 +171,7 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::post('/requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);
     Route::post('/requisitions/{requisition}/convert', [RequisitionController::class, 'convert']);
     Route::get('/suppliers', [ProcurementController::class, 'suppliers']);
+    Route::get('/suppliers/{supplier}', [ProcurementController::class, 'supplier'])->whereUuid('supplier');
     Route::post('/suppliers', [ProcurementController::class, 'storeSupplier']);
     Route::patch('/suppliers/{supplier}', [ProcurementController::class, 'updateSupplier']);
     Route::get('/purchase-orders', [ProcurementController::class, 'purchaseOrders']);
@@ -211,6 +213,9 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/finance/ar-ageing', [PaymentController::class, 'arAgeing']);
     Route::get('/finance/trial-balance', [FinanceController::class, 'trialBalance']);
     Route::get('/finance/journals', [FinanceController::class, 'journals']);
+    Route::post('/finance/journals', [FinanceController::class, 'storeJournal']);
+    Route::get('/finance/journals/{journal}', [FinanceController::class, 'showJournal']);
+    Route::post('/finance/journals/{journal}/reverse', [FinanceController::class, 'reverseJournal']);
     Route::get('/finance/chart-of-accounts', [FinanceController::class, 'chartOfAccounts']);
     Route::get('/finance/periods', [FinanceController::class, 'periods']);
     Route::post('/finance/periods/{period}/close', [FinanceController::class, 'closePeriod']);
@@ -276,6 +281,7 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::post('/adr-reports/{report}/submit', [AdrReportController::class, 'submit']);
     Route::post('/adr-reports/{report}/close', [AdrReportController::class, 'close']);
     Route::get('/licences', [LicenceController::class, 'index']);
+    Route::get('/licences/{licence}', [LicenceController::class, 'show']);
     Route::get('/licences/holders', [LicenceController::class, 'holders']);
     Route::post('/licences', [LicenceController::class, 'store']);
     Route::match(['post', 'patch'], '/licences/{licence}', [LicenceController::class, 'update']);
@@ -377,6 +383,7 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::post('/alerts/acknowledge-all', [AlertController::class, 'acknowledgeAll']);
     Route::post('/alerts/{alert}/acknowledge', [AlertController::class, 'acknowledge']);
     Route::get('/admin/users', [AdminController::class, 'users']);
+    Route::get('/admin/users/{user}', [AdminController::class, 'user'])->whereNumber('user');
     Route::post('/admin/users', [AdminController::class, 'storeUser']);
     Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
     Route::post('/admin/users/{user}/unlock', [AdminController::class, 'unlockUser']);
@@ -388,6 +395,7 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::post('/admin/branches', [AdminController::class, 'storeBranch']);
     Route::patch('/admin/branches/{branch}', [AdminController::class, 'updateBranch']);
     Route::post('/admin/branches/{branch}/stores', [AdminController::class, 'storeStore']);
+    Route::patch('/admin/branches/{branch}/stores/{store}', [AdminController::class, 'updateStore']);
     Route::get('/admin/organisation', [OrganisationController::class, 'show']);
     Route::patch('/admin/organisation', [OrganisationController::class, 'update']);
     Route::get('/admin/settings', [AdminController::class, 'settings']);

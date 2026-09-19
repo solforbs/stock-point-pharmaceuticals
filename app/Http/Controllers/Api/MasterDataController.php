@@ -22,13 +22,17 @@ class MasterDataController extends ApiController
     {
         $this->requirePermission($request, 'sale.create');
 
+        $allowedSorts = ['name', 'code', 'customer_type', 'created_at'];
+        $sortBy = in_array($request->query('sort_by'), $allowedSorts, true) ? $request->query('sort_by') : 'name';
+        $sortDir = strtolower((string) $request->query('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+
         $customers = Customer::where('organisation_id', $this->organisationId($request))
             ->when($request->string('q')->trim()->isNotEmpty(), function ($q) use ($request) {
                 $term = '%'.$request->string('q')->trim().'%';
                 $q->where(fn ($w) => $w->where('name', 'like', $term)->orWhere('code', 'like', $term)->orWhere('phone', 'like', $term));
             })
             ->with(['tier:id,code,name', 'credit'])
-            ->orderBy('name')
+            ->orderBy($sortBy, $sortDir)
             ->paginate($request->integer('per_page', 25));
 
         $customers->getCollection()->transform(fn (Customer $c) => $c->toArray() + [
@@ -82,6 +86,57 @@ class MasterDataController extends ApiController
         });
 
         return response()->json($customer->load('credit'), 201);
+    }
+
+    public function updateCustomer(Request $request, string $customer): JsonResponse
+    {
+        $this->requirePermission($request, 'customer.manage');
+        $organisationId = $this->organisationId($request);
+
+        $customer = Customer::where('organisation_id', $organisationId)->findOrFail($customer);
+
+        $data = $request->validate([
+            'code' => ['nullable', 'string', 'max:30', Rule::unique('customers', 'code')->where('organisation_id', $organisationId)->ignore($customer->id)],
+            'name' => ['sometimes', 'required', 'string', 'max:150'],
+            'customer_type' => ['sometimes', 'required', 'in:WALK_IN,RETAIL_PHARMACY,HOSPITAL,CLINIC,NGO,GOVERNMENT,TENDER,INSTITUTION'],
+            'tier_id' => ['nullable', 'uuid', 'exists:customer_tiers,id'],
+            'tax_status' => ['sometimes', 'required', 'in:STANDARD,EXEMPT,ZERO_RATED,WITHHOLDING_AGENT'],
+            'exemption_ref' => ['nullable', 'string', 'max:100'],
+            'exemption_expiry' => ['nullable', 'date'],
+            'payment_terms_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+            'fulfilment_policy' => ['sometimes', 'required', 'in:PARTIAL,COMPLETE,CANCEL_SHORTFALL'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:150'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        $before = $customer->only([
+            'code', 'name', 'customer_type', 'tier_id', 'tax_status',
+            'exemption_ref', 'exemption_expiry', 'payment_terms_days',
+            'fulfilment_policy', 'phone', 'email', 'address', 'is_active',
+        ]);
+
+        $updateData = $data;
+        if (empty($updateData['code'])) {
+            unset($updateData['code']);
+        }
+        $updateData['updated_by'] = $request->user()->id;
+
+        $customer->update($updateData);
+
+        AuditLog::record('CUSTOMER_UPDATED', 'customer', $customer->id, [
+            'reference' => $customer->code,
+            'before_json' => $before,
+            'after_json' => $customer->fresh()->only(array_keys($before)),
+        ]);
+
+        $customer->load(['tier', 'credit', 'contacts']);
+
+        return response()->json($customer->toArray() + [
+            'available_credit' => $customer->credit?->availableCredit() ?? '0.0000',
+            'open_order_exposure' => $customer->credit?->openOrderExposure() ?? '0.0000',
+        ]);
     }
 
     public function updateCredit(Request $request, string $customer): JsonResponse

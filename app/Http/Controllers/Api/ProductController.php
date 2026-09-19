@@ -18,6 +18,10 @@ class ProductController extends ApiController
         $this->requirePermission($request, 'product.view');
         $organisationId = $this->organisationId($request);
 
+        $allowedSorts = ['name', 'code', 'generic_name', 'default_price', 'created_at'];
+        $sortBy = in_array($request->query('sort_by'), $allowedSorts, true) ? $request->query('sort_by') : 'name';
+        $sortDir = strtolower((string) $request->query('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+
         $products = Product::query()
             ->where('organisation_id', $organisationId)
             ->when($request->string('q')->trim()->isNotEmpty(), function ($query) use ($request) {
@@ -45,7 +49,7 @@ class ProductController extends ApiController
                 };
             })
             ->with(['dosageForm', 'category', 'manufacturer', 'baseUom', 'uoms.uom', 'taxCode:id,code,name'])
-            ->orderBy('name')
+            ->orderBy($sortBy, $sortDir)
             ->paginate($request->integer('per_page', 25));
 
         // Part 7.3 — every product row carries its stock in the active

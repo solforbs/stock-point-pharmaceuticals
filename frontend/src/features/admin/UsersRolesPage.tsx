@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Key, UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DeleteRecordButton } from '../../components/DeleteRecordButton'
@@ -9,11 +10,11 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton, NoAccess } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, Card, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
+import { Button, Card, DescriptionList, DrawerFooter, Field, FormSection, Input, Select } from '../../components/ui/primitives'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { formatDateTime, titleCase } from '../../lib/format'
-import { useAdminBranches, useAdminRoles, usePermissionCatalogue } from '../../lib/hooks'
+import { useAdminBranches, useAdminRoles, useAdminUser, usePermissionCatalogue } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { AdminBranch, AdminRole, AdminUser, Paginated, PermissionGroup } from '../../lib/types'
@@ -78,7 +79,8 @@ function UsersTab() {
     queryFn: () => apiGet<Paginated<AdminUser>>('/api/admin/users', { q: dq, is_active: active, page, per_page: 50 }),
     placeholderData: (prev) => prev,
   })
-  const selected = list.data?.data.find((u) => u.id === selectedId) ?? null
+  const userQuery = useAdminUser(selectedId)
+  const selected = userQuery.data ?? list.data?.data.find((u) => u.id === selectedId) ?? null
 
   const columns: Column<AdminUser>[] = [
     { key: 'name', header: 'Name', render: (u) => <><div className="font-semibold">{u.name}</div><div className="text-[10.5px] text-[var(--text-muted)] tabular">{u.username ?? '—'}</div></>, sortValue: (u) => u.name },
@@ -126,7 +128,8 @@ function UsersTab() {
         <DataTable columns={columns} rows={list.data?.data} rowKey={(u) => String(u.id)} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(u) => { setEditing(false); setSelectedId(u.id) }} selectedKey={selectedId === null ? null : String(selectedId)} emptyTitle="No users match" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
-      <Drawer open={!!selected} onClose={closeDrawer} title={selected?.name ?? ''} subtitle={selected ? `${selected.username ?? ''} · ${selected.email}` : undefined} width={editing ? 760 : 600}>
+      <Drawer open={selectedId !== null} onClose={closeDrawer} title={selected?.name ?? 'User Details'} subtitle={selected ? `${selected.username ?? ''} · ${selected.email}` : undefined} width={editing ? 760 : 600}>
+        {userQuery.isLoading && !selected && <LoadingSkeleton />}
         {selected && editing && <UserForm user={selected} onDone={() => setEditing(false)} onCancel={() => setEditing(false)} />}
         {selected && !editing && <UserDetail user={selected} onEdit={() => setEditing(true)} />}
       </Drawer>
@@ -265,20 +268,33 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-        <Field label="Username" required error={err?.errors.username?.[0]}><Input value={form.username} disabled={!!user} onChange={(e) => set({ username: e.target.value })} /></Field>
-        <Field label="Email" required error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
-        <Field label="Phone" error={err?.errors.phone?.[0]}><Input value={form.phone} onChange={(e) => set({ phone: e.target.value })} /></Field>
-        <Field label={user ? 'New password' : 'Temporary password'} required={!user} hint="At least 12 characters." error={err?.errors.password?.[0] ?? (form.password && !passwordOk ? 'At least 12 characters.' : null)}>
-          <Input type="password" autoComplete="new-password" value={form.password} placeholder={user ? 'Leave blank to keep' : ''} onChange={(e) => set({ password: e.target.value })} />
-        </Field>
-        <div className="flex flex-col gap-2 pt-5 text-[12px]">
-          <label className="flex items-center gap-2"><input type="checkbox" checked={form.must_change_password} onChange={(e) => set({ must_change_password: e.target.checked })} /> Must change password at next sign-in</label>
-          {user && <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active</label>}
-          {user && <label className="flex items-center gap-2"><input type="checkbox" checked={form.reset_mfa} onChange={(e) => set({ reset_mfa: e.target.checked })} /> Reset MFA (they re-enrol from Security)</label>}
+      <FormSection
+        title="User Identity & Authentication"
+        description="Full name, system login credentials, and initial password setup"
+        icon={UserCheck}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
+          <Field label="Username" required error={err?.errors.username?.[0]}><Input value={form.username} disabled={!!user} onChange={(e) => set({ username: e.target.value })} /></Field>
+          <Field label="Email" required error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
+          <Field label="Phone" error={err?.errors.phone?.[0]}><Input value={form.phone} onChange={(e) => set({ phone: e.target.value })} /></Field>
+          <Field label={user ? 'New password' : 'Temporary password'} required={!user} hint="At least 12 characters." error={err?.errors.password?.[0] ?? (form.password && !passwordOk ? 'At least 12 characters.' : null)} className="col-span-1 sm:col-span-2">
+            <Input type="password" autoComplete="new-password" value={form.password} placeholder={user ? 'Leave blank to keep current password' : ''} onChange={(e) => set({ password: e.target.value })} />
+          </Field>
         </div>
-      </div>
+      </FormSection>
+
+      <FormSection
+        title="Security Policies & Status"
+        description="Password expiration, account accessibility, and multi-factor flags"
+        icon={Key}
+      >
+        <div className="flex flex-col gap-2.5 text-[12px]">
+          <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.must_change_password} onChange={(e) => set({ must_change_password: e.target.checked })} /> Must change password at next sign-in</label>
+          {user && <label className="flex items-center gap-2 cursor-pointer border-t border-slate-100 pt-2"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active user (can authenticate and sign in)</label>}
+          {user && <label className="flex items-center gap-2 cursor-pointer border-t border-slate-100 pt-2"><input type="checkbox" checked={form.reset_mfa} onChange={(e) => set({ reset_mfa: e.target.checked })} /> Reset multi-factor authentication (requires re-enrolment)</label>}
+        </div>
+      </FormSection>
 
       <Card title="Role assignments by branch">
         {(branches.isLoading || roles.isLoading) && <LoadingSkeleton rows={3} />}
@@ -290,10 +306,14 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
       {err?.errors.assignments?.[0] && <div className="text-[11px] text-[var(--status-red)]">{err.errors.assignments[0]}</div>}
 
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
-      <div className="flex justify-end gap-2">
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" disabled={!canSubmit} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : user ? 'Save changes' : 'Create user'}</Button>
-      </div>
+
+      <DrawerFooter
+        onCancel={onCancel}
+        onSubmit={() => save.mutate()}
+        submitLabel={user ? 'Save changes' : 'Create user'}
+        disabled={!canSubmit}
+        isPending={save.isPending}
+      />
     </div>
   )
 }

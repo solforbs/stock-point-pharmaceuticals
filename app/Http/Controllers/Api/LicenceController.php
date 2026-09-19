@@ -94,6 +94,46 @@ class LicenceController extends ApiController
         ]);
     }
 
+    public function show(Request $request, string $licence): JsonResponse
+    {
+        $this->requireViewPermission($request);
+        $orgId = $this->organisationId($request);
+
+        if (str_starts_with($licence, 'supplier:')) {
+            $supplierId = substr($licence, strlen('supplier:'));
+            $s = Supplier::where('organisation_id', $orgId)->findOrFail($supplierId);
+
+            return response()->json([
+                'id' => 'supplier:'.$s->id,
+                'organisation_id' => $orgId,
+                'holder_type' => 'SUPPLIER',
+                'holder_id' => $s->id,
+                'holder_name' => $s->name,
+                'licence_type' => 'PPB_PREMISES',
+                'licence_number' => $s->licence_number,
+                'issued_by' => 'Pharmacy and Poisons Board',
+                'issue_date' => null,
+                'expiry_date' => $s->licence_expiry?->toDateString(),
+                'notes' => null,
+                'is_active' => true,
+                'status' => $s->licence_expiry ? Licence::statusFor($s->licence_expiry) : 'EXPIRED',
+                'days_to_expiry' => $s->licence_expiry ? (int) now()->startOfDay()->diffInDays($s->licence_expiry->copy()->startOfDay(), false) : null,
+                'has_document' => false,
+                'source' => 'supplier',
+                'read_only' => true,
+            ]);
+        }
+
+        $model = Licence::where('organisation_id', $orgId)->findOrFail($licence);
+        $names = $this->holderNames(collect([$model]), $orgId);
+
+        return response()->json($model->toArray() + [
+            'holder_name' => $names[$model->holder_type.':'.$model->holder_id] ?? null,
+            'source' => 'licence',
+            'read_only' => false,
+        ]);
+    }
+
     /**
      * GET /api/licences/holders?holder_type= — id and name of every possible
      * holder of that type in this organisation, for the licence form.

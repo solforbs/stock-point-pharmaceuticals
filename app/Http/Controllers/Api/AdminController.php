@@ -57,6 +57,14 @@ class AdminController extends ApiController
         return response()->json($users);
     }
 
+    public function user(Request $request, int $user): JsonResponse
+    {
+        $this->requirePermission($request, 'admin.users');
+        $userModel = User::findOrFail($user);
+
+        return response()->json($this->userPayload($userModel, ($this->assignmentsFor([$userModel->id])[$userModel->id] ?? [])));
+    }
+
     public function storeUser(Request $request): JsonResponse
     {
         $this->requirePermission($request, 'admin.users');
@@ -290,6 +298,32 @@ class AdminController extends ApiController
         AuditLog::record('STORE_CREATED', 'store', $store->id, ['reference' => "{$branch->code}/{$store->code}"]);
 
         return response()->json($store, 201);
+    }
+
+    public function updateStore(Request $request, string $branch, string $store): JsonResponse
+    {
+        $this->requirePermission($request, 'admin.settings');
+        $branch = Branch::where('organisation_id', $this->organisationId($request))->findOrFail($branch);
+        $store = Store::where('branch_id', $branch->id)->findOrFail($store);
+
+        $data = $request->validate([
+            'code' => ['sometimes', 'required', 'string', 'max:20', Rule::unique('stores', 'code')->where('branch_id', $branch->id)->ignore($store->id)],
+            'name' => ['sometimes', 'required', 'string', 'max:100'],
+            'store_type' => ['sometimes', 'required', 'in:MAIN,COLD,QUARANTINE,RETAIL,TRANSIT,DISPENSARY'],
+            'storage_condition_id' => ['nullable', 'uuid', 'exists:storage_conditions,id'],
+            'is_sellable' => ['nullable', 'boolean'],
+        ]);
+
+        $before = $store->only(['code', 'name', 'store_type', 'storage_condition_id', 'is_sellable']);
+        $store->update($data + ['updated_by' => $request->user()->id]);
+        AuditLog::record('STORE_UPDATED', 'store', $store->id, [
+            'reference' => "{$branch->code}/{$store->code}",
+            'before_json' => $before,
+            'after_json' => $store->fresh()->only(array_keys($before)),
+            'changed_fields' => array_keys($data),
+        ]);
+
+        return response()->json($store->fresh());
     }
 
     // ---- Settings and number sequences ------------------------------------

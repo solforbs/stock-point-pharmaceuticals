@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Building2, Store } from 'lucide-react'
 import { useState } from 'react'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
 import { Page, PageHeader } from '../../components/ui/PageHeader'
 import { InlineError, NoAccess } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, Card, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
+import { Button, Card, DescriptionList, DrawerFooter, Field, FormSection, Input, Select } from '../../components/ui/primitives'
 import { apiPatch, apiPost, getApiError } from '../../lib/api'
 import { titleCase } from '../../lib/format'
 import { useAdminBranches, useStorageConditions } from '../../lib/hooks'
@@ -20,6 +21,7 @@ export default function BranchesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
   const [addingStore, setAddingStore] = useState(false)
+  const [editingStore, setEditingStore] = useState<AdminStore | null>(null)
   const [creating, setCreating] = useState(false)
   const selected = branches.data?.find((b) => b.id === selectedId) ?? null
 
@@ -32,7 +34,7 @@ export default function BranchesPage() {
     { key: 'status', header: 'Status', render: (b) => <StatusBadge status={b.is_active ? 'ACTIVE' : 'INACTIVE'} /> },
   ]
 
-  const close = () => { setSelectedId(null); setEditing(false); setAddingStore(false) }
+  const close = () => { setSelectedId(null); setEditing(false); setAddingStore(false); setEditingStore(null) }
 
   return (
     <Page>
@@ -46,7 +48,7 @@ export default function BranchesPage() {
         <div className="ui-card"><NoAccess permission="admin.settings" /></div>
       ) : (
         <div className="ui-card">
-          <DataTable columns={columns} rows={branches.data} rowKey={(b) => b.id} isLoading={branches.isLoading} error={branches.error} onRetry={() => branches.refetch()} onRowClick={(b) => { setEditing(false); setAddingStore(false); setSelectedId(b.id) }} selectedKey={selectedId} emptyTitle="No branches" />
+          <DataTable columns={columns} rows={branches.data} rowKey={(b) => b.id} isLoading={branches.isLoading} error={branches.error} onRetry={() => branches.refetch()} onRowClick={(b) => { setEditing(false); setAddingStore(false); setEditingStore(null); setSelectedId(b.id) }} selectedKey={selectedId} emptyTitle="No branches" />
         </div>
       )}
       <Drawer open={!!selected} onClose={close} title={selected?.name ?? ''} subtitle={selected?.code} width={680}>
@@ -58,13 +60,14 @@ export default function BranchesPage() {
               <Button onClick={() => setEditing(true)}>Edit</Button>
             </div>
             <DescriptionList items={[{ label: 'Address', value: selected.address ?? '—' }, { label: 'County', value: selected.county ?? '—' }]} />
-            <Card title={`Stores (${selected.stores.length})`} actions={!addingStore ? <Button size="sm" onClick={() => setAddingStore(true)}>Add store</Button> : null}>
+            <Card title={`Stores (${selected.stores.length})`} actions={!addingStore && !editingStore ? <Button size="sm" onClick={() => { setEditingStore(null); setAddingStore(true) }}>Add store</Button> : null}>
               {addingStore && <div className="p-4 border-b border-[var(--border)]"><StoreForm branch={selected} onDone={() => setAddingStore(false)} onCancel={() => setAddingStore(false)} /></div>}
+              {editingStore && <div className="p-4 border-b border-[var(--border)]"><StoreForm branch={selected} store={editingStore} onDone={() => setEditingStore(null)} onCancel={() => setEditingStore(null)} /></div>}
               {selected.stores.length === 0 ? (
                 <div className="p-4 text-[12px] text-[var(--text-muted)]">No stores yet. A branch needs at least a MAIN store before it can receive goods.</div>
               ) : (
                 <table className="ui-table">
-                  <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Sellable</th></tr></thead>
+                  <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Sellable</th><th className="text-right">Actions</th></tr></thead>
                   <tbody>
                     {selected.stores.map((s: AdminStore) => (
                       <tr key={s.id}>
@@ -72,6 +75,9 @@ export default function BranchesPage() {
                         <td>{s.name}</td>
                         <td><StatusBadge status={s.store_type} tone={s.store_type === 'QUARANTINE' ? 'purple' : s.store_type === 'COLD' ? 'cold' : s.store_type === 'TRANSIT' ? 'blue' : 'slate'} /></td>
                         <td>{s.is_sellable ? 'Yes' : 'No'}</td>
+                        <td className="text-right">
+                          <Button size="sm" onClick={() => { setAddingStore(false); setEditingStore(s) }}>Edit</Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -137,38 +143,70 @@ function BranchForm({ branch, onDone, onCancel }: { branch?: AdminBranch; onDone
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} disabled={!!branch} maxLength={10} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
-        <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-        <Field label="Address" className="col-span-2"><Input value={form.address} onChange={(e) => set({ address: e.target.value })} /></Field>
-        <Field label="County"><Input value={form.county} onChange={(e) => set({ county: e.target.value })} /></Field>
-        <div className="flex flex-col gap-1.5 pt-5 text-[12px]">
-          <label className="flex items-center gap-2"><input type="checkbox" checked={form.retail_enabled} onChange={(e) => set({ retail_enabled: e.target.checked })} /> Retail</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={form.wholesale_enabled} onChange={(e) => set({ wholesale_enabled: e.target.checked })} /> Wholesale</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={form.dispensing_enabled} onChange={(e) => set({ dispensing_enabled: e.target.checked })} /> Dispensing</label>
-          {branch && <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active</label>}
+      <FormSection
+        title="Branch Identity & Location"
+        description="Unique identifier code, legal branch name, and geographical address"
+        icon={Building2}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} disabled={!!branch} maxLength={10} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
+          <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
+          <Field label="Address" className="col-span-1 sm:col-span-2"><Input value={form.address} onChange={(e) => set({ address: e.target.value })} /></Field>
+          <Field label="County" className="col-span-1 sm:col-span-2"><Input value={form.county} onChange={(e) => set({ county: e.target.value })} /></Field>
         </div>
-      </div>
+      </FormSection>
+
+      <FormSection
+        title="Commercial Modes & Status"
+        description="Operating capabilities and licensing enablement for this branch"
+      >
+        <div className="flex flex-col gap-2 text-[12px]">
+          <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.retail_enabled} onChange={(e) => set({ retail_enabled: e.target.checked })} /> Retail sales enabled</label>
+          <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.wholesale_enabled} onChange={(e) => set({ wholesale_enabled: e.target.checked })} /> Wholesale distribution enabled</label>
+          <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.dispensing_enabled} onChange={(e) => set({ dispensing_enabled: e.target.checked })} /> Pharmacy dispensing enabled</label>
+          {branch && <label className="flex items-center gap-2 cursor-pointer border-t border-slate-100 pt-2 mt-1"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active branch</label>}
+        </div>
+      </FormSection>
+
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
-      <div className="flex justify-end gap-2">
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" disabled={!form.code || !form.name || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : branch ? 'Save changes' : 'Create branch'}</Button>
-      </div>
+
+      <DrawerFooter
+        onCancel={onCancel}
+        onSubmit={() => save.mutate()}
+        submitLabel={branch ? 'Save changes' : 'Create branch'}
+        disabled={!form.code || !form.name || save.isPending}
+        isPending={save.isPending}
+      />
     </div>
   )
 }
 
-function StoreForm({ branch, onDone, onCancel }: { branch: AdminBranch; onDone: () => void; onCancel: () => void }) {
+function StoreForm({ branch, store, onDone, onCancel }: { branch: AdminBranch; store?: AdminStore; onDone: () => void; onCancel: () => void }) {
   const queryClient = useQueryClient()
   const conditions = useStorageConditions()
-  const [form, setForm] = useState({ code: '', name: '', store_type: 'MAIN', storage_condition_id: '', is_sellable: true })
+  const [form, setForm] = useState({
+    code: store?.code ?? '',
+    name: store?.name ?? '',
+    store_type: store?.store_type ?? 'MAIN',
+    storage_condition_id: store?.storage_condition_id ?? '',
+    is_sellable: store?.is_sellable ?? true,
+  })
   const set = (patch: Partial<typeof form>) => setForm({ ...form, ...patch })
 
   const save = useMutation({
     meta: { silent: true },
-    mutationFn: () => apiPost<AdminStore>(`/api/admin/branches/${branch.id}/stores`, { ...form, storage_condition_id: form.storage_condition_id || null }),
+    mutationFn: () =>
+      store
+        ? apiPatch<AdminStore>(`/api/admin/branches/${branch.id}/stores/${store.id}`, {
+            ...form,
+            storage_condition_id: form.storage_condition_id || null,
+          })
+        : apiPost<AdminStore>(`/api/admin/branches/${branch.id}/stores`, {
+            ...form,
+            storage_condition_id: form.storage_condition_id || null,
+          }),
     onSuccess: (s) => {
-      toast.success(`Store ${branch.code}/${s.code} created`)
+      toast.success(store ? `Store ${branch.code}/${s.code} updated` : `Store ${branch.code}/${s.code} created`)
       queryClient.invalidateQueries({ queryKey: ['admin', 'branches'] })
       queryClient.invalidateQueries({ queryKey: ['auth', 'user'] })
       queryClient.invalidateQueries({ queryKey: ['stores'] })
@@ -178,28 +216,41 @@ function StoreForm({ branch, onDone, onCancel }: { branch: AdminBranch; onDone: 
   const err = save.isError ? getApiError(save.error) : null
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} maxLength={20} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
-        <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-        <Field label="Type" required error={err?.errors.store_type?.[0]}>
-          <Select value={form.store_type} onChange={(e) => set({ store_type: e.target.value, is_sellable: e.target.value === 'QUARANTINE' || e.target.value === 'TRANSIT' ? false : form.is_sellable })}>
-            {STORE_TYPES.map((t) => (<option key={t} value={t}>{titleCase(t)}</option>))}
-          </Select>
-        </Field>
-        <Field label="Storage condition" hint="The range cold-chain monitoring holds this store to (Part 8.5).">
-          <Select value={form.storage_condition_id} onChange={(e) => set({ storage_condition_id: e.target.value })}>
-            <option value="">None</option>
-            {(conditions.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-          </Select>
-        </Field>
-      </div>
-      <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={form.is_sellable} onChange={(e) => set({ is_sellable: e.target.checked })} /> Sellable (stock here counts as free to sell)</label>
+    <div className="space-y-4">
+      <FormSection
+        title={store ? `Edit Store: ${store.code}` : 'Store Configuration'}
+        description={`Store inside ${branch.code} · ${branch.name}`}
+        icon={Store}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} maxLength={20} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
+          <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
+          <Field label="Type" required error={err?.errors.store_type?.[0]}>
+            <Select value={form.store_type} onChange={(e) => set({ store_type: e.target.value, is_sellable: e.target.value === 'QUARANTINE' || e.target.value === 'TRANSIT' ? false : form.is_sellable })}>
+              {STORE_TYPES.map((t) => (<option key={t} value={t}>{titleCase(t)}</option>))}
+            </Select>
+          </Field>
+          <Field label="Storage condition" hint="The range cold-chain monitoring holds this store to (Part 8.5).">
+            <Select value={form.storage_condition_id} onChange={(e) => set({ storage_condition_id: e.target.value })}>
+              <option value="">None</option>
+              {(conditions.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+            </Select>
+          </Field>
+        </div>
+        <div className="pt-2 border-t border-slate-100 mt-2">
+          <label className="flex items-center gap-2 text-[12px] cursor-pointer"><input type="checkbox" checked={form.is_sellable} onChange={(e) => set({ is_sellable: e.target.checked })} /> Sellable (stock here counts as free to sell)</label>
+        </div>
+      </FormSection>
+
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
-      <div className="flex justify-end gap-2">
-        <Button size="sm" onClick={onCancel}>Cancel</Button>
-        <Button size="sm" variant="primary" disabled={!form.code || !form.name || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : 'Add store'}</Button>
-      </div>
+
+      <DrawerFooter
+        onCancel={onCancel}
+        onSubmit={() => save.mutate()}
+        submitLabel={store ? 'Save changes' : 'Add store'}
+        disabled={!form.code || !form.name || save.isPending}
+        isPending={save.isPending}
+      />
     </div>
   )
 }

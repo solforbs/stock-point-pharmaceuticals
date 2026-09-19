@@ -7,6 +7,8 @@ export type Column<T> = {
   header: ReactNode
   render: (row: T) => ReactNode
   sortValue?: (row: T) => string | number | null | undefined
+  sortKey?: string
+  sortable?: boolean
   align?: 'left' | 'right' | 'center'
   width?: string
   className?: string
@@ -27,6 +29,8 @@ type Props<T> = {
   footer?: ReactNode
   maxHeight?: string
   initialSort?: { key: string; dir: 'asc' | 'desc' }
+  sort?: { key: string; dir: 'asc' | 'desc' } | null
+  onSortChange?: (sort: { key: string; dir: 'asc' | 'desc' } | null) => void
   rowClassName?: (row: T) => string
 }
 
@@ -34,8 +38,8 @@ const alignClass = { left: 'text-left', right: 'text-right', center: 'text-cente
 
 /**
  * Part 1.5 — DataTable: dense, sortable, sticky header. Expandable rows are
- * used for batch detail under a stock line. Virtualisation and saved views
- * are deferred until a list outgrows a page.
+ * used for batch detail under a stock line. Supports both client-side and
+ * server-side sorting (when onSortChange is supplied).
  */
 export function DataTable<T>({
   columns,
@@ -52,15 +56,21 @@ export function DataTable<T>({
   footer,
   maxHeight,
   initialSort,
+  sort,
+  onSortChange,
   rowClassName,
 }: Props<T>) {
-  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(initialSort ?? null)
+  const [internalSort, setInternalSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(initialSort ?? null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  const effectiveSort = onSortChange !== undefined ? (sort ?? null) : internalSort
 
   const sorted = useMemo(() => {
     if (!rows) return []
-    if (!sort) return rows
-    const column = columns.find((c) => c.key === sort.key)
+    // When onSortChange is supplied, sorting is handled server-side across the whole dataset
+    if (onSortChange) return rows
+    if (!effectiveSort) return rows
+    const column = columns.find((c) => (c.sortKey || c.key) === effectiveSort.key)
     if (!column?.sortValue) return rows
     const getter = column.sortValue
     return [...rows].sort((a, b) => {
@@ -70,17 +80,30 @@ export function DataTable<T>({
       if (x === null || x === undefined) return 1
       if (y === null || y === undefined) return -1
       const cmp = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), undefined, { numeric: true })
-      return sort.dir === 'asc' ? cmp : -cmp
+      return effectiveSort.dir === 'asc' ? cmp : -cmp
     })
-  }, [rows, sort, columns])
+  }, [rows, effectiveSort, columns, onSortChange])
 
   function toggleSort(column: Column<T>) {
-    if (!column.sortValue) return
-    setSort((prev) => {
-      if (prev?.key !== column.key) return { key: column.key, dir: 'asc' }
-      if (prev.dir === 'asc') return { key: column.key, dir: 'desc' }
-      return null
-    })
+    const isSortable = Boolean(column.sortValue || column.sortable || column.sortKey)
+    if (!isSortable) return
+
+    const key = column.sortKey || column.key
+    let nextSort: { key: string; dir: 'asc' | 'desc' } | null = null
+
+    if (effectiveSort?.key !== key) {
+      nextSort = { key, dir: 'asc' }
+    } else if (effectiveSort.dir === 'asc') {
+      nextSort = { key, dir: 'desc' }
+    } else {
+      nextSort = null
+    }
+
+    if (onSortChange) {
+      onSortChange(nextSort)
+    } else {
+      setInternalSort(nextSort)
+    }
   }
 
   function toggleExpanded(key: string) {
@@ -104,28 +127,34 @@ export function DataTable<T>({
         <thead>
           <tr>
             {renderExpanded && <th style={{ width: 28 }} />}
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                style={column.width ? { width: column.width } : undefined}
-                className={`${alignClass[column.align ?? 'left']} ${column.sortValue ? 'cursor-pointer hover:text-[var(--text)]' : ''}`}
-                onClick={() => toggleSort(column)}
-              >
-                <span className="inline-flex items-center gap-1">
-                  {column.header}
-                  {column.sortValue &&
-                    (sort?.key === column.key ? (
-                      sort.dir === 'asc' ? (
-                        <ChevronUp size={11} />
+            {columns.map((column) => {
+              const sortKey = column.sortKey || column.key
+              const isSortable = Boolean(column.sortValue || column.sortable || column.sortKey)
+              const isCurrentSort = effectiveSort?.key === sortKey
+
+              return (
+                <th
+                  key={column.key}
+                  style={column.width ? { width: column.width } : undefined}
+                  className={`${alignClass[column.align ?? 'left']} ${isSortable ? 'cursor-pointer select-none hover:text-[var(--text)]' : ''}`}
+                  onClick={() => toggleSort(column)}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    {column.header}
+                    {isSortable &&
+                      (isCurrentSort ? (
+                        effectiveSort?.dir === 'asc' ? (
+                          <ChevronUp size={11} />
+                        ) : (
+                          <ChevronDown size={11} />
+                        )
                       ) : (
-                        <ChevronDown size={11} />
-                      )
-                    ) : (
-                      <ChevronsUpDown size={11} className="opacity-40" />
-                    ))}
-                </span>
-              </th>
-            ))}
+                        <ChevronsUpDown size={11} className="opacity-40" />
+                      ))}
+                  </span>
+                </th>
+              )
+            })}
           </tr>
         </thead>
         <tbody>

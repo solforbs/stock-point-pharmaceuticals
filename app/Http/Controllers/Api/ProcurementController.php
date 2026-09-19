@@ -32,14 +32,27 @@ class ProcurementController extends ApiController
     {
         $this->requirePermission($request, 'supplier.view');
 
+        $allowedSorts = ['name', 'code', 'licence_expiry', 'payment_terms_days', 'created_at'];
+        $sortBy = in_array($request->query('sort_by'), $allowedSorts, true) ? $request->query('sort_by') : 'name';
+        $sortDir = strtolower((string) $request->query('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+
         $suppliers = Supplier::where('organisation_id', $this->organisationId($request))
             ->when($request->string('q')->trim()->isNotEmpty(), fn ($q) => $q->where('name', 'like', '%'.$request->string('q')->trim().'%'))
-            ->orderBy('name')
+            ->orderBy($sortBy, $sortDir)
             ->paginate($request->integer('per_page', 25));
 
         $suppliers->getCollection()->transform(fn (Supplier $s) => $s->toArray() + ['payable_balance' => AccountsPayable::balanceFor($s->id)]);
 
         return response()->json($suppliers);
+    }
+
+    public function supplier(Request $request, string $supplier): JsonResponse
+    {
+        $this->requirePermission($request, 'supplier.view');
+
+        $supplier = Supplier::where('organisation_id', $this->organisationId($request))->findOrFail($supplier);
+
+        return response()->json($supplier->toArray() + ['payable_balance' => AccountsPayable::balanceFor($supplier->id)]);
     }
 
     /** POST /api/suppliers — Part 9.6 supplier master. */

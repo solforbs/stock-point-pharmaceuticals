@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Receipt, Tag } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ProductSearch, useDebounced } from '../../components/ProductSearch'
@@ -9,7 +10,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, NoAccess } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, Card, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
+import { Button, Card, DescriptionList, DrawerFooter, Field, FormSection, Input, Select } from '../../components/ui/primitives'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { formatDate, titleCase } from '../../lib/format'
@@ -288,21 +289,32 @@ function TierForm({ lists, onDone, onCancel }: { lists: PriceList[]; onDone: () 
   const err = save.isError ? getApiError(save.error) : null
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
-        <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-        <Field label="Default price list" className="col-span-2" error={err?.errors.default_price_list_id?.[0]}>
-          <Select value={form.default_price_list_id} onChange={(e) => set({ default_price_list_id: e.target.value })}><option value="">None</option>{lists.map((l) => (<option key={l.id} value={l.id}>{l.code} · {l.name}</option>))}</Select>
-        </Field>
-        <Field label="Default discount (%)" error={err?.errors.default_discount_pct?.[0]}><Input inputMode="decimal" className="tabular" value={form.default_discount_pct} onChange={(e) => set({ default_discount_pct: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
-        <Field label="Max discount (%)" error={err?.errors.max_discount_pct?.[0]}><Input inputMode="decimal" className="tabular" value={form.max_discount_pct} onChange={(e) => set({ max_discount_pct: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
-        <Field label="Credit terms (days)" error={err?.errors.credit_terms_days?.[0]}><Input inputMode="numeric" className="tabular" value={form.credit_terms_days} onChange={(e) => set({ credit_terms_days: e.target.value.replace(/\D/g, '') })} /></Field>
-      </div>
+      <FormSection
+        title="Pricing Tier Configuration"
+        description="Define customer tier identification, default pricing schedule, and credit terms"
+        icon={Tag}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
+          <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
+          <Field label="Default price list" className="col-span-1 sm:col-span-2" error={err?.errors.default_price_list_id?.[0]}>
+            <Select value={form.default_price_list_id} onChange={(e) => set({ default_price_list_id: e.target.value })}><option value="">None</option>{lists.map((l) => (<option key={l.id} value={l.id}>{l.code} · {l.name}</option>))}</Select>
+          </Field>
+          <Field label="Default discount (%)" error={err?.errors.default_discount_pct?.[0]}><Input inputMode="decimal" className="tabular" value={form.default_discount_pct} onChange={(e) => set({ default_discount_pct: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
+          <Field label="Max discount (%)" error={err?.errors.max_discount_pct?.[0]}><Input inputMode="decimal" className="tabular" value={form.max_discount_pct} onChange={(e) => set({ max_discount_pct: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
+          <Field label="Credit terms (days)" className="col-span-1 sm:col-span-2" error={err?.errors.credit_terms_days?.[0]}><Input inputMode="numeric" className="tabular" value={form.credit_terms_days} onChange={(e) => set({ credit_terms_days: e.target.value.replace(/\D/g, '') })} /></Field>
+        </div>
+      </FormSection>
+
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
-      <div className="flex justify-end gap-2">
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" disabled={!form.code || !form.name || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : 'Create tier'}</Button>
-      </div>
+
+      <DrawerFooter
+        onCancel={onCancel}
+        onSubmit={() => save.mutate()}
+        submitLabel="Create tier"
+        disabled={!form.code || !form.name || save.isPending}
+        isPending={save.isPending}
+      />
     </div>
   )
 }
@@ -336,23 +348,44 @@ function PriceListForm({ tiers, onDone, onCancel }: { tiers: CustomerTier[]; onD
   const err = save.isError ? getApiError(save.error) : null
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
-        <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-        <Field label="Sale mode" hint="Blank applies to every mode."><Select value={form.sale_mode} onChange={(e) => set({ sale_mode: e.target.value })}><option value="">Any</option>{['RETAIL', 'WHOLESALE', 'DISPENSING'].map((m) => (<option key={m} value={m}>{titleCase(m)}</option>))}</Select></Field>
-        <Field label="Tier" hint="Blank applies to every tier."><Select value={form.tier_id} onChange={(e) => set({ tier_id: e.target.value })}><option value="">Any</option>{tiers.map((t) => (<option key={t.id} value={t.id}>{t.code} · {t.name}</option>))}</Select></Field>
-        <Field label="Branch" hint="Blank applies to every branch."><Select value={form.branch_id} onChange={(e) => set({ branch_id: e.target.value })}><option value="">All branches</option>{(user?.branches ?? []).map((b) => (<option key={b.id} value={b.id}>{b.code} · {b.name}</option>))}</Select></Field>
-        <Field label="Priority" hint="Higher wins when several lists match." error={err?.errors.priority?.[0]}><Input inputMode="numeric" className="tabular" value={form.priority} onChange={(e) => set({ priority: e.target.value.replace(/\D/g, '') })} /></Field>
-        <Field label="Currency"><Input value={form.currency} maxLength={3} onChange={(e) => set({ currency: e.target.value.toUpperCase() })} /></Field>
-        <label className="flex items-center gap-2 text-[12px] pt-5"><input type="checkbox" checked={form.prices_include_tax} onChange={(e) => set({ prices_include_tax: e.target.checked })} /> Prices include tax</label>
-        <Field label="Effective from" hint="Blank = today." error={err?.errors.effective_from?.[0]}><Input type="date" value={form.effective_from} onChange={(e) => set({ effective_from: e.target.value })} /></Field>
-        <Field label="Effective to" error={err?.errors.effective_to?.[0]}><Input type="date" value={form.effective_to} onChange={(e) => set({ effective_to: e.target.value })} /></Field>
-      </div>
+      <FormSection
+        title="Price List Scope"
+        description="Define application scope across commercial channel, tier, and branch"
+        icon={Receipt}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
+          <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
+          <Field label="Sale mode" hint="Blank applies to every mode."><Select value={form.sale_mode} onChange={(e) => set({ sale_mode: e.target.value })}><option value="">Any</option>{['RETAIL', 'WHOLESALE', 'DISPENSING'].map((m) => (<option key={m} value={m}>{titleCase(m)}</option>))}</Select></Field>
+          <Field label="Tier" hint="Blank applies to every tier."><Select value={form.tier_id} onChange={(e) => set({ tier_id: e.target.value })}><option value="">Any</option>{tiers.map((t) => (<option key={t.id} value={t.id}>{t.code} · {t.name}</option>))}</Select></Field>
+          <Field label="Branch" hint="Blank applies to every branch."><Select value={form.branch_id} onChange={(e) => set({ branch_id: e.target.value })}><option value="">All branches</option>{(user?.branches ?? []).map((b) => (<option key={b.id} value={b.id}>{b.code} · {b.name}</option>))}</Select></Field>
+          <Field label="Currency"><Input value={form.currency} maxLength={3} onChange={(e) => set({ currency: e.target.value.toUpperCase() })} /></Field>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Validity & Priority Rules"
+        description="Scheduling parameters and tax calculation method"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Priority" hint="Higher wins when several lists match." error={err?.errors.priority?.[0]}><Input inputMode="numeric" className="tabular" value={form.priority} onChange={(e) => set({ priority: e.target.value.replace(/\D/g, '') })} /></Field>
+          <div className="pt-6">
+            <label className="flex items-center gap-2 text-[12px] cursor-pointer"><input type="checkbox" checked={form.prices_include_tax} onChange={(e) => set({ prices_include_tax: e.target.checked })} /> Prices include tax</label>
+          </div>
+          <Field label="Effective from" hint="Blank = today." error={err?.errors.effective_from?.[0]}><Input type="date" value={form.effective_from} onChange={(e) => set({ effective_from: e.target.value })} /></Field>
+          <Field label="Effective to" error={err?.errors.effective_to?.[0]}><Input type="date" value={form.effective_to} onChange={(e) => set({ effective_to: e.target.value })} /></Field>
+        </div>
+      </FormSection>
+
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
-      <div className="flex justify-end gap-2">
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" disabled={!form.code || !form.name || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : 'Create price list'}</Button>
-      </div>
+
+      <DrawerFooter
+        onCancel={onCancel}
+        onSubmit={() => save.mutate()}
+        submitLabel="Create price list"
+        disabled={!form.code || !form.name || save.isPending}
+        isPending={save.isPending}
+      />
     </div>
   )
 }

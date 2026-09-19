@@ -6,6 +6,11 @@ use App\Models\AuditLog;
 use App\Models\ChartOfAccount;
 use App\Models\FinancialPeriod;
 use App\Models\JournalEntry;
+use App\Models\JournalEntryLine;
+use App\Services\Finance\JournalPoster;
+use App\Services\Finance\NoOpenPeriodException;
+use App\Services\Finance\UnbalancedJournalException;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -73,23 +78,200 @@ class FinanceController extends ApiController
         $this->requirePermission($request, 'journal.post');
 
         $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
             'source_doc_type' => ['nullable', 'string', 'max:40'],
             'period_id' => ['nullable', 'uuid'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
+            'sort_by' => ['nullable', 'string', 'in:doc_number,entry_date,posted_at'],
+            'sort_dir' => ['nullable', 'string', 'in:asc,desc,ASC,DESC'],
             'per_page' => ['nullable', 'integer', 'between:1,200'],
         ]);
 
+        $sortBy = $filters['sort_by'] ?? 'posted_at';
+        $sortDir = strtolower($filters['sort_dir'] ?? 'desc');
+
         return response()->json(
             JournalEntry::where('organisation_id', $this->organisationId($request))
+                ->when($filters['q'] ?? null, function ($query, $term) {
+                    $query->where(function ($sub) use ($term) {
+                        $sub->where('doc_number', 'like', "%{$term}%")
+                            ->orWhere('narration', 'like', "%{$term}%");
+                    });
+                })
                 ->when($filters['source_doc_type'] ?? null, fn ($q, $v) => $q->where('source_doc_type', $v))
                 ->when($filters['period_id'] ?? null, fn ($q, $v) => $q->where('period_id', $v))
                 ->when($filters['from'] ?? null, fn ($q, $v) => $q->whereDate('entry_date', '>=', $v))
                 ->when($filters['to'] ?? null, fn ($q, $v) => $q->whereDate('entry_date', '<=', $v))
                 ->with('lines.account:id,code,name,system_role')
-                ->orderByDesc('posted_at')
+                ->orderBy($sortBy, $sortDir)
                 ->paginate($filters['per_page'] ?? 25)
         );
+    }
+
+    public function showJournal(Request $request, string $journal): JsonResponse
+    {
+        $this->requirePermission($request, 'journal.post');
+
+        $entry = JournalEntry::where('organisation_id', $this->organisationId($request))
+            ->with('lines.account:id,code,name,system_role')
+            ->findOrFail($journal);
+
+        return response()->json($entry);
+    }
+
+    public function storeJournal(Request $request, JournalPoster $poster): JsonResponse
+    {
+        $this->requirePermission($request, 'journal.post');
+
+        $validated = $request->validate([
+            'entry_date' => ['required', 'date'],
+            'narration' => ['required', 'string', 'max:255'],
+            'branch_id' => ['nullable', 'uuid', 'exists:branches,id'],
+            'lines' => ['required', 'array', 'min:2'],
+            'lines.*.account_id' => ['required', 'uuid', 'exists:chart_of_accounts,id'],
+            'lines.*.debit' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.credit' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.narration' => ['nullable', 'string', 'max:255'],
+            'lines.*.branch_id' => ['nullable', 'uuid', 'exists:branches,id'],
+        ]);
+
+        $organisationId = $this->organisationId($request);
+        $branchId = $validated['branch_id'] ?? $this->branchId($request);
+
+        $accountIds = collect($validated['lines'])->pluck('account_id')->unique();
+        $accounts = ChartOfAccount::where('organisation_id', $organisationId)
+            ->whereIn('id', $accountIds)
+            ->get()
+            ->keyBy('id');
+
+        if ($accounts->count() !== $accountIds->count()) {
+            return $this->error('INVALID_ACCOUNT', 'One or more accounts do not belong to this organisation.', 422);
+        }
+
+        foreach ($accounts as $account) {
+            if (! $account->is_postable) {
+                return $this->error('NON_POSTABLE_ACCOUNT', "Account {$account->code} ({$account->name}) is a summary/header account and cannot be posted to.", 422);
+            }
+            if (! $account->is_active) {
+                return $this->error('INACTIVE_ACCOUNT', "Account {$account->code} ({$account->name}) is inactive.", 422);
+            }
+        }
+
+        $totalDebit = '0.0000';
+        $totalCredit = '0.0000';
+        $normalizedLines = [];
+
+        foreach ($validated['lines'] as $index => $line) {
+            $debit = number_format((float) ($line['debit'] ?? 0), 4, '.', '');
+            $credit = number_format((float) ($line['credit'] ?? 0), 4, '.', '');
+            $hasDebit = bccomp($debit, '0.0000', 4) > 0;
+            $hasCredit = bccomp($credit, '0.0000', 4) > 0;
+
+            if ($hasDebit && $hasCredit) {
+                return $this->error('INVALID_LINE', 'Line '.($index + 1).' cannot have both debit and credit amounts.', 422);
+            }
+            if (! $hasDebit && ! $hasCredit) {
+                return $this->error('INVALID_LINE', 'Line '.($index + 1).' must specify either a debit or credit amount.', 422);
+            }
+
+            $totalDebit = bcadd($totalDebit, $debit, 4);
+            $totalCredit = bcadd($totalCredit, $credit, 4);
+
+            $normalizedLines[] = [
+                'account_id' => $line['account_id'],
+                'debit' => $debit,
+                'credit' => $credit,
+                'branch_id' => $line['branch_id'] ?? $branchId,
+                'narration' => $line['narration'] ?? null,
+            ];
+        }
+
+        if (bccomp($totalDebit, $totalCredit, 4) !== 0) {
+            return $this->error('UNBALANCED_JOURNAL', "Total debits ({$totalDebit}) do not equal total credits ({$totalCredit}).", 422);
+        }
+
+        try {
+            $journal = $poster->post([
+                'organisation_id' => $organisationId,
+                'branch_id' => $branchId,
+                'entry_date' => Carbon::parse($validated['entry_date']),
+                'source_doc_type' => 'manual',
+                'source_doc_id' => null,
+                'narration' => $validated['narration'],
+                'posted_by' => $request->user()->id,
+            ], $normalizedLines);
+        } catch (NoOpenPeriodException $e) {
+            return $this->error('NO_OPEN_PERIOD', $e->getMessage(), 422);
+        } catch (UnbalancedJournalException $e) {
+            return $this->error('UNBALANCED_JOURNAL', $e->getMessage(), 422);
+        }
+
+        AuditLog::record('MANUAL_JOURNAL_POSTED', 'journal_entry', $journal->id, [
+            'doc_number' => $journal->doc_number,
+            'amount' => $totalDebit,
+            'lines_count' => count($validated['lines']),
+        ]);
+
+        return response()->json($journal->load('lines.account:id,code,name,system_role'), 201);
+    }
+
+    public function reverseJournal(Request $request, string $journal, JournalPoster $poster): JsonResponse
+    {
+        $this->requirePermission($request, 'journal.reverse');
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+
+        $entry = JournalEntry::where('organisation_id', $this->organisationId($request))
+            ->with('lines')
+            ->findOrFail($journal);
+
+        if ($entry->reverses_journal_id !== null) {
+            return $this->error('ALREADY_REVERSAL', 'This journal is already a reversal entry and cannot be reversed again.', 422);
+        }
+
+        $existingReversal = JournalEntry::where('reverses_journal_id', $entry->id)->first();
+        if ($existingReversal) {
+            return $this->error('ALREADY_REVERSED', "This journal has already been reversed by {$existingReversal->doc_number}.", 422);
+        }
+
+        $reversedLines = $entry->lines->map(fn (JournalEntryLine $l) => [
+            'account_id' => $l->account_id,
+            'debit' => (string) $l->credit_amount,
+            'credit' => (string) $l->debit_amount,
+            'branch_id' => $l->branch_id,
+            'partner_type' => $l->partner_type,
+            'partner_id' => $l->partner_id,
+            'tax_code_id' => $l->tax_code_id,
+            'narration' => "Reversal: {$l->narration}",
+        ])->all();
+
+        try {
+            $reversal = $poster->post([
+                'organisation_id' => $entry->organisation_id,
+                'branch_id' => $entry->branch_id,
+                'entry_date' => now(),
+                'source_doc_type' => 'journal_reversal',
+                'source_doc_id' => $entry->id,
+                'narration' => "Reversal of {$entry->doc_number}: {$validated['reason']}",
+                'reverses_journal_id' => $entry->id,
+                'posted_by' => $request->user()->id,
+            ], $reversedLines);
+        } catch (NoOpenPeriodException $e) {
+            return $this->error('NO_OPEN_PERIOD', $e->getMessage(), 422);
+        } catch (UnbalancedJournalException $e) {
+            return $this->error('UNBALANCED_JOURNAL', $e->getMessage(), 422);
+        }
+
+        AuditLog::record('JOURNAL_REVERSED', 'journal_entry', $reversal->id, [
+            'original_doc_number' => $entry->doc_number,
+            'reversal_doc_number' => $reversal->doc_number,
+            'reason' => $validated['reason'],
+        ]);
+
+        return response()->json($reversal->load('lines.account:id,code,name,system_role'), 201);
     }
 
     public function periods(Request $request): JsonResponse

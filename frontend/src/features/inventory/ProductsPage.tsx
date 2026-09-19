@@ -11,7 +11,7 @@ import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, Card, DescriptionList, Field, Input, PrimaryAction, Select } from '../../components/ui/primitives'
+import { Button, Card, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select } from '../../components/ui/primitives'
 import { apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { formatDate } from '../../lib/format'
 import { useDosageForms, useProduct, useProductCategories, useProductStock, useStorageConditions, useTaxCodes, useUoms } from '../../lib/hooks'
@@ -28,6 +28,7 @@ export default function ProductsPage() {
   const [q, setQ] = useState('')
   const [barcode, setBarcode] = useState('')
   const [page, setPage] = useState(1)
+  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null)
   const [creating, setCreating] = useState(false)
   const dq = useDebounced(q, 250)
   const dbarcode = useDebounced(barcode, 250)
@@ -36,39 +37,40 @@ export default function ProductsPage() {
   const [stockFilter, setStockFilter] = useState('')
 
   const list = useQuery({
-    queryKey: ['products', 'list', dq, dbarcode, stockFilter, page],
-    queryFn: () => apiGet<Paginated<Product>>('/api/products', { q: dq, barcode: dbarcode, stock: stockFilter, page, per_page: 50 }),
+    queryKey: ['products', 'list', dq, dbarcode, stockFilter, page, sort?.key, sort?.dir],
+    queryFn: () => apiGet<Paginated<Product>>('/api/products', { q: dq, barcode: dbarcode, stock: stockFilter, page, per_page: 50, sort_by: sort?.key, sort_dir: sort?.dir }),
     placeholderData: (prev) => prev,
   })
 
   const columns: Column<Product>[] = [
-    { key: 'code', header: 'Code', render: (p) => <span className="font-semibold tabular">{p.code}</span>, sortValue: (p) => p.code },
-    { key: 'name', header: 'Name', render: (p) => <>{p.name}{p.strength && <b className="ml-1">{p.strength}</b>}</>, sortValue: (p) => p.name },
-    { key: 'generic', header: 'Generic', render: (p) => p.generic_name ?? '—', sortValue: (p) => p.generic_name ?? '' },
-    { key: 'base', header: 'Base UOM', render: (p) => p.base_uom?.code ?? '—' },
-    { key: 'uoms', header: 'Sales UOMs', render: (p) => (p.uoms ?? []).filter((u) => u.is_sales).map((u) => u.uom?.code).join(', ') },
-    { key: 'price', header: 'Default price', align: 'right', render: (p) => <MoneyCell value={p.default_price} />, sortValue: (p) => Number(p.default_price ?? 0) },
+    { key: 'code', header: 'Code', sortKey: 'code', render: (p) => <span className="font-semibold tabular">{p.code}</span> },
+    { key: 'name', header: 'Name', sortKey: 'name', render: (p) => <>{p.name}{p.strength && <b className="ml-1">{p.strength}</b>}</> },
+    { key: 'generic', header: 'Generic', sortKey: 'generic_name', render: (p) => p.generic_name ?? '—' },
+    { key: 'base', header: 'Base UOM', sortable: false, render: (p) => p.base_uom?.code ?? '—' },
+    { key: 'uoms', header: 'Sales UOMs', sortable: false, render: (p) => (p.uoms ?? []).filter((u) => u.is_sales).map((u) => u.uom?.code).join(', ') },
+    { key: 'price', header: 'Default price', sortKey: 'default_price', align: 'right', render: (p) => <MoneyCell value={p.default_price} /> },
     ...(canSeeStock
       ? ([
-          { key: 'on_hand', header: 'On hand', align: 'right', render: (p) => <QtyCell value={p.stock?.on_hand ?? '0'} />, sortValue: (p) => Number(p.stock?.on_hand ?? 0) },
+          { key: 'on_hand', header: 'On hand', sortable: false, align: 'right', render: (p) => <QtyCell value={p.stock?.on_hand ?? '0'} /> },
           {
             key: 'free',
             header: 'Free to sell',
+            sortable: false,
             align: 'right',
             render: (p) => {
               const free = Number(p.stock?.free_to_sell ?? 0)
               const low = Number(p.reorder_point) > 0 && free < Number(p.reorder_point)
               return <span className={low ? 'text-[var(--status-red)] font-semibold' : ''} title={low ? `Below reorder point ${p.reorder_point}` : undefined}><QtyCell value={p.stock?.free_to_sell ?? '0'} /></span>
             },
-            sortValue: (p) => Number(p.stock?.free_to_sell ?? 0),
           },
-          { key: 'expiry', header: 'Nearest expiry', render: (p) => (p.stock?.nearest_expiry ? <ExpiryBadge date={p.stock.nearest_expiry} /> : '—'), sortValue: (p) => p.stock?.nearest_expiry ?? '9999' },
+          { key: 'expiry', header: 'Nearest expiry', sortable: false, render: (p) => (p.stock?.nearest_expiry ? <ExpiryBadge date={p.stock.nearest_expiry} /> : '—') },
         ] as Column<Product>[])
       : []),
-    { key: 'active', header: 'Status', render: (p) => <StatusBadge status={p.is_active ? 'ACTIVE' : 'INACTIVE'} /> },
+    { key: 'active', header: 'Status', sortable: false, render: (p) => <StatusBadge status={p.is_active ? 'ACTIVE' : 'INACTIVE'} /> },
     {
       key: 'delete',
       header: '',
+      sortable: false,
       align: 'right',
       render: (p) => (
         <DeleteRecordButton type="products" id={p.id} label={`${p.code} · ${p.name}`} permission="product.edit" invalidateKeys={[['products']]} />
@@ -103,7 +105,19 @@ export default function ProductsPage() {
         )}
       </FilterBar>
       <div className="ui-card">
-        <DataTable columns={columns} rows={list.data?.data} rowKey={(p) => p.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(p) => setParams({ product: p.id })} selectedKey={selectedId} emptyTitle="No products match" />
+        <DataTable
+          columns={columns}
+          rows={list.data?.data}
+          rowKey={(p) => p.id}
+          sort={sort}
+          onSortChange={setSort}
+          isLoading={list.isLoading}
+          error={list.error}
+          onRetry={() => list.refetch()}
+          onRowClick={(p) => setParams({ product: p.id })}
+          selectedKey={selectedId}
+          emptyTitle="No products match"
+        />
         <Pagination page={list.data} onPage={setPage} />
       </div>
       <ProductDrawer id={selectedId} onClose={() => setParams({})} />
@@ -167,32 +181,61 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
   const err = save.isError ? getApiError(save.error) : null
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-        <Field label="Generic name"><Input value={form.generic_name} onChange={(e) => set({ generic_name: e.target.value })} /></Field>
-        <Field label="Strength"><Input value={form.strength} onChange={(e) => set({ strength: e.target.value })} /></Field>
-        <Field label="Category"><Select value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}><option value="">None</option>{(categories.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.code} · {c.name}</option>))}</Select></Field>
-        <Field label="Dosage form"><Select value={form.dosage_form_id} onChange={(e) => set({ dosage_form_id: e.target.value })}><option value="">None</option>{(dosageForms.data ?? []).map((d) => (<option key={d.id} value={d.id}>{d.code} · {d.name}</option>))}</Select></Field>
-        <Field label="Storage condition" hint="What cold-chain monitoring holds this product to (Part 8.5)."><Select value={form.storage_condition_id} onChange={(e) => set({ storage_condition_id: e.target.value })}><option value="">None</option>{(storageConditions.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}</Select></Field>
-        <Field label="Tax code" hint="VAT treatment used by every quote (Part 13); none means 0% until set."><Select value={form.tax_code_id} onChange={(e) => set({ tax_code_id: e.target.value })}><option value="">None (untaxed)</option>{(taxCodes.data ?? []).map((t) => (<option key={t.id} value={t.id}>{t.code} · {t.name}{t.rate_pct != null ? ` · ${Number(t.rate_pct)}%` : ''}</option>))}</Select></Field>
-        <Field label="Base UOM" hint="Locked once stock has moved (BASE_UOM_LOCKED)." error={err?.code === 'BASE_UOM_LOCKED' ? err.message : err?.errors.base_uom_id?.[0]}>
-          <Select value={form.base_uom_id} onChange={(e) => set({ base_uom_id: e.target.value })}>{(uoms.data ?? []).map((u) => (<option key={u.id} value={u.id}>{u.code} · {u.name}</option>))}</Select>
-        </Field>
-        <Field label="Default price (per base unit)" hint="Price-list rows have no edit endpoint yet."><Input inputMode="decimal" className="tabular" value={form.default_price} onChange={(e) => set({ default_price: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
-        <Field label="Reorder point"><Input inputMode="decimal" className="tabular" value={form.reorder_point} onChange={(e) => set({ reorder_point: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
-        <Field label="Safety stock"><Input inputMode="decimal" className="tabular" value={form.safety_stock} onChange={(e) => set({ safety_stock: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
-        <Field label="Lead time (days)"><Input inputMode="numeric" className="tabular" value={form.lead_time_days} onChange={(e) => set({ lead_time_days: e.target.value.replace(/\D/g, '') })} /></Field>
-        <div className="flex flex-col gap-1.5 text-[12px] pt-4">
-          <label className="flex items-center gap-2"><input type="checkbox" checked={form.pack_integrity} onChange={(e) => set({ pack_integrity: e.target.checked })} /> Pack integrity (never split a sealed pack)</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active</label>
+    <div className="space-y-4">
+      <FormSection
+        title="Medication Identity & Formulation"
+        description="Brand name, generic name, pharmaceutical strength, and classification"
+        icon={FlaskConical}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
+          <Field label="Generic name"><Input value={form.generic_name} onChange={(e) => set({ generic_name: e.target.value })} /></Field>
+          <Field label="Strength"><Input value={form.strength} onChange={(e) => set({ strength: e.target.value })} /></Field>
+          <Field label="Category"><Select value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}><option value="">None</option>{(categories.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.code} · {c.name}</option>))}</Select></Field>
+          <Field label="Dosage form" className="col-span-1 sm:col-span-2"><Select value={form.dosage_form_id} onChange={(e) => set({ dosage_form_id: e.target.value })}><option value="">None</option>{(dosageForms.data ?? []).map((d) => (<option key={d.id} value={d.id}>{d.code} · {d.name}</option>))}</Select></Field>
         </div>
-      </div>
+      </FormSection>
+
+      <FormSection
+        title="Regulatory & Storage Requirements"
+        description="Cold chain temperature compliance, taxation, and locked unit of measure"
+        icon={Box}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Storage condition" hint="What cold-chain monitoring holds this product to (Part 8.5)."><Select value={form.storage_condition_id} onChange={(e) => set({ storage_condition_id: e.target.value })}><option value="">None</option>{(storageConditions.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}</Select></Field>
+          <Field label="Tax code" hint="VAT treatment used by every quote (Part 13); none means 0% until set."><Select value={form.tax_code_id} onChange={(e) => set({ tax_code_id: e.target.value })}><option value="">None (untaxed)</option>{(taxCodes.data ?? []).map((t) => (<option key={t.id} value={t.id}>{t.code} · {t.name}{t.rate_pct != null ? ` · ${Number(t.rate_pct)}%` : ''}</option>))}</Select></Field>
+          <Field label="Base UOM" className="col-span-1 sm:col-span-2" hint="Locked once stock has moved (BASE_UOM_LOCKED)." error={err?.code === 'BASE_UOM_LOCKED' ? err.message : err?.errors.base_uom_id?.[0]}>
+            <Select value={form.base_uom_id} onChange={(e) => set({ base_uom_id: e.target.value })}>{(uoms.data ?? []).map((u) => (<option key={u.id} value={u.id}>{u.code} · {u.name}</option>))}</Select>
+          </Field>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Pricing & Reorder Parameters"
+        description="Default catalog price and inventory safety thresholds"
+        icon={Settings2}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Default price (per base unit)" hint="Price-list rows have no edit endpoint yet."><Input inputMode="decimal" className="tabular" value={form.default_price} onChange={(e) => set({ default_price: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
+          <Field label="Reorder point"><Input inputMode="decimal" className="tabular" value={form.reorder_point} onChange={(e) => set({ reorder_point: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
+          <Field label="Safety stock"><Input inputMode="decimal" className="tabular" value={form.safety_stock} onChange={(e) => set({ safety_stock: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
+          <Field label="Lead time (days)"><Input inputMode="numeric" className="tabular" value={form.lead_time_days} onChange={(e) => set({ lead_time_days: e.target.value.replace(/\D/g, '') })} /></Field>
+        </div>
+        <div className="flex flex-col gap-2 pt-2 text-[12px] border-t border-slate-100 mt-2">
+          <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.pack_integrity} onChange={(e) => set({ pack_integrity: e.target.checked })} /> Pack integrity (never split a sealed pack)</label>
+          <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active in catalogue</label>
+        </div>
+      </FormSection>
+
       {err && err.code !== 'BASE_UOM_LOCKED' && !Object.keys(err.errors).length && <InlineError error={save.error} />}
-      <div className="flex justify-end gap-2">
-        <Button onClick={onDone}>Cancel</Button>
-        <Button variant="primary" disabled={!form.name || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : 'Save changes'}</Button>
-      </div>
+
+      <DrawerFooter
+        onCancel={onDone}
+        onSubmit={() => save.mutate()}
+        submitLabel="Save changes"
+        disabled={!form.name || save.isPending}
+        isPending={save.isPending}
+      />
     </div>
   )
 }

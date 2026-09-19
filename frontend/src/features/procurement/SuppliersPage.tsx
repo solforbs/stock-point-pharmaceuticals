@@ -9,11 +9,12 @@ import { Drawer } from '../../components/ui/Drawer'
 import { MoneyCell } from '../../components/ui/MoneyCell'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
-import { InlineError } from '../../components/ui/States'
+import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select } from '../../components/ui/primitives'
 import { apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { formatDate, titleCase } from '../../lib/format'
+import { useSupplier } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Paginated, Supplier } from '../../lib/types'
@@ -25,6 +26,7 @@ export default function SuppliersPage() {
   const [params, setParams] = useSearchParams()
   const [q, setQ] = useState('')
   const [page, setPage] = useState(1)
+  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null)
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState(false)
   const dq = useDebounced(q, 250)
@@ -32,23 +34,25 @@ export default function SuppliersPage() {
   const canManage = usePermission('supplier.manage')
 
   const list = useQuery({
-    queryKey: ['suppliers', 'list', dq, page],
-    queryFn: () => apiGet<Paginated<Supplier>>('/api/suppliers', { q: dq, page, per_page: 50 }),
+    queryKey: ['suppliers', 'list', dq, page, sort?.key, sort?.dir],
+    queryFn: () => apiGet<Paginated<Supplier>>('/api/suppliers', { q: dq, page, per_page: 50, sort_by: sort?.key, sort_dir: sort?.dir }),
     placeholderData: (prev) => prev,
   })
-  const selected = list.data?.data.find((s) => s.id === selectedId) ?? null
+  const single = useSupplier(selectedId)
+  const selected = single.data ?? list.data?.data.find((s) => s.id === selectedId) ?? null
 
   const columns: Column<Supplier>[] = [
-    { key: 'code', header: 'Code', render: (s) => <span className="font-semibold tabular">{s.code}</span>, sortValue: (s) => s.code },
-    { key: 'name', header: 'Name', render: (s) => s.name, sortValue: (s) => s.name },
-    { key: 'contact', header: 'Contact', render: (s) => <>{s.contact_name ?? '—'}{s.phone && <div className="text-[10.5px] text-[var(--text-muted)]">{s.phone}</div>}</> },
-    { key: 'licence', header: 'Licence expiry', render: (s) => <ExpiryBadge date={s.licence_expiry} />, sortValue: (s) => s.licence_expiry ?? '' },
-    { key: 'terms', header: 'Terms', align: 'right', render: (s) => <span className="tabular">{s.payment_terms_days ?? 0} d</span> },
-    { key: 'status', header: 'Status', render: (s) => <StatusBadge status={s.is_active ? s.status : 'INACTIVE'} /> },
-    { key: 'payable', header: 'Payable', align: 'right', render: (s) => <MoneyCell value={s.payable_balance} />, sortValue: (s) => Number(s.payable_balance ?? 0) },
+    { key: 'code', header: 'Code', sortKey: 'code', render: (s) => <span className="font-semibold tabular">{s.code}</span> },
+    { key: 'name', header: 'Name', sortKey: 'name', render: (s) => s.name },
+    { key: 'contact', header: 'Contact', sortable: false, render: (s) => <>{s.contact_name ?? '—'}{s.phone && <div className="text-[10.5px] text-[var(--text-muted)]">{s.phone}</div>}</> },
+    { key: 'licence', header: 'Licence expiry', sortKey: 'licence_expiry', render: (s) => <ExpiryBadge date={s.licence_expiry} /> },
+    { key: 'terms', header: 'Terms', sortKey: 'payment_terms_days', align: 'right', render: (s) => <span className="tabular">{s.payment_terms_days ?? 0} d</span> },
+    { key: 'status', header: 'Status', sortable: false, render: (s) => <StatusBadge status={s.is_active ? s.status : 'INACTIVE'} /> },
+    { key: 'payable', header: 'Payable', sortable: false, align: 'right', render: (s) => <MoneyCell value={s.payable_balance} /> },
     {
       key: 'delete',
       header: '',
+      sortable: false,
       align: 'right',
       render: (s) => (
         <DeleteRecordButton type="suppliers" id={s.id} label={`${s.code} · ${s.name}`} permission="supplier.manage" invalidateKeys={[['suppliers']]} />
@@ -79,10 +83,24 @@ export default function SuppliersPage() {
         <Field label="Search" className="w-72"><Input placeholder="Search supplier name or code..." value={q} onChange={(e) => setQ(e.target.value)} /></Field>
       </FilterBar>
       <div className="ui-card">
-        <DataTable columns={columns} rows={list.data?.data} rowKey={(s) => s.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(s) => { setEditing(false); setParams({ supplier: s.id }) }} selectedKey={selectedId} emptyTitle="No suppliers" />
+        <DataTable
+          columns={columns}
+          rows={list.data?.data}
+          rowKey={(s) => s.id}
+          sort={sort}
+          onSortChange={setSort}
+          isLoading={list.isLoading}
+          error={list.error}
+          onRetry={() => list.refetch()}
+          onRowClick={(s) => { setEditing(false); setParams({ supplier: s.id }) }}
+          selectedKey={selectedId}
+          emptyTitle="No suppliers"
+        />
         <Pagination page={list.data} onPage={setPage} />
       </div>
-      <Drawer open={!!selected} onClose={close} title={selected?.name ?? ''} subtitle={selected?.code} width={editing ? 720 : undefined}>
+      <Drawer open={!!selectedId} onClose={close} title={selected?.name ?? 'Supplier Details'} subtitle={selected?.code} width={editing ? 720 : undefined}>
+        {single.isLoading && !selected && <LoadingSkeleton />}
+        {single.isError && !selected && <InlineError error={single.error} />}
         {selected && editing && <SupplierForm supplier={selected} onDone={() => setEditing(false)} onCancel={() => setEditing(false)} />}
         {selected && !editing && (
           <div className="space-y-4">

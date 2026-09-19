@@ -715,6 +715,7 @@ export type JournalEntry = {
   source_doc_type: string | null
   source_doc_id: string | null
   narration: string | null
+  reverses_journal_id?: string | null
   posted_at: string | null
   lines: JournalLine[]
 }
@@ -1142,7 +1143,7 @@ export type PermissionGroup = { group: string; permissions: string[] }
 export type StoreType = 'MAIN' | 'COLD' | 'QUARANTINE' | 'RETAIL' | 'TRANSIT' | 'DISPENSARY'
 export const STORE_TYPES: StoreType[] = ['MAIN', 'COLD', 'QUARANTINE', 'RETAIL', 'TRANSIT', 'DISPENSARY']
 
-export type AdminStore = { id: string; code: string; name: string; store_type: string; is_sellable: boolean }
+export type AdminStore = { id: string; code: string; name: string; store_type: string; is_sellable: boolean; storage_condition_id?: string | null }
 
 export type AdminBranch = {
   id: string

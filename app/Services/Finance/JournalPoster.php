@@ -29,16 +29,16 @@ class NoOpenPeriodException extends \RuntimeException {}
 class JournalPoster
 {
     /**
-     * @param  array{organisation_id: string, branch_id: ?string, entry_date: \DateTimeInterface, source_doc_type: string, source_doc_id: string, narration: string, posted_by: int, reverses_journal_id?: ?string}  $header
-     * @param  list<array{account_role: string, debit?: string, credit?: string, branch_id?: ?string, partner_type?: ?string, partner_id?: ?string, tax_code_id?: ?string, narration?: ?string}>  $lines
+     * @param  array{organisation_id: string, branch_id: ?string, entry_date: \DateTimeInterface, source_doc_type: string, source_doc_id?: ?string, narration: string, posted_by: int, reverses_journal_id?: ?string}  $header
+     * @param  list<array{account_id?: ?string, account_role?: ?string, debit?: string, credit?: string, branch_id?: ?string, partner_type?: ?string, partner_id?: ?string, tax_code_id?: ?string, narration?: ?string}>  $lines
      */
     public function post(array $header, array $lines): JournalEntry
     {
         $totalDebit = '0.0000';
         $totalCredit = '0.0000';
         foreach ($lines as $line) {
-            $totalDebit = bcadd($totalDebit, $line['debit'] ?? '0', 4);
-            $totalCredit = bcadd($totalCredit, $line['credit'] ?? '0', 4);
+            $totalDebit = bcadd($totalDebit, (string) ($line['debit'] ?? '0'), 4);
+            $totalCredit = bcadd($totalCredit, (string) ($line['credit'] ?? '0'), 4);
         }
 
         if (bccomp($totalDebit, $totalCredit, 4) !== 0) {
@@ -65,7 +65,7 @@ class JournalPoster
                 'entry_date' => $header['entry_date'],
                 'period_id' => $period->id,
                 'source_doc_type' => $header['source_doc_type'],
-                'source_doc_id' => $header['source_doc_id'],
+                'source_doc_id' => $header['source_doc_id'] ?? null,
                 'narration' => $header['narration'],
                 'reverses_journal_id' => $header['reverses_journal_id'] ?? null,
                 'posted_by' => $header['posted_by'],
@@ -73,7 +73,14 @@ class JournalPoster
             ]);
 
             foreach ($lines as $i => $line) {
-                $account = ChartOfAccount::byRole($header['organisation_id'], $line['account_role']);
+                if (! empty($line['account_id'])) {
+                    $account = ChartOfAccount::where('organisation_id', $header['organisation_id'])
+                        ->where('is_postable', true)
+                        ->where('is_active', true)
+                        ->findOrFail($line['account_id']);
+                } else {
+                    $account = ChartOfAccount::byRole($header['organisation_id'], $line['account_role']);
+                }
 
                 JournalEntryLine::create([
                     'journal_id' => $journal->id,

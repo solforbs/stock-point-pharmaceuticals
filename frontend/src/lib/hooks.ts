@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from './api'
-import type { AdminBranch, AdminRole, CustomerTier, DashboardSummary, DosageForm, Paginated, PermissionGroup, PriceList, Product, ProductCategory, ProductStock, PurchaseOrder, StorageCondition, Store, Supplier, TaxCode, Uom, UserRef } from './types'
+import type { AdminBranch, AdminRole, AdminUser, ChartAccount, CustomerTier, DashboardSummary, DosageForm, JournalEntry, Paginated, PermissionGroup, PriceList, Product, ProductCategory, ProductStock, PurchaseOrder, StorageCondition, Store, Supplier, TaxCode, Uom, UserRef } from './types'
 
 export function useUsers(q = '') {
   return useQuery({ queryKey: ['users', q], queryFn: () => apiGet<UserRef[]>('/api/users', { q }), staleTime: 60_000 })
@@ -46,6 +46,22 @@ export function useSuppliers(q = '') {
   })
 }
 
+export function useSupplier(id: string | null | undefined) {
+  return useQuery({
+    queryKey: ['suppliers', id],
+    queryFn: () => apiGet<Supplier>(`/api/suppliers/${id}`),
+    enabled: !!id,
+  })
+}
+
+export function useAdminUser(id: number | null | undefined) {
+  return useQuery({
+    queryKey: ['admin', 'users', id],
+    queryFn: () => apiGet<AdminUser>(`/api/admin/users/${id}`),
+    enabled: id != null,
+  })
+}
+
 export function useProduct(id: string | null | undefined) {
   return useQuery({ queryKey: ['products', id], queryFn: () => apiGet<Product>(`/api/products/${id}`), enabled: !!id })
 }
@@ -78,3 +94,20 @@ export function useAdminBranches(enabled = true) {
 export function usePriceLists(enabled = true) {
   return useQuery({ queryKey: ['price-lists'], queryFn: () => apiGet<PriceList[]>('/api/price-lists'), enabled, staleTime: 60_000 })
 }
+
+export function useChartOfAccounts() {
+  return useQuery({
+    queryKey: ['finance', 'chart-of-accounts'],
+    queryFn: () => apiGet<{ data: ChartAccount[] }>('/api/finance/chart-of-accounts'),
+    staleTime: 60_000,
+  })
+}
+
+export function useJournal(id: string | null | undefined) {
+  return useQuery({
+    queryKey: ['finance', 'journals', id],
+    queryFn: () => apiGet<JournalEntry>(`/api/finance/journals/${id}`),
+    enabled: !!id,
+  })
+}
+
