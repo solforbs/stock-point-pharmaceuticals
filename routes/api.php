@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\OperationsController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OrganisationController;
 use App\Http\Controllers\Api\PackingController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PayrollBandController;
@@ -387,6 +388,8 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::post('/admin/branches', [AdminController::class, 'storeBranch']);
     Route::patch('/admin/branches/{branch}', [AdminController::class, 'updateBranch']);
     Route::post('/admin/branches/{branch}/stores', [AdminController::class, 'storeStore']);
+    Route::get('/admin/organisation', [OrganisationController::class, 'show']);
+    Route::patch('/admin/organisation', [OrganisationController::class, 'update']);
     Route::get('/admin/settings', [AdminController::class, 'settings']);
     Route::put('/admin/settings', [AdminController::class, 'putSetting']);
     Route::get('/admin/number-sequences', [AdminController::class, 'numberSequences']);

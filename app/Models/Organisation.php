@@ -11,8 +11,8 @@ class Organisation extends Model
     use HasUuids;
 
     protected $fillable = [
-        'name', 'legal_name', 'kra_pin', 'vat_registered',
-        'base_currency', 'fiscal_year_start', 'is_active',
+        'name', 'legal_name', 'kra_pin', 'vat_number', 'vat_registered',
+        'base_currency', 'fiscal_year_start', 'is_active', 'updated_by',
     ];
 
     protected function casts(): array
