@@ -64,7 +64,7 @@ export default function BranchesPage() {
               {addingStore && <div className="p-4 border-b border-[var(--border)]"><StoreForm branch={selected} onDone={() => setAddingStore(false)} onCancel={() => setAddingStore(false)} /></div>}
               {editingStore && <div className="p-4 border-b border-[var(--border)]"><StoreForm branch={selected} store={editingStore} onDone={() => setEditingStore(null)} onCancel={() => setEditingStore(null)} /></div>}
               {selected.stores.length === 0 ? (
-                <div className="p-4 text-[12px] text-[var(--text-muted)]">No stores yet. A branch needs at least a MAIN store before it can receive goods.</div>
+                <div className="p-4 text-xs text-slate-500">No stores yet. A branch needs at least a MAIN store before it can receive goods.</div>
               ) : (
                 <table className="ui-table">
                   <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Sellable</th><th className="text-right">Actions</th></tr></thead>
@@ -96,7 +96,7 @@ export default function BranchesPage() {
 
 function ModeBadges({ branch }: { branch: AdminBranch }) {
   const modes = [branch.retail_enabled && 'RETAIL', branch.wholesale_enabled && 'WHOLESALE', branch.dispensing_enabled && 'DISPENSING'].filter((m): m is string => !!m)
-  if (modes.length === 0) return <span className="text-[var(--text-muted)] text-[11px]">None</span>
+  if (modes.length === 0) return <span className="text-slate-400 text-xs">None</span>
   return <div className="flex gap-1">{modes.map((m) => <StatusBadge key={m} status={m} />)}</div>
 }
 
@@ -160,7 +160,7 @@ function BranchForm({ branch, onDone, onCancel }: { branch?: AdminBranch; onDone
         title="Commercial Modes & Status"
         description="Operating capabilities and licensing enablement for this branch"
       >
-        <div className="flex flex-col gap-2 text-[12px]">
+        <div className="flex flex-col gap-2 text-xs">
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.retail_enabled} onChange={(e) => set({ retail_enabled: e.target.checked })} /> Retail sales enabled</label>
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.wholesale_enabled} onChange={(e) => set({ wholesale_enabled: e.target.checked })} /> Wholesale distribution enabled</label>
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.dispensing_enabled} onChange={(e) => set({ dispensing_enabled: e.target.checked })} /> Pharmacy dispensing enabled</label>
@@ -238,7 +238,7 @@ function StoreForm({ branch, store, onDone, onCancel }: { branch: AdminBranch; s
           </Field>
         </div>
         <div className="pt-2 border-t border-slate-100 mt-2">
-          <label className="flex items-center gap-2 text-[12px] cursor-pointer"><input type="checkbox" checked={form.is_sellable} onChange={(e) => set({ is_sellable: e.target.checked })} /> Sellable (stock here counts as free to sell)</label>
+          <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={form.is_sellable} onChange={(e) => set({ is_sellable: e.target.checked })} /> Sellable (stock here counts as free to sell)</label>
         </div>
       </FormSection>
 

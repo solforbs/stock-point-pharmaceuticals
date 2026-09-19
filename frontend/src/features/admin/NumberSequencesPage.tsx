@@ -33,7 +33,7 @@ export default function NumberSequencesPage() {
         <div className="ui-card"><NoAccess permission="admin.settings" /></div>
       ) : (
         <div className="ui-card">
-          <div className="px-4 py-2 border-b border-[var(--border)] text-[11.5px] text-[var(--text-muted)]">
+          <div className="px-4 py-2 border-b border-slate-200 text-xs text-slate-500">
             Sequences cannot be edited or reset from the application. Annual sequences roll over automatically at fiscal year end.
           </div>
           <DataTable columns={columns} rows={sequences.data} rowKey={(s) => s.id} isLoading={sequences.isLoading} error={sequences.error} onRetry={() => sequences.refetch()} emptyTitle="No numbers issued yet" emptyHint="A sequence appears the first time a document of that type posts." />
