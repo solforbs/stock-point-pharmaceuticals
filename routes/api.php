@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\OperationsController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PackingController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PayrollBandController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\PriceListController;
 use App\Http\Controllers\Api\PricingController;
@@ -294,6 +295,12 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::post('/admin/system-health/retry-failed-jobs', [OperationsController::class, 'retryFailedJobs']);
     Route::post('/admin/system-health/forget-failed-job/{id}', [OperationsController::class, 'forgetFailedJob']);
     // Part 18.3 — deleting master data (never transactions).
+    // Part 15 — statutory payroll rates, kept current by the System Administrator.
+    Route::get('/payroll-bands', [PayrollBandController::class, 'index']);
+    Route::post('/payroll-bands', [PayrollBandController::class, 'store']);
+    Route::patch('/payroll-bands/{band}', [PayrollBandController::class, 'update']);
+    Route::delete('/payroll-bands/{band}', [PayrollBandController::class, 'destroy']);
+
     Route::get('/admin/deletable', [RecordDeletionController::class, 'types']);
     Route::get('/admin/records/{type}/{id}/references', [RecordDeletionController::class, 'references']);
     Route::delete('/admin/records/{type}/{id}', [RecordDeletionController::class, 'destroy']);

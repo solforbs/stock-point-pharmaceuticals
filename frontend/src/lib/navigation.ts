@@ -130,6 +130,7 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'settings', label: 'Settings', path: '/admin/settings' },
       { key: 'security', label: 'Security (MFA)', path: '/admin/security' },
       { key: 'pricing-rules', label: 'Pricing Rules', path: '/admin/pricing-rules' },
+      { key: 'payroll-bands', label: 'Payroll Bands', path: '/admin/payroll-bands' },
       { key: 'number-sequences', label: 'Number Sequences', path: '/admin/number-sequences' },
       { key: 'audit-log', label: 'Audit Log', path: '/admin/audit-log' },
       { key: 'alerts', label: 'Alerts', path: '/admin/alerts' },

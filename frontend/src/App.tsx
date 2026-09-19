@@ -89,6 +89,7 @@ const BackupPage = lazy(() => import('./features/admin/BackupPage'))
 const SyncCentrePage = lazy(() => import('./features/admin/SyncCentrePage'))
 const AlertsPage = lazy(() => import('./features/admin/AlertsPage'))
 const DeploymentsPage = lazy(() => import('./features/admin/DeploymentsPage'))
+const PayrollBandsPage = lazy(() => import('./features/admin/PayrollBandsPage'))
 const PricingRulesPage = lazy(() => import('./features/admin/pricing/PricingRulesPage'))
 import { NAV_ITEMS } from './lib/navigation'
 
@@ -175,6 +176,7 @@ function App() {
             <Route path="/admin/sync-centre" element={<SyncCentrePage />} />
             <Route path="/admin/alerts" element={<AlertsPage />} />
             <Route path="/admin/deployments" element={<DeploymentsPage />} />
+            <Route path="/admin/payroll-bands" element={<PayrollBandsPage />} />
             <Route path="/quality/cold-chain" element={<ColdChainPage />} />
             <Route path="/quality/pharmacovigilance" element={<PharmacovigilancePage />} />
             <Route path="/quality/licences" element={<LicencesPage />} />

@@ -172,6 +172,9 @@ class CheckoutService
 
         return DB::transaction(function () use ($data) {
             $store = Store::findOrFail($data['store_id']);
+            if (! $store->is_sellable) {
+                throw new StoreNotSellableException($store->code);
+            }
 
             $subtotal = '0.0000';
             $discountTotal = '0.0000';

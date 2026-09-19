@@ -73,9 +73,10 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
             aria-label="Inventory store"
             className="h-7 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[12px] font-bold px-2 outline-none hover:bg-slate-100 transition-colors cursor-pointer max-w-[130px] sm:max-w-none"
           >
-            {stores.map((store) => (
+            {/* Only stores the till may sell from: the server refuses the rest. */}
+            {stores.filter((store) => store.is_sellable).map((store) => (
               <option key={store.id} value={store.id}>
-                {store.code} {store.is_sellable ? '' : '(view)'}
+                {store.code}
               </option>
             ))}
           </select>
