@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Services\Leave\LeaveException;
 use App\Services\Leave\LeaveService;
+use App\Services\Notifications\Notifier;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -62,7 +63,7 @@ class LeaveController extends ApiController
         );
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, Notifier $notifier): JsonResponse
     {
         $this->requireAnyLeavePermission($request);
         $data = $request->validate([
@@ -77,7 +78,22 @@ class LeaveController extends ApiController
             return $this->error('NOT_OWN_EMPLOYEE', 'You may only request leave for your own employee record.', 403);
         }
 
-        return $this->attempt(fn () => response()->json($this->withRelations($this->leave->request($this->organisationId($request), $data, $request->user()->id)), 201));
+        return $this->attempt(function () use ($request, $data, $notifier) {
+            $leave = $this->leave->request($this->organisationId($request), $data, $request->user()->id);
+
+            $notifier->toPermission(
+                'leave.approve',
+                $this->branchId($request),
+                'Leave request awaiting approval',
+                ($request->user()->name ?? 'Someone').' requested leave from '.$data['start_date'].' to '.$data['end_date'].'.',
+                category: 'LEAVE',
+                link: '/people/leave',
+                priority: 'NORMAL',
+                exceptUserId: $request->user()->id,
+            );
+
+            return response()->json($this->withRelations($leave), 201);
+        });
     }
 
     public function approve(Request $request, string $leave): JsonResponse

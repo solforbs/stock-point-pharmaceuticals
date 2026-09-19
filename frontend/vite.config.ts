@@ -6,6 +6,10 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss()],
+  // Read VITE_* from the application's own .env one level up, so the SPA and
+  // the server are configured from one file. Only VITE_-prefixed values are
+  // exposed to the browser; the rest of .env stays server-side.
+  envDir: path.resolve(import.meta.dirname, '..'),
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
@@ -27,6 +31,7 @@ export default defineConfig(({ command }) => ({
       '/api': { target: 'http://localhost:8000', changeOrigin: true },
       '/sanctum': { target: 'http://localhost:8000', changeOrigin: true },
       '/auth': { target: 'http://localhost:8000', changeOrigin: true },
+      '/broadcasting': { target: 'http://localhost:8000', changeOrigin: true },
     },
   },
 }))

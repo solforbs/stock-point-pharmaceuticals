@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Building2, MapPin, UserSquare2, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { DeleteRecordButton } from '../../components/DeleteRecordButton'
 import { useCustomer } from '../../components/CustomerPicker'
 import { useDebounced } from '../../components/ProductSearch'
 import { DataTable, type Column } from '../../components/ui/DataTable'
@@ -47,6 +48,14 @@ export default function CustomersPage() {
     { key: 'balance', header: 'Balance', align: 'right', render: (c) => <MoneyCell value={c.credit?.current_balance ?? '0'} />, sortValue: (c) => Number(c.credit?.current_balance ?? 0) },
     { key: 'available', header: 'Available', align: 'right', render: (c) => <MoneyCell value={c.available_credit ?? '0'} className={dIsNeg(c.available_credit ?? '0') ? 'font-bold text-rose-600' : ''} /> },
     { key: 'status', header: 'Status', render: (c) => (c.credit?.on_hold ? <StatusBadge status="ON_HOLD" label="Credit hold" /> : <StatusBadge status={c.is_active ? 'ACTIVE' : 'INACTIVE'} />) },
+    {
+      key: 'delete',
+      header: '',
+      align: 'right',
+      render: (c) => (
+        <DeleteRecordButton type="customers" id={c.id} label={`${c.code} · ${c.name}`} permission="customer.manage" invalidateKeys={[['customers']]} />
+      ),
+    },
   ]
 
   return (

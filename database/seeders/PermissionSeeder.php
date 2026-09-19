@@ -31,7 +31,7 @@ class PermissionSeeder extends Seeder
         'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view', 'licence.manage', 'document.manage',
         'payroll.view', 'payroll.process', 'payroll.approve.own',
         'leave.request', 'leave.approve', 'report.schedule',
-        'admin.users', 'admin.settings',
+        'admin.users', 'admin.settings', 'record.delete', 'deploy.run',
         'audit.view', 'report.view', 'report.financial.view',
     ];
 

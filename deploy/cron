@@ -1,4 +1,4 @@
-# /etc/cron.d/pharmacy_erp — installed by provision.sh
+# /etc/cron.d/stockpoint — installed by provision.sh
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
@@ -7,4 +7,4 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 * * * * * www-data cd __APP_DIR__ && php artisan schedule:run >> /dev/null 2>&1
 
 # Nightly database + files backup, kept 30 days.
-15 2 * * * root APP_DIR=__APP_DIR__ bash __APP_DIR__/deploy/backup.sh >> /var/log/pharmacy_erp-backup.log 2>&1
+15 2 * * * root APP_DIR=__APP_DIR__ bash __APP_DIR__/deploy/backup.sh >> /var/log/stockpoint-backup.log 2>&1

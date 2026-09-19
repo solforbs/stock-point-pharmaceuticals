@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Box, ChevronRight, FlaskConical, PackageCheck, Plus, Settings2, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { DeleteRecordButton } from '../../components/DeleteRecordButton'
 import { useDebounced } from '../../components/ProductSearch'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
@@ -65,6 +66,14 @@ export default function ProductsPage() {
         ] as Column<Product>[])
       : []),
     { key: 'active', header: 'Status', render: (p) => <StatusBadge status={p.is_active ? 'ACTIVE' : 'INACTIVE'} /> },
+    {
+      key: 'delete',
+      header: '',
+      align: 'right',
+      render: (p) => (
+        <DeleteRecordButton type="products" id={p.id} label={`${p.code} · ${p.name}`} permission="product.edit" invalidateKeys={[['products']]} />
+      ),
+    },
   ]
 
   return (

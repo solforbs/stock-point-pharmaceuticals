@@ -60,10 +60,14 @@ export default function PosPage() {
   const [resumeOpen, setResumeOpen] = useState(false)
   const [removeRef, setRemoveRef] = useState<string | null>(null)
 
+  // The till only ever works in a sellable store; a remembered store that has
+  // since been marked not sellable is replaced rather than left to fail.
   useEffect(() => {
-    if (!storeId && stores.data?.length) {
-      const sellable = stores.data.find((s) => s.is_sellable) ?? stores.data[0]
-      setStore(sellable.id)
+    if (!stores.data?.length) return
+    const current = stores.data.find((s) => s.id === storeId)
+    if (!current || !current.is_sellable) {
+      const sellable = stores.data.find((s) => s.is_sellable)
+      if (sellable && sellable.id !== storeId) setStore(sellable.id)
     }
   }, [storeId, stores.data, setStore])
 

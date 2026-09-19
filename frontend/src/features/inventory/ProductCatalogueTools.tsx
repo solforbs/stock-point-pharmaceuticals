@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Download, FolderTree, Upload } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { DeleteRecordButton } from '../../components/DeleteRecordButton'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
 import { InlineError } from '../../components/ui/States'
@@ -96,6 +97,15 @@ function CategoriesDrawer({ open, onClose, canEdit }: { open: boolean; onClose: 
     { key: 'parent', header: 'Parent', render: (c) => c.parent ? `${c.parent.code} · ${c.parent.name}` : '—', sortValue: (c) => c.parent?.code ?? '' },
     { key: 'products', header: 'Products', align: 'right', render: (c) => <span className="tabular">{c.products_count}</span>, sortValue: (c) => c.products_count },
     { key: 'status', header: 'Status', render: (c) => <StatusBadge status={c.is_active ? 'ACTIVE' : 'INACTIVE'} /> },
+    {
+      key: 'delete',
+      header: '',
+      align: 'right',
+      render: (c) => (
+        <DeleteRecordButton type="product-categories" id={c.id} label={`${c.code} · ${c.name}`} permission="product.edit"
+          invalidateKeys={[['product-categories', 'all'], ['product-categories']]} />
+      ),
+    },
   ]
 
   // A category cannot sit under itself or its own descendants.

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Nightly (and pre-deploy) backup: a consistent MySQL dump plus uploaded
-# files, kept for 30 days. Copy /var/backups/pharmacy_erp off the server
+# files, kept for 30 days. Copy /var/backups/stockpoint off the server
 # regularly — a backup on the same disk does not survive a lost VPS.
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/var/www/pharmacy_erp}"
-DEST="${BACKUP_DIR:-/var/backups/pharmacy_erp}"
+APP_DIR="${APP_DIR:-/var/www/stockpoint}"
+DEST="${BACKUP_DIR:-/var/backups/stockpoint}"
 KEEP_DAYS="${KEEP_DAYS:-30}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 

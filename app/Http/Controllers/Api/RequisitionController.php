@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Requisition;
+use App\Models\User;
+use App\Services\Notifications\Notifier;
 use App\Services\Procurement\ReorderAdvisor;
 use App\Services\Procurement\RequisitionService;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +20,7 @@ class RequisitionController extends ApiController
         return response()->json(
             Requisition::where('branch_id', $this->branchId($request))
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
-                ->withCount('lines')->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->withCount('lines')->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 
@@ -45,26 +47,59 @@ class RequisitionController extends ApiController
         return response()->json($requisitions->create($data + ['branch_id' => $this->branchId($request), 'user_id' => $request->user()->id]), 201);
     }
 
-    public function submit(Request $request, string $requisition, RequisitionService $requisitions): JsonResponse
+    public function submit(Request $request, string $requisition, RequisitionService $requisitions, Notifier $notifier): JsonResponse
     {
         $this->requirePermission($request, 'requisition.create');
 
-        return response()->json($requisitions->submit($this->find($request, $requisition), $request->user()->id));
+        $submitted = $requisitions->submit($this->find($request, $requisition), $request->user()->id);
+
+        // Whoever may approve requisitions here hears about it at once; an
+        // order nobody knows is waiting is an order that does not get placed.
+        $notifier->toPermission(
+            'requisition.approve',
+            $this->branchId($request),
+            "Requisition {$submitted->doc_number} needs approval",
+            ($request->user()->name ?? 'Someone').' raised '.$submitted->doc_number.' with '.$submitted->lines()->count().' line(s).'
+                .($submitted->needed_by ? ' Needed by '.$submitted->needed_by->format('j M Y').'.' : ''),
+            category: 'REQUISITION',
+            link: '/buy/requisitions?requisition='.$submitted->id,
+            priority: 'HIGH',
+            exceptUserId: $request->user()->id,
+        );
+
+        return response()->json($submitted);
     }
 
-    public function approve(Request $request, string $requisition, RequisitionService $requisitions): JsonResponse
+    public function approve(Request $request, string $requisition, RequisitionService $requisitions, Notifier $notifier): JsonResponse
     {
         $this->requirePermission($request, 'requisition.approve');
 
-        return response()->json($requisitions->approve($this->find($request, $requisition), $request->user()->id));
+        $approved = $requisitions->approve($this->find($request, $requisition), $request->user()->id);
+        $this->tellTheRequester($notifier, $approved, $request, "Requisition {$approved->doc_number} approved",
+            'Approved by '.($request->user()->name ?? 'an approver').'. It can now be turned into a purchase order.', 'NORMAL');
+
+        return response()->json($approved);
     }
 
-    public function reject(Request $request, string $requisition, RequisitionService $requisitions): JsonResponse
+    public function reject(Request $request, string $requisition, RequisitionService $requisitions, Notifier $notifier): JsonResponse
     {
         $this->requirePermission($request, 'requisition.approve');
         $data = $request->validate(['reason' => ['required', 'string', 'min:3', 'max:255']]);
 
-        return response()->json($requisitions->reject($this->find($request, $requisition), $request->user()->id, $data['reason']));
+        $rejected = $requisitions->reject($this->find($request, $requisition), $request->user()->id, $data['reason']);
+        $this->tellTheRequester($notifier, $rejected, $request, "Requisition {$rejected->doc_number} rejected", $data['reason'], 'HIGH');
+
+        return response()->json($rejected);
+    }
+
+    /** The person who raised a requisition is told what became of it. */
+    private function tellTheRequester(Notifier $notifier, Requisition $requisition, Request $request, string $subject, string $body, string $priority): void
+    {
+        $requester = User::find($requisition->requested_by);
+        if ($requester && $requester->id !== $request->user()->id) {
+            $notifier->toUsers([$requester], $this->branchId($request), $subject, $body,
+                category: 'REQUISITION', link: '/buy/requisitions?requisition='.$requisition->id, priority: $priority);
+        }
     }
 
     /** POST /api/requisitions/{id}/convert — supplier selection; the PO still needs its own approval. */

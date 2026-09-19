@@ -81,7 +81,7 @@ class RoleSeeder extends Seeder
             'leave.request',
         ],
         'System Administrator' => [
-            'admin.users', 'admin.settings', 'audit.view',
+            'admin.users', 'admin.settings', 'audit.view', 'record.delete',
             'licence.view', 'licence.manage', 'document.manage',
         ],
     ];
@@ -99,10 +99,13 @@ class RoleSeeder extends Seeder
             $role->syncPermissions($permissions);
         }
 
-        // The setup/owner role from `user:create-admin --full-access` holds
-        // every permission, including ones added after it was created.
-        Role::where('name', CreateAdminUser::SUPER_ADMINISTRATOR)->where('guard_name', 'web')->whereNull('branch_id')->first()
-            ?->syncPermissions(Permission::where('guard_name', 'web')->get());
+        // The owner role. It is created here rather than waiting for
+        // `user:create-admin --full-access`, so a production database has it
+        // from the first seed and deploying (deploy.run) has a home even
+        // before anyone holds it. It carries every permission there is,
+        // including ones added by later releases.
+        Role::firstOrCreate(['name' => CreateAdminUser::SUPER_ADMINISTRATOR, 'guard_name' => 'web', 'branch_id' => null])
+            ->syncPermissions(Permission::where('guard_name', 'web')->get());
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

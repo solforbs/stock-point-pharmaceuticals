@@ -2,12 +2,15 @@
 
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdrReportController;
+use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\ColdChainController;
 use App\Http\Controllers\Api\ControlledDocumentController;
 use App\Http\Controllers\Api\CustomerContactController;
 use App\Http\Controllers\Api\CustomerStatementController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DeploymentController;
 use App\Http\Controllers\Api\DocumentListController;
+use App\Http\Controllers\Api\DocumentPdfController;
 use App\Http\Controllers\Api\EtimsController;
 use App\Http\Controllers\Api\FinanceController;
 use App\Http\Controllers\Api\InventoryController;
@@ -15,10 +18,13 @@ use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LicenceController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MasterDataController;
+use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\OperationsController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OrganisationController;
 use App\Http\Controllers\Api\PackingController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PayrollBandController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\PriceListController;
 use App\Http\Controllers\Api\PricingController;
@@ -28,6 +34,7 @@ use App\Http\Controllers\Api\ProductCatalogueController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\QualityController;
 use App\Http\Controllers\Api\ReconciliationController;
+use App\Http\Controllers\Api\RecordDeletionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RequisitionController;
 use App\Http\Controllers\Api\ReturnController;
@@ -115,6 +122,11 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/sales-orders/{order}', [OrderController::class, 'salesOrder']);
     Route::post('/sales-orders/{order}/confirm', [OrderController::class, 'confirmSalesOrder']);
     Route::post('/sales-orders/{order}/cancel', [OrderController::class, 'cancelSalesOrder']);
+    Route::get('/sales-orders/{order}/updates', [OrderController::class, 'salesOrderUpdates']);
+
+    // Part 16.6 — documents as PDFs, rendered from the posted record.
+    Route::get('/sales/{sale}/pdf', [DocumentPdfController::class, 'invoice']);
+    Route::get('/delivery-notes/{note}/pdf', [DocumentPdfController::class, 'deliveryNote']);
     Route::post('/sales-orders/{order}/pick', [OrderController::class, 'pick']);
     Route::post('/picking-lists/{list}/lines/{line}/pick', [OrderController::class, 'pickLine']);
     Route::post('/picking-lists/{list}/complete', [OrderController::class, 'completePicking']);
@@ -283,6 +295,22 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/admin/system-health', [OperationsController::class, 'systemHealth']);
     Route::post('/admin/system-health/retry-failed-jobs', [OperationsController::class, 'retryFailedJobs']);
     Route::post('/admin/system-health/forget-failed-job/{id}', [OperationsController::class, 'forgetFailedJob']);
+    // Part 18.3 — deleting master data (never transactions).
+    // Part 15 — statutory payroll rates, kept current by the System Administrator.
+    Route::get('/payroll-bands', [PayrollBandController::class, 'index']);
+    Route::post('/payroll-bands', [PayrollBandController::class, 'store']);
+    Route::patch('/payroll-bands/{band}', [PayrollBandController::class, 'update']);
+    Route::delete('/payroll-bands/{band}', [PayrollBandController::class, 'destroy']);
+
+    Route::get('/admin/deletable', [RecordDeletionController::class, 'types']);
+    Route::get('/admin/records/{type}/{id}/references', [RecordDeletionController::class, 'references']);
+    Route::delete('/admin/records/{type}/{id}', [RecordDeletionController::class, 'destroy']);
+
+    // Part 17 — deployments: pull the latest code and run the deploy script.
+    Route::get('/admin/deployments', [DeploymentController::class, 'status']);
+    Route::post('/admin/deployments/check', [DeploymentController::class, 'check']);
+    Route::post('/admin/deployments', [DeploymentController::class, 'deploy']);
+
     Route::get('/admin/backups', [OperationsController::class, 'backups']);
     Route::post('/admin/backups', [OperationsController::class, 'createBackup']);
     Route::get('/admin/backups/{name}/download', [OperationsController::class, 'downloadBackup']);
@@ -333,6 +361,21 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
 
     // 21.16 Dashboard and administration (Parts 16.3, 17, 18, 19)
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
+
+    // Part 17 — standing alerts: payment deadlines and shelf-life risk.
+    // Part 17 — messages between people, delivered live over the websocket.
+    Route::get('/messages', [MessageController::class, 'index']);
+    Route::get('/messages/unread-count', [MessageController::class, 'unreadCount']);
+    Route::get('/messages/recipients', [MessageController::class, 'recipients']);
+    Route::post('/messages', [MessageController::class, 'store']);
+    Route::post('/messages/read-all', [MessageController::class, 'markAllRead']);
+    Route::post('/messages/{message}/read', [MessageController::class, 'markRead']);
+
+    Route::get('/alerts', [AlertController::class, 'index']);
+    Route::get('/alerts/summary', [AlertController::class, 'summary']);
+    Route::post('/alerts/scan', [AlertController::class, 'scan']);
+    Route::post('/alerts/acknowledge-all', [AlertController::class, 'acknowledgeAll']);
+    Route::post('/alerts/{alert}/acknowledge', [AlertController::class, 'acknowledge']);
     Route::get('/admin/users', [AdminController::class, 'users']);
     Route::post('/admin/users', [AdminController::class, 'storeUser']);
     Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
@@ -345,6 +388,8 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::post('/admin/branches', [AdminController::class, 'storeBranch']);
     Route::patch('/admin/branches/{branch}', [AdminController::class, 'updateBranch']);
     Route::post('/admin/branches/{branch}/stores', [AdminController::class, 'storeStore']);
+    Route::get('/admin/organisation', [OrganisationController::class, 'show']);
+    Route::patch('/admin/organisation', [OrganisationController::class, 'update']);
     Route::get('/admin/settings', [AdminController::class, 'settings']);
     Route::put('/admin/settings', [AdminController::class, 'putSetting']);
     Route::get('/admin/number-sequences', [AdminController::class, 'numberSequences']);

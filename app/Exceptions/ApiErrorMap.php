@@ -2,6 +2,8 @@
 
 namespace App\Exceptions;
 
+use App\Services\Admin\RecordInUseException;
+use App\Services\Admin\RecordNotDeletableException;
 use App\Services\Finance\InvalidPaymentStatusException;
 use App\Services\Finance\NoOpenPeriodException;
 use App\Services\Finance\PaymentPeriodClosedException;
@@ -33,6 +35,7 @@ use App\Services\Sales\OrderCreditLimitExceededException;
 use App\Services\Sales\OrderOnCreditHoldException;
 use App\Services\Sales\PaymentMismatchException;
 use App\Services\Sales\SaleAlreadyVoidedException;
+use App\Services\Sales\StoreNotSellableException;
 use App\Services\Sales\VoidPeriodClosedException;
 use Illuminate\Http\JsonResponse;
 
@@ -83,6 +86,9 @@ class ApiErrorMap
             $e instanceof InvalidReturnStatusException,
             $e instanceof InvalidPayrollStatusException => ['INVALID_STATE', 409, []],
             $e instanceof SecondApproverRequiredException => ['SECOND_APPROVER_REQUIRED', 422, ['variance_value' => $e->varianceValue, 'threshold' => $e->threshold]],
+            $e instanceof StoreNotSellableException => ['STORE_NOT_SELLABLE', 422, ['store' => $e->storeCode]],
+            $e instanceof RecordInUseException => ['RECORD_IN_USE', 409, ['references' => $e->references]],
+            $e instanceof RecordNotDeletableException => [$e->errorCode, $e->status, []],
             $e instanceof \InvalidArgumentException, $e instanceof \DomainException => ['INVALID_INPUT', 422, []],
             default => [null, 0, []],
         };

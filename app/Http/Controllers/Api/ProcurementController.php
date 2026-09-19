@@ -2,22 +2,28 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Mail\PurchaseOrderSentMail;
 use App\Models\AccountsPayable;
 use App\Models\AuditLog;
+use App\Models\Branch;
 use App\Models\GoodsReceipt;
 use App\Models\GoodsReceiptLine;
 use App\Models\NumberSequence;
+use App\Models\Organisation;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceLine;
+use App\Services\Notifications\Notifier;
 use App\Services\Procurement\GoodsReceiptService;
 use App\Services\Procurement\SupplierPaymentService;
 use App\Services\Procurement\ThreeWayMatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class ProcurementController extends ApiController
@@ -160,7 +166,7 @@ class ProcurementController extends ApiController
         return response()->json($po->fresh('lines'));
     }
 
-    public function sendPurchaseOrder(Request $request, string $po): JsonResponse
+    public function sendPurchaseOrder(Request $request, string $po, Notifier $notifier): JsonResponse
     {
         $this->requirePermission($request, 'po.create');
         $po = $this->findPo($request, $po);
@@ -169,8 +175,62 @@ class ProcurementController extends ApiController
         }
 
         $po->update(['status' => 'SENT', 'sent_at' => now()]);
+        $po->load(['lines.product:id,code,name', 'lines.uom:id,code', 'supplier']);
 
-        return response()->json($po->fresh('lines'));
+        // Sending the order is what starts the supplier's dispatch, so this
+        // is the moment they are told. A supplier is not a user of this
+        // system, so the only way to reach them is the address on their
+        // record; a missing one is reported rather than silently ignored.
+        $delivered = $this->emailSupplier($request, $po);
+
+        $notifier->toPermission(
+            'grn.create',
+            $this->branchId($request),
+            "Purchase order {$po->doc_number} sent to {$po->supplier?->name}",
+            $delivered
+                ? "{$po->supplier?->name} has been emailed and can dispatch. Expect delivery".($po->expected_date ? ' by '.$po->expected_date->format('j M Y') : '').'.'
+                : "The order is marked sent, but {$po->supplier?->name} has no email address on file — send it to them by hand.",
+            category: 'PURCHASE_ORDER',
+            link: '/buy/purchase-orders?po='.$po->id,
+            priority: $delivered ? 'NORMAL' : 'HIGH',
+            exceptUserId: null,
+        );
+
+        return response()->json($po->fresh('lines')->toArray() + ['supplier_notified' => $delivered]);
+    }
+
+    /**
+     * Emails the order to the supplier. Returns false when there is nobody
+     * to send it to, or the mail could not be handed over.
+     */
+    private function emailSupplier(Request $request, PurchaseOrder $po): bool
+    {
+        $address = trim((string) ($po->supplier->email ?? ''));
+        if ($address === '') {
+            return false;
+        }
+
+        $branch = Branch::find($this->branchId($request));
+        $organisationName = (string) (Organisation::where('id', $branch?->organisation_id)->value('name') ?? config('app.name'));
+
+        try {
+            Mail::to($address, $po->supplier->contact_name ?: $po->supplier->name)->send(
+                new PurchaseOrderSentMail($po, $organisationName, (string) $branch?->name)
+            );
+
+            AuditLog::record('PURCHASE_ORDER_SENT_TO_SUPPLIER', 'purchase_order', $po->id, [
+                'reference' => $po->doc_number,
+                'after_json' => ['to' => $address, 'supplier' => $po->supplier->code],
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            // The order is already SENT in the books; failing the request now
+            // would leave the two disagreeing. Report it instead.
+            Log::error('Purchase order email failed', ['po' => $po->doc_number, 'to' => $address, 'error' => $e->getMessage()]);
+
+            return false;
+        }
     }
 
     public function purchaseOrders(Request $request): JsonResponse
@@ -181,7 +241,7 @@ class ProcurementController extends ApiController
             PurchaseOrder::where('branch_id', $this->branchId($request))
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->with('supplier:id,code,name')->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 

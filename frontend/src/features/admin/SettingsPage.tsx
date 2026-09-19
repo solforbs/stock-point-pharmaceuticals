@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Drawer } from '../../components/ui/Drawer'
+import { OrganisationCard } from './OrganisationCard'
 import { Page, PageHeader } from '../../components/ui/PageHeader'
 import { InlineError, LoadingSkeleton, NoAccess } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
@@ -42,6 +43,7 @@ export default function SettingsPage() {
   return (
     <Page>
       <PageHeader parent="Admin" title="Settings" subtitle="Settings are versioned, never edited in place; a branch value overrides the organisation value for that branch only (Part 17.4)." />
+      <OrganisationCard />
       {!canManage ? (
         <div className="ui-card"><NoAccess permission="admin.settings" /></div>
       ) : (

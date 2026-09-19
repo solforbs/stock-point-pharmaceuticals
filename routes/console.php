@@ -15,6 +15,13 @@ Schedule::command('finance:open-periods')->dailyAt('00:01');
 // Part 7.1 / 12.4 — the reconciliation that must return zero rows.
 Schedule::command('inventory:reconcile-ledger')->dailyAt('00:30');
 
+// Part 17 — payment deadlines and shelf-life risk, recomputed before the
+// counter opens so the morning's alerts are the day's truth.
+Schedule::command('alerts:scan')->dailyAt('05:30')->withoutOverlapping();
+
+// Part 17 — a newer released version is offered to whoever may deploy it.
+Schedule::command('deploy:check-release')->dailyAt('06:00')->withoutOverlapping();
+
 // Part 20.3 — scheduled reports are mailed when due (run_at is HH:MM, so a quarter-hour tick is enough).
 Schedule::command('reports:run-scheduled')->everyFifteenMinutes()->withoutOverlapping();
 
@@ -24,3 +31,7 @@ Schedule::call(fn () => Cache::forever('scheduler:last_run', now()->toIso8601Str
 
 // Part 17 — operations: nightly database backup, pruned to BACKUP_RETENTION_DAYS.
 Schedule::command('backup:run')->dailyAt('02:00');
+
+// Part 17 — once a week the uploaded files (licence scans, certificates of
+// analysis) go with the database in one restorable zip.
+Schedule::command('backup:run --full --no-prune')->weeklyOn(7, '02:30');

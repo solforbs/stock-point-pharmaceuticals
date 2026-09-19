@@ -21,7 +21,7 @@ class StockCountController extends ApiController
                 ->whereIn('store_id', Store::where('branch_id', $this->branchId($request))->pluck('id'))
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->with('store:id,code,name')->withCount('lines')
-                ->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))
         );
     }
 

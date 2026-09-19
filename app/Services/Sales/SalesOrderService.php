@@ -160,7 +160,12 @@ class SalesOrderService
                 $this->checkCredit($order, $userId, $creditOverrideReason);
             }
 
+            // Confirming reserves stock to sell, so the same rule as the till
+            // applies: it must come from a store marked sellable.
             $store = Store::findOrFail($order->store_id);
+            if (! $store->is_sellable) {
+                throw new StoreNotSellableException($store->code);
+            }
             $costTotal = '0.0000';
 
             foreach ($order->lines as $line) {

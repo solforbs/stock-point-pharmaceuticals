@@ -53,4 +53,14 @@ class SalesOrderLine extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    /**
+     * The unit the customer ordered in — a box is not 24 tablets to them.
+     *
+     * @return BelongsTo<UnitOfMeasure, $this>
+     */
+    public function uom(): BelongsTo
+    {
+        return $this->belongsTo(UnitOfMeasure::class, 'uom_id');
+    }
 }

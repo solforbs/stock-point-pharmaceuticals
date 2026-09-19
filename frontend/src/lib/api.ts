@@ -50,6 +50,12 @@ export async function apiPost<T>(url: string, body?: unknown, config?: AxiosRequ
   return data
 }
 
+export async function apiDelete<T>(url: string): Promise<T> {
+  await ensureCsrfCookie()
+  const { data } = await api.delete<T>(url)
+  return data
+}
+
 export async function apiPatch<T>(url: string, body?: unknown): Promise<T> {
   const { data } = await api.patch<T>(url, body)
   return data

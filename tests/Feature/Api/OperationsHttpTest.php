@@ -218,6 +218,41 @@ class OperationsHttpTest extends TestCase
         return $uuid;
     }
 
+    public function test_a_full_backup_holds_the_database_and_the_uploaded_files_in_one_zip(): void
+    {
+        $this->fakeDump();
+        $uploads = storage_path('app'.DIRECTORY_SEPARATOR.'private'.DIRECTORY_SEPARATOR.'licences');
+        File::ensureDirectoryExists($uploads);
+        file_put_contents($uploads.DIRECTORY_SEPARATOR.'ppb-licence.pdf', '%PDF-1.4 licence scan');
+
+        $created = $this->postJson('/api/admin/backups', ['kind' => 'full'])->assertCreated()->assertJsonPath('kind', 'full')->json();
+        $this->assertStringEndsWith('.zip', $created['name']);
+
+        $zip = new \ZipArchive;
+        $this->assertTrue($zip->open($this->backupDir.'/'.$created['name']) === true);
+
+        $names = [];
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $names[] = (string) $zip->getNameIndex($i);
+        }
+
+        $sql = array_values(array_filter($names, fn (string $n) => str_ends_with($n, '.sql')));
+        $this->assertCount(1, $sql);
+        $this->assertSame('-- fake dump', $zip->getFromName($sql[0]));
+        $this->assertContains('files/private/licences/ppb-licence.pdf', $names);
+        $this->assertSame('%PDF-1.4 licence scan', $zip->getFromName('files/private/licences/ppb-licence.pdf'));
+        $this->assertStringContainsString('Restore:', (string) $zip->getFromName('MANIFEST.txt'));
+        $this->assertEmpty(array_filter($names, fn (string $n) => str_contains($n, 'backups/')), 'a full backup never swallows the older backups');
+        $zip->close();
+
+        // It downloads as a zip and is listed beside the database dumps.
+        $download = $this->get("/api/admin/backups/{$created['name']}/download")->assertOk();
+        $this->assertSame('application/zip', $download->headers->get('Content-Type'));
+        $this->getJson('/api/admin/backups')->assertOk()->assertJsonPath('data.0.name', $created['name']);
+
+        unlink($uploads.DIRECTORY_SEPARATOR.'ppb-licence.pdf');
+    }
+
     private function fakeDump(): void
     {
         $this->app->instance(BackupService::class, new class extends BackupService
