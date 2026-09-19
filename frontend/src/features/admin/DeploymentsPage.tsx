@@ -20,8 +20,14 @@ type DeployRun = {
   log: string
 }
 
+type Release = { version: string; released_at: string | null; notes: string }
+
 type DeploymentStatus = {
   enabled: boolean
+  version: string | null
+  latest_version: string | null
+  update_available: boolean
+  releases: Release[]
   available: boolean
   root: string
   branch: string
@@ -47,6 +53,8 @@ export default function DeploymentsPage() {
   const canDeploy = usePermission('deploy.run')
   const queryClient = useQueryClient()
   const [confirming, setConfirming] = useState(false)
+  // Which version the confirm dialog is about; null means the branch tip.
+  const [target, setTarget] = useState<string | null>(null)
 
   const status = useQuery({
     queryKey: ['admin', 'deployments'],
@@ -70,10 +78,11 @@ export default function DeploymentsPage() {
 
   const deploy = useMutation({
     meta: { silent: true },
-    mutationFn: () => apiPost<{ run_id: string }>('/api/admin/deployments'),
+    mutationFn: (version: string | null) => apiPost<{ run_id: string }>('/api/admin/deployments', { version }),
     onSuccess: (r) => {
       toast.success(`Deploy ${r.run_id} started`)
       setConfirming(false)
+      setTarget(null)
       invalidate()
     },
     onError: (e) => toast.error(getApiError(e).message),
@@ -103,7 +112,7 @@ export default function DeploymentsPage() {
             <Button disabled={check.isPending || running} onClick={() => check.mutate()}>
               <RefreshCw size={13} className={check.isPending ? 'animate-spin' : ''} /> {check.isPending ? 'Checking…' : 'Check for updates'}
             </Button>
-            <Button variant="primary" disabled={running || !s?.enabled} onClick={() => setConfirming(true)}>
+            <Button variant="primary" disabled={running || !s?.enabled} onClick={() => { setTarget(null); setConfirming(true) }}>
               <Rocket size={13} /> {running ? 'Deploying…' : 'Pull and deploy'}
             </Button>
           </div>
@@ -116,6 +125,17 @@ export default function DeploymentsPage() {
         <div className="ui-card p-4 border-l-4 text-[12.5px]" style={{ borderLeftColor: 'var(--status-amber)' }}>
           <span className="font-bold">Deploying from the browser is switched off here.</span> Set <code>DEPLOY_ENABLED=true</code> in the
           server's <code>.env</code>. Checking for updates still works.
+        </div>
+      )}
+
+      {s?.update_available && (
+        <div className="ui-card p-4 border-l-4 flex items-center justify-between gap-3" style={{ borderLeftColor: 'var(--status-amber)' }}>
+          <div className="text-[12.5px]">
+            <span className="font-bold">Version {s.latest_version} is available.</span> This server runs {s.version ?? 'untagged code'}.
+          </div>
+          <Button variant="primary" disabled={running || !s.enabled} onClick={() => { setTarget(s.latest_version); setConfirming(true) }}>
+            <Rocket size={13} /> Update to {s.latest_version}
+          </Button>
         </div>
       )}
 
@@ -136,6 +156,11 @@ export default function DeploymentsPage() {
                   {s.author} · {formatDateTime(s.committed_at)}
                 </p>
                 <p className="text-[11px] text-slate-400 tabular">{s.root}</p>
+                <p className="text-[12px] mt-1">
+                  <span className="font-bold text-slate-700">Version:</span>{' '}
+                  <span className="tabular font-bold text-blue-700">{s.version ?? 'untagged'}</span>
+                  {s.version?.endsWith('+') && <span className="text-slate-500"> (newer than the release)</span>}
+                </p>
               </>
             )}
           </div>
@@ -158,6 +183,42 @@ export default function DeploymentsPage() {
           </div>
         </Card>
       </div>
+
+      <Card title="Released versions">
+        <div className="p-4">
+          {(s?.releases.length ?? 0) === 0 && (
+            <p className="text-[12.5px] text-slate-500">
+              No versions have been released yet. Tag a commit <span className="tabular">v1.0.0</span> and push the tag to publish one.
+            </p>
+          )}
+          {(s?.releases.length ?? 0) > 0 && (
+            <table className="w-full text-[12.5px]">
+              <tbody>
+                {s?.releases.map((r) => {
+                  const isRunning = s.version === r.version
+                  return (
+                    <tr key={r.version} className="border-b border-slate-50 last:border-0">
+                      <td className="py-2 pr-3 w-24">
+                        <span className="font-bold tabular text-slate-800">{r.version}</span>
+                        {isRunning && <StatusBadge status="RUNNING" tone="green" label="running" />}
+                      </td>
+                      <td className="py-2 pr-3 text-slate-600">{r.notes}</td>
+                      <td className="py-2 pr-3 text-[11px] text-slate-500 whitespace-nowrap">{formatDateTime(r.released_at)}</td>
+                      <td className="py-2 text-right">
+                        {!isRunning && (
+                          <Button size="sm" disabled={running || !s.enabled} onClick={() => { setTarget(r.version); setConfirming(true) }}>
+                            Switch to this
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </Card>
 
       <Card
         title="Last deploy"
@@ -183,12 +244,12 @@ export default function DeploymentsPage() {
       <Modal
         open={confirming}
         onClose={() => setConfirming(false)}
-        title="Pull and deploy?"
+        title={target ? `Switch to ${target}?` : 'Pull and deploy?'}
         footer={
           <>
             <Button onClick={() => setConfirming(false)}>Cancel</Button>
-            <Button variant="primary" disabled={deploy.isPending} onClick={() => deploy.mutate()}>
-              {deploy.isPending ? 'Starting…' : 'Deploy now'}
+            <Button variant="primary" disabled={deploy.isPending} onClick={() => deploy.mutate(target)}>
+              {deploy.isPending ? 'Starting…' : target ? `Deploy ${target}` : 'Deploy now'}
             </Button>
           </>
         }
@@ -197,7 +258,7 @@ export default function DeploymentsPage() {
           <p>This runs the deploy script on the server, in this order:</p>
           <ol className="list-decimal pl-5 space-y-1 text-[12px]">
             <li>back up the database</li>
-            <li>fetch {s?.branch} from GitHub and install PHP dependencies</li>
+            <li>fetch {target ? `version ${target}` : `${s?.branch} from GitHub`} and install PHP dependencies</li>
             <li>apply pending migrations and reference seeders</li>
             <li>build the SPA, re-cache and restart the workers</li>
           </ol>

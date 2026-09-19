@@ -17,6 +17,9 @@ set -euo pipefail
 
 APP_DIR="${APP_DIR:-/var/www/stockpoint}"
 BRANCH="${BRANCH:-main}"
+# The Deployments screen writes the version it was asked for here. It is
+# validated again below, so a bad value can only ever fall back to the branch.
+REF_FILE="${REF_FILE:-$APP_DIR/storage/app/private/deployments/requested-ref}"
 PHP_FPM="${PHP_FPM:-php8.5-fpm}"
 export COMPOSER_ALLOW_SUPERUSER=1
 
@@ -28,9 +31,25 @@ APP_DIR="$APP_DIR" bash deploy/backup.sh
 
 echo "==> Code"
 BEFORE="$(git rev-parse --short HEAD)"
-git fetch --prune origin
-git reset --hard "origin/${BRANCH}"
+git fetch --prune --tags --force origin
+
+TARGET="origin/${BRANCH}"
+if [ -f "$REF_FILE" ]; then
+  REQUESTED="$(tr -d "[:space:]" < "$REF_FILE")"
+  : > "$REF_FILE"   # one deploy, one request
+  if [ -n "$REQUESTED" ]; then
+    if printf '%s' "$REQUESTED" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' && git rev-parse -q --verify "refs/tags/${REQUESTED}" >/dev/null; then
+      TARGET="refs/tags/${REQUESTED}"
+      echo "    deploying version ${REQUESTED}"
+    else
+      echo "    ignoring '${REQUESTED}': not a released version" >&2
+    fi
+  fi
+fi
+
+git reset --hard "$TARGET"
 git log --oneline "${BEFORE}..HEAD" | head -20 || true
+echo "    now at $(git describe --tags --always)"
 composer install --no-dev --optimize-autoloader --no-interaction
 
 echo "==> Database"
@@ -65,4 +84,4 @@ artisan queue:restart
 systemctl reload "$PHP_FPM"   # drops the old opcache
 artisan up
 
-echo "==> Deployed $(git rev-parse --short HEAD) ($(git log -1 --pretty=%s))"
+echo "==> Deployed $(git describe --tags --always) — $(git log -1 --pretty=%s)"

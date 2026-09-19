@@ -75,7 +75,7 @@ class DeploymentHttpTest extends TestCase
         {
             public bool $started = false;
 
-            public function start(int $userId): string
+            public function start(int $userId, ?string $ref = null): string
             {
                 if ($this->started) {
                     throw new DeploymentFailedException('A deploy is already running; wait for it to finish.');
@@ -189,6 +189,44 @@ class DeploymentHttpTest extends TestCase
             $this->getJson('/api/user')->assertStatus(503);
         } finally {
             $this->artisan('up')->assertSuccessful();
+        }
+    }
+
+    public function test_only_a_real_released_version_can_be_deployed(): void
+    {
+        $this->actAsDeployer();
+        config(['deployment.enabled' => true]);
+
+        // Anything that is not a vX.Y.Z tag this repository has is refused
+        // before it can reach a shell.
+        foreach ([
+            'main; rm -rf /',
+            '$(whoami)',
+            '../../etc/passwd',
+            'v9.9.9',        // shaped right, but no such release
+            'not-a-version',
+        ] as $attempt) {
+            $this->postJson('/api/admin/deployments', ['version' => $attempt])
+                ->assertStatus(422)
+                ->assertJsonPath('error.code', 'DEPLOY_FAILED');
+        }
+
+        $this->assertSame(0, AuditLog::where('action', 'DEPLOY_STARTED')->count());
+    }
+
+    public function test_the_status_reports_the_running_version_and_what_is_released(): void
+    {
+        $this->actAsDeployer();
+
+        $response = $this->getJson('/api/admin/deployments')->assertOk()->json();
+
+        $this->assertArrayHasKey('version', $response);
+        $this->assertArrayHasKey('latest_version', $response);
+        $this->assertArrayHasKey('releases', $response);
+        $this->assertIsBool($response['update_available']);
+
+        foreach ($response['releases'] as $release) {
+            $this->assertMatchesRegularExpression(DeploymentService::VERSION_PATTERN, $release['version']);
         }
     }
 }

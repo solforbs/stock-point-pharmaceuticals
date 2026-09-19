@@ -49,18 +49,21 @@ class DeploymentController extends ApiController
             return $this->error('DEPLOY_DISABLED', 'Deploying from the browser is switched off here (DEPLOY_ENABLED).', 422);
         }
 
+        $data = $request->validate(['version' => ['nullable', 'string', 'max:40']]);
+
         try {
-            $runId = $deployments->start((int) $request->user()->id);
+            $runId = $deployments->start((int) $request->user()->id, $data['version'] ?? null);
         } catch (DeploymentFailedException $e) {
             return $this->error('DEPLOY_FAILED', $e->getMessage(), 422);
         }
 
         $before = $deployments->status();
         AuditLog::record('DEPLOY_STARTED', 'deployment', $runId, [
-            'reference' => $runId,
-            'before_json' => ['commit' => $before['commit'], 'behind' => $before['behind']],
+            'reference' => $data['version'] ?? $runId,
+            'before_json' => ['commit' => $before['commit'], 'version' => $before['version'], 'behind' => $before['behind']],
+            'after_json' => ['requested' => $data['version'] ?? 'latest on '.$deployments->branch()],
         ]);
 
-        return response()->json(['run_id' => $runId, 'status' => 'running'], 202);
+        return response()->json(['run_id' => $runId, 'status' => 'running', 'version' => $data['version'] ?? null], 202);
     }
 }

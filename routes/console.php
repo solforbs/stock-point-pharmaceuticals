@@ -19,6 +19,9 @@ Schedule::command('inventory:reconcile-ledger')->dailyAt('00:30');
 // counter opens so the morning's alerts are the day's truth.
 Schedule::command('alerts:scan')->dailyAt('05:30')->withoutOverlapping();
 
+// Part 17 — a newer released version is offered to whoever may deploy it.
+Schedule::command('deploy:check-release')->dailyAt('06:00')->withoutOverlapping();
+
 // Part 20.3 — scheduled reports are mailed when due (run_at is HH:MM, so a quarter-hour tick is enough).
 Schedule::command('reports:run-scheduled')->everyFifteenMinutes()->withoutOverlapping();
 
