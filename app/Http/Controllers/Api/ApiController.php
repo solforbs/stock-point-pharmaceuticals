@@ -23,6 +23,25 @@ abstract class ApiController extends Controller
         }
     }
 
+    /**
+     * @param  list<string>  $permissions
+     */
+    protected function requireAnyPermission(Request $request, array $permissions): void
+    {
+        $user = $request->user();
+        if (! $user) {
+            throw new HttpException(403, 'Unauthorized.');
+        }
+
+        foreach ($permissions as $permission) {
+            if ($user->can($permission)) {
+                return;
+            }
+        }
+
+        throw new HttpException(403, 'You do not have any of the required permissions: '.implode(', ', $permissions).'.');
+    }
+
     protected function branchId(Request $request): string
     {
         $branchId = $request->attributes->get('active_branch_id');

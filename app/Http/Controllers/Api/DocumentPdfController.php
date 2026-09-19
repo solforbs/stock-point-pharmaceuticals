@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
 use App\Models\DeliveryNote;
+use App\Models\PurchaseOrder;
+use App\Models\Quotation;
 use App\Models\Sale;
 use App\Models\User;
 use App\Services\Documents\PdfRenderer;
@@ -62,5 +64,50 @@ class DocumentPdfController extends ApiController
             'note' => $note,
             'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
         ], $note->doc_number, $note->branch_id);
+    }
+
+    /** GET /api/quotations/{quotation}/pdf — institutional wholesale price quotation. */
+    public function quotation(Request $request, string $quotation, PdfRenderer $pdf): Response
+    {
+        $this->requirePermission($request, 'sale.view');
+
+        $quote = Quotation::where('branch_id', $this->branchId($request))
+            ->with(['customer', 'lines.product:id,code,name', 'lines.uom:id,code'])
+            ->findOrFail($quotation);
+
+        AuditLog::record('QUOTATION_PRINTED', 'quotation', $quote->id, ['reference' => $quote->doc_number]);
+
+        return $pdf->render('pdf.quotation', [
+            'title' => 'Wholesale quotation',
+            'quotation' => $quote,
+            'money' => fn ($v) => number_format((float) $v, 2),
+            'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
+        ], $quote->doc_number, $quote->branch_id);
+    }
+
+    /** GET /api/purchase-orders/{po}/pdf — official procurement purchase order. */
+    public function purchaseOrder(Request $request, string $po, PdfRenderer $pdf): Response
+    {
+        $this->requireAnyPermission($request, ['po.create', 'po.approve']);
+
+        $order = PurchaseOrder::where('branch_id', $this->branchId($request))
+            ->with(['supplier', 'branch', 'lines.product:id,code,name', 'lines.uom:id,code'])
+            ->findOrFail($po);
+
+        $total = '0.0000';
+        foreach ($order->lines as $line) {
+            $lineTotal = bcmul((string) $line->qty_ordered, (string) $line->unit_price, 4);
+            $total = bcadd($total, $lineTotal, 4);
+        }
+
+        AuditLog::record('PURCHASE_ORDER_PRINTED', 'purchase_order', $order->id, ['reference' => $order->doc_number]);
+
+        return $pdf->render('pdf.purchase-order', [
+            'title' => 'Purchase order',
+            'order' => $order,
+            'total' => $total,
+            'money' => fn ($v) => number_format((float) $v, 2),
+            'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
+        ], $order->doc_number, $order->branch_id);
     }
 }

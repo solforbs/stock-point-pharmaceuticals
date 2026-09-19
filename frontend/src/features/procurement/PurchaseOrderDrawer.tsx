@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { Drawer } from '../../components/ui/Drawer'
 import { MoneyCell, QtyCell } from '../../components/ui/MoneyCell'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
@@ -44,7 +45,8 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
       width={780}
       actions={
         p ? (
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <PdfDownloadButton url={`/api/purchase-orders/${p.id}/pdf`} filename={p.doc_number} label="Download PO PDF" />
             {canApprove && (p.status === 'DRAFT' || p.status === 'PENDING_APPROVAL') && (
               <Button size="sm" variant="success" disabled={act.isPending} onClick={() => act.mutate('approve')}>
                 Approve

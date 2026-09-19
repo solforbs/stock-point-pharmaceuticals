@@ -128,6 +128,8 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     // Part 16.6 — documents as PDFs, rendered from the posted record.
     Route::get('/sales/{sale}/pdf', [DocumentPdfController::class, 'invoice']);
     Route::get('/delivery-notes/{note}/pdf', [DocumentPdfController::class, 'deliveryNote']);
+    Route::get('/quotations/{quotation}/pdf', [DocumentPdfController::class, 'quotation']);
+    Route::get('/purchase-orders/{po}/pdf', [DocumentPdfController::class, 'purchaseOrder']);
     Route::post('/sales-orders/{order}/pick', [OrderController::class, 'pick']);
     Route::post('/picking-lists/{list}/lines/{line}/pick', [OrderController::class, 'pickLine']);
     Route::post('/picking-lists/{list}/complete', [OrderController::class, 'completePicking']);

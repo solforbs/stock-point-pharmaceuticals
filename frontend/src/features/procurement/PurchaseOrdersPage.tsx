@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
@@ -65,6 +66,16 @@ export default function PurchaseOrdersPage() {
     { key: 'lines', header: 'Lines', align: 'right', render: (po) => <span className="tabular">{po.lines_count ?? '—'}</span> },
     { key: 'expected', header: 'Expected', render: (po) => formatDate(po.expected_date), sortValue: (po) => po.expected_date ?? '' },
     { key: 'created', header: 'Created', render: (po) => formatDateTime(po.created_at), sortValue: (po) => po.created_at ?? '' },
+    {
+      key: 'actions',
+      header: 'PDF',
+      align: 'right',
+      render: (po) => (
+        <span onClick={(e) => e.stopPropagation()}>
+          <PdfDownloadButton url={`/api/purchase-orders/${po.id}/pdf`} filename={po.doc_number} label="PDF" />
+        </span>
+      ),
+    },
   ]
 
   return (

@@ -48,4 +48,12 @@ class QuotationLine extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    /**
+     * @return BelongsTo<UnitOfMeasure, $this>
+     */
+    public function uom(): BelongsTo
+    {
+        return $this->belongsTo(UnitOfMeasure::class, 'uom_id');
+    }
 }

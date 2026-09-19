@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CreditLimitResolver, type CreditResolution } from '../../components/CreditLimitResolver'
 import { CustomerPicker } from '../../components/CustomerPicker'
+import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
 import { MoneyCell, QtyCell } from '../../components/ui/MoneyCell'
@@ -77,6 +78,16 @@ export default function QuotationsPage() {
     { key: 'valid', header: 'Valid until', render: (q) => formatDate(q.valid_until), sortValue: (q) => q.valid_until },
     { key: 'total', header: 'Total', align: 'right', render: (q) => <MoneyCell value={q.grand_total} />, sortValue: (q) => Number(q.grand_total) },
     { key: 'created', header: 'Created', render: (q) => formatDateTime(q.created_at), sortValue: (q) => q.created_at ?? '' },
+    {
+      key: 'actions',
+      header: 'PDF',
+      align: 'right',
+      render: (q) => (
+        <span onClick={(e) => e.stopPropagation()}>
+          <PdfDownloadButton url={`/api/quotations/${q.id}/pdf`} filename={q.doc_number} label="PDF" />
+        </span>
+      ),
+    },
   ]
 
   return (
@@ -229,7 +240,18 @@ function QuotationDrawer({ id, onClose, onAccepted }: { id: string | null; onClo
       title={q?.doc_number ?? 'Quotation'}
       subtitle={q ? `${q.customer?.name ?? ''} · valid until ${formatDate(q.valid_until)}` : undefined}
       width={760}
-      actions={q && acceptable ? <Button variant="success" size="sm" onClick={() => accept.mutate({})} disabled={accept.isPending}>{accept.isPending ? 'Accepting…' : 'Accept → sales order'}</Button> : null}
+      actions={
+        q ? (
+          <div className="flex items-center gap-2">
+            <PdfDownloadButton url={`/api/quotations/${q.id}/pdf`} filename={q.doc_number} label="Download PDF" />
+            {acceptable && (
+              <Button variant="success" size="sm" onClick={() => accept.mutate({})} disabled={accept.isPending}>
+                {accept.isPending ? 'Accepting…' : 'Accept → sales order'}
+              </Button>
+            )}
+          </div>
+        ) : null
+      }
     >
       {quotation.isLoading && <LoadingSkeleton />}
       {quotation.isError && <InlineError error={quotation.error} />}
