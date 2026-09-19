@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { MoneyCell } from '../../components/ui/MoneyCell'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
@@ -31,6 +32,12 @@ export default function InvoicesPage() {
     { key: 'customer', header: 'Customer', render: (s) => s.customer?.name ?? <span className="text-[var(--text-muted)]">Walk-in</span>, sortValue: (s) => s.customer?.name ?? '' },
     { key: 'status', header: 'Status', render: (s) => <StatusBadge status={s.status} /> },
     { key: 'total', header: 'Total', align: 'right', render: (s) => <MoneyCell value={s.grand_total} />, sortValue: (s) => Number(s.grand_total) },
+    {
+      key: 'pdf',
+      header: '',
+      align: 'right',
+      render: (s) => <PdfDownloadButton url={`/api/sales/${s.id}/pdf`} filename={s.doc_number} label="Invoice" />,
+    },
   ]
 
   return (

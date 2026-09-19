@@ -62,4 +62,14 @@ class SaleLine extends Model
     {
         return $this->hasMany(SaleLineBatchAllocation::class);
     }
+
+    /**
+     * The unit the customer bought in — a box is not 24 tablets on a receipt.
+     *
+     * @return BelongsTo<UnitOfMeasure, $this>
+     */
+    public function uom(): BelongsTo
+    {
+        return $this->belongsTo(UnitOfMeasure::class, 'uom_id');
+    }
 }

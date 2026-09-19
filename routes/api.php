@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\CustomerStatementController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeploymentController;
 use App\Http\Controllers\Api\DocumentListController;
+use App\Http\Controllers\Api\DocumentPdfController;
 use App\Http\Controllers\Api\EtimsController;
 use App\Http\Controllers\Api\FinanceController;
 use App\Http\Controllers\Api\InventoryController;
@@ -120,6 +121,10 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::post('/sales-orders/{order}/confirm', [OrderController::class, 'confirmSalesOrder']);
     Route::post('/sales-orders/{order}/cancel', [OrderController::class, 'cancelSalesOrder']);
     Route::get('/sales-orders/{order}/updates', [OrderController::class, 'salesOrderUpdates']);
+
+    // Part 16.6 — documents as PDFs, rendered from the posted record.
+    Route::get('/sales/{sale}/pdf', [DocumentPdfController::class, 'invoice']);
+    Route::get('/delivery-notes/{note}/pdf', [DocumentPdfController::class, 'deliveryNote']);
     Route::post('/sales-orders/{order}/pick', [OrderController::class, 'pick']);
     Route::post('/picking-lists/{list}/lines/{line}/pick', [OrderController::class, 'pickLine']);
     Route::post('/picking-lists/{list}/complete', [OrderController::class, 'completePicking']);

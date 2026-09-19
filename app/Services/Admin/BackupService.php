@@ -109,27 +109,47 @@ class BackupService
             throw new BackupFailedException("Cannot write {$target}. Check the backup directory's permissions.");
         }
 
+        $dump = $directory.DIRECTORY_SEPARATOR."database-{$stamp}.sql";
+
         try {
-            $sql = '';
-            $this->runDump(function (string $chunk) use (&$sql): void {
-                $sql .= $chunk;
-            });
-            $zip->addFromString("database-{$stamp}.sql", $sql);
+            // The dump is written to disk as it arrives and added to the zip
+            // from there. Holding it in a string worked at a few megabytes and
+            // would have run the server out of memory as the database grew.
+            $handle = @fopen($dump, 'wb');
+            if ($handle === false) {
+                throw new BackupFailedException("Cannot write {$dump}. Check the backup directory's permissions.");
+            }
+
+            $bytes = 0;
+            try {
+                $this->runDump(function (string $chunk) use ($handle, &$bytes): void {
+                    $bytes += (int) fwrite($handle, $chunk);
+                });
+            } finally {
+                fclose($handle);
+            }
+
+            $zip->addFile($dump, "database-{$stamp}.sql");
 
             $files = $this->collectFiles();
             foreach ($files as $relative => $path) {
                 $zip->addFile($path, 'files/'.$relative);
             }
 
-            $zip->addFromString('MANIFEST.txt', $this->manifest($stamp, strlen($sql), count($files)));
+            $zip->addFromString('MANIFEST.txt', $this->manifest($stamp, $bytes, count($files)));
         } catch (\Throwable $e) {
             $zip->close();
             @unlink($target);
+            @unlink($dump);
 
             throw $e instanceof BackupFailedException ? $e : new BackupFailedException($e->getMessage(), 0, $e);
         }
 
-        if (! $zip->close()) {
+        // The zip needs the dump until it is closed; only then can it go.
+        $closed = $zip->close();
+        @unlink($dump);
+
+        if (! $closed) {
             @unlink($target);
 
             throw new BackupFailedException('The backup archive could not be finalised; the disk may be full.');
