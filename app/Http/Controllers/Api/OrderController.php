@@ -8,7 +8,9 @@ use App\Models\PickingList;
 use App\Models\PickingListLine;
 use App\Models\Quotation;
 use App\Models\SalesOrder;
+use App\Models\SalesOrderUpdate;
 use App\Services\Pricing\PriceQuoteService;
+use App\Services\Sales\CustomerOrderNotifier;
 use App\Services\Sales\DispatchService;
 use App\Services\Sales\PickingService;
 use App\Services\Sales\QuotationService;
@@ -168,7 +170,7 @@ class OrderController extends ApiController
         return response()->json($this->findOrder($request, $order)->load(['lines.product:id,code,name', 'customer:id,code,name']));
     }
 
-    public function confirmSalesOrder(Request $request, string $order, SalesOrderService $orders): JsonResponse
+    public function confirmSalesOrder(Request $request, string $order, SalesOrderService $orders, CustomerOrderNotifier $customer): JsonResponse
     {
         $this->requirePermission($request, 'sale.create');
         $data = $request->validate([
@@ -180,7 +182,10 @@ class OrderController extends ApiController
             $order->update(['payment_terms' => $data['payment_terms']]);
         }
 
-        return response()->json($orders->confirm($order, $request->user()->id, $this->creditOverrideReason($request, $data['credit_override_reason'] ?? null)));
+        $confirmed = $orders->confirm($order, $request->user()->id, $this->creditOverrideReason($request, $data['credit_override_reason'] ?? null));
+        $customer->announce($confirmed, 'CONFIRMED');
+
+        return response()->json($confirmed);
     }
 
     /** Part 10.4 — only a holder of customer.credit.override may take an order past the limit. */
@@ -194,20 +199,25 @@ class OrderController extends ApiController
         return $reason;
     }
 
-    public function cancelSalesOrder(Request $request, string $order, SalesOrderService $orders): JsonResponse
+    public function cancelSalesOrder(Request $request, string $order, SalesOrderService $orders, CustomerOrderNotifier $customer): JsonResponse
     {
         $this->requirePermission($request, 'sale.create');
         $data = $request->validate(['reason' => ['required', 'string', 'min:3', 'max:255']]);
 
-        return response()->json($orders->cancel($this->findOrder($request, $order), $data['reason'], $request->user()->id));
+        $cancelled = $orders->cancel($this->findOrder($request, $order), $data['reason'], $request->user()->id);
+        $customer->announce($cancelled, 'CANCELLED', $data['reason']);
+
+        return response()->json($cancelled);
     }
 
     /** POST /api/sales-orders/{id}/pick — generates the location-sorted pick list. */
-    public function pick(Request $request, string $order, PickingService $picking): JsonResponse
+    public function pick(Request $request, string $order, PickingService $picking, CustomerOrderNotifier $customer): JsonResponse
     {
         $this->requirePermission($request, 'warehouse.pick');
 
-        $list = $picking->generate($this->findOrder($request, $order));
+        $salesOrder = $this->findOrder($request, $order);
+        $list = $picking->generate($salesOrder);
+        $customer->announce($salesOrder->fresh(), 'PICKING');
         $picking->start($list, $request->user()->id);
 
         return response()->json($list->fresh('lines.batch:id,batch_number,expiry_date'), 201);
@@ -224,15 +234,21 @@ class OrderController extends ApiController
         return response()->json($picking->completeLine($pickLine, (string) $data['qty_picked_base']));
     }
 
-    public function completePicking(Request $request, string $list, PickingService $picking): JsonResponse
+    public function completePicking(Request $request, string $list, PickingService $picking, CustomerOrderNotifier $customer): JsonResponse
     {
         $this->requirePermission($request, 'warehouse.pick');
 
-        return response()->json($picking->complete(PickingList::where('branch_id', $this->branchId($request))->findOrFail($list)));
+        $completed = $picking->complete(PickingList::where('branch_id', $this->branchId($request))->findOrFail($list));
+
+        if ($completed->salesOrder) {
+            $customer->announce($completed->salesOrder, 'PACKED');
+        }
+
+        return response()->json($completed);
     }
 
     /** POST /api/sales-orders/{id}/dispatch — posts stock OUT, revenue and AR (Part 10.2). */
-    public function dispatch(Request $request, string $order, DispatchService $dispatch): JsonResponse
+    public function dispatch(Request $request, string $order, DispatchService $dispatch, CustomerOrderNotifier $customer): JsonResponse
     {
         $this->requirePermission($request, 'warehouse.dispatch');
         $key = $this->idempotencyKey($request);
@@ -265,18 +281,43 @@ class OrderController extends ApiController
             ]);
         }
 
+        // On its way: the customer is told, with the vehicle and driver so
+        // they know who is arriving.
+        $customer->announce($order->fresh(), 'DISPATCHED', trim(implode(' ', array_filter([
+            $data['vehicle_reg'] ?? null ? 'Vehicle '.$data['vehicle_reg'].'.' : null,
+            $data['driver_name'] ?? null ? 'Driver '.$data['driver_name'].($data['driver_phone'] ?? null ? ' ('.$data['driver_phone'].')' : '').'.' : null,
+        ]))) ?: null);
+
         return response()->json($note->load('lines.batchAllocations'), 201);
     }
 
     /** POST /api/delivery-notes/{id}/pod — proof of delivery; touches nothing financial. */
-    public function proofOfDelivery(Request $request, string $note, DispatchService $dispatch): JsonResponse
+    public function proofOfDelivery(Request $request, string $note, DispatchService $dispatch, CustomerOrderNotifier $customer): JsonResponse
     {
         $this->requirePermission($request, 'warehouse.dispatch');
         $data = $request->validate(['received_by_name' => ['required', 'string', 'max:150']]);
 
         $note = DeliveryNote::where('branch_id', $this->branchId($request))->findOrFail($note);
+        $delivered = $dispatch->confirmDelivery($note, $data['received_by_name']);
 
-        return response()->json($dispatch->confirmDelivery($note, $data['received_by_name']));
+        if ($delivered->salesOrder) {
+            $customer->announce($delivered->salesOrder, 'DELIVERED', 'Received by '.$data['received_by_name'].'.');
+        }
+
+        return response()->json($delivered);
+    }
+
+    /** GET /api/sales-orders/{order}/updates — what the customer has been told. */
+    public function salesOrderUpdates(Request $request, string $order): JsonResponse
+    {
+        $this->requirePermission($request, 'sale.view');
+        $order = $this->findOrder($request, $order);
+
+        return response()->json([
+            'data' => SalesOrderUpdate::where('sales_order_id', $order->id)->orderBy('created_at')->get(),
+            'milestones' => SalesOrderUpdate::MILESTONES,
+            'customer_email' => $order->customer?->email,
+        ]);
     }
 
     private function findOrder(Request $request, string $id): SalesOrder

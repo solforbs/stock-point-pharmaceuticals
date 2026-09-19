@@ -224,6 +224,11 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
   const queryClient = useQueryClient()
   const [cancelling, setCancelling] = useState(false)
   const order = useQuery({ queryKey: ['sales-orders', id], queryFn: () => apiGet<SalesOrder>(`/api/sales-orders/${id}`), enabled: !!id })
+  const updates = useQuery({
+    queryKey: ['sales-orders', id, 'updates'],
+    queryFn: () => apiGet<OrderUpdates>(`/api/sales-orders/${id}/updates`),
+    enabled: !!id,
+  })
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
@@ -293,6 +298,7 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
             <StatusBadge status={o.status} />
             {o.cancel_reason && <span className="text-[11.5px] text-[var(--status-red)]">Cancelled: {o.cancel_reason}</span>}
           </div>
+          <CustomerTimeline updates={updates.data} />
           <DescriptionList
             items={[
               { label: 'Required', value: formatDate(o.required_date) },
@@ -365,5 +371,69 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
         onConfirm={(reason) => cancel.mutate(reason)}
       />
     </Drawer>
+  )
+}
+
+type OrderUpdate = {
+  id: string
+  milestone: string
+  recipient: string | null
+  sent_at: string | null
+  failure_reason: string | null
+  note: string | null
+  created_at: string
+}
+
+type OrderUpdates = { data: OrderUpdate[]; milestones: Record<string, string>; customer_email: string | null }
+
+/**
+ * Part 7 — what the customer has been told, and when. Staff answering "where
+ * is my order?" should see exactly what the customer saw.
+ */
+function CustomerTimeline({ updates }: { updates?: OrderUpdates }) {
+  if (!updates) return null
+
+  const steps = Object.entries(updates.milestones).filter(([key]) => key !== 'CANCELLED')
+  const sent = new Map(updates.data.map((u) => [u.milestone, u]))
+  const cancelled = sent.get('CANCELLED')
+  const shown = cancelled ? [...steps.filter(([k]) => sent.has(k)), ['CANCELLED', updates.milestones.CANCELLED]] : steps
+
+  return (
+    <div className="ui-card p-3">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-[12.5px] font-bold text-slate-800">Customer updates</h3>
+        <span className="text-[11px] text-slate-500">
+          {updates.customer_email ?? <span className="text-amber-700 font-semibold">no email on file</span>}
+        </span>
+      </div>
+      <ol className="space-y-1.5">
+        {shown.map(([key, label]) => {
+          const update = sent.get(key as string)
+          const failed = update && !update.sent_at
+          return (
+            <li key={key} className="flex items-start gap-2 text-[12px]">
+              <span
+                className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center text-[9px] font-bold ${
+                  failed ? 'bg-rose-50 border-rose-300 text-rose-700'
+                    : update ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                    : 'bg-slate-50 border-slate-200 text-slate-300'
+                }`}
+              >
+                {update ? (failed ? '!' : '✓') : ''}
+              </span>
+              <div className="min-w-0">
+                <span className={update ? 'font-semibold text-slate-800' : 'text-slate-400'}>{label}</span>
+                {update && (
+                  <span className="text-slate-500">
+                    {' '}· {update.sent_at ? `told ${formatDateTime(update.sent_at)}` : `not sent: ${update.failure_reason}`}
+                  </span>
+                )}
+                {update?.note && <p className="text-[11px] text-slate-500">{update.note}</p>}
+              </div>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
   )
 }

@@ -119,6 +119,7 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/sales-orders/{order}', [OrderController::class, 'salesOrder']);
     Route::post('/sales-orders/{order}/confirm', [OrderController::class, 'confirmSalesOrder']);
     Route::post('/sales-orders/{order}/cancel', [OrderController::class, 'cancelSalesOrder']);
+    Route::get('/sales-orders/{order}/updates', [OrderController::class, 'salesOrderUpdates']);
     Route::post('/sales-orders/{order}/pick', [OrderController::class, 'pick']);
     Route::post('/picking-lists/{list}/lines/{line}/pick', [OrderController::class, 'pickLine']);
     Route::post('/picking-lists/{list}/complete', [OrderController::class, 'completePicking']);
