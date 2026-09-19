@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
 use App\Models\DeliveryNote;
+use App\Models\GoodsReceipt;
 use App\Models\PurchaseOrder;
 use App\Models\Quotation;
 use App\Models\Sale;
@@ -64,6 +65,34 @@ class DocumentPdfController extends ApiController
             'note' => $note,
             'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
         ], $note->doc_number, $note->branch_id);
+    }
+
+    /**
+     * GET /api/goods-receipts/{receipt}/pdf — the goods received note: what
+     * arrived, what was accepted into stock, and what went back and why.
+     */
+    public function goodsReceipt(Request $request, string $receipt, PdfRenderer $pdf): Response
+    {
+        $this->requirePermission($request, 'grn.create');
+
+        $grn = GoodsReceipt::where('branch_id', $this->branchId($request))
+            ->with(['supplier', 'store:id,code,name', 'receiver:id,name', 'purchaseOrder:id,doc_number', 'lines.product:id,code,name', 'lines.uom:id,code'])
+            ->findOrFail($receipt);
+
+        $total = '0.0000';
+        foreach ($grn->lines as $line) {
+            $total = bcadd($total, bcmul((string) $line->qty_accepted, (string) $line->unit_cost, 4), 4);
+        }
+
+        AuditLog::record('GRN_PRINTED', 'goods_receipt', $grn->id, ['reference' => $grn->doc_number]);
+
+        return $pdf->render('pdf.goods-receipt', [
+            'title' => $grn->status === 'POSTED' ? 'Goods received note' : 'Goods received note (draft)',
+            'grn' => $grn,
+            'total' => $total,
+            'money' => fn ($v) => number_format((float) $v, 2),
+            'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
+        ], $grn->doc_number, $grn->branch_id);
     }
 
     /** GET /api/quotations/{quotation}/pdf — institutional wholesale price quotation. */

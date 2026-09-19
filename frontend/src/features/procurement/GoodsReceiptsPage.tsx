@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PackageCheck, Plus, Trash2, Truck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { ProductSearch } from '../../components/ProductSearch'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
@@ -67,6 +68,7 @@ export default function GoodsReceiptsPage() {
     { key: 'status', header: 'Status', render: (g) => <StatusBadge status={g.status} /> },
     { key: 'lines', header: 'Lines', align: 'right', render: (g) => <span className="tabular">{g.lines_count ?? '—'}</span> },
     { key: 'received', header: 'Received', render: (g) => formatDateTime(g.received_at ?? g.created_at), sortValue: (g) => g.received_at ?? g.created_at ?? '' },
+    { key: 'pdf', header: '', render: (g) => <PdfDownloadButton url={`/api/goods-receipts/${g.id}/pdf`} filename={g.doc_number} label="PDF" /> },
   ]
 
   return (
@@ -305,7 +307,7 @@ function ReceiptDrawer({ id, onClose }: { id: string | null; onClose: () => void
       {receipt.isError && <InlineError error={receipt.error} />}
       {g && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={g.status} />{g.is_emergency && <StatusBadge status="EMERGENCY" tone="amber" label="Emergency" />}{g.purchase_order && <Link to={`/buy/purchase-orders?po=${g.purchase_order.id}`} className="text-[11.5px] text-[var(--color-navy)] underline">Open purchase order</Link>}</div>
+          <div className="flex items-center gap-2"><StatusBadge status={g.status} />{g.is_emergency && <StatusBadge status="EMERGENCY" tone="amber" label="Emergency" />}{g.purchase_order && <Link to={`/buy/purchase-orders?po=${g.purchase_order.id}`} className="text-[11.5px] text-[var(--color-navy)] underline">Open purchase order</Link>}<span className="ml-auto"><PdfDownloadButton url={`/api/goods-receipts/${g.id}/pdf`} filename={g.doc_number} label="Download GRN" /></span></div>
           <DescriptionList items={[{ label: 'Supplier', value: g.supplier?.name ?? g.supplier_id.slice(0, 8) }, { label: 'Store', value: g.store?.code ?? g.store_id.slice(0, 8) }]} />
           <table className="ui-table">
             <thead><tr><th>Batch</th><th>Expiry</th><th>Batch status</th><th className="text-right">Ordered</th><th className="text-right">Delivered</th><th className="text-right">Accepted</th><th className="text-right">Rejected</th><th className="text-right">Unit cost</th><th className="text-right">Landed cost</th></tr></thead>

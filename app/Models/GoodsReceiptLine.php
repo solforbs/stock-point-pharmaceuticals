@@ -58,6 +58,16 @@ class GoodsReceiptLine extends Model
     }
 
     /**
+     * The purchase unit the line was received in.
+     *
+     * @return BelongsTo<UnitOfMeasure, $this>
+     */
+    public function uom(): BelongsTo
+    {
+        return $this->belongsTo(UnitOfMeasure::class, 'uom_id');
+    }
+
+    /**
      * @return BelongsTo<ProductBatch, $this>
      */
     public function batch(): BelongsTo

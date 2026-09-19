@@ -52,6 +52,14 @@ class GoodsReceipt extends Model
     }
 
     /**
+     * @return BelongsTo<User, $this>
+     */
+    public function receiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
+
+    /**
      * @return BelongsTo<Supplier, $this>
      */
     public function supplier(): BelongsTo

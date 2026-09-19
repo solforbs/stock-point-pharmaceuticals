@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Printer } from 'lucide-react'
 import { useState } from 'react'
 import { CustomerPicker } from '../../components/CustomerPicker'
+import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { MoneyCell } from '../../components/ui/MoneyCell'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
@@ -98,7 +99,12 @@ export default function CustomerStatementsPage() {
         parent="Sell"
         title="Customer Statements"
         subtitle="Every invoice, receipt and credit note for a customer with a running balance, plus what is owed by age."
-        actions={<Button variant="primary" disabled={!s} onClick={() => window.print()}><Printer size={13} /> Print</Button>}
+        actions={
+          <div className="flex items-center gap-2">
+            {s && <PdfDownloadButton size="md" url={`/api/customers/${s.customer.id}/statement/pdf?from=${from}&to=${to}`} filename={`STMT-${s.customer.code}-${s.to}`} label="Download PDF" />}
+            <Button variant="primary" disabled={!s} onClick={() => window.print()}><Printer size={13} /> Print</Button>
+          </div>
+        }
       />
       <FilterBar>
         <Field label="Customer" className="w-96"><CustomerPicker value={customer} onChange={setCustomer} /></Field>
