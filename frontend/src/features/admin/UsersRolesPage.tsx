@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { DeleteRecordButton } from '../../components/DeleteRecordButton'
 import { useDebounced } from '../../components/ProductSearch'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
@@ -96,6 +97,14 @@ function UsersTab() {
     { key: 'status', header: 'Status', render: (u) => <StatusBadge status={isLocked(u) ? 'LOCKED' : u.is_active ? 'ACTIVE' : 'INACTIVE'} tone={isLocked(u) ? 'red' : undefined} /> },
     { key: 'mfa', header: 'MFA', render: (u) => <StatusBadge status={u.mfa_required ? 'ACTIVE' : 'DISABLED'} label={u.mfa_required ? 'On' : 'Off'} /> },
     { key: 'login', header: 'Last login', render: (u) => <span className="tabular">{formatDateTime(u.last_login_at)}</span>, sortValue: (u) => u.last_login_at ?? '' },
+    {
+      key: 'delete',
+      header: '',
+      align: 'right',
+      render: (u) => (
+        <DeleteRecordButton type="users" id={String(u.id)} label={u.email} permission="admin.users" invalidateKeys={[['admin', 'users']]} />
+      ),
+    },
   ]
 
   const closeDrawer = () => { setSelectedId(null); setEditing(false) }

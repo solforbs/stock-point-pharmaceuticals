@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { DeleteRecordButton } from '../../components/DeleteRecordButton'
 import { useDebounced } from '../../components/ProductSearch'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
@@ -44,6 +45,14 @@ export default function SuppliersPage() {
     { key: 'terms', header: 'Terms', align: 'right', render: (s) => <span className="tabular">{s.payment_terms_days ?? 0} d</span> },
     { key: 'status', header: 'Status', render: (s) => <StatusBadge status={s.is_active ? s.status : 'INACTIVE'} /> },
     { key: 'payable', header: 'Payable', align: 'right', render: (s) => <MoneyCell value={s.payable_balance} />, sortValue: (s) => Number(s.payable_balance ?? 0) },
+    {
+      key: 'delete',
+      header: '',
+      align: 'right',
+      render: (s) => (
+        <DeleteRecordButton type="suppliers" id={s.id} label={`${s.code} · ${s.name}`} permission="supplier.manage" invalidateKeys={[['suppliers']]} />
+      ),
+    },
   ]
 
   const close = () => {

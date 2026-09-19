@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ControlledDocumentController;
 use App\Http\Controllers\Api\CustomerContactController;
 use App\Http\Controllers\Api\CustomerStatementController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DeploymentController;
 use App\Http\Controllers\Api\DocumentListController;
 use App\Http\Controllers\Api\EtimsController;
 use App\Http\Controllers\Api\FinanceController;
@@ -29,6 +30,7 @@ use App\Http\Controllers\Api\ProductCatalogueController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\QualityController;
 use App\Http\Controllers\Api\ReconciliationController;
+use App\Http\Controllers\Api\RecordDeletionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RequisitionController;
 use App\Http\Controllers\Api\ReturnController;
@@ -284,6 +286,16 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/admin/system-health', [OperationsController::class, 'systemHealth']);
     Route::post('/admin/system-health/retry-failed-jobs', [OperationsController::class, 'retryFailedJobs']);
     Route::post('/admin/system-health/forget-failed-job/{id}', [OperationsController::class, 'forgetFailedJob']);
+    // Part 18.3 — deleting master data (never transactions).
+    Route::get('/admin/deletable', [RecordDeletionController::class, 'types']);
+    Route::get('/admin/records/{type}/{id}/references', [RecordDeletionController::class, 'references']);
+    Route::delete('/admin/records/{type}/{id}', [RecordDeletionController::class, 'destroy']);
+
+    // Part 17 — deployments: pull the latest code and run the deploy script.
+    Route::get('/admin/deployments', [DeploymentController::class, 'status']);
+    Route::post('/admin/deployments/check', [DeploymentController::class, 'check']);
+    Route::post('/admin/deployments', [DeploymentController::class, 'deploy']);
+
     Route::get('/admin/backups', [OperationsController::class, 'backups']);
     Route::post('/admin/backups', [OperationsController::class, 'createBackup']);
     Route::get('/admin/backups/{name}/download', [OperationsController::class, 'downloadBackup']);
