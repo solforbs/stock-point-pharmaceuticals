@@ -174,4 +174,21 @@ class DeploymentHttpTest extends TestCase
         Sanctum::actingAs($this->user);
         $this->getJson('/api/admin/deployments')->assertOk();
     }
+
+    public function test_the_deployment_screen_still_answers_while_the_shop_is_in_maintenance(): void
+    {
+        $this->actAsDeployer();
+
+        // A deploy calls `artisan down`. If that silenced these endpoints too,
+        // the administrator watching the deploy would lose the log at exactly
+        // the moment it matters.
+        $this->artisan('down')->assertSuccessful();
+
+        try {
+            $this->getJson('/api/admin/deployments')->assertOk();
+            $this->getJson('/api/user')->assertStatus(503);
+        } finally {
+            $this->artisan('up')->assertSuccessful();
+        }
+    }
 }

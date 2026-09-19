@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LicenceController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MasterDataController;
+use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\OperationsController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PackingController;
@@ -348,6 +349,14 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
 
     // Part 17 — standing alerts: payment deadlines and shelf-life risk.
+    // Part 17 — messages between people, delivered live over the websocket.
+    Route::get('/messages', [MessageController::class, 'index']);
+    Route::get('/messages/unread-count', [MessageController::class, 'unreadCount']);
+    Route::get('/messages/recipients', [MessageController::class, 'recipients']);
+    Route::post('/messages', [MessageController::class, 'store']);
+    Route::post('/messages/read-all', [MessageController::class, 'markAllRead']);
+    Route::post('/messages/{message}/read', [MessageController::class, 'markRead']);
+
     Route::get('/alerts', [AlertController::class, 'index']);
     Route::get('/alerts/summary', [AlertController::class, 'summary']);
     Route::post('/alerts/scan', [AlertController::class, 'scan']);

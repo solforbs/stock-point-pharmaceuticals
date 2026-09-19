@@ -87,7 +87,10 @@ class DeploymentService
      */
     public function fetch(): array
     {
-        $process = new Process(['git', 'fetch', '--prune', 'origin', $this->branch()], $this->root(), null, null, 120);
+        $process = Process::fromShellCommandline(
+            (string) config('deployment.fetch_command', 'sudo -n /usr/local/bin/stockpoint-fetch'),
+            $this->root(), null, null, 120
+        );
         $process->run();
 
         if (! $process->isSuccessful()) {

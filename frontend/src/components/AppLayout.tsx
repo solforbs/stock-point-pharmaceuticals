@@ -5,6 +5,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useBranchStore } from '../lib/branch'
 import { formatDate, todayIso } from '../lib/format'
 import { AlertBell } from './AlertBell'
+import { MessagesBell } from './MessagesBell'
 import Sidebar from './Sidebar'
 import { ProductTour } from './tour/ProductTour'
 import { useTourStore } from './tour/useTourStore'
@@ -122,6 +123,7 @@ export default function AppLayout() {
               <span>Tour</span>
             </button>
 
+            <MessagesBell />
             <AlertBell />
 
             {/* Keyboard Shortcuts Help Button */}
