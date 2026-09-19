@@ -18,7 +18,7 @@ class UserMessage extends Model
     public const PRIORITIES = ['NORMAL', 'HIGH', 'URGENT'];
 
     protected $fillable = [
-        'branch_id', 'sender_id', 'recipient_id', 'subject', 'body', 'priority', 'link', 'read_at',
+        'branch_id', 'sender_id', 'recipient_id', 'subject', 'body', 'priority', 'category', 'link', 'read_at',
     ];
 
     protected function casts(): array

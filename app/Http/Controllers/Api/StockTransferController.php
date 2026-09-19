@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\StockTransfer;
 use App\Models\Store;
 use App\Services\Inventory\StockTransferService;
+use App\Services\Notifications\Notifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -55,11 +56,26 @@ class StockTransferController extends ApiController
         return response()->json($transfers->approve($this->find($request, $transfer), $request->user()->id));
     }
 
-    public function dispatch(Request $request, string $transfer, StockTransferService $transfers): JsonResponse
+    public function dispatch(Request $request, string $transfer, StockTransferService $transfers, Notifier $notifier): JsonResponse
     {
         $this->requirePermission($request, 'stock.transfer.dispatch');
 
-        return response()->json($transfers->dispatch($this->find($request, $transfer), $request->user()->id));
+        $dispatched = $transfers->dispatch($this->find($request, $transfer), $request->user()->id);
+
+        // Stock in transit belongs to nobody until it is received, so the
+        // people who receive it are told it is on its way.
+        $notifier->toPermission(
+            'stock.transfer.receive',
+            $this->branchId($request),
+            "Transfer {$dispatched->doc_number} is on its way",
+            ($request->user()->name ?? 'Someone').' dispatched '.$dispatched->lines()->count().' line(s). It stays in transit until you receive it.',
+            category: 'TRANSFER',
+            link: '/inventory/transfers?transfer='.$dispatched->id,
+            priority: 'NORMAL',
+            exceptUserId: $request->user()->id,
+        );
+
+        return response()->json($dispatched);
     }
 
     public function receive(Request $request, string $transfer, StockTransferService $transfers): JsonResponse
