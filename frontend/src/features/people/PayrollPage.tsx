@@ -80,7 +80,7 @@ export default function PayrollPage() {
             <thead><tr><th>Band</th><th className="text-right">#</th><th className="text-right">Lower</th><th className="text-right">Upper</th><th className="text-right">Rate</th><th className="text-right">Fixed</th><th>Effective</th><th>Source</th></tr></thead>
             <tbody>
               {bands.data.data.map((b) => (
-                <tr key={b.id}><td className="font-semibold">{b.band_type}</td><td className="text-right tabular">{b.sequence}</td><td className="text-right"><MoneyCell value={b.lower} /></td><td className="text-right">{b.upper ? <MoneyCell value={b.upper} /> : '∞'}</td><td className="text-right tabular">{b.rate_pct ? formatPct(b.rate_pct) : '—'}</td><td className="text-right"><MoneyCell value={b.fixed_amount} /></td><td className="tabular text-[11px]">{formatDate(b.effective_from)} → {b.effective_to ? formatDate(b.effective_to) : 'open'}</td><td className="text-[11px]">{b.source ?? '—'}</td></tr>
+                <tr key={b.id}><td className="font-semibold">{b.band_type}</td><td className="text-right tabular font-mono">{b.sequence}</td><td className="text-right"><MoneyCell value={b.lower} /></td><td className="text-right">{b.upper ? <MoneyCell value={b.upper} /> : '∞'}</td><td className="text-right tabular font-mono">{b.rate_pct ? formatPct(b.rate_pct) : '—'}</td><td className="text-right"><MoneyCell value={b.fixed_amount} /></td><td className="tabular font-mono text-xs">{formatDate(b.effective_from)} → {b.effective_to ? formatDate(b.effective_to) : 'open'}</td><td className="text-xs text-slate-500">{b.source ?? '—'}</td></tr>
               ))}
             </tbody>
           </table>
@@ -139,10 +139,10 @@ function RunDrawer({ id, onClose }: { id: string | null; onClose: () => void }) 
       {anyError && <InlineError error={anyError} className="mb-3" />}
       {r && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={r.status} /><span className="text-[11.5px] text-[var(--text-muted)]">{perms.has('payroll.approve.own') ? 'You may approve runs you prepared yourself; that is recorded in the audit log.' : 'Separation of duties: the person who prepared the run cannot approve it.'}</span></div>
+          <div className="flex items-center gap-2"><StatusBadge status={r.status} /><span className="text-xs text-slate-500">{perms.has('payroll.approve.own') ? 'You may approve runs you prepared yourself; that is recorded in the audit log.' : 'Separation of duties: the person who prepared the run cannot approve it.'}</span></div>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-center">
             {[['Gross', r.total_gross], ['PAYE', r.total_paye], ['NSSF (ee)', r.total_nssf_employee], ['SHIF', r.total_shif], ['Housing levy (ee)', r.total_housing_levy_employee], ['Net pay', r.total_net]].map(([label, value]) => (
-              <div key={label} className="ui-card p-2"><div className="ui-label !mb-0">{label}</div><div className="text-[14px] font-extrabold tabular">{formatMoney(value)}</div></div>
+              <div key={label} className="ui-card p-3 text-center"><div className="ui-label !mb-0">{label}</div><div className="text-sm font-extrabold tabular font-mono">{formatMoney(value)}</div></div>
             ))}
           </div>
           {r.status === 'POSTED' && perms.has('payment.record') && (
@@ -161,7 +161,7 @@ function RunDrawer({ id, onClose }: { id: string | null; onClose: () => void }) 
                 const cell = (key: keyof typeof inp, value: string) => editable ? <input value={inp[key]} onChange={(e) => setInputs({ ...inputs, [l.employee_id]: { ...inp, [key]: e.target.value.replace(/[^\d.]/g, '') } })} className="ui-input h-7 w-20 tabular text-right" /> : <MoneyCell value={value} />
                 return (
                   <tr key={l.id}>
-                    <td><div className="font-semibold">{l.employee?.name ?? l.employee_id.slice(0, 8)}</div><div className="text-[10.5px] text-[var(--text-muted)]">{l.employee?.employee_no}{l.employee?.job_title ? ` · ${l.employee.job_title}` : ''}</div></td>
+                    <td><div className="font-semibold text-slate-900">{l.employee?.name ?? l.employee_id.slice(0, 8)}</div><div className="text-xs text-slate-500 font-mono">{l.employee?.employee_no}{l.employee?.job_title ? ` · ${l.employee.job_title}` : ''}</div></td>
                     <td className="text-right"><MoneyCell value={l.basic} /></td>
                     <td className="text-right">{cell('allowances', l.allowances)}</td>
                     <td className="text-right">{cell('overtime', l.overtime)}</td>
@@ -177,10 +177,10 @@ function RunDrawer({ id, onClose }: { id: string | null; onClose: () => void }) 
                   </tr>
                 )
               })}
-              {(r.lines ?? []).length === 0 && <tr><td colSpan={13} className="text-center text-[var(--text-muted)] py-4">Compute the run to list active employees with their statutory deductions.</td></tr>}
+              {(r.lines ?? []).length === 0 && <tr><td colSpan={13} className="text-center text-slate-500 py-6 text-sm">Compute the run to list active employees with their statutory deductions.</td></tr>}
             </tbody>
           </table>
-          {editable && <p className="text-[11px] text-[var(--text-muted)]">Enter this month's variable inputs, then Compute. Statutory deductions come from the bands stamped on the run.</p>}
+          {editable && <p className="text-xs text-slate-500">Enter this month's variable inputs, then Compute. Statutory deductions come from the bands stamped on the run.</p>}
           <DescriptionList items={[{ label: 'Computed', value: formatDateTime(r.computed_at) }, { label: 'Approved', value: formatDateTime(r.approved_at) }, { label: 'Posted', value: `${formatDateTime(r.posted_at)}${r.journal_id ? ` · journal ${r.journal_id.slice(0, 8)}` : ''}` }, { label: 'Paid', value: `${formatDateTime(r.paid_at)}${r.payment_journal_id ? ` · journal ${r.payment_journal_id.slice(0, 8)}` : ''}` }]} />
         </div>
       )}
@@ -199,9 +199,9 @@ function PayslipModal({ runId, employeeId, onClose }: { runId: string | null; em
       {payslip.isLoading && <LoadingSkeleton />}
       {payslip.isError && <InlineError error={payslip.error} />}
       {p && line && (
-        <div className="space-y-3 text-[12.5px]" id="payslip">
+        <div className="space-y-4" id="payslip">
           <div className="flex justify-between">
-            <div><div className="font-black text-[14px]">STOCKPOINT PHARMA</div><div className="text-[var(--text-muted)]">Payslip · {MONTHS[p.run.period_month - 1]} {p.run.period_year} · {p.run.doc_number}</div></div>
+            <div><div className="font-black text-base tracking-tight">STOCKPOINT PHARMA</div><div className="text-xs text-slate-500 font-mono">Payslip · {MONTHS[p.run.period_month - 1]} {p.run.period_year} · {p.run.doc_number}</div></div>
             <StatusBadge status={p.run.status} />
           </div>
           <DescriptionList items={[{ label: 'Employee', value: `${p.employee?.employee_no ?? ''} · ${p.employee?.name ?? ''}` }, { label: 'Position', value: `${p.employee?.job_title ?? '—'}${p.employee?.department ? ` · ${p.employee.department}` : ''}` }, { label: 'KRA PIN', value: p.employee?.kra_pin ?? '—' }, { label: 'NSSF / SHIF', value: `${p.employee?.nssf_no ?? '—'} / ${p.employee?.shif_no ?? '—'}` }, { label: 'Bank', value: p.employee?.bank_name ?? '—' }, { label: 'Bands as of', value: formatDate(p.run.bands_as_of) }]} />
@@ -219,7 +219,7 @@ function PayslipModal({ runId, employeeId, onClose }: { runId: string | null; em
               <tr><td>Housing levy</td><td className="text-right"><MoneyCell value={line.housing_levy_employee} /></td></tr>
               <tr><td>Pension</td><td className="text-right"><MoneyCell value={line.pension_contribution} /></td></tr>
               <tr><td>Other</td><td className="text-right"><MoneyCell value={line.other_deductions} /></td></tr>
-              <tr className="font-bold text-[14px]"><td>NET PAY</td><td className="text-right"><MoneyCell value={line.net} /></td></tr>
+              <tr className="font-bold text-sm"><td>NET PAY</td><td className="text-right"><MoneyCell value={line.net} /></td></tr>
             </tbody></table>
           </div>
           {bd?.paye_bands && (

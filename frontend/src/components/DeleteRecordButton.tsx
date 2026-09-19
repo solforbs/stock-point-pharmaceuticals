@@ -85,10 +85,10 @@ export function DeleteRecordButton({
           </>
         }
       >
-        {references.isLoading && <p className="text-[12.5px] text-slate-600">Checking what uses this record…</p>}
+        {references.isLoading && <p className="text-sm text-slate-600">Checking what uses this record…</p>}
 
         {references.data?.deletable && (
-          <p className="text-[12.5px] text-slate-700">
+          <p className="text-sm text-slate-700 leading-relaxed">
             Nothing refers to <span className="font-bold">{label}</span>, so it can be removed. The full record is written to the audit
             log first, so it can be read back if this turns out to be a mistake.
           </p>
@@ -96,18 +96,18 @@ export function DeleteRecordButton({
 
         {blocked && (
           <div className="space-y-2">
-            <p className="text-[12.5px] text-slate-700">
+            <p className="text-sm text-slate-700 leading-relaxed">
               <span className="font-bold">{label}</span> cannot be deleted — deleting it would leave these records pointing at
               something that no longer exists:
             </p>
-            <ul className="text-[12px] text-slate-600 space-y-1 pl-4 list-disc">
+            <ul className="text-sm text-slate-600 space-y-1 pl-4 list-disc">
               {references.data?.references.map((r) => (
                 <li key={`${r.table}.${r.column}`}>
                   <span className="font-bold tabular">{r.count}</span> {prettyTable(r.table)}
                 </li>
               ))}
             </ul>
-            <p className="text-[12px] text-slate-500">Deactivate it instead: it stops appearing in new work while its history stays intact.</p>
+            <p className="text-xs text-slate-500">Deactivate it instead: it stops appearing in new work while its history stays intact.</p>
           </div>
         )}
       </Modal>

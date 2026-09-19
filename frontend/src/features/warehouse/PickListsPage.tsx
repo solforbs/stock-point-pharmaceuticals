@@ -89,14 +89,14 @@ export default function PickListsPage() {
         </div>
         <Card title={pl ? `Pick list ${pl.doc_number}` : 'Pick list'} actions={pl ? <StatusBadge status={pl.status} /> : null}>
           {!listId ? (
-            <div className="p-6 text-[12px] text-[var(--text-muted)]">Generate a pick list from an order, or resume an open one.</div>
+            <div className="p-6 text-sm text-slate-500">Generate a pick list from an order, or resume an open one.</div>
           ) : list.isLoading ? (
             <LoadingSkeleton />
           ) : list.isError ? (
             <div className="p-4"><InlineError error={list.error} /></div>
           ) : pl ? (
             <div className="p-4 space-y-3">
-              <div className="text-[12px] text-[var(--text-secondary)]">Order {pl.sales_order?.doc_number ?? ''} · {pl.sales_order?.customer?.name ?? ''}</div>
+              <div className="text-sm text-slate-600 font-medium">Order {pl.sales_order?.doc_number ?? ''} · {pl.sales_order?.customer?.name ?? ''}</div>
               <table className="ui-table">
                 <thead><tr><th>#</th><th>Product</th><th>Batch</th><th className="text-right">To pick</th><th>Picked</th><th>Status</th><th /></tr></thead>
                 <tbody>
@@ -104,11 +104,11 @@ export default function PickListsPage() {
                     <tr key={l.id}>
                       <td className="tabular">{i + 1}</td>
                       <td>{l.product?.name ?? l.product_id.slice(0, 8)}</td>
-                      <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-[10.5px] text-[var(--text-muted)]">exp {formatDate(l.batch.expiry_date)}</div>}</td>
+                      <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-500 tabular">exp {formatDate(l.batch.expiry_date)}</div>}</td>
                       <td className="text-right"><QtyCell value={l.qty_to_pick_base} /></td>
                       <td>
                         {l.status === 'PENDING' ? (
-                          <input value={picked[l.id] ?? String(Number(l.qty_to_pick_base))} onChange={(e) => setPicked({ ...picked, [l.id]: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-24 tabular text-right" />
+                          <input value={picked[l.id] ?? String(Number(l.qty_to_pick_base))} onChange={(e) => setPicked({ ...picked, [l.id]: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-8 w-24 tabular text-right text-sm" />
                         ) : (
                           <QtyCell value={l.qty_picked_base} />
                         )}
@@ -121,13 +121,13 @@ export default function PickListsPage() {
                   ))}
                 </tbody>
               </table>
-              <div className="flex items-center justify-between text-[11.5px] text-[var(--text-muted)]">
+              <div className="flex items-center justify-between text-xs text-slate-500">
                 <span>Started {formatDateTime(pl.started_at)}{pl.completed_at ? ` · completed ${formatDateTime(pl.completed_at)}` : ''}{(pl.delivery_notes ?? []).length > 0 ? ` · delivery ${pl.delivery_notes!.map((d) => `${d.doc_number} (${d.status})`).join(', ')}` : ''}</span>
                 {pl.status === 'COMPLETED' ? (
                   (pl.delivery_notes ?? []).length > 0 ? (
-                    <Link to={`/warehouse/deliveries?note=${pl.delivery_notes![0].id}`} className="text-[var(--color-navy)] underline font-semibold">Open delivery note</Link>
+                    <Link to={`/warehouse/deliveries?note=${pl.delivery_notes![0].id}`} className="text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open delivery note</Link>
                   ) : (
-                    <Link to={`/warehouse/dispatch?order=${pl.sales_order_id}`} className="text-[var(--color-navy)] underline font-semibold">Go to dispatch</Link>
+                    <Link to={`/warehouse/dispatch?order=${pl.sales_order_id}`} className="text-blue-600 hover:text-blue-700 hover:underline font-semibold">Go to dispatch</Link>
                   )
                 ) : (
                   <Button variant="success" disabled={!allPicked || !canPick || complete.isPending} onClick={() => complete.mutate()} title={allPicked ? undefined : 'Pick every line first (short picks are allowed)'}>{complete.isPending ? 'Completing…' : 'Complete picking'}</Button>

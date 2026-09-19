@@ -60,7 +60,7 @@ export default function PurchaseOrdersPage() {
   })
 
   const columns: Column<PurchaseOrder>[] = [
-    { key: 'doc', header: 'Document', render: (po) => <span className="font-semibold tabular text-[var(--color-navy)]">{po.doc_number}</span>, sortValue: (po) => po.doc_number },
+    { key: 'doc', header: 'Document', render: (po) => <span className="font-semibold tabular text-blue-600 font-mono">{po.doc_number}</span>, sortValue: (po) => po.doc_number },
     { key: 'supplier', header: 'Supplier', render: (po) => po.supplier?.name ?? '—', sortValue: (po) => po.supplier?.name ?? '' },
     { key: 'status', header: 'Status', render: (po) => <StatusBadge status={po.status} /> },
     { key: 'lines', header: 'Lines', align: 'right', render: (po) => <span className="tabular">{po.lines_count ?? '—'}</span> },

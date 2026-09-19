@@ -46,12 +46,12 @@ export default function SecurityPage() {
 
       <div className="grid gap-4 md:grid-cols-2 max-w-4xl">
         <Card title="Two-factor authentication (TOTP)">
-          <div className="p-4 space-y-3 text-[12.5px]">
+          <div className="p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-[var(--text-muted)]">Status</span>
+              <span className="text-xs text-slate-500">Status</span>
               <StatusBadge status={user?.mfa_required ? 'ACTIVE' : 'DISABLED'} label={user?.mfa_required ? 'Enabled' : 'Not enabled'} />
             </div>
-            <p className="text-[var(--text-secondary)]">
+            <p className="text-sm text-slate-600">
               Roles with finance, admin, void or adjustment-approval permissions must use an authenticator app. Setting up a new
               authenticator replaces the previous one.
             </p>
@@ -63,15 +63,15 @@ export default function SecurityPage() {
 
         {setup && (
           <Card title="Finish enrolment">
-            <div className="p-4 space-y-3 text-[12.5px]">
-              <p className="text-[var(--text-secondary)]">
+            <div className="p-4 space-y-3">
+              <p className="text-sm text-slate-600">
                 Add this account in Google Authenticator, Microsoft Authenticator or any TOTP app, then enter the first code it shows.
               </p>
               <Field label="Secret (manual entry)">
                 <code className="block ui-input !h-auto py-2 tabular tracking-wider break-all select-all">{setup.secret}</code>
               </Field>
               <Field label="otpauth URL" hint="Open this on the device with your authenticator app, or paste it into an app that accepts setup links.">
-                <a href={setup.otpauth_url} className="block ui-input !h-auto py-2 text-[11px] break-all text-[var(--color-navy)] underline">
+                <a href={setup.otpauth_url} className="block ui-input !h-auto py-2 text-xs break-all text-blue-600 underline">
                   {setup.otpauth_url}
                 </a>
               </Field>
@@ -81,7 +81,7 @@ export default function SecurityPage() {
                   maxLength={6}
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  className="tabular text-center text-[18px] tracking-[0.4em]"
+                  className="tabular text-center text-xl tracking-[0.4em] font-mono"
                   autoFocus
                 />
               </Field>

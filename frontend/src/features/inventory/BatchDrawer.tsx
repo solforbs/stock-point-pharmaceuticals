@@ -105,7 +105,7 @@ export function BatchDrawer({ id, onClose }: BatchDrawerProps) {
                     <td>{m.store?.code ?? '—'}</td>
                     <td className="text-right"><QtyCell value={m.qty_base} /></td>
                     {showCost && <td className="text-right"><MoneyCell value={m.unit_cost} /></td>}
-                    <td className="text-[var(--text-muted)] tabular">{m.source_doc_type ? `${titleCase(m.source_doc_type)} ${m.source_doc_id?.slice(0, 8) ?? ''}` : '—'}</td>
+                    <td className="text-slate-500 tabular">{m.source_doc_type ? `${titleCase(m.source_doc_type)} ${m.source_doc_id?.slice(0, 8) ?? ''}` : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -113,7 +113,7 @@ export function BatchDrawer({ id, onClose }: BatchDrawerProps) {
           </Card>
           <Card title={`Recipients (${b.recipients?.length ?? 0})`}>
             {(b.recipients ?? []).length === 0 ? (
-              <div className="p-4 text-[12px] text-[var(--text-muted)]">Nothing from this batch has been sold yet.</div>
+              <div className="p-4 text-xs text-slate-500">Nothing from this batch has been sold yet.</div>
             ) : (
               <table className="ui-table">
                 <thead>
@@ -122,11 +122,11 @@ export function BatchDrawer({ id, onClose }: BatchDrawerProps) {
                 <tbody>
                   {(b.recipients ?? []).map((r, i) => (
                     <tr key={`${r.sale_id}-${i}`}>
-                      <td className="tabular font-semibold">{r.doc_number}</td>
+                      <td className="tabular font-semibold text-slate-900">{r.doc_number}</td>
                       <td className="tabular">{formatDateTime(r.posted_at)}</td>
                       <td><StatusBadge status={r.sale_mode} /></td>
                       <td>{r.customer_name ?? 'Walk-in'}</td>
-                      <td className="text-right"><QtyCell value={r.qty_base} />{r.is_bonus && <span className="ml-1 text-[10px] font-bold text-[var(--status-green)]">FREE</span>}</td>
+                      <td className="text-right"><QtyCell value={r.qty_base} />{r.is_bonus && <span className="ml-1 text-xs font-bold text-emerald-700">FREE</span>}</td>
                     </tr>
                   ))}
                 </tbody>

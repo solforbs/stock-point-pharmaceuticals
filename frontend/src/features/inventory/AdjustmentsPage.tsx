@@ -199,7 +199,7 @@ function AdjustmentDrawer({ id, onClose }: { id: string | null; onClose: () => v
       {adjustment.isError && <InlineError error={adjustment.error} />}
       {a && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={a.approval_status} />{a.total_value !== undefined && <span className="tabular text-[12.5px]">Value <MoneyCell value={a.total_value} symbol className="font-bold" /></span>}</div>
+          <div className="flex items-center gap-2"><StatusBadge status={a.approval_status} />{a.total_value !== undefined && <span className="tabular text-sm">Value <MoneyCell value={a.total_value} symbol className="font-bold" /></span>}</div>
           {a.approval_status === 'PENDING' && (
             <ApprovalBar
               title="Awaiting approval"
@@ -217,7 +217,7 @@ function AdjustmentDrawer({ id, onClose }: { id: string | null; onClose: () => v
               {(a.lines ?? []).map((l) => (
                 <tr key={l.id}>
                   <td>{l.product?.name ?? l.product_id.slice(0, 8)}</td>
-                  <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-[10.5px] text-[var(--text-muted)]">exp {formatDate(l.batch.expiry_date)}</div>}</td>
+                  <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-500 tabular">exp {formatDate(l.batch.expiry_date)}</div>}</td>
                   <td className="text-right"><QtyCell value={l.qty_base} className="font-semibold" /></td>
                   {showCost && <td className="text-right"><MoneyCell value={l.unit_cost} /></td>}
                   {showCost && <td className="text-right"><MoneyCell value={l.line_value} /></td>}

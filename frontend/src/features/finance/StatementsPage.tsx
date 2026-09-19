@@ -16,8 +16,8 @@ export default function StatementsPage() {
   const tb = useQuery({ queryKey: ['finance', 'trial-balance', asOf], queryFn: () => apiGet<TrialBalance>('/api/finance/trial-balance', { as_of: asOf }), placeholderData: (prev) => prev })
 
   const columns: Column<Row>[] = [
-    { key: 'code', header: 'Account', render: (r) => <span className="font-semibold tabular">{r.code}</span>, sortValue: (r) => r.code },
-    { key: 'name', header: 'Name', render: (r) => <>{r.name}{r.system_role && <span className="ml-1 text-[10px] text-[var(--text-muted)]">{r.system_role}</span>}</>, sortValue: (r) => r.name },
+    { key: 'code', header: 'Account', render: (r) => <span className="font-semibold tabular font-mono">{r.code}</span>, sortValue: (r) => r.code },
+    { key: 'name', header: 'Name', render: (r) => <>{r.name}{r.system_role && <span className="ml-1.5 text-xs text-slate-400 font-mono">({r.system_role})</span>}</>, sortValue: (r) => r.name },
     { key: 'type', header: 'Type', render: (r) => r.account_type, sortValue: (r) => r.account_type },
     { key: 'debit', header: 'Debit', align: 'right', render: (r) => <MoneyCell value={r.debit} />, sortValue: (r) => Number(r.debit) },
     { key: 'credit', header: 'Credit', align: 'right', render: (r) => <MoneyCell value={r.credit} />, sortValue: (r) => Number(r.credit) },

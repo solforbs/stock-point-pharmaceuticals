@@ -83,21 +83,21 @@ export function CartLineRow({
       <div className="flex items-start justify-between gap-2 pb-1.5 border-b border-slate-100">
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <h4 className="font-extrabold text-slate-900 text-[14px] leading-snug break-words line-clamp-2">
+            <h4 className="font-bold text-slate-900 text-sm leading-snug break-words line-clamp-2">
               {line.productName}
             </h4>
             {line.strength && (
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-[11.5px] shrink-0">
+              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-xs shrink-0">
                 {line.strength}
               </span>
             )}
-            <span className="text-slate-500 font-mono text-[11.5px] font-semibold shrink-0">#{line.productCode}</span>
+            <span className="text-slate-500 font-mono text-xs font-medium shrink-0">#{line.productCode}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
           {quoted?.approval_required && showQuoted && (
-            <span className="text-[10px] font-bold uppercase text-amber-700 px-1.5 py-0.2 rounded bg-amber-50 border border-amber-200">
+            <span className="text-xs font-semibold uppercase text-amber-800 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200">
               Needs approval
             </span>
           )}
@@ -203,13 +203,13 @@ export function CartLineRow({
         <div className="text-right shrink-0">
           <MoneyCell
             value={lineTotal}
-            className={`text-[15px] font-black tracking-tight text-slate-900 ${showQuoted ? '' : 'opacity-60 italic'}`}
+            className={`text-base font-bold tracking-tight text-slate-900 ${showQuoted ? '' : 'opacity-60 italic'}`}
           />
         </div>
       </div>
 
       {/* Batch & Expiry strip & Line discount trigger */}
-      <div className="flex items-center justify-between mt-2 pt-1.5 text-[11.5px] text-slate-600 font-medium border-t border-slate-100/80">
+      <div className="flex items-center justify-between mt-2 pt-1.5 text-xs text-slate-600 font-medium border-t border-slate-100/80">
         <button
           type="button"
           onClick={(e) => {
@@ -221,10 +221,10 @@ export function CartLineRow({
           {fefoOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           <span>Batch: </span>
           {fefo.allocations.length === 0 ? (
-            <span className="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80">
+            <span className="text-amber-800 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
               No released stock in {sellingStoreCode}
               {heldElsewhere.length > 0 && (
-                <span className="font-semibold">
+                <span className="font-medium">
                   {' '}· {heldElsewhere.map((row) => `${formatQty(row.free_to_sell)} in ${row.store_code}`).join(', ')} — transfer it first
                 </span>
               )}
@@ -235,7 +235,7 @@ export function CartLineRow({
             </span>
           )}
           {dIsPos(fefo.shortfall) && (
-            <span className="text-rose-600 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200/80 ml-1">
+            <span className="text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded border border-rose-200/80 ml-1">
               Short by {formatQty(fefo.shortfall)}
             </span>
           )}
@@ -249,7 +249,7 @@ export function CartLineRow({
               setDiscountOpen(true)
             }}
             data-discount-toggle={line.lineRef}
-            className="text-blue-600 hover:text-blue-700 font-bold hover:underline cursor-pointer"
+            className="text-blue-600 hover:text-blue-700 font-semibold hover:underline cursor-pointer"
           >
             + Discount (F6)
           </button>
@@ -258,7 +258,7 @@ export function CartLineRow({
 
       {/* Expanded FEFO info */}
       {fefoOpen && fefo.allocations.length > 0 && (
-        <ul className="mt-1.5 p-2 bg-slate-50 rounded-lg text-[10.5px] space-y-0.5 text-slate-600 border border-slate-100">
+        <ul className="mt-1.5 p-2 bg-slate-50 rounded-lg text-xs space-y-0.5 text-slate-600 border border-slate-100">
           {fefo.allocations.map((a) => (
             <li key={a.batch_id} className="flex justify-between font-mono">
               <span>{a.batch_number} · exp {formatDate(a.expiry_date)}</span>
@@ -271,7 +271,7 @@ export function CartLineRow({
       {/* Expanded Line Discount Inputs */}
       {discountOpen && canDiscount && (
         <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-slate-100">
-          <span className="text-[10.5px] text-slate-500 font-semibold">Disc %:</span>
+          <span className="text-xs text-slate-500 font-semibold">Disc %:</span>
           <input
             type="text"
             inputMode="decimal"
@@ -296,7 +296,7 @@ export function CartLineRow({
               setLineDiscount(line.lineRef, '', '')
               setDiscountOpen(false)
             }}
-            className="text-[10px] text-slate-400 hover:text-slate-600 cursor-pointer"
+            className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
           >
             Clear
           </button>

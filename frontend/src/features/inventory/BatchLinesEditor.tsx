@@ -16,11 +16,11 @@ function Row({ line, storeId, statuses, onChange, onRemove }: { line: BatchLine;
   return (
     <tr>
       <td>
-        <div className="font-semibold">{line.product.name}</div>
-        <div className="text-[10.5px] text-[var(--text-muted)]">{line.product.code} · base {line.product.base_uom?.code ?? ''}</div>
+        <div className="font-semibold text-slate-900">{line.product.name}</div>
+        <div className="text-xs text-slate-500 font-mono mt-0.5">{line.product.code} · base {line.product.base_uom?.code ?? ''}</div>
       </td>
       <td>
-        <select value={line.batch_id} onChange={(e) => onChange({ batch_id: e.target.value })} className="ui-input h-7">
+        <select value={line.batch_id} onChange={(e) => onChange({ batch_id: e.target.value })} className="ui-input h-8 text-sm">
           <option value="">Batch…</option>
           {batches.map((b) => (
             <option key={b.batch_id} value={b.batch_id}>
@@ -28,14 +28,14 @@ function Row({ line, storeId, statuses, onChange, onRemove }: { line: BatchLine;
             </option>
           ))}
         </select>
-        {!stock.isLoading && batches.length === 0 && <div className="text-[10.5px] text-[var(--status-red)]">No eligible batches in this store.</div>}
+        {!stock.isLoading && batches.length === 0 && <div className="text-xs text-rose-600 font-medium mt-0.5">No eligible batches in this store.</div>}
       </td>
       <td>
-        <input type="text" inputMode="decimal" value={line.qty_base} onChange={(e) => onChange({ qty_base: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-24 tabular text-right" />
-        {chosen && Number(line.qty_base) > Number(chosen.on_hand) && <div className="text-[10.5px] text-[#b45309]">Above on-hand</div>}
+        <input type="text" inputMode="decimal" value={line.qty_base} onChange={(e) => onChange({ qty_base: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-8 w-24 tabular text-right text-sm" />
+        {chosen && Number(line.qty_base) > Number(chosen.on_hand) && <div className="text-xs text-amber-700 font-medium mt-0.5">Above on-hand</div>}
       </td>
       <td className="text-right">
-        <Button size="sm" variant="ghost" onClick={onRemove} aria-label="Remove"><Trash2 size={13} /></Button>
+        <Button size="sm" variant="ghost" onClick={onRemove} aria-label="Remove"><Trash2 size={14} /></Button>
       </td>
     </tr>
   )

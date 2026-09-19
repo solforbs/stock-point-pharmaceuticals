@@ -61,7 +61,7 @@ export default function ContactsPage() {
       <PageHeader parent="Customers" title="Contacts" subtitle="The people you deal with at each customer, and a log of every call, visit and message with follow-ups that stay due until done." />
       <div className="flex gap-1 mb-3">
         {(['contacts', 'interactions'] as const).map((t) => (
-          <button key={t} type="button" onClick={() => setParams(t === 'contacts' ? {} : { tab: t })} className={`h-8 px-3 rounded-md text-[12px] font-semibold ${tab === t ? 'bg-[var(--color-navy)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-secondary)]'}`}>
+          <button key={t} type="button" onClick={() => setParams(t === 'contacts' ? {} : { tab: t })} className={`h-8 px-4 rounded-md text-xs font-semibold transition-colors ${tab === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
             {t === 'contacts' ? 'Contacts' : 'Interactions'}
           </button>
         ))}
@@ -91,7 +91,7 @@ function ContactsTab({ customer }: { customer: Customer | null }) {
   const columns: Column<CustomerContactRow>[] = [
     { key: 'name', header: 'Name', render: (c) => <span className="font-semibold">{c.name}</span>, sortValue: (c) => c.name },
     { key: 'role', header: 'Role', render: (c) => c.role ?? '—', sortValue: (c) => c.role ?? '' },
-    { key: 'customer', header: 'Customer', render: (c) => <>{c.customer?.name}<div className="text-[10.5px] text-[var(--text-muted)] tabular">{c.customer?.code}</div></>, sortValue: (c) => c.customer?.name ?? '' },
+    { key: 'customer', header: 'Customer', render: (c) => <>{c.customer?.name}<div className="text-xs text-slate-500 font-mono tabular">{c.customer?.code}</div></>, sortValue: (c) => c.customer?.name ?? '' },
     { key: 'phone', header: 'Phone', render: (c) => (c.phone ? <a href={`tel:${c.phone}`} className="tabular underline" onClick={(e) => e.stopPropagation()}>{c.phone}</a> : '—') },
     { key: 'email', header: 'Email', render: (c) => (c.email ? <a href={`mailto:${c.email}`} className="underline" onClick={(e) => e.stopPropagation()}>{c.email}</a> : '—') },
     { key: 'primary', header: '', render: (c) => (c.is_primary ? <StatusBadge status="PRIMARY" tone="blue" label="Primary" /> : null) },
@@ -165,7 +165,7 @@ function ContactForm({ contact, defaultCustomer, onDone, onCancel }: { contact?:
             <Field label="Email" error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
           </div>
           <div className="pt-2 border-t border-slate-100 mt-2">
-            <label className="flex items-center gap-2 text-[12px] cursor-pointer"><input type="checkbox" checked={form.is_primary} onChange={(e) => set({ is_primary: e.target.checked })} /> Primary contact for this customer</label>
+            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={form.is_primary} onChange={(e) => set({ is_primary: e.target.checked })} /> Primary contact for this customer</label>
           </div>
         </div>
       </FormSection>
@@ -208,7 +208,7 @@ function InteractionsTab({ customer }: { customer: Customer | null }) {
   const today = todayIso()
   const columns: Column<CustomerInteractionRow>[] = [
     { key: 'when', header: 'When', render: (r) => <span className="tabular">{formatDateTime(r.occurred_at)}</span>, sortValue: (r) => r.occurred_at },
-    { key: 'customer', header: 'Customer', render: (r) => <>{r.customer?.name}{r.contact && <div className="text-[10.5px] text-[var(--text-muted)]">with {r.contact.name}</div>}</>, sortValue: (r) => r.customer?.name ?? '' },
+    { key: 'customer', header: 'Customer', render: (r) => <>{r.customer?.name}{r.contact && <div className="text-xs text-slate-500">with {r.contact.name}</div>}</>, sortValue: (r) => r.customer?.name ?? '' },
     { key: 'channel', header: 'Channel', render: (r) => <StatusBadge status={r.channel} tone="slate" label={titleCase(r.channel)} /> },
     { key: 'summary', header: 'Summary', render: (r) => <span className="whitespace-pre-line">{r.summary}</span> },
     { key: 'by', header: 'Logged by', render: (r) => r.user?.name ?? '—' },
@@ -216,7 +216,7 @@ function InteractionsTab({ customer }: { customer: Customer | null }) {
       key: 'follow',
       header: 'Follow-up',
       render: (r) => {
-        if (!r.follow_up_date) return <span className="text-[var(--text-muted)]">—</span>
+        if (!r.follow_up_date) return <span className="text-slate-400">—</span>
         if (r.follow_up_done) return <StatusBadge status="DONE" tone="green" label={`Done · ${formatDate(r.follow_up_date)}`} />
         const overdue = r.follow_up_date.slice(0, 10) <= today
         return <StatusBadge status="DUE" tone={overdue ? 'red' : 'amber'} label={`${overdue ? 'Due' : 'Scheduled'} ${formatDate(r.follow_up_date)}`} />
@@ -243,7 +243,7 @@ function InteractionsTab({ customer }: { customer: Customer | null }) {
               {CHANNELS.map((c) => (<option key={c} value={c}>{titleCase(c)}</option>))}
             </Select>
           </Field>
-          <label className="flex items-center gap-2 text-[12px] pb-2"><input type="checkbox" checked={dueOnly} onChange={(e) => { setDueOnly(e.target.checked); setPage(1) }} /> Follow-ups due (today or overdue)</label>
+          <label className="flex items-center gap-2 text-xs text-slate-600 pb-2 cursor-pointer"><input type="checkbox" checked={dueOnly} onChange={(e) => { setDueOnly(e.target.checked); setPage(1) }} /> Follow-ups due (today or overdue)</label>
         </div>
         {canManage && <Button variant="primary" onClick={() => setLogging(true)}>Log interaction</Button>}
       </div>

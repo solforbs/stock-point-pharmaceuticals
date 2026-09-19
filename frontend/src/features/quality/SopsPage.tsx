@@ -88,10 +88,10 @@ export default function SopsPage() {
   })
 
   const columns: Column<ControlledDoc>[] = [
-    { key: 'code', header: 'Code', render: (d) => <span className="font-semibold tabular">{d.code}</span>, sortValue: (d) => d.code },
-    { key: 'title', header: 'Title', render: (d) => <>{d.title}<div className="text-[10.5px] text-[var(--text-muted)]">{titleCase(d.category)}</div></>, sortValue: (d) => d.title },
-    { key: 'version', header: 'Current version', render: (d) => (d.current_version ? <span className="tabular">v{d.current_version.version} · effective {formatDate(d.current_version.effective_date)}</span> : '—') },
-    { key: 'review', header: 'Review due', render: (d) => <span className={`tabular ${d.review_due_date && d.review_due_date < todayIso() ? 'text-[var(--status-red)] font-semibold' : ''}`}>{formatDate(d.review_due_date)}</span>, sortValue: (d) => d.review_due_date ?? '' },
+    { key: 'code', header: 'Code', render: (d) => <span className="font-semibold font-mono tabular">{d.code}</span>, sortValue: (d) => d.code },
+    { key: 'title', header: 'Title', render: (d) => <>{d.title}<div className="text-xs text-slate-500">{titleCase(d.category)}</div></>, sortValue: (d) => d.title },
+    { key: 'version', header: 'Current version', render: (d) => (d.current_version ? <span className="tabular font-mono text-xs">v{d.current_version.version} · effective {formatDate(d.current_version.effective_date)}</span> : '—') },
+    { key: 'review', header: 'Review due', render: (d) => <span className={`tabular font-mono text-xs ${d.review_due_date && d.review_due_date < todayIso() ? 'text-rose-600 font-semibold' : ''}`}>{formatDate(d.review_due_date)}</span>, sortValue: (d) => d.review_due_date ?? '' },
     ...(canManage
       ? [
           { key: 'status', header: 'Status', render: (d: ControlledDoc) => <StatusBadge status={d.status} /> } satisfies Column<ControlledDoc>,
@@ -100,7 +100,7 @@ export default function SopsPage() {
       : []),
     {
       key: 'mine', header: 'You', render: (d) =>
-        d.status !== 'ACTIVE' ? <span className="text-[var(--text-muted)]">—</span>
+        d.status !== 'ACTIVE' ? <span className="text-slate-400">—</span>
           : d.my_acknowledged_at ? <StatusBadge status="COMPLETED" label={`Acknowledged ${formatDate(d.my_acknowledged_at)}`} />
             : <StatusBadge status="PENDING" label="Not yet acknowledged" />,
     },
@@ -140,7 +140,7 @@ export default function SopsPage() {
             </Select>
           </Field>
         )}
-        <label className="flex items-center gap-2 text-[12px] pb-2"><input type="checkbox" checked={pendingOnly} onChange={(e) => { setPendingOnly(e.target.checked); setPage(1) }} /> Only ones I have not acknowledged</label>
+        <label className="flex items-center gap-2 text-xs text-slate-600 pb-2 cursor-pointer"><input type="checkbox" checked={pendingOnly} onChange={(e) => { setPendingOnly(e.target.checked); setPage(1) }} /> Only ones I have not acknowledged</label>
       </FilterBar>
       <div className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(d) => d.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={canManage ? (d) => setParams({ document: d.id }) : undefined} selectedKey={selectedId} emptyTitle={pendingOnly ? 'Nothing waiting for your acknowledgement' : 'No documents'} emptyHint={canManage ? 'Upload an SOP, then activate it so staff can acknowledge it.' : undefined} />
@@ -157,7 +157,7 @@ export default function SopsPage() {
           <span className="block space-y-2">
             <span className="block">By confirming, you record that you have read and understood <b>{acking?.title}</b>, version {acking?.current_version?.version}. This is recorded against your name in the audit log.</span>
             {acking?.current_version && (
-              <button type="button" className="text-[var(--color-navy)] underline" onClick={() => acking.current_version && void downloadFile(`/api/documents/${acking.id}/versions/${acking.current_version.id}/download`, acking.current_version.file_name)}>Open the document first</button>
+              <button type="button" className="text-blue-600 font-medium hover:underline" onClick={() => acking.current_version && void downloadFile(`/api/documents/${acking.id}/versions/${acking.current_version.id}/download`, acking.current_version.file_name)}>Open the document first</button>
             )}
             {acknowledge.isError && <InlineError error={acknowledge.error} />}
           </span>
@@ -177,7 +177,7 @@ function FileInput({ onFile, error }: { onFile: (file: File | null, error: strin
       <input
         type="file"
         accept={ACCEPT}
-        className="block text-[12px]"
+        className="block text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
         onChange={(e) => {
           const f = e.target.files?.[0] ?? null
           onFile(f, f && f.size > MAX_UPLOAD_BYTES ? 'The file is larger than 10 MB.' : null)
@@ -275,14 +275,14 @@ function ManageDrawer({ id, onClose }: { id: string | null; onClose: () => void 
             ]}
           />
           <section>
-            <div className="text-[12.5px] font-bold mb-1.5">Versions</div>
-            <div className="border border-[var(--border)] rounded-md divide-y divide-[var(--border)]">
+            <div className="text-xs font-semibold text-slate-900 mb-1.5 uppercase tracking-wide">Versions</div>
+            <div className="border border-slate-200 rounded-lg divide-y divide-slate-100">
               {(d.versions ?? []).map((v) => (
-                <div key={v.id} className="flex items-start justify-between gap-3 px-3 py-2 text-[12px]">
+                <div key={v.id} className="flex items-start justify-between gap-3 px-3.5 py-2.5">
                   <div className="min-w-0">
-                    <div className="font-semibold">v{v.version} {v.id === d.current_version_id && <StatusBadge status="ACTIVE" label="Current" className="ml-1" />}</div>
-                    <div className="text-[var(--text-muted)]">Effective {formatDate(v.effective_date)} · uploaded {formatDateTime(v.created_at)} by {v.uploader?.name ?? '—'} · {v.acknowledgements_count ?? 0} acknowledged</div>
-                    {v.change_summary && <div className="text-[var(--text-secondary)] mt-0.5">{v.change_summary}</div>}
+                    <div className="font-semibold text-slate-900">v{v.version} {v.id === d.current_version_id && <StatusBadge status="ACTIVE" label="Current" className="ml-1" />}</div>
+                    <div className="text-xs text-slate-500 font-mono mt-0.5">Effective {formatDate(v.effective_date)} · uploaded {formatDateTime(v.created_at)} by {v.uploader?.name ?? '—'} · {v.acknowledgements_count ?? 0} acknowledged</div>
+                    {v.change_summary && <div className="text-xs text-slate-600 mt-0.5">{v.change_summary}</div>}
                   </div>
                   <Button size="sm" onClick={() => void downloadFile(`/api/documents/${d.id}/versions/${v.id}/download`, v.file_name)}>Download</Button>
                 </div>
@@ -291,25 +291,25 @@ function ManageDrawer({ id, onClose }: { id: string | null; onClose: () => void 
           </section>
           <section>
             <div className="flex items-center justify-between mb-1.5">
-              <div className="text-[12.5px] font-bold">Acknowledgements — v{d.current_version?.version ?? '—'}</div>
-              {acks.data && <span className="text-[11.5px] text-[var(--text-muted)] tabular">{acks.data.acknowledged.length} of {acks.data.acknowledged.length + acks.data.pending.length} staff</span>}
+              <div className="text-xs font-semibold text-slate-900 uppercase tracking-wide">Acknowledgements — v{d.current_version?.version ?? '—'}</div>
+              {acks.data && <span className="text-xs text-slate-500 tabular font-mono">{acks.data.acknowledged.length} of {acks.data.acknowledged.length + acks.data.pending.length} staff</span>}
             </div>
             {acks.isLoading && <LoadingSkeleton rows={3} />}
             {acks.error && <InlineError error={acks.error} />}
             {acks.data && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="border border-[var(--border)] rounded-md max-h-64 overflow-y-auto">
-                  <div className="px-3 py-1.5 text-[11px] font-semibold text-[var(--status-green)] border-b border-[var(--border)]">Acknowledged</div>
-                  {acks.data.acknowledged.length === 0 && <div className="px-3 py-2 text-[11.5px] text-[var(--text-muted)]">No one yet.</div>}
+                <div className="border border-slate-200 rounded-lg max-h-64 overflow-y-auto">
+                  <div className="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border-b border-slate-200 rounded-t-lg">Acknowledged</div>
+                  {acks.data.acknowledged.length === 0 && <div className="px-3 py-2.5 text-xs text-slate-500">No one yet.</div>}
                   {acks.data.acknowledged.map((a) => (
-                    <div key={a.id} className="px-3 py-1.5 text-[12px] flex justify-between gap-2"><span className="truncate">{a.user?.name ?? `User #${a.user_id}`}</span><span className="tabular text-[var(--text-muted)]">{formatDateTime(a.acknowledged_at)}</span></div>
+                    <div key={a.id} className="px-3 py-1.5 text-xs flex justify-between gap-2"><span className="truncate text-slate-800">{a.user?.name ?? `User #${a.user_id}`}</span><span className="tabular text-slate-500 font-mono">{formatDateTime(a.acknowledged_at)}</span></div>
                   ))}
                 </div>
-                <div className="border border-[var(--border)] rounded-md max-h-64 overflow-y-auto">
-                  <div className="px-3 py-1.5 text-[11px] font-semibold text-[#b45309] border-b border-[var(--border)]">Not yet acknowledged</div>
-                  {acks.data.pending.length === 0 && <div className="px-3 py-2 text-[11.5px] text-[var(--text-muted)]">Everyone has acknowledged.</div>}
+                <div className="border border-slate-200 rounded-lg max-h-64 overflow-y-auto">
+                  <div className="px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border-b border-slate-200 rounded-t-lg">Not yet acknowledged</div>
+                  {acks.data.pending.length === 0 && <div className="px-3 py-2.5 text-xs text-slate-500">Everyone has acknowledged.</div>}
                   {acks.data.pending.map((u) => (
-                    <div key={u.id} className="px-3 py-1.5 text-[12px] truncate">{u.name}{u.username ? <span className="text-[var(--text-muted)]"> ({u.username})</span> : null}</div>
+                    <div key={u.id} className="px-3 py-1.5 text-xs truncate text-slate-700">{u.name}{u.username ? <span className="text-slate-400 font-mono"> ({u.username})</span> : null}</div>
                   ))}
                 </div>
               </div>
@@ -356,7 +356,7 @@ function NewVersionForm({ doc, onDone }: { doc: ControlledDoc; onDone: () => voi
   const err = save.isError ? getApiError(save.error) : null
 
   return (
-    <div className="rounded-md border border-[var(--border)] p-3 space-y-3 bg-[var(--surface-2)]">
+    <div className="rounded-lg border border-slate-200 p-4 space-y-3 bg-slate-50">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Version" required error={err?.errors.version?.[0]}><Input value={form.version} onChange={(e) => set({ version: e.target.value })} /></Field>
         <Field label="Effective date" required error={err?.errors.effective_date?.[0]}><Input type="date" value={form.effective_date} onChange={(e) => set({ effective_date: e.target.value })} /></Field>

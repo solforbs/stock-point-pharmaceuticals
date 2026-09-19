@@ -33,7 +33,7 @@ export default function BatchesPage() {
   })
 
   const columns: Column<ProductBatch>[] = [
-    { key: 'batch', header: 'Batch', render: (b) => <span className="font-semibold tabular text-[var(--color-navy)]">{b.batch_number}</span>, sortValue: (b) => b.batch_number },
+    { key: 'batch', header: 'Batch', render: (b) => <span className="font-semibold tabular text-blue-600 hover:text-blue-700">{b.batch_number}</span>, sortValue: (b) => b.batch_number },
     { key: 'product', header: 'Product', render: (b) => b.product?.name ?? b.product_id.slice(0, 8), sortValue: (b) => b.product?.name ?? '' },
     { key: 'expiry', header: 'Expiry', render: (b) => <ExpiryBadge date={b.expiry_date} />, sortValue: (b) => b.expiry_date },
     { key: 'status', header: 'Status', render: (b) => <StatusBadge status={b.status} /> },

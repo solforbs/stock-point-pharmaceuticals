@@ -120,16 +120,16 @@ export function AlertBell() {
                       <Icon size={13} />
                     </span>
                     <div className="flex-1 min-w-0">
-                      <Link to={alert.link ?? '#'} onClick={() => setOpen(false)} className="text-[12.5px] font-bold text-slate-800 hover:text-blue-700 block">
+                      <Link to={alert.link ?? '#'} onClick={() => setOpen(false)} className="text-sm font-bold text-slate-900 hover:text-blue-600 block">
                         {alert.title}
                       </Link>
-                      {alert.detail && <p className="text-[11.5px] text-slate-600 mt-0.5">{alert.detail}</p>}
+                      {alert.detail && <p className="text-xs text-slate-600 mt-0.5">{alert.detail}</p>}
                       <div className="flex items-center gap-2 mt-1">
-                        {alert.due_date && <span className="text-[10.5px] text-slate-500 tabular">{formatDate(alert.due_date)}</span>}
+                        {alert.due_date && <span className="text-xs text-slate-500 tabular">{formatDate(alert.due_date)}</span>}
                         <button
                           type="button"
                           onClick={() => acknowledge.mutate(alert.id)}
-                          className="text-[10.5px] font-bold text-slate-500 hover:text-slate-800 hover:underline cursor-pointer"
+                          className="text-xs font-semibold text-slate-500 hover:text-slate-800 hover:underline cursor-pointer"
                         >
                           Mark seen
                         </button>

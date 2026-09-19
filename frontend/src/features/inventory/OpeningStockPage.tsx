@@ -88,10 +88,10 @@ export default function OpeningStockPage() {
 
       {result && (
         <Card className="mb-4" title="Posted">
-          <div className="text-[12.5px] tabular">
+          <div className="text-sm tabular">
             {result.reference}: {result.lines} batch(es), {formatQty(result.total_qty)} units, value {formatKes(result.total_value)}
-            {result.expired_lines > 0 && <span className="text-[var(--status-red)]"> · {result.expired_lines} already expired (held, not sellable)</span>}
-            {' · '}<Link to="/inventory/stock-on-hand" className="underline">View stock on hand</Link>
+            {result.expired_lines > 0 && <span className="text-rose-600 font-medium"> · {result.expired_lines} already expired (held, not sellable)</span>}
+            {' · '}<Link to="/inventory/stock-on-hand" className="text-blue-600 hover:text-blue-700 hover:underline font-medium">View stock on hand</Link>
           </div>
         </Card>
       )}
@@ -105,16 +105,16 @@ export default function OpeningStockPage() {
             </Select>
           </Field>
           <Field label="CSV file" hint="Columns: product_code, batch_number, expiry_date (YYYY-MM-DD), qty, unit_cost — per product base unit.">
-            <input type="file" accept=".csv,text/csv" className="text-[12px]" onChange={(e) => onFile(e.target.files?.[0])} />
+            <input type="file" accept=".csv,text/csv" className="text-xs text-slate-600" onChange={(e) => onFile(e.target.files?.[0])} />
           </Field>
         </div>
         {parsed && parsed.missing.length > 0 && (
-          <div className="mt-3 text-[12px] text-[var(--status-red)]">The file is missing column(s): {parsed.missing.join(', ')}.</div>
+          <div className="mt-3 text-xs text-rose-600 font-medium">The file is missing column(s): {parsed.missing.join(', ')}.</div>
         )}
       </Card>
 
       {rows.length > 0 && parsed?.missing.length === 0 && (
-        <Card className="mt-4" title={`2. Check ${rows.length} row(s) from ${fileName}`} actions={<span className="text-[12px] tabular">Value at cost ≈ {formatKes(totalValue.toFixed(2))}</span>}>
+        <Card className="mt-4" title={`2. Check ${rows.length} row(s) from ${fileName}`} actions={<span className="text-xs tabular font-medium text-slate-600">Value at cost ≈ {formatKes(totalValue.toFixed(2))}</span>}>
           <div className="max-h-[420px] overflow-auto">
             <table className="ui-table">
               <thead>
@@ -124,22 +124,22 @@ export default function OpeningStockPage() {
                 {rows.slice(0, 500).map((r, i) => {
                   const problems = rowErrors?.[String(i + 1)]
                   return (
-                    <tr key={i} className={problems ? 'bg-[color-mix(in_srgb,var(--status-red)_8%,transparent)]' : ''}>
+                    <tr key={i} className={problems ? 'bg-rose-50/60' : ''}>
                       <td className="tabular">{i + 1}</td>
-                      <td className="tabular font-semibold">{r.product_code}</td>
+                      <td className="tabular font-mono font-semibold">{r.product_code}</td>
                       <td>{r.batch_number}</td>
                       <td className="tabular">{r.expiry_date}</td>
                       <td className="text-right tabular">{r.qty}</td>
                       <td className="text-right tabular">{r.unit_cost}</td>
-                      <td className="text-[11px] text-[var(--status-red)]">{problems?.join('; ')}</td>
+                      <td className="text-xs text-rose-600 font-medium">{problems?.join('; ')}</td>
                     </tr>
                   )
                 })}
               </tbody>
             </table>
-            {rows.length > 500 && <div className="p-2 text-[11px] text-[var(--text-muted)]">Showing the first 500 rows; all {rows.length} are checked and posted.</div>}
+            {rows.length > 500 && <div className="p-2 text-xs text-slate-500">Showing the first 500 rows; all {rows.length} are checked and posted.</div>}
           </div>
-          {rowErrors?.['0'] && <div className="mt-2 text-[12px] text-[var(--status-red)]">{rowErrors['0'].join('; ')}</div>}
+          {rowErrors?.['0'] && <div className="mt-2 text-xs text-rose-600 font-medium">{rowErrors['0'].join('; ')}</div>}
           {err && !rowErrors && <div className="mt-2"><InlineError error={failure} /></div>}
           <div className="flex justify-end gap-2 mt-3">
             <Button disabled={!storeId || check.isPending} onClick={() => check.mutate()}>{check.isPending ? 'Checking…' : 'Check file'}</Button>

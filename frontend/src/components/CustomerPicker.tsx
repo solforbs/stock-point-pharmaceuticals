@@ -94,9 +94,9 @@ export function CustomerPicker({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[13.5px] font-extrabold text-slate-900 truncate">{value.name}</span>
+              <span className="text-sm font-bold text-slate-900 truncate">{value.name}</span>
               {value.tier?.code && (
-                <span className="px-2 py-0.5 rounded-full bg-blue-100/80 text-blue-800 text-[11px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 text-xs font-bold">
                   Tier {value.tier.code}
                 </span>
               )}
@@ -134,13 +134,13 @@ export function CustomerPicker({
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
-        className={`ui-input ${required ? '!border-[var(--status-amber)]' : ''}`}
+        className={`ui-input ${required ? '!border-amber-400' : ''}`}
         autoComplete="off"
       />
       {open && (
-        <div className="absolute z-30 left-0 right-0 top-9 ui-card shadow-xl max-h-72 overflow-y-auto">
+        <div className="absolute z-30 left-0 right-0 top-10 ui-card shadow-xl max-h-72 overflow-y-auto">
           {results.length === 0 ? (
-            <div className="px-3 py-2 text-[11.5px] text-[var(--text-muted)]">{isFetching ? 'Searching…' : 'No customers match.'}</div>
+            <div className="px-3 py-2.5 text-xs text-slate-500">{isFetching ? 'Searching…' : 'No customers match.'}</div>
           ) : (
             results.map((customer, i) => (
               <button
@@ -148,11 +148,11 @@ export function CustomerPicker({
                 type="button"
                 onClick={() => choose(customer)}
                 onMouseEnter={() => setHighlight(i)}
-                className={`w-full text-left px-3 py-1.5 border-b border-[var(--border)] last:border-b-0 ${i === highlight ? 'bg-[var(--surface-3)]' : 'hover:bg-[var(--surface-2)]'}`}
+                className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 transition-colors ${i === highlight ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[12.5px] truncate">
-                    {customer.name} <span className="text-[var(--text-muted)]">· {customer.code}</span>
+                  <span className="text-sm font-medium text-slate-900 truncate">
+                    {customer.name} <span className="text-slate-500 font-mono text-xs">· {customer.code}</span>
                   </span>
                   {customer.credit?.on_hold && <StatusBadge status="ON_HOLD" label="Credit hold" />}
                 </div>
@@ -170,7 +170,7 @@ export function CustomerCreditLine({ customer, className = '' }: { customer: Cus
   const available = customer.available_credit ?? null
   const overLimit = available !== null && dIsNeg(available)
   return (
-    <div className={`text-[11.5px] tabular flex flex-wrap items-center gap-x-2 text-slate-600 font-medium ${className}`}>
+    <div className={`text-xs tabular flex flex-wrap items-center gap-x-2 text-slate-600 font-medium ${className}`}>
       <span>Credit Limit: <strong className="text-slate-800 font-semibold">{formatMoney(customer.credit?.credit_limit ?? '0')}</strong></span>
       <span className="text-slate-300">·</span>
       <span>Balance: <strong className="text-slate-800 font-semibold">{formatMoney(customer.credit?.current_balance ?? '0')}</strong></span>
@@ -181,7 +181,7 @@ export function CustomerCreditLine({ customer, className = '' }: { customer: Cus
         </span>
       )}
       {customer.credit?.on_hold && (
-        <span className="px-1.5 py-0.5 rounded bg-rose-500 text-white font-bold text-[10px] uppercase tracking-wide">
+        <span className="px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs uppercase tracking-wide">
           Credit Hold
         </span>
       )}

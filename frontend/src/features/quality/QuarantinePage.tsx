@@ -69,13 +69,13 @@ export default function QuarantinePage() {
   })
 
   const columns: Column<ProductBatch>[] = [
-    { key: 'batch', header: 'Batch', render: (b) => <span className="font-semibold tabular">{b.batch_number}</span>, sortValue: (b) => b.batch_number },
+    { key: 'batch', header: 'Batch', render: (b) => <span className="font-semibold font-mono tabular">{b.batch_number}</span>, sortValue: (b) => b.batch_number },
     { key: 'product', header: 'Product', render: (b) => b.product?.name ?? b.product_id.slice(0, 8), sortValue: (b) => b.product?.name ?? '' },
     { key: 'expiry', header: 'Expiry', render: (b) => <ExpiryBadge date={b.expiry_date} />, sortValue: (b) => b.expiry_date },
     { key: 'status', header: 'Status', render: (b) => <StatusBadge status={b.status} /> },
     { key: 'qty', header: 'On hand', align: 'right', render: (b) => <QtyCell value={b.qty_on_hand ?? '0'} />, sortValue: (b) => Number(b.qty_on_hand ?? 0) },
     { key: 'supplier', header: 'Supplier', render: (b) => b.supplier?.name ?? '—' },
-    { key: 'received', header: 'Received', render: (b) => <span className="tabular">{formatDate(b.manufacture_date)}</span> },
+    { key: 'received', header: 'Received', render: (b) => <span className="tabular font-mono text-xs">{formatDate(b.manufacture_date)}</span> },
     ...(showCost ? [{ key: 'cost', header: 'Landed cost', align: 'right' as const, render: (b: ProductBatch) => <MoneyCell value={b.landed_unit_cost} /> }] : []),
     ...(canRelease
       ? [{
@@ -99,16 +99,16 @@ export default function QuarantinePage() {
         <div className="ui-card"><NoAccess permission="stock.view" /></div>
       ) : (
         <>
-          <div className="flex gap-1 mb-3">
+          <div className="flex gap-2 mb-3">
             {TABS.map((t) => (
-              <button key={t.key} type="button" onClick={() => { setParams({ tab: t.key }); setPage(1) }} className={`h-8 px-3.5 rounded-md text-[12.5px] font-semibold inline-flex items-center gap-2 ${tab === t.key ? 'bg-[var(--color-navy)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)]'}`}>
+              <button key={t.key} type="button" onClick={() => { setParams({ tab: t.key }); setPage(1) }} className={`h-8 px-3.5 rounded-lg text-xs font-semibold inline-flex items-center gap-2 transition-colors ${tab === t.key ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
                 {t.label}
-                <span className={`tabular text-[10.5px] px-1.5 rounded-full ${tab === t.key ? 'bg-white/20' : 'bg-[var(--surface-3)]'}`}>{counts.data?.[t.key] ?? '…'}</span>
+                <span className={`tabular font-mono text-xs px-1.5 py-0.2 rounded-full ${tab === t.key ? 'bg-blue-700 text-white' : 'bg-slate-200 text-slate-700'}`}>{counts.data?.[t.key] ?? '…'}</span>
               </button>
             ))}
           </div>
           <div className="ui-card">
-            <div className="px-3 py-2 text-[11.5px] text-[var(--text-muted)] border-b border-[var(--border)]">{active.hint}</div>
+            <div className="px-3.5 py-2.5 text-xs text-slate-500 border-b border-slate-200 bg-slate-50/50">{active.hint}</div>
             <DataTable columns={columns} rows={list.data?.data} rowKey={(b) => b.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(b) => setParams({ tab, batch: b.id })} selectedKey={selectedId} emptyTitle={tab === 'QUARANTINED' ? 'Nothing in quarantine' : 'Nothing awaiting QC'} initialSort={{ key: 'expiry', dir: 'asc' }} />
             <Pagination page={list.data} onPage={setPage} />
           </div>

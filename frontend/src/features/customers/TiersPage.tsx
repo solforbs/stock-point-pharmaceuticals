@@ -56,7 +56,7 @@ export default function TiersPage() {
   const listColumns: Column<PriceList>[] = [
     { key: 'code', header: 'Code', render: (l) => <span className="font-semibold tabular">{l.code}</span>, sortValue: (l) => l.code },
     { key: 'name', header: 'Name', render: (l) => l.name, sortValue: (l) => l.name },
-    { key: 'mode', header: 'Mode', render: (l) => (l.sale_mode ? <StatusBadge status={l.sale_mode} /> : <span className="text-[var(--text-muted)]">Any</span>) },
+    { key: 'mode', header: 'Mode', render: (l) => (l.sale_mode ? <StatusBadge status={l.sale_mode} /> : <span className="text-slate-400">Any</span>) },
     { key: 'tier', header: 'Tier', render: (l) => l.tier?.code ?? '—' },
     { key: 'branch', header: 'Branch', render: (l) => l.branch?.code ?? 'All' },
     { key: 'priority', header: 'Priority', align: 'right', render: (l) => <span className="tabular">{l.priority}</span>, sortValue: (l) => l.priority },
@@ -114,7 +114,7 @@ function PriceListDrawer({ list, canManage }: { list: PriceList; canManage: bool
   const isClosed = (i: PriceListItem) => !!i.effective_to && i.effective_to.slice(0, 10) < today
 
   const columns: Column<PriceListItem>[] = [
-    { key: 'product', header: 'Product', render: (i) => <><div className="font-semibold">{i.product?.name ?? i.product_id.slice(0, 8)}</div><div className="text-[10.5px] text-[var(--text-muted)] tabular">{i.product?.code ?? ''}</div></>, sortValue: (i) => i.product?.name ?? '' },
+    { key: 'product', header: 'Product', render: (i) => <><div className="font-semibold">{i.product?.name ?? i.product_id.slice(0, 8)}</div><div className="text-xs text-slate-500 font-mono tabular">{i.product?.code ?? ''}</div></>, sortValue: (i) => i.product?.name ?? '' },
     { key: 'uom', header: 'Unit', render: (i) => i.uom?.code ?? '—' },
     { key: 'type', header: 'Basis', render: (i) => FACTOR_LABEL[i.factor_type] },
     { key: 'price', header: 'Price / factor', align: 'right', render: (i) => factorSummary(i) },
@@ -152,7 +152,7 @@ function PriceListDrawer({ list, canManage }: { list: PriceList; canManage: bool
 
       <FilterBar>
         <Field label="Search" className="w-64"><Input placeholder="Product name or code" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} /></Field>
-        <label className="flex items-center gap-2 text-[12px] h-8"><input type="checkbox" checked={history} onChange={(e) => { setHistory(e.target.checked); setPage(1) }} /> Show history</label>
+        <label className="flex items-center gap-2 text-xs text-slate-600 h-8 cursor-pointer"><input type="checkbox" checked={history} onChange={(e) => { setHistory(e.target.checked); setPage(1) }} /> Show history</label>
         {canManage && !adding && <div className="ml-auto"><Button variant="primary" size="sm" onClick={() => setAdding(true)}>Add price</Button></div>}
       </FilterBar>
       <div className="ui-card">
@@ -184,7 +184,7 @@ function PriceListHeaderForm({ list, onDone, onCancel }: { list: PriceList; onDo
         <Field label="Priority" hint="Higher wins when several lists match." error={err?.errors.priority?.[0]}><Input inputMode="numeric" className="tabular" value={form.priority} onChange={(e) => set({ priority: e.target.value.replace(/\D/g, '') })} /></Field>
         <Field label="Effective to" hint="Blank keeps the list open-ended." error={err?.errors.effective_to?.[0]}><Input type="date" value={form.effective_to} onChange={(e) => set({ effective_to: e.target.value })} /></Field>
       </div>
-      <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active</label>
+      <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active</label>
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
       <div className="flex justify-end gap-2">
         <Button size="sm" onClick={onCancel}>Cancel</Button>
@@ -229,7 +229,7 @@ function PriceItemForm({ list, onDone, onCancel }: { list: PriceList; onDone: ()
     <div className="space-y-3">
       <Field label="Product" required error={err?.errors.product_id?.[0]}>
         {product ? (
-          <div className="ui-input flex items-center gap-2"><span className="flex-1 truncate">{product.name} <span className="text-[var(--text-muted)] tabular">{product.code}</span></span><button type="button" onClick={() => { setProduct(null); set({ uom_id: '' }) }} className="text-[var(--text-muted)]">×</button></div>
+          <div className="ui-input flex items-center gap-2"><span className="flex-1 truncate">{product.name} <span className="text-slate-400 tabular font-mono text-xs">{product.code}</span></span><button type="button" onClick={() => { setProduct(null); set({ uom_id: '' }) }} className="text-slate-400 hover:text-slate-700 font-bold">×</button></div>
         ) : (
           <ProductSearch onSelect={(p) => { setProduct(p); set({ uom_id: '' }) }} placeholder="Search product…" />
         )}
@@ -370,7 +370,7 @@ function PriceListForm({ tiers, onDone, onCancel }: { tiers: CustomerTier[]; onD
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Priority" hint="Higher wins when several lists match." error={err?.errors.priority?.[0]}><Input inputMode="numeric" className="tabular" value={form.priority} onChange={(e) => set({ priority: e.target.value.replace(/\D/g, '') })} /></Field>
           <div className="pt-6">
-            <label className="flex items-center gap-2 text-[12px] cursor-pointer"><input type="checkbox" checked={form.prices_include_tax} onChange={(e) => set({ prices_include_tax: e.target.checked })} /> Prices include tax</label>
+            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={form.prices_include_tax} onChange={(e) => set({ prices_include_tax: e.target.checked })} /> Prices include tax</label>
           </div>
           <Field label="Effective from" hint="Blank = today." error={err?.errors.effective_from?.[0]}><Input type="date" value={form.effective_from} onChange={(e) => set({ effective_from: e.target.value })} /></Field>
           <Field label="Effective to" error={err?.errors.effective_to?.[0]}><Input type="date" value={form.effective_to} onChange={(e) => set({ effective_to: e.target.value })} /></Field>

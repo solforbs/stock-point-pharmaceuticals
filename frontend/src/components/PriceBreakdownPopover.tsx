@@ -34,13 +34,13 @@ export function PriceBreakdownPopover({ line, showCost }: { line: QuoteLine; sho
         aria-label="Explain this price"
         title="How was this price reached?"
         onClick={() => setOpen((v) => !v)}
-        className={`p-0.5 rounded ${open ? 'text-[var(--color-navy)]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'}`}
+        className={`p-1 rounded-md transition-colors ${open ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-600'}`}
       >
-        <Info size={13} />
+        <Info size={14} />
       </button>
       {open && (
-        <div className="absolute right-0 top-6 z-30 w-[380px] ui-card shadow-xl p-3 text-[11.5px] text-left">
-          <div className="font-bold text-[12px] mb-1.5">{line.product_name}</div>
+        <div className="absolute right-0 top-6 z-30 w-[380px] ui-card shadow-xl p-3.5 text-xs text-left">
+          <div className="font-bold text-sm text-slate-900 mb-1.5">{line.product_name}</div>
           <table className="w-full tabular mb-2">
             <tbody>
               <Row label="List price" value={formatMoney(line.list_price)} />
@@ -54,7 +54,7 @@ export function PriceBreakdownPopover({ line, showCost }: { line: QuoteLine; sho
             </tbody>
           </table>
           <div className="ui-label">Explain</div>
-          <ol className="list-decimal pl-4 space-y-0.5 text-[var(--text-secondary)]">
+          <ol className="list-decimal pl-4 space-y-0.5 text-slate-600">
             {line.explain.map((step, i) => (
               <li key={i}>{step}</li>
             ))}
@@ -68,8 +68,8 @@ export function PriceBreakdownPopover({ line, showCost }: { line: QuoteLine; sho
 function Row({ label, value, strong, warn }: { label: string; value: string; strong?: boolean; warn?: boolean }) {
   return (
     <tr>
-      <td className={`py-0.5 pr-2 ${warn ? 'text-[var(--status-red)]' : 'text-[var(--text-muted)]'}`}>{label}</td>
-      <td className={`py-0.5 text-right ${strong ? 'font-bold' : ''} ${warn ? 'text-[var(--status-red)]' : ''}`}>{value}</td>
+      <td className={`py-0.5 pr-2 ${warn ? 'text-rose-600 font-bold' : 'text-slate-500'}`}>{label}</td>
+      <td className={`py-0.5 text-right ${strong ? 'font-bold' : ''} ${warn ? 'text-rose-600' : ''}`}>{value}</td>
     </tr>
   )
 }

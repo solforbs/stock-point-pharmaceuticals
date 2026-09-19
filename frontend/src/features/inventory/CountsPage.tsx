@@ -196,13 +196,13 @@ function CountDrawer({ id, onClose }: { id: string | null; onClose: () => void }
         <div className="mb-3">
           <InlineError error={approve.error} />
           {approveError.code === 'SECOND_APPROVER_REQUIRED' && (
-            <p className="text-[11.5px] text-[var(--text-secondary)] mt-1 tabular">Variance value {formatMoney(String(approveError.details.variance_value ?? ''))} is above the threshold: a different user with stock.count.post must approve this count.</p>
+            <p className="text-xs text-slate-600 mt-1 tabular">Variance value {formatMoney(String(approveError.details.variance_value ?? ''))} is above the threshold: a different user with stock.count.post must approve this count.</p>
           )}
         </div>
       )}
       {c && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={c.status} /><span className="text-[11.5px] text-[var(--text-muted)]">{c.status === 'COUNTING' ? 'System quantities are hidden while counting (blind count).' : ''}</span></div>
+          <div className="flex items-center gap-2"><StatusBadge status={c.status} /><span className="text-xs text-slate-500">{c.status === 'COUNTING' ? 'System quantities are hidden while counting (blind count).' : ''}</span></div>
           <table className="ui-table">
             <thead><tr><th>Product</th><th>Batch</th>{c.status !== 'COUNTING' && <th className="text-right">System</th>}<th className="text-right">Counted</th>{c.status !== 'COUNTING' && <th className="text-right">Variance</th>}{c.status !== 'COUNTING' && c.lines?.some((l) => l.variance_value !== undefined) && <th className="text-right">Value</th>}<th>Reason</th>{counting && <th />}</tr></thead>
             <tbody>
@@ -211,16 +211,16 @@ function CountDrawer({ id, onClose }: { id: string | null; onClose: () => void }
                 return (
                   <tr key={l.id}>
                     <td>{l.product?.name ?? l.product_id.slice(0, 8)}</td>
-                    <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-[10.5px] text-[var(--text-muted)]">exp {formatDate(l.batch.expiry_date)}</div>}</td>
+                    <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-500 tabular">exp {formatDate(l.batch.expiry_date)}</div>}</td>
                     {c.status !== 'COUNTING' && <td className="text-right"><QtyCell value={l.system_qty} /></td>}
                     <td className="text-right">
-                      {counting ? <input value={e.qty} onChange={(ev) => setEntries({ ...entries, [l.id]: { ...e, qty: ev.target.value.replace(/[^\d.]/g, '') } })} className="ui-input h-7 w-24 tabular text-right" /> : <QtyCell value={l.counted_qty} />}
+                      {counting ? <input value={e.qty} onChange={(ev) => setEntries({ ...entries, [l.id]: { ...e, qty: ev.target.value.replace(/[^\d.]/g, '') } })} className="ui-input h-7 w-24 tabular text-right text-sm" /> : <QtyCell value={l.counted_qty} />}
                     </td>
                     {c.status !== 'COUNTING' && <td className="text-right"><QtyCell value={l.variance_qty} className={l.variance_qty && Number(l.variance_qty) !== 0 ? 'font-bold' : ''} /></td>}
                     {c.status !== 'COUNTING' && c.lines?.some((x) => x.variance_value !== undefined) && <td className="text-right"><MoneyCell value={l.variance_value ?? null} /></td>}
                     <td>
                       {counting ? (
-                        <select value={e.reason} onChange={(ev) => setEntries({ ...entries, [l.id]: { ...e, reason: ev.target.value } })} className="ui-input h-7">
+                        <select value={e.reason} onChange={(ev) => setEntries({ ...entries, [l.id]: { ...e, reason: ev.target.value } })} className="ui-input h-7 text-sm">
                           <option value="">None</option>
                           {(c.variance_reasons ?? []).map((r) => (<option key={r} value={r}>{titleCase(r)}</option>))}
                         </select>
@@ -234,7 +234,7 @@ function CountDrawer({ id, onClose }: { id: string | null; onClose: () => void }
               })}
             </tbody>
           </table>
-          {counting && <p className="text-[11px] text-[var(--text-muted)]">A variance without a reason code cannot go to review. Reasons: {(c.variance_reasons ?? []).map(titleCase).join(', ')}.</p>}
+          {counting && <p className="text-xs text-slate-500">A variance without a reason code cannot go to review. Reasons: {(c.variance_reasons ?? []).map(titleCase).join(', ')}.</p>}
         </div>
       )}
     </Drawer>

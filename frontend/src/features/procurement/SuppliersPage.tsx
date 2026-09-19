@@ -44,7 +44,7 @@ export default function SuppliersPage() {
   const columns: Column<Supplier>[] = [
     { key: 'code', header: 'Code', sortKey: 'code', render: (s) => <span className="font-semibold tabular">{s.code}</span> },
     { key: 'name', header: 'Name', sortKey: 'name', render: (s) => s.name },
-    { key: 'contact', header: 'Contact', sortable: false, render: (s) => <>{s.contact_name ?? '—'}{s.phone && <div className="text-[10.5px] text-[var(--text-muted)]">{s.phone}</div>}</> },
+    { key: 'contact', header: 'Contact', sortable: false, render: (s) => <>{s.contact_name ?? '—'}{s.phone && <div className="text-xs text-slate-500 tabular">{s.phone}</div>}</> },
     { key: 'licence', header: 'Licence expiry', sortKey: 'licence_expiry', render: (s) => <ExpiryBadge date={s.licence_expiry} /> },
     { key: 'terms', header: 'Terms', sortKey: 'payment_terms_days', align: 'right', render: (s) => <span className="tabular">{s.payment_terms_days ?? 0} d</span> },
     { key: 'status', header: 'Status', sortable: false, render: (s) => <StatusBadge status={s.is_active ? s.status : 'INACTIVE'} /> },
@@ -105,7 +105,7 @@ export default function SuppliersPage() {
         {selected && !editing && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2"><StatusBadge status={selected.is_active ? selected.status : 'INACTIVE'} /><span className="tabular text-[12.5px]">Payable <MoneyCell value={selected.payable_balance} symbol className="font-bold" /></span></div>
+              <div className="flex items-center gap-2"><StatusBadge status={selected.is_active ? selected.status : 'INACTIVE'} /><span className="tabular text-sm">Payable <MoneyCell value={selected.payable_balance} symbol className="font-bold" /></span></div>
               {canManage && <Button onClick={() => setEditing(true)}>Edit</Button>}
             </div>
             <DescriptionList
@@ -118,9 +118,9 @@ export default function SuppliersPage() {
                 { label: 'Lead time', value: `${selected.lead_time_days ?? 0} days` },
               ]}
             />
-            <div className="flex gap-3 text-[12px]">
-              <Link to={`/buy/purchase-orders?supplier=${selected.id}`} className="text-[var(--color-navy)] underline">Raise purchase order</Link>
-              <Link to={`/finance/payables?supplier=${selected.id}`} className="text-[var(--color-navy)] underline">Record payment</Link>
+            <div className="flex gap-4 text-xs font-semibold">
+              <Link to={`/buy/purchase-orders?supplier=${selected.id}`} className="text-blue-600 hover:text-blue-700 hover:underline font-semibold">Raise purchase order</Link>
+              <Link to={`/finance/payables?supplier=${selected.id}`} className="text-blue-600 hover:text-blue-700 hover:underline font-semibold">Record payment</Link>
             </div>
           </div>
         )}

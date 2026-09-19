@@ -155,12 +155,12 @@ function DisposalDrawer({ id, onClose }: { id: string | null; onClose: () => voi
       {disposal.isError && <InlineError error={disposal.error} />}
       {d && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={d.status} /><span className="tabular text-[12.5px]">Value <MoneyCell value={d.total_value} symbol className="font-bold" /></span></div>
+          <div className="flex items-center gap-2"><StatusBadge status={d.status} /><span className="tabular text-sm font-medium text-slate-700">Value: <MoneyCell value={d.total_value} symbol className="font-bold text-slate-900" /></span></div>
           <table className="ui-table">
             <thead><tr><th>Product</th><th>Batch</th><th className="text-right">Qty (base)</th><th className="text-right">Unit cost</th><th className="text-right">Value</th></tr></thead>
             <tbody>
               {(d.lines ?? []).map((l) => (
-                <tr key={l.id}><td>{l.product?.name ?? l.product_id.slice(0, 8)}</td><td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-[10.5px] text-[var(--text-muted)]">exp {formatDate(l.batch.expiry_date)} · {titleCase(l.batch.status)}</div>}</td><td className="text-right"><QtyCell value={l.qty_base} /></td><td className="text-right"><MoneyCell value={l.unit_cost} /></td><td className="text-right"><MoneyCell value={l.line_value} /></td></tr>
+                <tr key={l.id}><td>{l.product?.name ?? l.product_id.slice(0, 8)}</td><td className="tabular font-mono">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-500 font-sans">exp {formatDate(l.batch.expiry_date)} · {titleCase(l.batch.status)}</div>}</td><td className="text-right"><QtyCell value={l.qty_base} /></td><td className="text-right"><MoneyCell value={l.unit_cost} /></td><td className="text-right"><MoneyCell value={l.line_value} /></td></tr>
               ))}
             </tbody>
           </table>

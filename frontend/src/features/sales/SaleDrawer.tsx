@@ -49,7 +49,7 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
         s && s.status === 'POSTED' ? (
           <div className="flex gap-2">
             {canReturn && (
-              <Link to={`/sell/returns?sale=${s.id}`} className="inline-flex items-center h-7 px-2.5 rounded-md border border-[var(--border-strong)] text-[11.5px] font-semibold hover:bg-[var(--surface-2)]">
+              <Link to={`/sell/returns?sale=${s.id}`} className="inline-flex items-center h-8 px-3 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                 Return items
               </Link>
             )}
@@ -64,7 +64,7 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
           <div className="flex items-center gap-2">
             <StatusBadge status={s.status} />
             <StatusBadge status={s.sale_mode} />
-            {s.void_reason && <span className="text-[11.5px] text-[var(--status-red)]">Void reason: {s.void_reason}</span>}
+            {s.void_reason && <span className="text-xs text-rose-700 font-semibold">Void reason: {s.void_reason}</span>}
           </div>
           <DescriptionList
             items={[
@@ -94,10 +94,10 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
                   <td>
                     <div>
                       {line.product?.name ?? line.product_id}
-                      {line.is_bonus && <span className="ml-1 text-[10px] font-bold text-[var(--status-green)]">FREE</span>}
+                      {line.is_bonus && <span className="ml-1 text-xs font-bold text-emerald-700">FREE</span>}
                     </div>
                     {line.batch_allocations && line.batch_allocations.length > 0 && (
-                      <div className="text-[10.5px] text-[var(--text-muted)] tabular">
+                      <div className="text-xs text-slate-400 tabular">
                         {line.batch_allocations.map((a) => `${a.batch?.batch_number ?? a.batch_id.slice(0, 8)} ×${Number(a.qty_base)}${a.batch ? ` (exp ${formatDate(a.batch.expiry_date)})` : ''}`).join(', ')}
                       </div>
                     )}
@@ -108,7 +108,7 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
                   <td className="text-right">
                     <MoneyCell value={line.unit_price} />
                   </td>
-                  <td className="text-right tabular text-[var(--text-muted)]">{Number(line.discount_pct) > 0 ? formatPct(line.discount_pct) : '—'}</td>
+                  <td className="text-right tabular text-slate-500">{Number(line.discount_pct) > 0 ? formatPct(line.discount_pct) : '—'}</td>
                   <td className="text-right">
                     <MoneyCell value={line.tax_amount} />
                   </td>
@@ -124,18 +124,18 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
               ))}
             </tbody>
           </table>
-          <div className="ml-auto w-72 grid grid-cols-[1fr_auto] gap-y-1 text-[12.5px] tabular">
-            <span className="text-[var(--text-muted)]">Subtotal</span>
+          <div className="ml-auto w-72 grid grid-cols-[1fr_auto] gap-y-1.5 text-sm tabular">
+            <span className="text-slate-500 font-medium">Subtotal</span>
             <MoneyCell value={s.subtotal} />
-            <span className="text-[var(--text-muted)]">Discount</span>
+            <span className="text-slate-500 font-medium">Discount</span>
             <MoneyCell value={`-${s.discount_total}`} />
-            <span className="text-[var(--text-muted)]">Tax</span>
+            <span className="text-slate-500 font-medium">Tax</span>
             <MoneyCell value={s.tax_total} />
-            <span className="font-bold">Grand total</span>
-            <MoneyCell value={s.grand_total} className="font-bold" />
+            <span className="font-bold text-slate-900 pt-1.5 border-t border-slate-200">Grand Total</span>
+            <MoneyCell value={s.grand_total} className="font-bold text-slate-900 pt-1.5 border-t border-slate-200" />
             {showCost && s.cost_total !== undefined && (
               <>
-                <span className="text-[var(--text-muted)]">Cost</span>
+                <span className="text-slate-500 font-medium">Cost</span>
                 <MoneyCell value={s.cost_total} muted />
               </>
             )}

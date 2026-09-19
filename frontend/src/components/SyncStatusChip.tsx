@@ -25,7 +25,7 @@ export function SyncStatusChip({
   if (invert) {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/20 text-white border border-white/30 backdrop-blur-xs ${className}`}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/20 text-white border border-white/30 backdrop-blur-xs ${className}`}
         title={online ? 'Connected to local/remote server' : 'Offline'}
       >
         <span
@@ -40,7 +40,7 @@ export function SyncStatusChip({
   const color = online ? 'var(--status-green)' : 'var(--status-red)'
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${className}`}
       style={{ color, borderColor: color, background: `color-mix(in srgb, ${color} 10%, transparent)` }}
       title={online ? 'Connected to the server' : 'No connection — sales cannot post until the server is reachable'}
     >

@@ -138,7 +138,7 @@ function CategoriesDrawer({ open, onClose, canEdit }: { open: boolean; onClose: 
                     {parentOptions.map((c) => (<option key={c.id} value={c.id}>{c.code} · {c.name}</option>))}
                   </Select>
                 </Field>
-                <label className="flex items-center gap-2 text-[12px] pt-5"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active</label>
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 pt-5"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active</label>
               </div>
               {err && err.code !== 'CATEGORY_CYCLE' && !Object.keys(err.errors).length && <InlineError error={save.error} />}
               <div className="flex justify-end gap-2">
@@ -210,7 +210,7 @@ function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClo
       <div className="space-y-4">
         {applied && (
           <Card title="Imported">
-            <div className="p-4 text-[12.5px]">
+            <div className="p-4 text-sm">
               {applied.updated} product(s) updated, {applied.unchanged} already matched the file.
               {applied.categories_created.length > 0 && <> Created categories: {applied.categories_created.join(', ')}.</>}
             </div>
@@ -219,21 +219,21 @@ function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClo
 
         <Card title="1. Choose the file">
           <div className="p-4 space-y-3">
-            <div className="text-[12px] text-[var(--text-secondary)]">
-              Start from <button type="button" className="underline font-semibold" onClick={onExport}>Export CSV</button>, edit it in Excel and save as CSV.
+            <div className="text-xs text-slate-600">
+              Start from <button type="button" className="text-blue-600 hover:text-blue-700 hover:underline font-semibold" onClick={onExport}>Export CSV</button>, edit it in Excel and save as CSV.
               Columns read: {IMPORT_COLUMNS.join(', ')}. Others (name, default_price) are ignored. is_active takes 1/0 or yes/no.
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
               <Field label="CSV file" required>
-                <input type="file" accept=".csv,text/csv" className="text-[12px]" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
+                <input type="file" accept=".csv,text/csv" className="text-xs text-slate-600" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
               </Field>
-              <label className="flex items-center gap-2 text-[12px]">
+              <label className="flex items-center gap-2 text-xs text-slate-700">
                 <input type="checkbox" checked={createCategories} onChange={(e) => { setCreateCategories(e.target.checked); reset() }} />
                 Create missing categories (named after their code; rename them under Categories)
               </label>
             </div>
-            {parsed && parsed.missing.length > 0 && <div className="text-[12px] text-[var(--status-red)]">The file has no “code” column, so no product can be matched.</div>}
-            {parsed && parsed.missing.length === 0 && rows.length === 0 && <div className="text-[12px] text-[var(--status-red)]">The file has a header but no rows.</div>}
+            {parsed && parsed.missing.length > 0 && <div className="text-xs text-rose-600 font-medium">The file has no “code” column, so no product can be matched.</div>}
+            {parsed && parsed.missing.length === 0 && rows.length === 0 && <div className="text-xs text-rose-600 font-medium">The file has a header but no rows.</div>}
           </div>
         </Card>
 
@@ -248,19 +248,19 @@ function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClo
                   {rows.slice(0, 500).map((r, i) => {
                     const problems = rowErrors?.[String(i + 1)]
                     return (
-                      <tr key={i} className={problems ? 'bg-[color-mix(in_srgb,var(--status-red)_8%,transparent)]' : ''}>
+                      <tr key={i} className={problems ? 'bg-rose-50/60' : ''}>
                         <td className="tabular">{i + 1}</td>
-                        {usedColumns.map((c) => <td key={c} className={c === 'code' ? 'tabular font-semibold' : 'tabular'}>{r[c] || <span className="text-[var(--text-muted)]">·</span>}</td>)}
-                        <td className="text-[11px] text-[var(--status-red)]">{problems?.join('; ')}</td>
+                        {usedColumns.map((c) => <td key={c} className={c === 'code' ? 'tabular font-mono font-semibold' : 'tabular'}>{r[c] || <span className="text-slate-400">·</span>}</td>)}
+                        <td className="text-xs text-rose-600 font-medium">{problems?.join('; ')}</td>
                       </tr>
                     )
                   })}
                 </tbody>
               </table>
-              {rows.length > 500 && <div className="p-2 text-[11px] text-[var(--text-muted)]">Showing the first 500 rows; all {rows.length} are checked and applied.</div>}
+              {rows.length > 500 && <div className="p-2 text-xs text-slate-500">Showing the first 500 rows; all {rows.length} are checked and applied.</div>}
             </div>
             <div className="p-3 space-y-2">
-              {rowErrors?.['0'] && <div className="text-[12px] text-[var(--status-red)]">{rowErrors['0'].join('; ')}</div>}
+              {rowErrors?.['0'] && <div className="text-xs text-rose-600 font-medium">{rowErrors['0'].join('; ')}</div>}
               {err && !rowErrors && <InlineError error={failure} />}
               {checked && <ChangePreview summary={checked} />}
               <div className="flex justify-end gap-2">
@@ -280,7 +280,7 @@ function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClo
 function ChangePreview({ summary }: { summary: ImportSummary }) {
   const show = (v: unknown) => (v === null || v === undefined || v === '' ? '—' : typeof v === 'boolean' ? (v ? 'yes' : 'no') : String(v))
   return (
-    <div className="rounded-md border border-[var(--border)] p-3 text-[12px] space-y-2">
+    <div className="rounded-md border border-slate-200 p-3 text-xs space-y-2">
       <div className="font-semibold">
         {summary.updated} product(s) will change, {summary.unchanged} already match.
         {summary.categories_created.length > 0 && <span className="font-normal"> New categories: {summary.categories_created.join(', ')}.</span>}
@@ -292,9 +292,9 @@ function ChangePreview({ summary }: { summary: ImportSummary }) {
             <tbody>
               {summary.changes.slice(0, 300).flatMap((c) => Object.entries(c.fields).map(([field, v]) => (
                 <tr key={`${c.code}-${field}`}>
-                  <td className="tabular font-semibold">{c.code}</td>
+                  <td className="tabular font-mono font-semibold">{c.code}</td>
                   <td>{field}</td>
-                  <td className="tabular text-[var(--text-muted)]">{show(v.from)}</td>
+                  <td className="tabular text-slate-500">{show(v.from)}</td>
                   <td className="tabular">{show(v.to)}</td>
                 </tr>
               )))}

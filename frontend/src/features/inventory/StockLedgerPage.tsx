@@ -64,7 +64,7 @@ export default function StockLedgerPage() {
           { key: 'total_cost', header: 'Total cost', align: 'right' as const, render: (r: LedgerRow) => <MoneyCell value={r.total_cost} /> },
         ]
       : []),
-    { key: 'source', header: 'Source', render: (r) => <span className="text-[var(--text-muted)] tabular">{r.source_doc_type ? `${titleCase(r.source_doc_type)} ${r.source_doc_id?.slice(0, 8) ?? ''}` : '—'}</span> },
+    { key: 'source', header: 'Source', render: (r) => <span className="text-slate-500 tabular">{r.source_doc_type ? `${titleCase(r.source_doc_type)} ${r.source_doc_id?.slice(0, 8) ?? ''}` : '—'}</span> },
   ]
 
   return (
@@ -108,7 +108,7 @@ export default function StockLedgerPage() {
         <Field label="From"><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
         <Field label="To"><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
       </FilterBar>
-      {running && <p className="text-[11px] text-[var(--text-muted)] mb-2">Running balance mode: every movement of this batch in this store, oldest first, unpaginated.</p>}
+      {running && <p className="text-xs text-slate-500 mb-2">Running balance mode: every movement of this batch in this store, oldest first, unpaginated.</p>}
       <div className="ui-card">
         <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} isLoading={ledger.isLoading} error={ledger.error} onRetry={() => ledger.refetch()} emptyTitle="No movements match" />
         <Pagination page={paginated} onPage={setPage} />

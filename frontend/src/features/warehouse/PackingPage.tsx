@@ -132,7 +132,7 @@ function PackForm({ list, onDone }: { list: PackingListDetail; onDone: () => voi
   const dispatched = (list.delivery_notes ?? []).some((n) => n.status === 'DISPATCHED' || n.status === 'DELIVERED')
 
   const lineColumns: Column<PickingList['lines'][number]>[] = [
-    { key: 'product', header: 'Product', render: (l) => <><span className="font-semibold">{l.product?.name ?? '—'}</span><div className="text-[10.5px] text-[var(--text-muted)] tabular">{l.product?.code}</div></> },
+    { key: 'product', header: 'Product', render: (l) => <><span className="font-semibold">{l.product?.name ?? '—'}</span><div className="text-xs text-slate-500 font-mono tabular">{l.product?.code}</div></> },
     { key: 'batch', header: 'Batch', render: (l) => <span className="tabular">{l.batch?.batch_number ?? '—'}</span> },
     { key: 'qty', header: 'Picked (base)', align: 'right', render: (l) => <QtyCell value={l.qty_picked_base} /> },
     { key: 'status', header: 'Line', render: (l) => <StatusBadge status={l.status} /> },
@@ -153,19 +153,19 @@ function PackForm({ list, onDone }: { list: PackingListDetail; onDone: () => voi
         <DataTable columns={lineColumns} rows={list.lines} rowKey={(l) => l.id} emptyTitle="No lines on this pick list" />
       </div>
       {dispatched ? (
-        <p className="text-[12px] text-[var(--text-muted)]">This order has already been dispatched; its packing record is final.</p>
+        <p className="text-xs text-slate-500">This order has already been dispatched; its packing record is final.</p>
       ) : list.status !== 'COMPLETED' ? (
-        <p className="text-[12px] text-[var(--text-muted)]">Only a completed pick can be packed. Finish picking on the <Link to="/warehouse/pick-lists" className="underline">Pick lists</Link> page first.</p>
+        <p className="text-xs text-slate-500">Only a completed pick can be packed. Finish picking on the <Link to="/warehouse/pick-lists" className="text-blue-600 hover:text-blue-700 hover:underline font-medium">Pick lists</Link> page first.</p>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Packages" required error={err?.errors.package_count?.[0]}><Input inputMode="numeric" className="tabular" value={packageCount} onChange={(e) => setPackageCount(e.target.value.replace(/\D/g, ''))} placeholder="e.g. 3" /></Field>
-            <Field label="Total weight (kg)" error={err?.errors.total_weight_kg?.[0]}><Input inputMode="decimal" className="tabular" value={weight} onChange={(e) => setWeight(e.target.value.replace(/[^\d.]/g, ''))} placeholder="Optional" /></Field>
+            <Field label="Packages" required error={err?.errors.package_count?.[0]}><Input inputMode="numeric" className="tabular text-sm" value={packageCount} onChange={(e) => setPackageCount(e.target.value.replace(/\D/g, ''))} placeholder="e.g. 3" /></Field>
+            <Field label="Total weight (kg)" error={err?.errors.total_weight_kg?.[0]}><Input inputMode="decimal" className="tabular text-sm" value={weight} onChange={(e) => setWeight(e.target.value.replace(/[^\d.]/g, ''))} placeholder="Optional" /></Field>
           </div>
           <Field label="Packing notes" error={err?.errors.packing_notes?.[0]}><Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Cool box, fragile, cartons sealed…" /></Field>
           {err && !Object.keys(err.errors).length && <InlineError error={pack.error} />}
           <div className="flex justify-between gap-2">
-            <Link to={`/warehouse/dispatch?order=${list.sales_order_id}`} className="text-[12px] text-[var(--color-navy)] underline self-center">Dispatch this order</Link>
+            <Link to={`/warehouse/dispatch?order=${list.sales_order_id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold self-center">Dispatch this order</Link>
             <Button variant="primary" disabled={!packageCount || Number(packageCount) < 1 || pack.isPending} onClick={() => pack.mutate()}>{pack.isPending ? 'Saving…' : list.packed_at ? 'Correct packing' : 'Mark packed'}</Button>
           </div>
         </>

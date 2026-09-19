@@ -70,8 +70,8 @@ export function StockInForm({ product, onDone, onCancel }: { product: Product; o
 
   return (
     <div className="space-y-4">
-      <div className="text-[12px] text-[var(--text-secondary)]">
-        Receives stock without a purchase order (an emergency goods receipt). For supplier deliveries against an order use <Link to="/buy/goods-receipts" className="underline">Goods Receipts</Link>; for the go-live stock take use <Link to="/inventory/opening-stock" className="underline">Opening Stock</Link>.
+      <div className="text-xs text-slate-600">
+        Receives stock without a purchase order (an emergency goods receipt). For supplier deliveries against an order use <Link to="/buy/goods-receipts" className="text-blue-600 hover:text-blue-700 hover:underline font-medium">Goods Receipts</Link>; for the go-live stock take use <Link to="/inventory/opening-stock" className="text-blue-600 hover:text-blue-700 hover:underline font-medium">Opening Stock</Link>.
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Store" required>
@@ -103,7 +103,7 @@ export function StockInForm({ product, onDone, onCancel }: { product: Product; o
           <Input inputMode="decimal" className="tabular" value={unitCost} onChange={(e) => setUnitCost(e.target.value.replace(/[^\d.]/g, ''))} />
         </Field>
         {canRelease && (
-          <label className="flex items-center gap-2 text-[12px] pt-5">
+          <label className="flex items-center gap-2 text-xs font-medium text-slate-700 pt-5">
             <input type="checkbox" checked={release} onChange={(e) => setRelease(e.target.checked)} /> Release for sale now (QC checked)
           </label>
         )}

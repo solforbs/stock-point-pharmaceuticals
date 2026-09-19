@@ -83,9 +83,9 @@ export default function LeavePage() {
         title="Leave"
         subtitle="Days are counted Monday to Friday. Only approved leave uses the balance, and nobody approves their own request."
       />
-      <div className="flex gap-1 mb-3 border-b border-[var(--border)]">
+      <div className="flex gap-1 mb-3 border-b border-slate-200">
         {(['requests', 'balances'] as const).map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)} className={`px-3 py-2 text-[12.5px] font-semibold border-b-2 -mb-px ${tab === t ? 'border-[var(--color-navy)] text-[var(--text)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text)]'}`}>
+          <button key={t} type="button" onClick={() => setTab(t)} className={`px-4 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors ${tab === t ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
             {t === 'requests' ? 'Requests' : 'Balances'}
           </button>
         ))}
@@ -129,9 +129,9 @@ function RequestsTab({ canApprove }: { canApprove: boolean }) {
   const canCancel = (r: LeaveRequest) => ['PENDING', 'APPROVED', 'DRAFT'].includes(r.status) && (canApprove || isOwnRequest(r))
 
   const columns: Column<LeaveRequest>[] = [
-    { key: 'doc', header: 'Request', render: (r) => <span className="font-semibold tabular">{r.doc_number}</span>, sortValue: (r) => r.doc_number },
-    { key: 'employee', header: 'Employee', render: (r) => <>{r.employee?.name ?? '—'}<div className="text-[10.5px] text-[var(--text-muted)]">{r.employee?.employee_no}{r.employee?.department ? ` · ${r.employee.department}` : ''}</div></>, sortValue: (r) => r.employee?.name ?? '' },
-    { key: 'type', header: 'Type', render: (r) => <>{r.leave_type?.name ?? '—'}{r.leave_type && !r.leave_type.is_paid && <span className="ml-1 text-[10.5px] text-[var(--text-muted)]">(unpaid)</span>}</> },
+    { key: 'doc', header: 'Request', render: (r) => <span className="font-semibold font-mono tabular">{r.doc_number}</span>, sortValue: (r) => r.doc_number },
+    { key: 'employee', header: 'Employee', render: (r) => <>{r.employee?.name ?? '—'}<div className="text-xs text-slate-500 font-mono">{r.employee?.employee_no}{r.employee?.department ? ` · ${r.employee.department}` : ''}</div></>, sortValue: (r) => r.employee?.name ?? '' },
+    { key: 'type', header: 'Type', render: (r) => <>{r.leave_type?.name ?? '—'}{r.leave_type && !r.leave_type.is_paid && <span className="ml-1 text-xs text-slate-500">(unpaid)</span>}</> },
     { key: 'dates', header: 'Dates', render: (r) => <span className="tabular">{formatDate(r.start_date)} – {formatDate(r.end_date)}</span>, sortValue: (r) => r.start_date },
     { key: 'days', header: 'Days', align: 'right', render: (r) => <span className="tabular font-semibold">{days(r.days)}</span>, sortValue: (r) => Number(r.days) },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
@@ -191,7 +191,7 @@ function RequestsTab({ canApprove }: { canApprove: boolean }) {
         </div>
       </FilterBar>
       {employees.data && !employees.data.data.length && (
-        <div className="mb-3 text-[11.5px] text-[var(--text-muted)]">Your user is not linked to an employee record, so you cannot request leave yet. Ask payroll to link it.</div>
+        <div className="mb-3 text-xs text-slate-500">Your user is not linked to an employee record, so you cannot request leave yet. Ask payroll to link it.</div>
       )}
       <div className="ui-card">
         <DataTable
@@ -212,7 +212,7 @@ function RequestsTab({ canApprove }: { canApprove: boolean }) {
       <Drawer open={!!selected} onClose={() => setSelected(null)} title={selected?.doc_number ?? ''} subtitle={selected?.employee?.name}>
         {selected && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2"><StatusBadge status={selected.status} /><span className="text-[12px] text-[var(--text-secondary)]">{days(selected.days)} working day(s)</span></div>
+            <div className="flex items-center gap-2"><StatusBadge status={selected.status} /><span className="text-xs text-slate-600 font-medium">{days(selected.days)} working day(s)</span></div>
             <DescriptionList
               items={[
                 { label: 'Employee', value: `${selected.employee?.employee_no ?? ''} · ${selected.employee?.name ?? ''}` },
@@ -298,19 +298,19 @@ function RequestForm({ employees, types, onDone }: { employees: LeaveEmployee[];
         <Field label="First day" required error={err?.errors.start_date?.[0]}><Input type="date" value={form.start_date} onChange={(e) => set({ start_date: e.target.value, end_date: form.end_date < e.target.value ? e.target.value : form.end_date })} /></Field>
         <Field label="Last day" required error={err?.errors.end_date?.[0]}><Input type="date" value={form.end_date} min={form.start_date} onChange={(e) => set({ end_date: e.target.value })} /></Field>
       </div>
-      <div className="rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-[12px] flex flex-wrap gap-x-5 gap-y-1 tabular">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs flex flex-wrap gap-x-5 gap-y-1 tabular font-mono">
         <span>Working days <b>{requested}</b></span>
         {balance && type?.is_paid && (
           <>
             <span>Entitlement {year} <b>{days(balance.entitlement)}</b></span>
             <span>Taken <b>{days(balance.taken)}</b></span>
             <span>Pending <b>{days(balance.pending)}</b></span>
-            <span className={short ? 'text-[var(--status-red)]' : ''}>Available <b>{days(balance.balance)}</b></span>
+            <span className={short ? 'text-rose-600 font-bold' : ''}>Available <b>{days(balance.balance)}</b></span>
           </>
         )}
-        {type && !type.is_paid && <span className="text-[var(--text-muted)]">Unpaid leave has no balance limit.</span>}
+        {type && !type.is_paid && <span className="text-slate-500 font-sans">Unpaid leave has no balance limit.</span>}
       </div>
-      {short && <div className="text-[11.5px] text-[var(--status-red)]">This is more than the remaining balance; the request will be refused.</div>}
+      {short && <div className="text-xs font-semibold text-rose-600">This is more than the remaining balance; the request will be refused.</div>}
       <Field label="Reason"><Textarea rows={3} value={form.reason} onChange={(e) => set({ reason: e.target.value })} /></Field>
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
       <div className="flex justify-end gap-2">
@@ -359,18 +359,18 @@ function BalancesTab() {
               {rows.map((r) => (
                 <tr key={r.employee.id}>
                   <td>
-                    <div className="font-semibold">{r.employee.name}</div>
-                    <div className="text-[10.5px] text-[var(--text-muted)]">{r.employee.employee_no}{r.employee.department ? ` · ${r.employee.department}` : ''}</div>
+                    <div className="font-semibold text-slate-900">{r.employee.name}</div>
+                    <div className="text-xs text-slate-500 font-mono">{r.employee.employee_no}{r.employee.department ? ` · ${r.employee.department}` : ''}</div>
                   </td>
                   {paidTypes.map((t) => {
                     const b = r.balances.find((x) => x.leave_type_id === t.id)
-                    if (!b) return <td key={t.id} className="text-right">—</td>
+                    if (!b) return <td key={t.id} className="text-right text-slate-400">—</td>
                     const low = Number(b.balance) <= 0
                     return (
-                      <td key={t.id} className="text-right tabular" title={`Entitlement ${b.entitlement} · taken ${b.taken} · pending ${b.pending}`}>
-                        <span className={`font-semibold ${low ? 'text-[var(--text-muted)]' : ''}`}>{days(b.balance)}</span>
-                        <span className="text-[var(--text-muted)]"> / {days(b.entitlement)}</span>
-                        {Number(b.pending) > 0 && <div className="text-[10px] text-[#b45309]">{days(b.pending)} pending</div>}
+                      <td key={t.id} className="text-right tabular font-mono" title={`Entitlement ${b.entitlement} · taken ${b.taken} · pending ${b.pending}`}>
+                        <span className={`font-semibold ${low ? 'text-slate-400' : 'text-slate-900'}`}>{days(b.balance)}</span>
+                        <span className="text-slate-400"> / {days(b.entitlement)}</span>
+                        {Number(b.pending) > 0 && <div className="text-xs text-amber-600 font-sans">{days(b.pending)} pending</div>}
                       </td>
                     )
                   })}
@@ -380,7 +380,7 @@ function BalancesTab() {
           </table>
         )}
       </div>
-      <p className="mt-2 text-[11px] text-[var(--text-muted)]">Available / entitlement in working days. Entitlements are pro-rated for employees who joined or left during the year. Unpaid leave is not shown because it has no balance.</p>
+      <p className="mt-2 text-xs text-slate-500">Available / entitlement in working days. Entitlements are pro-rated for employees who joined or left during the year. Unpaid leave is not shown because it has no balance.</p>
     </>
   )
 }

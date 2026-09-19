@@ -115,7 +115,7 @@ export function NewPurchaseOrderDrawer({
                       <tr key={l.key}>
                         <td>
                           <div className="font-bold text-slate-900">{l.product.name}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">{l.product.code}</div>
+                          <div className="text-xs text-slate-400 font-mono">{l.product.code}</div>
                         </td>
                         <td>
                           <select
@@ -123,7 +123,7 @@ export function NewPurchaseOrderDrawer({
                             onChange={(e) =>
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, uom_id: e.target.value } : x)))
                             }
-                            className="ui-input h-8 w-auto text-xs font-semibold"
+                            className="ui-input h-8 w-auto text-sm font-semibold"
                           >
                             {(l.product.uoms ?? [])
                               .filter((u) => u.is_purchase || u.is_base)
@@ -142,7 +142,7 @@ export function NewPurchaseOrderDrawer({
                             onChange={(e) =>
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, qty_ordered: e.target.value.replace(/[^\d.]/g, '') } : x)))
                             }
-                            className="ui-input h-8 w-20 tabular text-right font-bold text-xs"
+                            className="ui-input h-8 w-20 tabular text-right font-bold text-sm"
                           />
                         </td>
                         <td>
@@ -154,7 +154,7 @@ export function NewPurchaseOrderDrawer({
                             onChange={(e) =>
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, unit_price: e.target.value.replace(/[^\d.]/g, '') } : x)))
                             }
-                            className="ui-input h-8 w-28 tabular text-right font-bold text-xs"
+                            className="ui-input h-8 w-28 tabular text-right font-bold text-sm"
                           />
                         </td>
                         <td className="text-right">
@@ -174,7 +174,7 @@ export function NewPurchaseOrderDrawer({
                 </table>
               </div>
             ) : (
-              <div className="p-6 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/60 text-[12.5px] text-slate-500">
+              <div className="p-6 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/60 text-xs text-slate-500">
                 Use the search box above to add medicine lines to this purchase order.
               </div>
             )}

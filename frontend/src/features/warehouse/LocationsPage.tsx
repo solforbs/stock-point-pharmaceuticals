@@ -97,8 +97,8 @@ export default function LocationsPage() {
             {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
           </Select>
         </Field>
-        <label className="flex items-center gap-2 text-[12px] pb-2"><input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Show deactivated</label>
-        {list.data && <div className="text-[11.5px] text-[var(--text-muted)] pb-2">{list.data.length} locations across {aisleCount} aisle{aisleCount === 1 ? '' : 's'}</div>}
+        <label className="flex items-center gap-2 text-xs font-medium text-slate-700 pb-2"><input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Show deactivated</label>
+        {list.data && <div className="text-xs text-slate-500 pb-2">{list.data.length} locations across {aisleCount} aisle{aisleCount === 1 ? '' : 's'}</div>}
       </FilterBar>
       <div className="ui-card">
         {stores.isSuccess && !stores.data.length ? (
@@ -150,7 +150,7 @@ function LocationDetail({ location, canManage, onEdit }: { location: WarehouseLo
   })
 
   const stockColumns: Column<LocationStockRow>[] = [
-    { key: 'product', header: 'Product', render: (r) => <><span className="font-semibold">{r.product_name}</span><div className="text-[10.5px] text-[var(--text-muted)] tabular">{r.product_code}</div></>, sortValue: (r) => r.product_name },
+    { key: 'product', header: 'Product', render: (r) => <><span className="font-semibold">{r.product_name}</span><div className="text-xs text-slate-500 font-mono tabular">{r.product_code}</div></>, sortValue: (r) => r.product_name },
     { key: 'batch', header: 'Batch', render: (r) => <span className="tabular">{r.batch_number}</span>, sortValue: (r) => r.batch_number },
     { key: 'expiry', header: 'Expiry', render: (r) => <ExpiryBadge date={r.expiry_date} />, sortValue: (r) => r.expiry_date ?? '' },
     { key: 'status', header: 'Batch status', render: (r) => <StatusBadge status={r.batch_status} /> },
@@ -180,7 +180,7 @@ function LocationDetail({ location, canManage, onEdit }: { location: WarehouseLo
         ]}
       />
       <div>
-        <div className="text-[12px] font-bold mb-2">Stock at this location</div>
+        <div className="text-sm font-bold text-slate-900 mb-2">Stock at this location</div>
         <div className="ui-card">
           <DataTable
             columns={stockColumns}
@@ -205,7 +205,7 @@ function LocationDetail({ location, canManage, onEdit }: { location: WarehouseLo
         onCancel={() => setConfirming(false)}
       />
       {location.on_hand_base && Number(location.on_hand_base) !== 0 && location.is_active && (
-        <p className="text-[11px] text-[var(--status-amber)]">This location still holds stock ({location.on_hand_base} base units). Move it before deactivating.</p>
+        <p className="text-xs text-amber-700 font-medium">This location still holds stock ({location.on_hand_base} base units). Move it before deactivating.</p>
       )}
     </div>
   )

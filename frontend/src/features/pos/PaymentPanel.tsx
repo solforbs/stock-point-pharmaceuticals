@@ -96,10 +96,10 @@ export function PaymentPanel({
               <ArrowLeft size={18} />
             </button>
             <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">
                 Checkout & Tender
               </span>
-              <div className="text-[24px] font-black tracking-tight text-slate-900 tabular leading-none mt-0.5">
+              <div className="text-2xl font-bold tracking-tight text-slate-900 tabular leading-none mt-0.5">
                 KES {formatMoney(total)}
               </div>
             </div>
@@ -287,11 +287,11 @@ export function PaymentPanel({
                 <span>Remaining</span>
                 <MoneyCell
                   value={remaining}
-                  className={dEq(remaining, '0') ? 'text-emerald-600' : 'text-rose-600'}
+                  className={dEq(remaining, '0') ? 'text-emerald-700' : 'text-rose-700'}
                 />
               </div>
               {!dEq(remaining, '0') && (
-                <p className="text-[11px] font-semibold text-rose-600 pt-1">
+                <p className="text-xs font-semibold text-rose-700 pt-1">
                   Payments must sum exactly to the total.
                 </p>
               )}
@@ -318,14 +318,14 @@ export function PaymentPanel({
                   </div>
                 </div>
                 {customer.credit?.on_hold && (
-                  <p className="text-rose-600 font-bold pt-1">
-                    ⚠️ Account is on credit hold: {customer.credit.hold_reason ?? 'Administrative hold'}.
+                  <p className="text-rose-700 font-bold pt-1">
+                    Account is on credit hold: {customer.credit.hold_reason ?? 'Administrative hold'}.
                   </p>
                 )}
               </>
             ) : (
-              <p className="text-rose-600 font-bold">
-                ⚠️ Please select a customer account first (F5).
+              <p className="text-rose-700 font-bold">
+                Please select a customer account first (F5).
               </p>
             )}
           </div>
@@ -350,7 +350,7 @@ export function PaymentPanel({
 
         {checkoutError && (
           <div role="alert" className="text-xs rounded-xl p-3 border border-rose-200 bg-rose-50 text-rose-900 space-y-1">
-            <div className="font-extrabold">{checkoutError.code}</div>
+            <div className="font-bold">{checkoutError.code}</div>
             <div>{checkoutError.message}</div>
           </div>
         )}
@@ -362,17 +362,17 @@ export function PaymentPanel({
           type="button"
           disabled={!canPost}
           onClick={post}
-          className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm shadow-md shadow-emerald-600/20 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 cursor-pointer transition-all"
+          className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-sm shadow-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-300 flex items-center justify-center gap-2 cursor-pointer transition-colors"
         >
           <CheckCircle2 size={16} />
           <span>
             {isPosting ? 'POSTING SALE…' : mode === 'credit' ? 'POST INVOICE ON CREDIT' : `COMPLETE SALE (KES ${formatMoney(total)})`}
           </span>
-          <span className="px-1.5 py-0.5 rounded bg-white/20 text-white text-[11px] font-mono font-bold tracking-wider">
+          <span className="px-1.5 py-0.5 rounded bg-white/20 text-white text-xs font-mono font-semibold">
             Enter
           </span>
         </button>
-        <p className="text-[12px] text-slate-500 text-center mt-2 font-medium">
+        <p className="text-xs text-slate-500 text-center mt-2 font-medium">
           Receipt prints automatically and inventory is updated immediately.
         </p>
       </footer>

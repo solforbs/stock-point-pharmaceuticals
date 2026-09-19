@@ -52,10 +52,10 @@ export default function SettingsPage() {
           {settings.isError && <InlineError error={settings.error} />}
           {settings.data && (
             <div className="space-y-4">
-              <div className="text-[11.5px] text-[var(--text-muted)]">Showing values in force for <b>{user?.active_branch?.code ?? settings.data.branch_id}</b>.</div>
+              <div className="text-xs text-slate-500">Showing values in force for <b>{user?.active_branch?.code ?? settings.data.branch_id}</b>.</div>
               {scopes.map((scope) => (
                 <section key={scope} className="ui-card">
-                  <header className="px-4 py-2.5 border-b border-[var(--border)] text-[13px] font-bold">{titleCase(scope)}</header>
+                  <header className="px-4 py-2.5 border-b border-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-900">{titleCase(scope)}</header>
                   <table className="ui-table">
                     <thead>
                       <tr><th>Key</th><th>Description</th><th className="text-right">Effective value</th><th>Source</th><th>Set</th><th /></tr>
@@ -64,10 +64,10 @@ export default function SettingsPage() {
                       {rows.filter((r) => r.scope === scope).map((r) => (
                         <tr key={r.key}>
                           <td className="font-semibold tabular whitespace-nowrap">{r.key}</td>
-                          <td className="text-[var(--text-secondary)] max-w-md">{r.description}</td>
-                          <td className="text-right tabular font-semibold">{displayValue(r.value)}</td>
+                          <td className="text-slate-600 max-w-md">{r.description}</td>
+                          <td className="text-right tabular font-semibold font-mono">{displayValue(r.value)}</td>
                           <td><StatusBadge status={r.source} tone={sourceTone[r.source]} /></td>
-                          <td className="tabular text-[var(--text-muted)] whitespace-nowrap">{r.set_at ? formatDateTime(r.set_at) : '—'}</td>
+                          <td className="tabular text-slate-400 font-mono whitespace-nowrap">{r.set_at ? formatDateTime(r.set_at) : '—'}</td>
                           <td className="text-right"><Button size="sm" onClick={() => setEditing(r)}>Edit</Button></td>
                         </tr>
                       ))}
@@ -129,7 +129,7 @@ function SettingForm({ row, branchCode, onDone, onCancel }: { row: SettingRow; b
           <Input type={row.type === 'string' ? 'text' : 'number'} step={row.type === 'decimal' ? '0.01' : '1'} inputMode={row.type === 'string' ? 'text' : 'decimal'} className={row.type === 'string' ? '' : 'tabular'} value={value} onChange={(e) => setValue(e.target.value)} autoFocus />
         )}
       </Field>
-      <label className="flex items-center gap-2 text-[12px]">
+      <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
         <input type="checkbox" checked={branchScoped} onChange={(e) => setBranchScoped(e.target.checked)} /> Only for this branch{branchCode ? ` (${branchCode})` : ''}
       </label>
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}

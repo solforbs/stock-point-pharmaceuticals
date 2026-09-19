@@ -87,18 +87,18 @@ export default function DispatchPage() {
                 {dispatch.isPending ? 'Dispatching…' : 'Dispatch'}
               </Button>
             </div>
-            <p className="text-[11px] text-[var(--text-muted)]">INVALID_STATE means the order has no completed pick list yet — pick it first.</p>
+            <p className="text-xs text-slate-500">INVALID_STATE means the order has no completed pick list yet — pick it first.</p>
           </div>
         </Card>
         <Card title="Delivery note">
           {!note ? (
-            <div className="p-6 text-[12px] text-[var(--text-muted)]">The delivery note appears here after dispatch.</div>
+            <div className="p-6 text-sm text-slate-500">The delivery note appears here after dispatch.</div>
           ) : (
-            <div className="p-4 space-y-2 text-[12.5px]">
+            <div className="p-4 space-y-2 text-sm">
               <div className="flex items-center gap-2"><span className="font-bold tabular">{note.doc_number}</span><StatusBadge status={note.status} /></div>
               <div>Vehicle {note.vehicle_reg ?? '—'} · Driver {note.driver_name ?? '—'} {note.driver_phone ? `(${note.driver_phone})` : ''}</div>
-              {note.sale_id && <Link to={`/sell/invoices?sale=${note.sale_id}`} className="text-[var(--color-navy)] underline">Open the posted invoice</Link>}
-              <div><Link to={`/warehouse/deliveries?note=${note.id}`} className="text-[var(--color-navy)] underline">Record proof of delivery</Link></div>
+              {note.sale_id && <div><Link to={`/sell/invoices?sale=${note.sale_id}`} className="text-blue-600 hover:text-blue-700 hover:underline font-medium">Open the posted invoice</Link></div>}
+              <div><Link to={`/warehouse/deliveries?note=${note.id}`} className="text-blue-600 hover:text-blue-700 hover:underline font-medium">Record proof of delivery</Link></div>
             </div>
           )}
         </Card>

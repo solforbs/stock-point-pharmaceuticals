@@ -55,11 +55,11 @@ function resolveAttention(s?: DashboardSummary): Attention[] {
   return items
 }
 
-const toneStyles: Record<Attention['tone'], { text: string; bg: string }> = {
-  red: { text: 'text-rose-700', bg: 'bg-rose-50' },
-  amber: { text: 'text-amber-800', bg: 'bg-amber-50' },
-  blue: { text: 'text-sky-700', bg: 'bg-sky-50' },
-  purple: { text: 'text-purple-700', bg: 'bg-purple-50' },
+const toneStyles: Record<Attention['tone'], { text: string; bg: string; border: string }> = {
+  red: { text: 'text-rose-800', bg: 'bg-rose-50', border: 'border-rose-200/70' },
+  amber: { text: 'text-amber-800', bg: 'bg-amber-50', border: 'border-amber-200/70' },
+  blue: { text: 'text-blue-800', bg: 'bg-blue-50', border: 'border-blue-200/70' },
+  purple: { text: 'text-purple-800', bg: 'bg-purple-50', border: 'border-purple-200/70' },
 }
 
 export function AttentionAlertsSection({ summary }: AttentionAlertsSectionProps) {
@@ -67,43 +67,43 @@ export function AttentionAlertsSection({ summary }: AttentionAlertsSectionProps)
   const openPeriod = summary?.finance?.open_period
 
   return (
-    <section className="bg-white rounded-[26px] p-6 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_10px_28px_-6px_rgba(15,23,42,0.03)] border-0 flex flex-col justify-between">
+    <section className="bg-white rounded-xl p-5 sm:p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
       <div>
-        <header className="flex items-center justify-between pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
-              <AlertTriangle size={18} />
+        <header className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+              <AlertTriangle size={16} />
             </div>
             <div>
-              <h2 className="text-[14.5px] font-bold text-slate-900">Action Items & Compliance</h2>
-              <p className="text-[11.5px] text-slate-400 font-medium">Compliance, expiry & inventory flags</p>
+              <h2 className="text-sm font-semibold text-slate-900">Action Items & Compliance</h2>
+              <p className="text-xs text-slate-500 font-normal">Compliance, expiry & inventory flags</p>
             </div>
           </div>
           {items.length > 0 && (
-            <span className="tabular font-bold text-[11px] px-3 py-1 rounded-full bg-rose-50 text-rose-700">
+            <span className="tabular font-semibold text-xs px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200/70 text-rose-800">
               {items.length} Alerts
             </span>
           )}
         </header>
 
         {items.length === 0 ? (
-          <div className="p-6 text-center text-[12.5px] text-slate-400">
+          <div className="p-6 text-center text-xs text-slate-400">
             Everything is running smoothly. Zero compliance flags today.
           </div>
         ) : (
-          <div className="space-y-1.5 pt-1">
+          <div className="space-y-0.5 pt-2">
             {items.map((item) => {
               const st = toneStyles[item.tone]
               return (
                 <Link
                   key={item.key}
                   to={item.to}
-                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
+                  className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors group"
                 >
-                  <span className="text-[13px] font-medium text-slate-700 group-hover:text-rose-600 transition-colors">
+                  <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
                     {item.label}
                   </span>
-                  <span className={`tabular font-bold px-2.5 py-0.5 rounded-full text-[11px] ${st.bg} ${st.text}`}>
+                  <span className={`tabular font-semibold px-2 py-0.5 rounded-md text-xs border ${st.bg} ${st.text} ${st.border}`}>
                     {item.count}
                   </span>
                 </Link>
@@ -114,9 +114,9 @@ export function AttentionAlertsSection({ summary }: AttentionAlertsSectionProps)
       </div>
 
       {openPeriod && (
-        <div className="pt-4 mt-3 border-t border-slate-50 text-[11.5px] text-slate-400 tabular flex items-center justify-between">
+        <div className="pt-3 mt-3 border-t border-slate-100 text-xs text-slate-500 tabular flex items-center justify-between">
           <span>Active Fiscal Period</span>
-          <span className="font-semibold text-slate-600">
+          <span className="font-medium text-slate-700">
             FY{openPeriod.fiscal_year}/P{String(openPeriod.period_no).padStart(2, '0')} · {formatDate(openPeriod.start_date)} – {formatDate(openPeriod.end_date)}
           </span>
         </div>

@@ -39,8 +39,8 @@ export function UserPicker({
       <div className="ui-input flex items-center gap-2">
         <span className="flex-1 truncate">{chosen ? `${chosen.name}${chosen.username ? ` (${chosen.username})` : ''}` : `User #${value}`}</span>
         {!disabled && (
-          <button type="button" aria-label="Clear user" onClick={() => onChange(null, null)} className="text-[var(--text-muted)] hover:text-[var(--text)]">
-            <X size={13} />
+          <button type="button" aria-label="Clear user" onClick={() => onChange(null, null)} className="text-slate-400 hover:text-slate-600">
+            <X size={14} />
           </button>
         )}
       </div>
@@ -64,9 +64,9 @@ export function UserPicker({
         autoComplete="off"
       />
       {open && (
-        <div className="absolute z-30 left-0 right-0 top-9 ui-card shadow-xl max-h-60 overflow-y-auto">
+        <div className="absolute z-30 left-0 right-0 top-10 ui-card shadow-xl max-h-60 overflow-y-auto">
           {options.length === 0 ? (
-            <div className="px-3 py-2 text-[11.5px] text-[var(--text-muted)]">{users.isFetching ? 'Searching…' : 'No users match.'}</div>
+            <div className="px-3 py-2 text-xs text-slate-500">{users.isFetching ? 'Searching…' : 'No users match.'}</div>
           ) : (
             options.map((u) => (
               <button
@@ -77,9 +77,9 @@ export function UserPicker({
                   setOpen(false)
                   setQuery('')
                 }}
-                className="w-full text-left px-3 py-1.5 border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--surface-2)] text-[12.5px]"
+                className="w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 text-sm"
               >
-                {u.name} <span className="text-[var(--text-muted)]">{u.username ? `· ${u.username}` : ''} · #{u.id}</span>
+                {u.name} <span className="text-slate-500 font-mono text-xs">{u.username ? `· ${u.username}` : ''} · #{u.id}</span>
               </button>
             ))
           )}

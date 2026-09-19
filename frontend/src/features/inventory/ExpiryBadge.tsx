@@ -6,7 +6,7 @@ export interface ExpiryBadgeProps {
 }
 
 export function ExpiryBadge({ date }: ExpiryBadgeProps) {
-  if (!date) return <span className="text-[var(--text-muted)]">—</span>
+  if (!date) return <span className="text-slate-400">—</span>
 
   const tier = expiryTier(date)
   const tone =

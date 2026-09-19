@@ -26,10 +26,10 @@ export default function InvoicesPage() {
   })
 
   const columns: Column<Sale>[] = [
-    { key: 'doc', header: 'Document', render: (s) => <span className="font-semibold tabular text-[var(--color-navy)]">{s.doc_number}</span>, sortValue: (s) => s.doc_number },
+    { key: 'doc', header: 'Document', render: (s) => <span className="font-semibold tabular text-blue-600 hover:text-blue-700">{s.doc_number}</span>, sortValue: (s) => s.doc_number },
     { key: 'posted', header: 'Posted', render: (s) => formatDateTime(s.posted_at), sortValue: (s) => s.posted_at ?? '' },
     { key: 'mode', header: 'Mode', render: (s) => <StatusBadge status={s.sale_mode} /> },
-    { key: 'customer', header: 'Customer', render: (s) => s.customer?.name ?? <span className="text-[var(--text-muted)]">Walk-in</span>, sortValue: (s) => s.customer?.name ?? '' },
+    { key: 'customer', header: 'Customer', render: (s) => s.customer?.name ?? <span className="text-slate-400">Walk-in</span>, sortValue: (s) => s.customer?.name ?? '' },
     { key: 'status', header: 'Status', render: (s) => <StatusBadge status={s.status} /> },
     { key: 'total', header: 'Total', align: 'right', render: (s) => <MoneyCell value={s.grand_total} />, sortValue: (s) => Number(s.grand_total) },
     {

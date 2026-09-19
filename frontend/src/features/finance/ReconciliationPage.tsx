@@ -94,7 +94,7 @@ export default function ReconciliationPage() {
         }]
       : []),
     { key: 'received', header: 'Received', render: (p) => <span className="tabular">{formatDateTime(p.received_at)}</span>, sortValue: (p) => p.received_at },
-    { key: 'customer', header: 'Customer', render: (p) => <>{p.customer?.name ?? '—'}<div className="text-[10.5px] text-[var(--text-muted)] tabular">{p.customer?.code}</div></>, sortValue: (p) => p.customer?.name ?? '' },
+    { key: 'customer', header: 'Customer', render: (p) => <>{p.customer?.name ?? '—'}<div className="text-xs text-slate-500 font-mono tabular">{p.customer?.code}</div></>, sortValue: (p) => p.customer?.name ?? '' },
     { key: 'method', header: 'Method', render: (p) => titleCase(p.method), sortValue: (p) => p.method },
     { key: 'reference', header: 'Reference', render: (p) => <span className="tabular">{p.reference ?? '—'}</span> },
     { key: 'amount', header: 'Amount', align: 'right', render: (p) => <MoneyCell value={p.amount} />, sortValue: (p) => Number(p.amount) },
@@ -108,7 +108,7 @@ export default function ReconciliationPage() {
         return (
           <div>
             <StatusBadge status="RECONCILED" tone="green" label="Reconciled" />
-            <div className="text-[10.5px] text-[var(--text-muted)] mt-0.5">{p.reconciliation_ref} · {formatDate(p.statement_date)}{p.reconciler ? ` · ${p.reconciler.name}` : ''}</div>
+            <div className="text-xs text-slate-500 mt-0.5">{p.reconciliation_ref} · {formatDate(p.statement_date)}{p.reconciler ? ` · ${p.reconciler.name}` : ''}</div>
           </div>
         )
       },
@@ -150,17 +150,17 @@ export default function ReconciliationPage() {
       <div className="grid gap-3 mb-4 grid-cols-2 lg:grid-cols-5">
         {(list.data?.totals ?? []).map((t) => (
           <div key={t.method} className="ui-card p-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">{titleCase(t.method)} · {t.count} receipt{t.count === 1 ? '' : 's'}</div>
-            <div className="text-[17px] font-bold mt-1"><MoneyCell value={t.amount} symbol /></div>
-            <div className="text-[11px] mt-1 text-[var(--text-secondary)]">Reconciled <MoneyCell value={t.reconciled} /></div>
-            <div className={`text-[11px] ${Number(t.unreconciled) > 0 ? 'text-[var(--status-amber)] font-semibold' : 'text-[var(--text-muted)]'}`}>Outstanding <MoneyCell value={t.unreconciled} /> ({t.unreconciled_count})</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{titleCase(t.method)} · {t.count} receipt{t.count === 1 ? '' : 's'}</div>
+            <div className="text-xl font-bold mt-1 text-slate-900"><MoneyCell value={t.amount} symbol /></div>
+            <div className="text-xs mt-1 text-slate-600">Reconciled <MoneyCell value={t.reconciled} /></div>
+            <div className={`text-xs ${Number(t.unreconciled) > 0 ? 'text-amber-700 font-semibold' : 'text-slate-500'}`}>Outstanding <MoneyCell value={t.unreconciled} /> ({t.unreconciled_count})</div>
           </div>
         ))}
-        {list.data && !list.data.totals.length && <div className="text-[12px] text-[var(--text-muted)] col-span-full">No cleared receipts between {formatDate(list.data.from)} and {formatDate(list.data.to)}.</div>}
+        {list.data && !list.data.totals.length && <div className="text-sm text-slate-500 col-span-full">No cleared receipts between {formatDate(list.data.from)} and {formatDate(list.data.to)}.</div>}
       </div>
 
       {selected.size > 0 && (
-        <div className="mb-2 text-[12px] text-[var(--text-secondary)] flex items-center gap-3">
+        <div className="mb-2 text-sm text-slate-600 flex items-center gap-3">
           <span>{selected.size} selected · total <MoneyCell value={selectedTotal} symbol className="font-bold" /></span>
           <Button size="sm" variant="ghost" onClick={resetSelection}>Clear selection</Button>
         </div>
@@ -232,7 +232,7 @@ function ReconcileModal({ open, payments, total, onClose, onDone }: { open: bool
         </>
       }
     >
-      <p className="text-[var(--text-secondary)] mb-3">{payments.length} receipt{payments.length === 1 ? '' : 's'} totalling <MoneyCell value={total} symbol className="font-bold" /> will be marked as appearing on this statement.</p>
+      <p className="text-sm text-slate-600 mb-3">{payments.length} receipt{payments.length === 1 ? '' : 's'} totalling <MoneyCell value={total} symbol className="font-bold" /> will be marked as appearing on this statement.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Statement reference" required error={err?.errors.reconciliation_ref?.[0]}><Input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. KCB-SEP-2026 p.3" autoFocus /></Field>
         <Field label="Statement date" required error={err?.errors.statement_date?.[0]}><Input type="date" value={statementDate} max={todayIso()} onChange={(e) => setStatementDate(e.target.value)} /></Field>

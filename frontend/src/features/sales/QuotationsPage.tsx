@@ -265,7 +265,7 @@ function QuotationDrawer({ id, onClose, onAccepted }: { id: string | null; onClo
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <StatusBadge status={q.status} />
-            {q.converted_sales_order_id && <span className="text-[11.5px] text-[var(--text-muted)]">Converted to order {q.converted_sales_order_id.slice(0, 8)}</span>}
+            {q.converted_sales_order_id && <span className="text-xs text-slate-500 font-medium">Converted to order {q.converted_sales_order_id.slice(0, 8)}</span>}
           </div>
           <DescriptionList items={[{ label: 'Notes', value: q.notes ?? '—' }, { label: 'Created', value: formatDateTime(q.created_at) }]} />
           <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
@@ -286,7 +286,7 @@ function QuotationDrawer({ id, onClose, onAccepted }: { id: string | null; onClo
               </tbody>
             </table>
           </div>
-          <div className="ml-auto w-full sm:w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2 text-[13px] tabular">
+          <div className="ml-auto w-full sm:w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2 text-sm tabular">
             <div className="flex justify-between text-slate-500 font-medium"><span>Subtotal</span><MoneyCell value={q.subtotal} /></div>
             <div className="flex justify-between text-slate-500 font-medium"><span>Discount</span><MoneyCell value={`-${q.discount_total}`} /></div>
             <div className="flex justify-between text-slate-500 font-medium"><span>Tax</span><MoneyCell value={q.tax_total} /></div>

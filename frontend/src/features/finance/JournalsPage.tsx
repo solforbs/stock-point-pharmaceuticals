@@ -69,7 +69,7 @@ export default function JournalsPage() {
       render: (j) => (
         <span>
           {titleCase(j.source_doc_type ?? 'Manual')}{' '}
-          <span className="text-[var(--text-muted)] tabular">{j.source_doc_id?.slice(0, 8)}</span>
+          <span className="text-slate-400 font-mono text-xs tabular">({j.source_doc_id?.slice(0, 8)})</span>
         </span>
       ),
     },
@@ -129,9 +129,9 @@ export default function JournalsPage() {
           renderExpanded={(j) => (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="text-[12px] text-[var(--text-muted)]">
-                  Document Reference: <span className="font-medium text-[var(--text)]">{j.doc_number}</span>
-                  {j.reverses_journal_id && <span className="ml-2 text-amber-500">(Reverses another journal)</span>}
+                <div className="text-xs text-slate-500">
+                  Document Reference: <span className="font-semibold text-slate-900 font-mono">{j.doc_number}</span>
+                  {j.reverses_journal_id && <span className="ml-2 text-amber-600 font-medium">(Reverses another journal)</span>}
                 </div>
                 {canReverse && j.source_doc_type !== 'journal_reversal' && !j.reverses_journal_id && (
                   <Button
@@ -158,9 +158,9 @@ export default function JournalsPage() {
                     <tr key={l.id}>
                       <td className="tabular">{l.line_number}</td>
                       <td>
-                        <span className="tabular font-semibold">{l.account?.code}</span> {l.account?.name}
+                        <span className="tabular font-semibold font-mono">{l.account?.code}</span> {l.account?.name}
                         {l.account?.system_role && (
-                          <span className="ml-1 text-[10px] text-[var(--text-muted)]">({l.account.system_role})</span>
+                          <span className="ml-1 text-xs text-slate-500">({l.account.system_role})</span>
                         )}
                       </td>
                       <td>{l.narration ?? '—'}</td>
@@ -298,11 +298,11 @@ function NewJournalModal({ open, onClose }: { open: boolean; onClose: () => void
         <div className="flex w-full items-center justify-between">
           <div className="flex items-center gap-2">
             {isBalanced ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11.5px] font-medium text-emerald-500">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                 <CheckCircle2 size={13} /> Balanced ({formatMoney(totalDebit)})
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-[11.5px] font-medium text-amber-500">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200/60 px-2.5 py-1 text-xs font-semibold text-amber-700">
                 <AlertCircle size={13} /> Out of balance: KES {formatMoney(diff)}
               </span>
             )}
@@ -340,7 +340,7 @@ function NewJournalModal({ open, onClose }: { open: boolean; onClose: () => void
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-[12px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Journal Lines (Double-Entry)
             </h3>
             <Button size="sm" onClick={addLine}>
@@ -348,7 +348,7 @@ function NewJournalModal({ open, onClose }: { open: boolean; onClose: () => void
             </Button>
           </div>
 
-          <div className="overflow-x-auto rounded-[12px] border border-[var(--border)]">
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="ui-table w-full">
               <thead>
                 <tr>
@@ -403,7 +403,7 @@ function NewJournalModal({ open, onClose }: { open: boolean; onClose: () => void
                     <td className="text-center">
                       <button
                         type="button"
-                        className="cursor-pointer text-[var(--text-muted)] hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="cursor-pointer text-slate-400 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         disabled={lines.length <= 2}
                         title={lines.length <= 2 ? 'Minimum 2 lines required' : 'Remove line'}
                         onClick={() => removeLine(line.id)}
@@ -415,12 +415,12 @@ function NewJournalModal({ open, onClose }: { open: boolean; onClose: () => void
                 ))}
               </tbody>
               <tfoot>
-                <tr className="bg-[var(--surface-subtle)] font-semibold">
-                  <td colSpan={2} className="text-right text-[12px]">
+                <tr className="bg-slate-50 font-semibold text-slate-900">
+                  <td colSpan={2} className="text-right text-xs">
                     Totals:
                   </td>
-                  <td className="text-right tabular">{formatMoney(totalDebit)}</td>
-                  <td className="text-right tabular">{formatMoney(totalCredit)}</td>
+                  <td className="text-right tabular font-mono">{formatMoney(totalDebit)}</td>
+                  <td className="text-right tabular font-mono">{formatMoney(totalCredit)}</td>
                   <td />
                 </tr>
               </tfoot>

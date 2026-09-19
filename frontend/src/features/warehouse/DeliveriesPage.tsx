@@ -38,7 +38,7 @@ export default function DeliveriesPage() {
     { key: 'status', header: 'Status', render: (d) => <StatusBadge status={d.status} /> },
     { key: 'vehicle', header: 'Vehicle / driver', render: (d) => `${d.vehicle_reg ?? '—'} · ${d.driver_name ?? '—'}` },
     { key: 'dispatched', header: 'Dispatched', render: (d) => formatDateTime(d.dispatched_at), sortValue: (d) => d.dispatched_at ?? '' },
-    { key: 'delivered', header: 'Delivered', render: (d) => (d.delivered_at ? <span className="tabular">{formatDateTime(d.delivered_at)}<div className="text-[10.5px] text-[var(--text-muted)]">{d.received_by_name}</div></span> : '—') },
+    { key: 'delivered', header: 'Delivered', render: (d) => (d.delivered_at ? <span className="tabular">{formatDateTime(d.delivered_at)}<div className="text-xs text-slate-500 tabular">{d.received_by_name}</div></span> : '—') },
   ]
 
   return (
@@ -82,8 +82,8 @@ function DeliveryNoteDrawer({ id, onClose }: { id: string | null; onClose: () =>
         <div className="space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
             <StatusBadge status={d.status} />
-            {d.sale_id && <Link to={`/sell/invoices?sale=${d.sale_id}`} className="text-[11.5px] text-[var(--color-navy)] underline">Open the posted invoice</Link>}
-            <Link to={`/sell/sales-orders?order=${d.sales_order_id}`} className="text-[11.5px] text-[var(--color-navy)] underline">Open sales order</Link>
+            {d.sale_id && <Link to={`/sell/invoices?sale=${d.sale_id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open the posted invoice</Link>}
+            <Link to={`/sell/sales-orders?order=${d.sales_order_id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open sales order</Link>
           </div>
           <DescriptionList items={[{ label: 'Vehicle', value: d.vehicle_reg ?? '—' }, { label: 'Driver', value: `${d.driver_name ?? '—'}${d.driver_phone ? ` (${d.driver_phone})` : ''}` }, { label: 'Dispatched', value: formatDateTime(d.dispatched_at) }, { label: 'Delivered', value: d.delivered_at ? `${formatDateTime(d.delivered_at)} · received by ${d.received_by_name ?? ''}` : '—' }]} />
           <table className="ui-table">
@@ -93,7 +93,7 @@ function DeliveryNoteDrawer({ id, onClose }: { id: string | null; onClose: () =>
                 <tr key={l.id}>
                   <td>{l.product?.name ?? l.product_id.slice(0, 8)}</td>
                   <td className="text-right"><QtyCell value={l.qty_base ?? l.qty_dispatched_base ?? (l.batch_allocations ?? []).reduce((s, a) => s + Number(a.qty_base), 0).toFixed(4)} /></td>
-                  <td className="tabular text-[11.5px]">{(l.batch_allocations ?? []).map((a) => `${a.batch?.batch_number ?? a.batch_id.slice(0, 8)} ×${formatQty(a.qty_base)}${a.batch ? ` (exp ${formatDate(a.batch.expiry_date)})` : ''}`).join(', ') || '—'}</td>
+                  <td className="tabular text-xs">{(l.batch_allocations ?? []).map((a) => `${a.batch?.batch_number ?? a.batch_id.slice(0, 8)} ×${formatQty(a.qty_base)}${a.batch ? ` (exp ${formatDate(a.batch.expiry_date)})` : ''}`).join(', ') || '—'}</td>
                 </tr>
               ))}
             </tbody>

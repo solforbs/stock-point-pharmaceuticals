@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Search, ShoppingCart } from 'lucide-react'
 import { KeyboardHintBar } from '../../components/KeyboardHintBar'
 import { ConfirmDialog } from '../../components/ui/Modal'
 import { EmptyState, LoadingSkeleton } from '../../components/ui/States'
@@ -187,26 +188,28 @@ export default function PosPage() {
         <button
           type="button"
           onClick={() => setMobileTab('catalog')}
-          className={`flex-1 py-2.5 text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2.5 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             mobileTab === 'catalog'
               ? 'border-blue-600 text-blue-600 bg-blue-50/50'
               : 'border-transparent text-slate-600 hover:text-slate-900'
           }`}
         >
-          <span>🔍 Catalog & Search</span>
+          <Search size={14} />
+          <span>Catalog & Search</span>
         </button>
         <button
           type="button"
           onClick={() => setMobileTab('cart')}
-          className={`flex-1 py-2.5 text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2.5 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             mobileTab === 'cart'
               ? 'border-blue-600 text-blue-600 bg-blue-50/50'
               : 'border-transparent text-slate-600 hover:text-slate-900'
           }`}
         >
-          <span>🛒 Cart</span>
+          <ShoppingCart size={14} />
+          <span>Cart</span>
           {lines.length > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full bg-blue-600 text-white text-[11px] tabular font-black">
+            <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-xs tabular font-semibold">
               {lines.length}
             </span>
           )}

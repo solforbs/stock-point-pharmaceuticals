@@ -7,24 +7,24 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg'
 
 const variantClass: Record<ButtonVariant, string> = {
   primary:
-    'bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm shadow-blue-500/25 border border-blue-500/30 active:scale-[0.98]',
+    'bg-blue-600 hover:bg-blue-700 text-white shadow-xs border border-blue-700/20 active:scale-[0.99]',
   success:
-    'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-sm shadow-emerald-500/20 border border-emerald-500/30 active:scale-[0.98]',
+    'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs border border-emerald-700/20 active:scale-[0.99]',
   secondary:
-    'bg-white text-slate-800 border-slate-200/90 hover:bg-slate-50/90 hover:border-slate-300 shadow-2xs text-slate-700 active:scale-[0.99]',
+    'bg-white text-slate-800 border-slate-300 hover:bg-slate-50 hover:border-slate-400 shadow-2xs font-medium active:scale-[0.99]',
   danger:
-    'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white shadow-sm shadow-rose-500/20 border border-rose-500/30 active:scale-[0.98]',
+    'bg-rose-600 hover:bg-rose-700 text-white shadow-xs border border-rose-700/20 active:scale-[0.99]',
   ghost:
-    'bg-transparent text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-100/80',
+    'bg-transparent text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-100',
   outline:
-    'bg-transparent text-blue-600 border-blue-200 hover:bg-blue-50/80 hover:border-blue-300 font-bold',
+    'bg-transparent text-slate-700 border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400 font-medium',
 }
 
 const sizeClass: Record<ButtonSize, string> = {
-  xs: 'h-7 px-2.5 text-[11.5px] font-semibold rounded-lg gap-1',
-  sm: 'h-8 px-3 text-[12.5px] font-bold rounded-xl gap-1.5',
-  md: 'h-9.5 px-4 text-[13.5px] font-bold rounded-xl gap-2',
-  lg: 'h-11 px-5 text-[14.5px] font-extrabold rounded-2xl gap-2.5',
+  xs: 'h-7 px-2.5 text-xs font-medium rounded-lg gap-1',
+  sm: 'h-8 px-3 text-xs font-semibold rounded-lg gap-1.5',
+  md: 'h-9 px-3.5 text-sm font-semibold rounded-lg gap-2',
+  lg: 'h-10 px-4.5 text-sm font-semibold rounded-xl gap-2.5',
 }
 
 export function Button({
@@ -65,7 +65,7 @@ export function PrimaryAction({
       size={size}
       onClick={onClick}
       disabled={disabled}
-      className={`shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 font-bold ${className}`}
+      className={`font-semibold shadow-xs ${className}`}
     >
       <Icon size={size === 'lg' ? 18 : size === 'sm' ? 14 : 16} className="shrink-0" />
       <span>{children}</span>
@@ -109,14 +109,14 @@ export function Field({
       <label className="ui-label flex items-center justify-between">
         <span className="flex items-center gap-1">
           {label}
-          {required && <span className="text-rose-500 font-black">*</span>}
+          {required && <span className="text-rose-500 font-bold">*</span>}
         </span>
       </label>
       {children}
       {error ? (
-        <p className="text-[11.5px] font-bold text-rose-600 mt-1 flex items-center gap-1">{error}</p>
+        <p className="text-xs font-medium text-rose-600 mt-1 flex items-center gap-1">{error}</p>
       ) : hint ? (
-        <p className="text-[11.5px] text-slate-500 mt-1 font-medium leading-normal">{hint}</p>
+        <p className="text-xs text-slate-500 mt-1 font-normal leading-normal">{hint}</p>
       ) : null}
     </div>
   )
@@ -139,21 +139,21 @@ export function FormSection({
   className?: string
 }) {
   return (
-    <div className={`p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-3.5 ${className}`}>
+    <div className={`p-4 sm:p-5 bg-white rounded-xl border border-slate-200 shadow-xs space-y-3.5 ${className}`}>
       <div className="flex items-start justify-between gap-3 pb-2.5 border-b border-slate-100">
         <div className="flex items-center gap-2.5">
           {Icon && (
-            <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
               <Icon size={14} />
             </div>
           )}
           <div>
-            <h3 className="text-[13.5px] font-extrabold text-slate-900 leading-none">{title}</h3>
-            {description && <p className="text-[11.5px] text-slate-500 font-medium mt-1">{description}</p>}
+            <h3 className="text-sm font-semibold text-slate-900 leading-none">{title}</h3>
+            {description && <p className="text-xs text-slate-500 font-normal mt-1">{description}</p>}
           </div>
         </div>
         {badge && (
-          <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+          <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
             {badge}
           </span>
         )}
@@ -191,10 +191,10 @@ export function DrawerFooter({
 }) {
   const pending = isSubmitting ?? isPending ?? false
   return (
-    <div className="sticky bottom-0 z-10 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 p-4 sm:px-6 bg-white/95 backdrop-blur-md border-t border-slate-200/90 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 mt-6 shadow-[0_-4px_16px_rgba(0,0,0,0.03)]">
+    <div className="sticky bottom-0 z-10 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 p-4 sm:px-6 bg-white/95 backdrop-blur-md border-t border-slate-200 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 mt-6 shadow-[0_-4px_16px_rgba(0,0,0,0.03)]">
       <div className="flex items-center gap-2.5 min-w-0 w-full sm:w-auto">
         {badge && (
-          <span className="inline-flex items-center justify-center h-6 px-2.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-bold tabular shrink-0">
+          <span className="inline-flex items-center justify-center h-6 px-2.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium tabular shrink-0">
             {badge}
           </span>
         )}
@@ -204,7 +204,7 @@ export function DrawerFooter({
         {children}
       </div>
       <div className="flex items-center justify-end gap-2 w-full sm:w-auto shrink-0">
-        <Button onClick={onCancel} variant="secondary" size="md" className="w-full sm:w-auto font-semibold">
+        <Button onClick={onCancel} variant="secondary" size="md" className="w-full sm:w-auto font-medium">
           {cancelLabel}
         </Button>
         {onSubmit && (
@@ -214,7 +214,7 @@ export function DrawerFooter({
             size="md"
             disabled={disabled || pending}
             onClick={onSubmit}
-            className="w-full sm:w-auto font-extrabold shadow-sm"
+            className="w-full sm:w-auto font-semibold shadow-xs"
           >
             {pending ? 'Saving…' : submitLabel}
           </Button>
@@ -238,8 +238,8 @@ export function Card({
   return (
     <section className={`ui-card ${className}`}>
       {(title || actions) && (
-        <header className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border)]">
-          <h2 className="text-[14px] font-bold text-[var(--text)]">{title}</h2>
+        <header className="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
           <div className="flex items-center gap-2">{actions}</div>
         </header>
       )}
@@ -260,10 +260,10 @@ export function DescriptionList({
   className?: string
 }) {
   return (
-    <dl className={`grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-[13px] ${className}`}>
+    <dl className={`grid grid-cols-[auto_1fr] gap-x-5 gap-y-2.5 text-sm ${className}`}>
       {items.map((item, i) => (
         <div key={i} className="contents">
-          <dt className="text-slate-500 font-semibold whitespace-nowrap">{item.label}</dt>
+          <dt className="text-slate-500 font-medium whitespace-nowrap">{item.label}</dt>
           <dd className="text-slate-900 font-medium min-w-0 break-words">{item.value ?? '—'}</dd>
         </div>
       ))}

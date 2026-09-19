@@ -83,18 +83,18 @@ export function CartPanel({
               <User size={13} className="text-blue-600" />
               Customer
             </span>
-            <span className="hidden md:inline-flex px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-mono font-semibold">
+            <span className="hidden md:inline-flex px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-xs font-mono font-medium">
               F5
             </span>
             {saleMode === 'WHOLESALE' ? (
-              <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-semibold">
+              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
                 Required
               </span>
             ) : (
-              <span className="text-[11px] text-slate-400 font-normal">Walk-in default</span>
+              <span className="text-xs text-slate-500 font-normal">Walk-in default</span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold tabular">
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold tabular">
             <span>{lines.length}</span>
             <span className="text-slate-400 font-medium">{lines.length === 1 ? 'item' : 'items'}</span>
           </div>
@@ -192,7 +192,7 @@ export function CartPanel({
             </div>
             <h4 className="text-sm font-bold text-slate-800 mb-1">Your cart is empty</h4>
             <p className="text-xs text-slate-500 max-w-[240px] mb-3">
-              Scan a barcode, press <kbd className="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-[11px] text-slate-700">F2</kbd> to search, or tap any fast-moving medicine.
+              Scan a barcode, press <kbd className="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-xs text-slate-700">F2</kbd> to search, or tap any fast-moving medicine.
             </p>
           </div>
         ) : (

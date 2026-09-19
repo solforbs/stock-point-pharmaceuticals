@@ -208,20 +208,20 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
               {(t.lines ?? []).map((l) => (
                 <tr key={l.id}>
                   <td>{l.product?.name ?? l.product_id.slice(0, 8)}</td>
-                  <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-[10.5px] text-[var(--text-muted)]">exp {formatDate(l.batch.expiry_date)}</div>}</td>
+                  <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-500 tabular">exp {formatDate(l.batch.expiry_date)}</div>}</td>
                   <td className="text-right"><QtyCell value={l.qty_dispatched} /></td>
                   <td className="text-right">
                     {t.status === 'DISPATCHED' && perms.has('stock.transfer.receive') ? (
-                      <input value={received[l.id] ?? ''} placeholder={String(Number(l.qty_dispatched))} onChange={(e) => setReceived({ ...received, [l.id]: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-24 tabular text-right" />
+                      <input value={received[l.id] ?? ''} placeholder={String(Number(l.qty_dispatched))} onChange={(e) => setReceived({ ...received, [l.id]: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-24 tabular text-right text-sm" />
                     ) : (
-                      <QtyCell value={l.qty_received} className={l.qty_received !== null && Number(l.qty_received) < Number(l.qty_dispatched) ? 'text-[var(--status-red)] font-bold' : ''} />
+                      <QtyCell value={l.qty_received} className={l.qty_received !== null && Number(l.qty_received) < Number(l.qty_dispatched) ? 'text-rose-600 font-bold' : ''} />
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {t.status === 'DISPATCHED' && <p className="text-[11px] text-[var(--text-muted)]">Leave a quantity blank to receive the full dispatched amount. A short receipt raises a discrepancy; the shortfall stays in transit until resolved.</p>}
+          {t.status === 'DISPATCHED' && <p className="text-xs text-slate-500">Leave a quantity blank to receive the full dispatched amount. A short receipt raises a discrepancy; the shortfall stays in transit until resolved.</p>}
         </div>
       )}
       <Modal

@@ -252,7 +252,7 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <StatusBadge status={o.status} />
-            {o.cancel_reason && <span className="text-[11.5px] text-[var(--status-red)]">Cancelled: {o.cancel_reason}</span>}
+            {o.cancel_reason && <span className="text-xs text-rose-700 font-semibold">Cancelled: {o.cancel_reason}</span>}
           </div>
           <CustomerTimeline updates={updates.data} />
           <DescriptionList
@@ -357,8 +357,8 @@ function CustomerTimeline({ updates }: { updates?: OrderUpdates }) {
   return (
     <div className="ui-card p-3">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-[12.5px] font-bold text-slate-800">Customer updates</h3>
-        <span className="text-[11px] text-slate-500">
+        <h3 className="text-xs font-bold text-slate-800">Customer updates</h3>
+        <span className="text-xs text-slate-500">
           {updates.customer_email ?? <span className="text-amber-700 font-semibold">no email on file</span>}
         </span>
       </div>
@@ -367,9 +367,9 @@ function CustomerTimeline({ updates }: { updates?: OrderUpdates }) {
           const update = sent.get(key as string)
           const failed = update && !update.sent_at
           return (
-            <li key={key} className="flex items-start gap-2 text-[12px]">
+            <li key={key} className="flex items-start gap-2 text-xs">
               <span
-                className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center text-[9px] font-bold ${
+                className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center text-[10px] font-bold ${
                   failed ? 'bg-rose-50 border-rose-300 text-rose-700'
                     : update ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
                     : 'bg-slate-50 border-slate-200 text-slate-300'
@@ -384,7 +384,7 @@ function CustomerTimeline({ updates }: { updates?: OrderUpdates }) {
                     {' '}· {update.sent_at ? `told ${formatDateTime(update.sent_at)}` : `not sent: ${update.failure_reason}`}
                   </span>
                 )}
-                {update?.note && <p className="text-[11px] text-slate-500">{update.note}</p>}
+                {update?.note && <p className="text-xs text-slate-500 mt-0.5">{update.note}</p>}
               </div>
             </li>
           )

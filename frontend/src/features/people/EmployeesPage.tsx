@@ -44,7 +44,7 @@ export default function EmployeesPage() {
     <Page>
       <PageHeader parent="People" title="Employees" subtitle="Payroll master data. Bank account numbers are write-only through the API." actions={canProcess ? <Button variant="primary" onClick={() => setEditing('new')}>New employee</Button> : null} />
       <FilterBar>
-        <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={activeOnly} onChange={(e) => { setActiveOnly(e.target.checked); setPage(1) }} /> Active only</label>
+        <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={activeOnly} onChange={(e) => { setActiveOnly(e.target.checked); setPage(1) }} /> Active only</label>
       </FilterBar>
       <div className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(e) => e.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(e) => (canProcess ? setEditing(e) : undefined)} emptyTitle="No employees" />
@@ -98,7 +98,7 @@ function EmployeeDrawer({ target, onClose }: { target: Employee | 'new' | null; 
           {text('job_title', 'Job title')}
           {text('department', 'Department')}
           <Field label="Employment type"><Select value={form.employment_type} onChange={(e) => set({ employment_type: e.target.value })}>{['PERMANENT', 'CONTRACT', 'CASUAL'].map((t) => (<option key={t} value={t}>{titleCase(t)}</option>))}</Select></Field>
-          <Field label="Active"><label className="flex items-center gap-2 h-8 text-[12.5px]"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> On payroll</label></Field>
+          <Field label="Active"><label className="flex items-center gap-2 h-8 text-sm text-slate-700 cursor-pointer"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> On payroll</label></Field>
           {text('date_joined', 'Date joined', { type: 'date' })}
           {text('date_left', 'Date left', { type: 'date' })}
           {text('basic_salary', 'Basic salary (KES / month)', { inputMode: 'decimal', className: 'tabular' })}

@@ -70,7 +70,7 @@ export default function SystemHealthPage() {
     { key: 'failed', header: 'Failed', render: (j) => <span className="tabular whitespace-nowrap">{formatDateTime(j.failed_at)}</span>, sortValue: (j) => j.failed_at },
     { key: 'job', header: 'Job', render: (j) => <span className="font-semibold">{j.job ?? '—'}</span>, sortValue: (j) => j.job ?? '' },
     { key: 'queue', header: 'Queue', render: (j) => <span className="tabular">{j.connection}/{j.queue}</span> },
-    { key: 'exception', header: 'Error', render: (j) => <span className="text-[11px] text-[var(--status-red)] break-all">{j.exception}</span> },
+    { key: 'exception', header: 'Error', render: (j) => <span className="text-xs text-rose-600 break-all font-mono">{j.exception}</span> },
     {
       key: 'actions', header: '', align: 'right', render: (j) => j.uuid ? (
         <div className="flex justify-end gap-1.5">
@@ -108,10 +108,10 @@ export default function SystemHealthPage() {
               )}
             </Tile>
             <Tile title="Backups" check={c.backup} metric={c.backup.last ? `${c.backup.last.name} · ${formatBytes(c.backup.last.size)}` : null}>
-              <Link to="/admin/backup" className="text-[11.5px] underline mt-1 inline-block">Open Backup</Link>
+              <Link to="/admin/backup" className="text-xs text-blue-600 hover:underline mt-1 inline-block">Open Backup</Link>
             </Tile>
             <Tile title="Financial period" check={c.financial_period} metric={c.financial_period.period ? `FY${c.financial_period.period.fiscal_year} P${c.financial_period.period.period_no}` : null}>
-              <Link to="/finance/periods" className="text-[11.5px] underline mt-1 inline-block">Open Periods</Link>
+              <Link to="/finance/periods" className="text-xs text-blue-600 hover:underline mt-1 inline-block">Open Periods</Link>
             </Tile>
           </div>
 
@@ -130,7 +130,7 @@ export default function SystemHealthPage() {
             </Card>
             <Card title="Inventory value: ledger against GL">
               {c.reconciliation.gl.length === 0 ? (
-                <div className="p-4 text-[12px] text-[var(--text-muted)]">No organisations to compare.</div>
+                <div className="p-4 text-xs text-slate-500">No organisations to compare.</div>
               ) : (
                 <table className="ui-table">
                   <thead><tr><th>Organisation</th><th className="text-right">Stock ledger</th><th className="text-right">GL inventory</th><th>Result</th></tr></thead>
@@ -146,7 +146,7 @@ export default function SystemHealthPage() {
                   </tbody>
                 </table>
               )}
-              <div className="px-4 py-2 border-t border-[var(--border)] text-[11px] text-[var(--text-muted)]">
+              <div className="px-4 py-2 border-t border-slate-200 text-xs text-slate-500">
                 The same checks as the nightly <code>inventory:reconcile-ledger</code> command. Any drift is a P1 incident: stop adjustments and investigate the stock ledger.
               </div>
             </Card>
@@ -158,7 +158,7 @@ export default function SystemHealthPage() {
           >
             <DataTable columns={jobColumns} rows={h.failed_jobs} rowKey={(j) => String(j.id)} emptyTitle="No failed jobs" emptyHint="Background work (eTIMS transmission, scheduled reports, mail) is completing normally." />
             {c.queue.failed > h.failed_jobs.length && (
-              <div className="px-4 py-2 border-t border-[var(--border)] text-[11px] text-[var(--text-muted)]">Showing the {h.failed_jobs.length} most recent of {c.queue.failed}. Retry all covers every one.</div>
+              <div className="px-4 py-2 border-t border-slate-200 text-xs text-slate-500">Showing the {h.failed_jobs.length} most recent of {c.queue.failed}. Retry all covers every one.</div>
             )}
           </Card>
         </div>
@@ -183,11 +183,11 @@ function Tile({ title, check, metric, children }: { title: string; check: Check;
   return (
     <section className="ui-card p-4 border-l-4" style={{ borderLeftColor: color }}>
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-[13px] font-bold">{title}</h2>
+        <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
         <StatusBadge status={check.status} tone={LIGHT_TONE[check.status]} label={LIGHT_LABEL[check.status]} />
       </div>
-      {metric && <div className="text-[12px] tabular font-semibold mt-1.5">{metric}</div>}
-      <p className="text-[11.5px] text-[var(--text-secondary)] mt-1">{check.message}</p>
+      {metric && <div className="text-xs tabular font-semibold font-mono mt-1.5 text-slate-700">{metric}</div>}
+      <p className="text-xs text-slate-500 mt-1">{check.message}</p>
       {children}
     </section>
   )

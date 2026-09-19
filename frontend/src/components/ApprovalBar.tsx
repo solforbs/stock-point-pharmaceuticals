@@ -34,13 +34,13 @@ export function ApprovalBar({
   const color = tone === 'red' ? 'var(--status-red)' : 'var(--status-amber)'
   return (
     <div
-      className="flex flex-wrap items-center gap-3 px-4 py-2.5 rounded-md border"
+      className="flex flex-wrap items-center gap-3 px-4 py-2.5 rounded-xl border"
       style={{ borderColor: color, background: `color-mix(in srgb, ${color} 10%, transparent)` }}
     >
       <ShieldAlert size={18} style={{ color }} className="shrink-0" />
       <div className="flex-1 min-w-[200px]">
-        <div className="text-[12.5px] font-bold text-[var(--text)]">{title}</div>
-        {message && <div className="text-[11.5px] text-[var(--text-secondary)]">{message}</div>}
+        <div className="text-sm font-bold text-slate-900">{title}</div>
+        {message && <div className="text-xs text-slate-600 mt-0.5">{message}</div>}
       </div>
       {extra}
       {onReject && (
