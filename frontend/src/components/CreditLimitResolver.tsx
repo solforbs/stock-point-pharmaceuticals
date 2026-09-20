@@ -34,7 +34,7 @@ export function CreditLimitResolver({ error, pending, onResolve }: { error: unkn
         <Link to="/customers/credit-control" className="text-xs text-blue-700 hover:text-blue-800 hover:underline font-semibold">Set a credit limit</Link>
       </div>
       {canOverride && (
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[var(--border)]">
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200">
           <Input className="flex-1 min-w-[220px]" placeholder="Reason for overriding the limit (recorded)" value={reason} onChange={(e) => setReason(e.target.value)} />
           <Button size="sm" variant="danger" disabled={pending || reason.trim().length < 5} onClick={() => onResolve({ credit_override_reason: reason.trim() })}>
             Override limit

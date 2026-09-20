@@ -77,13 +77,13 @@ export function DonutChart({
         <text x={cx} y={cy - 2} textAnchor="middle" fontSize={16} fontWeight={700} fill="var(--text)">{format(total)}</text>
         <text x={cx} y={cy + 14} textAnchor="middle" fontSize={10} fill="var(--text-muted)">{centerLabel}</text>
       </svg>
-      <ul className="flex-1 min-w-[160px] space-y-1.5 text-[11.5px]">
+      <ul className="flex-1 min-w-[160px] space-y-1.5 text-xs">
         {arcs.map((a) => (
           <li key={a.d.key} className="flex items-center gap-2" onMouseEnter={() => setActive(a.d.key)} onMouseLeave={() => setActive(null)}>
             <span className="inline-block w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: a.color }} aria-hidden />
-            <span className="text-[var(--text-secondary)] flex-1">{a.d.label}</span>
+            <span className="text-slate-600 flex-1">{a.d.label}</span>
             <span className="font-semibold tabular">{format(a.d.value)}</span>
-            <span className="text-[var(--text-muted)] tabular w-12 text-right">{share(a.d.value)}</span>
+            <span className="text-slate-400 tabular w-12 text-right">{share(a.d.value)}</span>
           </li>
         ))}
       </ul>

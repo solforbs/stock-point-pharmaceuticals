@@ -28,7 +28,7 @@ export function SidebarUserProfile({ user, collapsed }: SidebarUserProfileProps)
   if (collapsed) {
     return (
       <div className="pt-2 border-t border-slate-100 flex flex-col items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 text-blue-600 font-bold text-[12px] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 text-blue-600 font-bold text-xs flex items-center justify-center">
           {user?.name ? user.name.charAt(0).toUpperCase() : <User size={14} />}
         </div>
         <button
@@ -45,14 +45,14 @@ export function SidebarUserProfile({ user, collapsed }: SidebarUserProfileProps)
   return (
     <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-        <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 text-blue-600 font-bold text-[12px] flex items-center justify-center shrink-0 shadow-xs">
+        <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 text-blue-600 font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
           {user?.name ? user.name.charAt(0).toUpperCase() : <User size={14} />}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[12px] font-bold text-slate-900 truncate">
+          <div className="text-xs font-bold text-slate-900 truncate">
             {user?.name ?? 'Administrator'}
           </div>
-          <div className="text-[10.5px] text-slate-400 truncate font-medium">
+          <div className="text-xs text-slate-500 truncate font-medium">
             {roleName}
           </div>
         </div>

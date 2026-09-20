@@ -4,7 +4,7 @@ export type LegendItem = { key: string; label: string; color: string; shape?: 's
 export function Legend({ items }: { items: LegendItem[] }) {
   if (items.length < 2) return null
   return (
-    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[var(--text-secondary)] mb-2" aria-label="Legend">
+    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 mb-2" aria-label="Legend">
       {items.map((item) => (
         <li key={item.key} className="inline-flex items-center gap-1.5">
           {item.shape === 'line' ? (

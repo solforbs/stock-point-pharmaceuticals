@@ -157,7 +157,7 @@ export function ProductTour() {
               <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-blue-50 text-blue-600">
                 <Compass size={16} />
               </span>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                 Step {currentStepIndex + 1} of {steps.length}
               </span>
             </div>
@@ -171,10 +171,10 @@ export function ProductTour() {
           </div>
 
           {/* Title & Body */}
-          <h3 className="text-[15px] font-bold text-slate-900 leading-snug mb-1.5 flex items-center gap-1.5">
+          <h3 className="text-base font-bold text-slate-900 leading-snug mb-1.5 flex items-center gap-1.5">
             {currentStep.title}
           </h3>
-          <p className="text-[12.5px] text-slate-600 leading-relaxed mb-5">
+          <p className="text-xs text-slate-600 leading-relaxed mb-5">
             {currentStep.description}
           </p>
 
@@ -200,7 +200,7 @@ export function ProductTour() {
               {!isFirst && (
                 <button
                   onClick={prevStep}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-[12px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   <ArrowLeft size={13} /> Back
                 </button>
@@ -208,7 +208,7 @@ export function ProductTour() {
 
               <button
                 onClick={nextStep}
-                className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-bold inline-flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all"
+                className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all"
               >
                 {isLast ? (
                   <>

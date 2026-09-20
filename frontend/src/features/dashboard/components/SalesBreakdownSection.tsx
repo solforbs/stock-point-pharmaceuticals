@@ -8,7 +8,7 @@ export interface SalesBreakdownSectionProps {
 
 const MODE_CONFIG: Record<SaleMode, { label: string; color: string; bg: string }> = {
   WHOLESALE: { label: 'Wholesale Orders', color: '#b45309', bg: 'bg-amber-500' },
-  RETAIL: { label: 'Retail Walk-in (POS)', color: 'var(--color-navy)', bg: 'bg-blue-600' },
+  RETAIL: { label: 'Retail Walk-in (POS)', color: '#1e3a8a', bg: 'bg-blue-600' },
   DISPENSING: { label: 'Prescription Dispensing', color: '#6d28d9', bg: 'bg-purple-600' },
 }
 
@@ -26,11 +26,11 @@ export function SalesBreakdownSection({ salesToday }: SalesBreakdownSectionProps
             <TrendingUp size={18} />
           </div>
           <div>
-            <h2 className="text-[14.5px] font-bold text-slate-900">Sales by Channel Today</h2>
-            <p className="text-[11.5px] text-slate-400 font-medium">Real-time revenue split across active sales desks</p>
+            <h2 className="text-sm font-bold text-slate-900">Sales by Channel Today</h2>
+            <p className="text-xs text-slate-400 font-medium">Real-time revenue split across active sales desks</p>
           </div>
         </div>
-        <span className="text-[15px] font-black tabular text-slate-900">
+        <span className="text-base font-black tabular text-slate-900">
           {formatKes(salesToday.total)}
         </span>
       </header>
@@ -45,20 +45,20 @@ export function SalesBreakdownSection({ salesToday }: SalesBreakdownSectionProps
 
           return (
             <div key={mode} className="group">
-              <div className="flex items-center justify-between text-[12.5px] mb-1.5">
-                <span className="font-semibold text-[var(--text)] flex items-center gap-2">
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="font-semibold text-slate-800 flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${config.bg}`} />
                   {config.label}
-                  <span className="text-[11px] text-[var(--text-muted)] font-normal">
+                  <span className="text-xs text-slate-400 font-normal">
                     ({count} transaction{count === 1 ? '' : 's'})
                   </span>
                 </span>
-                <div className="text-right tabular font-bold">
+                <div className="text-right tabular font-bold text-slate-800">
                   <span>{formatKes(String(amount))}</span>
-                  <span className="text-[11px] text-[var(--text-muted)] ml-2">({pct}%)</span>
+                  <span className="text-xs text-slate-400 ml-2">({pct}%)</span>
                 </div>
               </div>
-              <div className="w-full h-2 rounded-full bg-[var(--surface-3)] overflow-hidden">
+              <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${config.bg}`}
                   style={{ width: `${pct}%` }}
