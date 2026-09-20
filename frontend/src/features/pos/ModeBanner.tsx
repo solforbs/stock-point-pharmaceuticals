@@ -39,7 +39,7 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden xl:inline">
           Sale Mode:
         </span>
-        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-full">
+        <div id="tour-pos-mode-toggle" className="flex items-center gap-1 p-1 bg-slate-100 rounded-full">
           {modes.map((mode) => {
             const isActive = mode === saleMode
             return (
@@ -64,7 +64,7 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
       {/* Right: Store, Terminal, Cashier & Live Status */}
       <div className="flex items-center gap-2 shrink-0 text-xs">
         {/* Stock Room Location Selector */}
-        <div className="flex items-center gap-1.5 text-slate-600">
+        <div id="tour-pos-stock-room" className="flex items-center gap-1.5 text-slate-600">
           <StoreIcon size={14} className="text-blue-600 shrink-0" />
           <span className="font-bold text-slate-500 text-xs inline">Stock Room:</span>
           <select

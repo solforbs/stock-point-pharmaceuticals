@@ -232,6 +232,7 @@ export function CartTotalsCard({
           </button>
         ) : (
           <button
+            id="tour-pos-payment-cta"
             type="button"
             onClick={onOpenPayment}
             disabled={!paymentEnabled}
