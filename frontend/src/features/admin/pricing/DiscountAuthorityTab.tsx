@@ -35,15 +35,15 @@ export default function DiscountAuthorityTab({ canManage }: { canManage: boolean
 
   const columns: Column<AuthorityRow>[] = [
     { key: 'role', header: 'Role', render: (r) => <span className="font-semibold">{r.role}</span>, sortValue: (r) => r.role },
-    { key: 'line', header: 'Line discount', align: 'right', render: (r) => (r.authority ? <span className="tabular">{formatPct(r.authority.max_line_discount_pct)}</span> : <span className="text-[var(--text-muted)]">None</span>), sortValue: (r) => Number(r.authority?.max_line_discount_pct ?? -1) },
-    { key: 'header', header: 'Whole-sale discount', align: 'right', render: (r) => (r.authority ? <span className="tabular">{formatPct(r.authority.max_header_discount_pct)}</span> : <span className="text-[var(--text-muted)]">None</span>) },
+    { key: 'line', header: 'Line discount', align: 'right', render: (r) => (r.authority ? <span className="tabular">{formatPct(r.authority.max_line_discount_pct)}</span> : <span className="text-slate-400 font-normal">None</span>), sortValue: (r) => Number(r.authority?.max_line_discount_pct ?? -1) },
+    { key: 'header', header: 'Whole-sale discount', align: 'right', render: (r) => (r.authority ? <span className="tabular">{formatPct(r.authority.max_header_discount_pct)}</span> : <span className="text-slate-400 font-normal">None</span>) },
     { key: 'floor', header: 'May go below margin floor', render: (r) => (r.authority ? <StatusBadge status={r.authority.may_override_floor ? 'OK' : 'INACTIVE'} label={r.authority.may_override_floor ? 'Yes, with reason' : 'No'} /> : '—') },
     { key: 'actions', header: '', align: 'right', render: (r) => (canManage && r.authority ? <div onClick={(e) => e.stopPropagation()}><Button size="sm" variant="ghost" onClick={() => setRemoving(r)}>Remove</Button></div> : null) },
   ]
 
   return (
     <>
-      <p className="text-[11.5px] text-[var(--text-muted)] mb-3">The product policy and the customer tier can each lower these limits; the most restrictive wins at the till.</p>
+      <p className="text-xs text-slate-500 mb-3">The product policy and the customer tier can each lower these limits; the most restrictive wins at the till.</p>
       <div className="ui-card">
         <DataTable columns={columns} rows={rows.data?.data} rowKey={(r) => String(r.role_id)} isLoading={rows.isLoading} error={rows.error} onRetry={() => rows.refetch()} onRowClick={canManage ? setEditing : undefined} emptyTitle="No roles" />
       </div>
@@ -86,7 +86,7 @@ function AuthorityForm({ row, onDone }: { row: AuthorityRow; onDone: () => void 
         <Field label="Max line discount %" required error={err?.errors.max_line_discount_pct?.[0]}><Input inputMode="decimal" className="tabular" value={form.max_line_discount_pct} onChange={(e) => setForm({ ...form, max_line_discount_pct: decimalInput(e.target.value) })} /></Field>
         <Field label="Max whole-sale discount %" required error={err?.errors.max_header_discount_pct?.[0]}><Input inputMode="decimal" className="tabular" value={form.max_header_discount_pct} onChange={(e) => setForm({ ...form, max_header_discount_pct: decimalInput(e.target.value) })} /></Field>
       </div>
-      <label className="flex items-start gap-2 text-[12px]">
+      <label className="flex items-start gap-2 text-xs text-slate-600 cursor-pointer">
         <input type="checkbox" className="mt-0.5" checked={form.may_override_floor} onChange={(e) => setForm({ ...form, may_override_floor: e.target.checked })} />
         <span>May sell below the margin floor, with a recorded reason. Reserve this for managers.</span>
       </label>

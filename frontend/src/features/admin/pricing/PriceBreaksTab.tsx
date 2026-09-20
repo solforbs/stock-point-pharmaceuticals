@@ -47,9 +47,9 @@ export default function PriceBreaksTab({ canManage }: { canManage: boolean }) {
   })
 
   const columns: Column<PriceBreak>[] = [
-    { key: 'product', header: 'Product', render: (b) => <>{b.product_price?.product?.name ?? '—'}<div className="text-[10.5px] text-[var(--text-muted)]">{b.product_price?.product?.code}</div></>, sortValue: (b) => b.product_price?.product?.name ?? '' },
+    { key: 'product', header: 'Product', render: (b) => <>{b.product_price?.product?.name ?? '—'}<div className="text-xs text-slate-500 font-mono">{b.product_price?.product?.code}</div></>, sortValue: (b) => b.product_price?.product?.name ?? '' },
     { key: 'uom', header: 'Unit', render: (b) => b.product_price?.uom?.code ?? '—' },
-    { key: 'list', header: 'List price', align: 'right', render: (b) => (b.product_price?.factor_type === 'FIXED' ? <MoneyCell value={b.product_price.unit_price} /> : <span className="text-[11px] text-[var(--text-muted)]">{b.product_price?.factor_type}</span>) },
+    { key: 'list', header: 'List price', align: 'right', render: (b) => (b.product_price?.factor_type === 'FIXED' ? <MoneyCell value={b.product_price.unit_price} /> : <span className="text-xs text-slate-500">{b.product_price?.factor_type}</span>) },
     { key: 'range', header: 'Quantity', render: (b) => <span className="tabular">{formatQty(b.min_qty)} – {b.max_qty ? formatQty(b.max_qty) : 'and above'}</span>, sortValue: (b) => Number(b.min_qty) },
     { key: 'price', header: 'Unit price', align: 'right', render: (b) => <MoneyCell value={b.unit_price} className="font-semibold" /> },
     { key: 'type', header: 'Type', render: (b) => <StatusBadge status={b.break_type} tone={b.break_type === 'STEP' ? 'blue' : 'purple'} /> },
@@ -148,7 +148,7 @@ function BreakForm({ listId, initialProductId, existing, onDone }: { listId: str
   return (
     <div className="space-y-4">
       {existing ? (
-        <div className="text-[12px]"><b>{existing.product_price?.product?.name}</b> · {existing.product_price?.uom?.code} · {existing.product_price?.price_list?.code}</div>
+        <div className="text-xs text-slate-700 font-medium"><b>{existing.product_price?.product?.name}</b> · {existing.product_price?.uom?.code} · {existing.product_price?.price_list?.code}</div>
       ) : (
         <>
           <Field label="Product" required><ProductField productId={productId} onChange={(p) => { setProductId(p?.id ?? ''); setRowId('') }} /></Field>
