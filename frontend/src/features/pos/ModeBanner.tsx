@@ -63,20 +63,21 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
 
       {/* Right: Store, Terminal, Cashier & Live Status */}
       <div className="flex items-center gap-2 shrink-0 text-xs">
-        {/* Store Selector */}
+        {/* Stock Room Location Selector */}
         <div className="flex items-center gap-1.5 text-slate-600">
-          <StoreIcon size={14} className="text-slate-500 shrink-0" />
-          <span className="font-medium text-slate-500 hidden 2xl:inline">Store:</span>
+          <StoreIcon size={14} className="text-blue-600 shrink-0" />
+          <span className="font-bold text-slate-500 text-xs inline">Stock Room:</span>
           <select
             value={storeId ?? ''}
             onChange={(e) => setStore(e.target.value)}
-            aria-label="Inventory store"
-            className="h-7 rounded-xl bg-slate-100/80 hover:bg-slate-100 border border-slate-200/60 text-slate-800 text-xs font-bold px-2.5 outline-none transition-colors cursor-pointer max-w-[130px] sm:max-w-none shadow-2xs"
+            aria-label="Stock Room Location"
+            title="Physical room or dispensary shelf where medicine stock is deducted from"
+            className="h-7 rounded-xl bg-slate-100/90 hover:bg-slate-200/70 border border-slate-200/60 text-slate-800 text-xs font-bold px-2.5 outline-none transition-colors cursor-pointer shadow-2xs"
           >
             {/* Only stores the till may sell from: the server refuses the rest. */}
             {stores.filter((store) => store.is_sellable).map((store) => (
               <option key={store.id} value={store.id}>
-                {store.code}
+                {store.code}{store.name && store.name.toLowerCase() !== store.code.toLowerCase() ? ` · ${store.name}` : ''}
               </option>
             ))}
           </select>
