@@ -186,37 +186,41 @@ export default function PosPage() {
     <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
       <ModeBanner stores={stores.data ?? []} />
 
-      {/* Mobile Tab Bar (only visible on mobile/small tablets) */}
-      <div className="md:hidden flex border-b border-slate-200 bg-white shrink-0">
-        <button
-          type="button"
-          onClick={() => setMobileTab('catalog')}
-          className={`flex-1 py-2.5 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
-            mobileTab === 'catalog'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-              : 'border-transparent text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <Search size={14} />
-          <span>Catalog & Search</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobileTab('cart')}
-          className={`flex-1 py-2.5 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
-            mobileTab === 'cart'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-              : 'border-transparent text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <ShoppingCart size={14} />
-          <span>Cart</span>
-          {lines.length > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-xs tabular font-semibold">
-              {lines.length}
-            </span>
-          )}
-        </button>
+      {/* Mobile Segmented Pill Bar (only visible on mobile/small tablets) */}
+      <div className="md:hidden p-2 bg-white border-b border-slate-200/80 shrink-0">
+        <div className="flex p-1 bg-slate-100 rounded-full gap-1">
+          <button
+            type="button"
+            onClick={() => setMobileTab('catalog')}
+            className={`flex-1 py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              mobileTab === 'catalog'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Search size={14} />
+            <span>Catalog & Search</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('cart')}
+            className={`flex-1 py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              mobileTab === 'cart'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ShoppingCart size={14} />
+            <span>Cart</span>
+            {lines.length > 0 && (
+              <span className={`px-2 py-0.5 rounded-full text-xs tabular font-bold ${
+                mobileTab === 'cart' ? 'bg-white/20 text-white' : 'bg-blue-600 text-white'
+              }`}>
+                {lines.length}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Main Work Area: 2-column on desktop, tabbed on mobile */}

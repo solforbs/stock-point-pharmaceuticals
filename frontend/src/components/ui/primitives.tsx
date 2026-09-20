@@ -7,24 +7,24 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg'
 
 const variantClass: Record<ButtonVariant, string> = {
   primary:
-    'bg-blue-600 hover:bg-blue-700 text-white shadow-xs border border-blue-700/20 active:scale-[0.99]',
+    'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm shadow-blue-500/20 border border-transparent active:scale-[0.98]',
   success:
-    'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs border border-emerald-700/20 active:scale-[0.99]',
+    'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-sm shadow-emerald-500/20 border border-transparent active:scale-[0.98]',
   secondary:
-    'bg-white text-slate-800 border-slate-300 hover:bg-slate-50 hover:border-slate-400 shadow-2xs font-medium active:scale-[0.99]',
+    'bg-slate-100/90 hover:bg-slate-200/80 text-slate-800 border border-slate-200/60 shadow-2xs font-bold active:scale-[0.98]',
   danger:
-    'bg-rose-600 hover:bg-rose-700 text-white shadow-xs border border-rose-700/20 active:scale-[0.99]',
+    'bg-rose-600 hover:bg-rose-700 text-white shadow-sm shadow-rose-500/20 border border-transparent active:scale-[0.98]',
   ghost:
-    'bg-transparent text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-100',
+    'bg-transparent text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-100/80',
   outline:
-    'bg-transparent text-slate-700 border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400 font-medium',
+    'bg-transparent text-slate-700 border border-slate-200/80 hover:bg-slate-100/80 hover:text-slate-900 font-bold',
 }
 
 const sizeClass: Record<ButtonSize, string> = {
-  xs: 'h-7 px-2.5 text-xs font-medium rounded-lg gap-1',
-  sm: 'h-8 px-3 text-xs font-semibold rounded-lg gap-1.5',
-  md: 'h-9 px-3.5 text-sm font-semibold rounded-lg gap-2',
-  lg: 'h-10 px-4.5 text-sm font-semibold rounded-xl gap-2.5',
+  xs: 'h-7 px-3 text-xs font-bold rounded-xl gap-1',
+  sm: 'h-8 px-3.5 text-xs font-bold rounded-xl gap-1.5',
+  md: 'h-9 px-4 text-sm font-bold rounded-xl gap-2',
+  lg: 'h-11 px-5 text-sm font-bold rounded-2xl gap-2.5',
 }
 
 export function Button({

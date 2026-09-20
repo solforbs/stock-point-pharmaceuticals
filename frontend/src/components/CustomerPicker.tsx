@@ -87,16 +87,16 @@ export function CustomerPicker({
 
   if (value) {
     return (
-      <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 shadow-xs">
+      <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl bg-slate-50/90 border border-slate-200/70 shadow-2xs">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
             <UserSquare2 size={16} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-bold text-slate-900 truncate">{value.name}</span>
               {value.tier?.code && (
-                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 text-xs font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 text-xs font-bold">
                   Tier {value.tier.code}
                 </span>
               )}
@@ -109,7 +109,7 @@ export function CustomerPicker({
             type="button"
             aria-label="Clear customer"
             onClick={() => onChange(null)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+            className="p-1.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
             title="Clear customer (F5 to reselect)"
           >
             <X size={15} />
@@ -134,11 +134,11 @@ export function CustomerPicker({
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
-        className={`ui-input ${required ? '!border-amber-400' : ''}`}
+        className={`ui-input rounded-2xl ${required ? '!border-amber-400' : ''}`}
         autoComplete="off"
       />
       {open && (
-        <div className="absolute z-30 left-0 right-0 top-10 ui-card shadow-xl max-h-72 overflow-y-auto">
+        <div className="absolute z-30 left-0 right-0 top-10 rounded-2xl bg-white border border-slate-200 shadow-xl max-h-72 overflow-y-auto">
           {results.length === 0 ? (
             <div className="px-3 py-2.5 text-xs text-slate-500">{isFetching ? 'Searching…' : 'No customers match.'}</div>
           ) : (
@@ -148,7 +148,7 @@ export function CustomerPicker({
                 type="button"
                 onClick={() => choose(customer)}
                 onMouseEnter={() => setHighlight(i)}
-                className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 transition-colors ${i === highlight ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
+                className={`w-full text-left px-3.5 py-2.5 border-b border-slate-100 last:border-b-0 transition-colors ${i === highlight ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium text-slate-900 truncate">
@@ -181,7 +181,7 @@ export function CustomerCreditLine({ customer, className = '' }: { customer: Cus
         </span>
       )}
       {customer.credit?.on_hold && (
-        <span className="px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs uppercase tracking-wide">
+        <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs uppercase tracking-wide">
           Credit Hold
         </span>
       )}

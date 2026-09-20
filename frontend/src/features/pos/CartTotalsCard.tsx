@@ -195,17 +195,17 @@ export function CartTotalsCard({
       )}
 
       {/* Side-by-Side Action Buttons */}
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex items-center gap-2.5 pt-1.5">
         {onPreviewCart && (
           <button
             type="button"
             onClick={onPreviewCart}
             disabled={linesCount === 0}
-            className="h-10 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 shadow-xs"
+            className="h-11 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200/80 active:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 border border-slate-200/50 shadow-2xs"
             title="Review items and print preview"
           >
-            <FileText size={14} className="text-slate-500" />
-            <span className="hidden sm:inline">Review</span>
+            <FileText size={15} className="text-slate-500" />
+            <span className="hidden sm:inline">Review ({linesCount})</span>
           </button>
         )}
 
@@ -213,9 +213,9 @@ export function CartTotalsCard({
           type="button"
           onClick={onHold}
           disabled={linesCount === 0 || disabled}
-          className="h-10 px-3.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 shadow-xs"
+          className="h-11 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200/80 active:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 border border-slate-200/50 shadow-2xs"
         >
-          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-xs font-mono font-medium">
+          <span className="px-1.5 py-0.5 rounded-full bg-white text-slate-600 text-[10px] font-mono font-bold shadow-2xs">
             F8
           </span>
           <span>Hold</span>
@@ -225,7 +225,7 @@ export function CartTotalsCard({
           <button
             type="button"
             onClick={onFocusCustomer}
-            className="flex-1 h-10 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="flex-1 h-11 rounded-2xl bg-amber-600 hover:bg-amber-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-amber-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <UserCheck size={16} />
             <span>SELECT CUSTOMER (F5)</span>
@@ -236,9 +236,9 @@ export function CartTotalsCard({
             onClick={onOpenPayment}
             disabled={!paymentEnabled}
             title={paymentEnabled ? undefined : linesCount === 0 ? 'Add items to cart' : 'Waiting for price quote…'}
-            className="flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm shadow-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-300 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="flex-1 h-11 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:shadow-none flex items-center justify-center gap-2.5 transition-all cursor-pointer"
           >
-            <span className="px-1.5 py-0.5 rounded bg-white/20 text-white text-xs font-mono font-semibold">
+            <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-xs font-mono font-bold">
               F10
             </span>
             <span>PROCEED TO PAYMENT</span>

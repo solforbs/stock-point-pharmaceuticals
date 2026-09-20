@@ -85,11 +85,11 @@ export function CartPanel({
               <User size={13} className="text-blue-600" />
               Customer
             </span>
-            <span className="hidden md:inline-flex px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-xs font-mono font-medium">
+            <span className="hidden md:inline-flex px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-mono font-bold">
               F5
             </span>
             {saleMode === 'WHOLESALE' ? (
-              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">
                 Required
               </span>
             ) : (
@@ -112,14 +112,14 @@ export function CartPanel({
 
       {/* Notifications & Warnings */}
       {modeSwitchNote && quote && modeSwitchNote.beforeTotal !== null && (
-        <div className="mx-3 mt-2 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-xs text-blue-900 flex items-center gap-3">
+        <div className="mx-3 mt-2 px-3 py-2 rounded-2xl border border-blue-200/80 bg-blue-50 text-xs text-blue-900 flex items-center gap-3">
           <span className="flex-1 tabular">
             Re-quoted after mode switch ({modeSwitchNote.from} → {modeSwitchNote.to}): was <b>{formatMoney(modeSwitchNote.beforeTotal)}</b>, now <b>{formatMoney(quote.totals.grand_total)}</b>
           </span>
           <button
             type="button"
             onClick={dismissModeSwitchNote}
-            className="px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium text-xs cursor-pointer"
+            className="px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold text-xs cursor-pointer shadow-2xs"
           >
             OK
           </button>
@@ -127,14 +127,14 @@ export function CartPanel({
       )}
 
       {expired && lines.length > 0 && (
-        <div className="mx-3 mt-2 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2.5">
+        <div className="mx-3 mt-2 px-3.5 py-2.5 rounded-2xl border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2.5">
           <AlertTriangle size={15} className="text-amber-600 shrink-0" />
           <span className="flex-1">Quote expired. Prices must be re-confirmed before checkout.</span>
           <button
             type="button"
             onClick={requote}
             disabled={isQuoting}
-            className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs flex items-center gap-1 cursor-pointer"
+            className="px-3 py-1 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer shadow-2xs"
           >
             <RefreshCw size={11} className={isQuoting ? 'animate-spin' : ''} /> Re-quote
           </button>
@@ -142,7 +142,7 @@ export function CartPanel({
       )}
 
       {quoteError && (
-        <div className="mx-3 mt-2 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-xs text-rose-900 flex items-center gap-2.5">
+        <div className="mx-3 mt-2 px-3.5 py-2.5 rounded-2xl border border-rose-200 bg-rose-50 text-xs text-rose-900 flex items-center gap-2.5">
           <span className="flex-1">
             <b className="mr-1">{quoteError.code}:</b>
             {quoteError.message}
@@ -151,7 +151,7 @@ export function CartPanel({
             <button
               type="button"
               onClick={() => setSaleMode(fallbackMode)}
-              className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs cursor-pointer"
+              className="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer shadow-2xs"
             >
               Switch to {fallbackMode}
             </button>
@@ -160,7 +160,7 @@ export function CartPanel({
               type="button"
               onClick={requote}
               disabled={isQuoting}
-              className="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-800 font-medium text-xs cursor-pointer"
+              className="px-3 py-1 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs cursor-pointer"
             >
               Retry
             </button>
@@ -194,7 +194,7 @@ export function CartPanel({
             </div>
             <h4 className="text-sm font-bold text-slate-800 mb-1">Your cart is empty</h4>
             <p className="text-xs text-slate-500 max-w-[240px] mb-3">
-              Scan a barcode, press <kbd className="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-xs text-slate-700">F2</kbd> to search, or tap any fast-moving medicine.
+              Scan a barcode, press <kbd className="px-2 py-0.5 rounded-lg bg-slate-100 font-mono text-xs font-bold text-slate-700">F2</kbd> to search, or tap any fast-moving medicine.
             </p>
           </div>
         ) : (

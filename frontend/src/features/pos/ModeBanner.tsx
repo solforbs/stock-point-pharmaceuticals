@@ -39,7 +39,7 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden xl:inline">
           Sale Mode:
         </span>
-        <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-full">
           {modes.map((mode) => {
             const isActive = mode === saleMode
             return (
@@ -48,10 +48,10 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
                 type="button"
                 onClick={() => requestSwitch(mode)}
                 disabled={!switchable && !isActive}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
                 }`}
               >
                 {mode === 'RETAIL' ? 'Retail' : mode === 'WHOLESALE' ? 'Wholesale' : 'Dispensing'}
@@ -71,7 +71,7 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
             value={storeId ?? ''}
             onChange={(e) => setStore(e.target.value)}
             aria-label="Inventory store"
-            className="h-7 rounded-md bg-white border border-slate-200 text-slate-800 text-xs font-semibold px-2 outline-none hover:bg-slate-50 transition-colors cursor-pointer max-w-[130px] sm:max-w-none"
+            className="h-7 rounded-xl bg-slate-100/80 hover:bg-slate-100 border border-slate-200/60 text-slate-800 text-xs font-bold px-2.5 outline-none transition-colors cursor-pointer max-w-[130px] sm:max-w-none shadow-2xs"
           >
             {/* Only stores the till may sell from: the server refuses the rest. */}
             {stores.filter((store) => store.is_sellable).map((store) => (
@@ -85,19 +85,19 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
         <div className="h-3.5 w-px bg-slate-200" />
 
         {/* Terminal Indicator */}
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-xs text-slate-600 font-medium">
+        <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200/50 text-xs text-slate-600 font-medium">
           <Monitor size={12} className="text-slate-400" />
           <input
             value={terminalId}
             onChange={(e) => setTerminal(e.target.value.slice(0, 20))}
-            className="w-8 bg-transparent text-slate-800 font-semibold outline-none text-center"
+            className="w-8 bg-transparent text-slate-800 font-bold outline-none text-center"
             aria-label="Terminal id"
           />
         </div>
 
         {/* Cashier Name - only on wider viewports to prevent overflow */}
         <span className="hidden xl:inline text-slate-500 text-xs font-normal">
-          Cashier: <strong className="text-slate-800 font-semibold">{user?.name ? user.name.split(' ')[0] : '—'}</strong>
+          Cashier: <strong className="text-slate-800 font-bold">{user?.name ? user.name.split(' ')[0] : '—'}</strong>
         </span>
 
         <div className="h-3.5 w-px bg-slate-200 hidden xl:block" />

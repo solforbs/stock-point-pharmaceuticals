@@ -73,21 +73,21 @@ export function CartLineRow({
     <div
       onClick={onSelect}
       data-line-ref={line.lineRef}
-      className={`rounded-xl border transition-all p-3 cursor-default text-xs ${
+      className={`rounded-2xl border transition-all p-3.5 cursor-default text-xs ${
         selected
-          ? 'bg-blue-50/40 border-blue-500 shadow-2xs ring-1 ring-blue-500/20'
-          : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
+          ? 'bg-blue-50/30 border-blue-400 shadow-xs ring-1 ring-blue-400/20'
+          : 'bg-white border-slate-200/70 hover:border-slate-300/80 shadow-2xs'
       }`}
     >
       {/* Product Title & Code Header */}
-      <div className="flex items-start justify-between gap-2 pb-1.5 border-b border-slate-100">
+      <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-100">
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 flex-wrap">
             <h4 className="font-bold text-slate-900 text-sm leading-snug break-words line-clamp-2">
               {line.productName}
             </h4>
             {line.strength && (
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-xs shrink-0">
+              <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs shrink-0">
                 {line.strength}
               </span>
             )}
@@ -97,7 +97,7 @@ export function CartLineRow({
 
         <div className="flex items-center gap-1.5 shrink-0">
           {quoted?.approval_required && showQuoted && (
-            <span className="text-xs font-semibold uppercase text-amber-800 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200">
+            <span className="text-xs font-bold uppercase text-amber-800 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200">
               Needs approval
             </span>
           )}
@@ -110,18 +110,18 @@ export function CartLineRow({
             disabled={disabled}
             aria-label="Remove item"
             title="Remove item (Ctrl+Del)"
-            className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-40 cursor-pointer"
+            className="p-1.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-40 cursor-pointer"
           >
-            <Trash2 size={13} />
+            <Trash2 size={14} />
           </button>
         </div>
       </div>
 
       {/* Stepper, UOM, Unit Price & Line Total */}
-      <div className="flex items-center justify-between gap-2 pt-2">
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-between gap-2 pt-2.5">
+        <div className="flex items-center gap-2">
           {/* Quantity Stepper */}
-          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5">
+          <div className="flex items-center bg-slate-100/90 border border-slate-200/60 rounded-full p-0.5 shadow-2xs">
             <button
               type="button"
               onClick={(e) => {
@@ -129,7 +129,7 @@ export function CartLineRow({
                 stepQty(-1)
               }}
               disabled={disabled}
-              className="w-6 h-6 rounded flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-800 disabled:opacity-40 transition-colors cursor-pointer"
+              className="w-6 h-6 rounded-full flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-900 shadow-2xs disabled:opacity-40 transition-all cursor-pointer"
               title="Decrease (or remove if 1)"
             >
               <Minus size={11} />
@@ -149,7 +149,7 @@ export function CartLineRow({
               inputRef={(el) => {
                 if (el) el.dataset.qtyFor = line.lineRef
               }}
-              className="!text-center font-bold text-xs"
+              className="!text-center font-bold text-xs !border-0 !bg-transparent"
             />
 
             <button
@@ -159,7 +159,7 @@ export function CartLineRow({
                 stepQty(1)
               }}
               disabled={disabled}
-              className="w-6 h-6 rounded flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-800 disabled:opacity-40 transition-colors cursor-pointer"
+              className="w-6 h-6 rounded-full flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-900 shadow-2xs disabled:opacity-40 transition-all cursor-pointer"
               title="Increase quantity"
             >
               <Plus size={11} />
@@ -172,7 +172,7 @@ export function CartLineRow({
             disabled={disabled || line.uoms.length <= 1}
             onChange={(e) => setUom(line.lineRef, e.target.value)}
             data-uom-for={line.lineRef}
-            className="h-7 px-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold focus:outline-none focus:border-blue-500 cursor-pointer"
+            className="h-7 px-2.5 rounded-xl bg-slate-100/80 border border-slate-200/60 text-slate-700 text-xs font-bold focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
             aria-label="Unit of measure"
           >
             {line.uoms.map((u) => (
@@ -221,7 +221,7 @@ export function CartLineRow({
           {fefoOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           <span>Batch: </span>
           {fefo.allocations.length === 0 ? (
-            <span className="text-amber-800 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
+            <span className="text-amber-800 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
               No released stock in {sellingStoreCode}
               {heldElsewhere.length > 0 && (
                 <span className="font-medium">
@@ -235,7 +235,7 @@ export function CartLineRow({
             </span>
           )}
           {dIsPos(fefo.shortfall) && (
-            <span className="text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded border border-rose-200/80 ml-1">
+            <span className="text-rose-700 font-bold bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200/80 ml-1">
               Short by {formatQty(fefo.shortfall)}
             </span>
           )}
@@ -249,7 +249,7 @@ export function CartLineRow({
               setDiscountOpen(true)
             }}
             data-discount-toggle={line.lineRef}
-            className="text-blue-600 hover:text-blue-700 font-semibold hover:underline cursor-pointer"
+            className="text-blue-600 hover:text-blue-700 font-bold hover:underline cursor-pointer"
           >
             + Discount (F6)
           </button>
@@ -258,7 +258,7 @@ export function CartLineRow({
 
       {/* Expanded FEFO info */}
       {fefoOpen && fefo.allocations.length > 0 && (
-        <ul className="mt-1.5 p-2 bg-slate-50 rounded-lg text-xs space-y-0.5 text-slate-600 border border-slate-100">
+        <ul className="mt-2 p-2.5 bg-slate-50/80 rounded-xl text-xs space-y-1 text-slate-600 border border-slate-200/50">
           {fefo.allocations.map((a) => (
             <li key={a.batch_id} className="flex justify-between font-mono">
               <span>{a.batch_number} · exp {formatDate(a.expiry_date)}</span>
@@ -270,8 +270,8 @@ export function CartLineRow({
 
       {/* Expanded Line Discount Inputs */}
       {discountOpen && canDiscount && (
-        <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-slate-100">
-          <span className="text-xs text-slate-500 font-semibold">Disc %:</span>
+        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
+          <span className="text-xs text-slate-500 font-bold">Disc %:</span>
           <input
             type="text"
             inputMode="decimal"
@@ -280,7 +280,7 @@ export function CartLineRow({
             disabled={disabled}
             onChange={(e) => setLineDiscount(line.lineRef, e.target.value.replace(/[^\d.]/g, ''), line.discountReason ?? '')}
             data-discount-for={line.lineRef}
-            className="w-12 h-6 px-1 rounded bg-white border border-slate-200 text-xs font-bold text-slate-800 text-right focus:outline-none focus:border-blue-500"
+            className="w-14 h-7 px-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 text-right focus:outline-none focus:border-blue-500 shadow-2xs"
           />
           <input
             type="text"
@@ -288,7 +288,7 @@ export function CartLineRow({
             value={line.discountReason ?? ''}
             disabled={disabled}
             onChange={(e) => setLineDiscount(line.lineRef, line.requestedDiscountPct ?? '', e.target.value)}
-            className="flex-1 h-6 px-2 rounded bg-white border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+            className="flex-1 h-7 px-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-2xs"
           />
           <button
             type="button"
