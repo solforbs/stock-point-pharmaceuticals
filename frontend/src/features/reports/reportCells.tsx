@@ -6,7 +6,7 @@ import type { ReportColumn } from '../../lib/types'
 
 /** Part 20 — one cell renderer for every typed report column, shared by the catalogue viewer and the dedicated report screens. */
 export function formatCell(value: unknown, column: ReportColumn) {
-  if (value === null || value === undefined || value === '') return <span className="text-[var(--text-muted)]">—</span>
+  if (value === null || value === undefined || value === '') return <span className="text-slate-400">—</span>
   switch (column.type) {
     case 'money':
       return <MoneyCell value={String(value)} />
@@ -23,7 +23,7 @@ export function formatCell(value: unknown, column: ReportColumn) {
     case 'bool':
       return <StatusBadge status={value ? 'OK' : 'FAILED'} label={value ? 'Yes' : 'No'} />
     default:
-      if (typeof value === 'object') return <span className="text-[11px] tabular">{JSON.stringify(value)}</span>
+      if (typeof value === 'object') return <span className="text-xs font-mono text-slate-600">{JSON.stringify(value)}</span>
       if (typeof value === 'string' && /^[A-Z_]{3,}$/.test(value)) return <StatusBadge status={value} />
       return String(value)
   }

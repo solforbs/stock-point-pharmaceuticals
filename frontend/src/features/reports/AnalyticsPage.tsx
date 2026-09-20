@@ -285,13 +285,13 @@ function ChartCard({
     <section className="ui-card min-w-0">
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2">
         <div className="min-w-0">
-          <h2 className="text-[13px] font-bold text-[var(--text)]">{title}</h2>
-          {subtitle && <div className="text-[11px] text-[var(--text-muted)] mt-0.5">{subtitle}</div>}
+          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+          {subtitle && <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>}
         </div>
         <button
           type="button"
           onClick={() => setAsTable(!asTable)}
-          className="shrink-0 inline-flex items-center gap-1 text-[11px] text-[var(--text-secondary)] hover:text-[var(--text)] px-1.5 py-1 rounded hover:bg-[var(--surface-2)]"
+          className="shrink-0 inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 px-2 py-1 rounded-md hover:bg-slate-100 transition-colors"
           aria-pressed={asTable}
         >
           {asTable ? <BarChart3 size={12} /> : <Table2 size={12} />} {asTable ? 'Chart' : 'Table'}

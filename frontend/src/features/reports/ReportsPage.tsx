@@ -84,14 +84,14 @@ export default function ReportsPage() {
           <div className="space-y-2">
             <div className="flex flex-wrap gap-1">
               {groups.map((g) => (
-                <button key={g} type="button" onClick={() => setGroup(g)} className={`h-7 px-2.5 rounded-md text-[11.5px] font-semibold ${group === g ? 'bg-[var(--color-navy)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-secondary)]'}`}>{titleCase(g)}</button>
+                <button key={g} type="button" onClick={() => setGroup(g)} className={`h-7 px-2.5 rounded-md text-xs font-semibold transition-colors ${group === g ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{titleCase(g)}</button>
               ))}
             </div>
             <div className="ui-card max-h-[70vh] overflow-y-auto">
               {defs.filter((d) => d.group === group).map((d) => (
-                <button key={d.key} type="button" onClick={() => choose(d)} className={`w-full text-left px-3 py-2 border-b border-[var(--border)] last:border-b-0 ${activeKey === d.key ? 'bg-[color-mix(in_srgb,var(--color-navy)_10%,var(--card))]' : 'hover:bg-[var(--surface-2)]'}`}>
-                  <div className="text-[12.5px] font-semibold">{d.title}</div>
-                  <div className="text-[10.5px] text-[var(--text-muted)] leading-snug">{d.description}</div>
+                <button key={d.key} type="button" onClick={() => choose(d)} className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 transition-colors ${activeKey === d.key ? 'bg-blue-50/70' : 'hover:bg-slate-50'}`}>
+                  <div className="text-xs font-semibold text-slate-900">{d.title}</div>
+                  <div className="text-xs text-slate-500 leading-snug">{d.description}</div>
                 </button>
               ))}
             </div>
@@ -103,8 +103,8 @@ export default function ReportsPage() {
             ) : (
               <div className="space-y-3">
                 <div>
-                  <h2 className="text-[15px] font-bold">{def.title}</h2>
-                  <p className="text-[11.5px] text-[var(--text-muted)]">{def.description}</p>
+                  <h2 className="text-base font-bold text-slate-900">{def.title}</h2>
+                  <p className="text-xs text-slate-500">{def.description}</p>
                 </div>
                 <FilterBar>
                   {def.filters.includes('from') && <Field label="From"><Input type="date" value={filters.from ?? ''} onChange={(e) => setFilters({ ...filters, from: e.target.value })} /></Field>}
@@ -113,7 +113,7 @@ export default function ReportsPage() {
                   {def.filters.includes('product_id') && (
                     <Field label="Product" className="w-72">
                       {product ? (
-                        <div className="ui-input flex items-center gap-2"><span className="flex-1 truncate">{product.name}</span><button type="button" onClick={() => setProduct(null)} className="text-[var(--text-muted)]">×</button></div>
+                        <div className="ui-input flex items-center gap-2"><span className="flex-1 truncate">{product.name}</span><button type="button" onClick={() => setProduct(null)} className="text-slate-400 hover:text-slate-600">×</button></div>
                       ) : (
                         <ProductSearch onSelect={setProduct} placeholder="Search product…" />
                       )}
@@ -134,7 +134,7 @@ export default function ReportsPage() {
                 {run.isError && <InlineError error={run.error} />}
                 {result && result.key === def.key && (
                   <div className="ui-card">
-                    <div className="px-3 py-2 text-[11px] text-[var(--text-muted)] border-b border-[var(--border)] tabular">
+                    <div className="px-3 py-2 text-xs text-slate-500 border-b border-slate-100 tabular">
                       {formatDate(result.from)} → {formatDate(result.to)} · {result.rows.length} rows · generated {formatDateTime(result.generated_at)}
                     </div>
                     <DataTable
@@ -145,7 +145,7 @@ export default function ReportsPage() {
                       maxHeight="65vh"
                       footer={
                         hasTotals ? (
-                          <tr className="font-bold bg-[var(--surface-2)]">
+                          <tr className="font-bold bg-slate-50">
                             {result.columns.map((c, i) => (
                               <td key={c.key} className={isNumericType(c.type) ? 'text-right' : ''}>
                                 {c.key in result.totals ? formatCell(result.totals[c.key], c) : i === 0 ? 'Totals' : ''}
@@ -156,9 +156,9 @@ export default function ReportsPage() {
                       }
                     />
                     {hasTotals && Object.keys(result.totals).some((k) => !result.columns.find((c) => c.key === k)) && (
-                      <div className="px-3 py-2 border-t border-[var(--border)] flex flex-wrap gap-x-5 gap-y-1 text-[11.5px] tabular">
+                      <div className="px-3 py-2 border-t border-slate-100 flex flex-wrap gap-x-5 gap-y-1 text-xs tabular">
                         {Object.entries(result.totals).filter(([k]) => !result.columns.find((c) => c.key === k)).map(([k, v]) => (
-                          <span key={k}><span className="text-[var(--text-muted)]">{titleCase(k)}</span> <b>{typeof v === 'boolean' ? (v ? 'Yes' : 'No') : typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v)}</b></span>
+                          <span key={k}><span className="text-slate-500">{titleCase(k)}</span> <b>{typeof v === 'boolean' ? (v ? 'Yes' : 'No') : typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v)}</b></span>
                         ))}
                       </div>
                     )}

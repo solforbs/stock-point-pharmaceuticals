@@ -100,14 +100,14 @@ export default function ScheduledReportsPage() {
   const rows = (list.data?.data ?? []).filter((s) => !status || (status === 'ACTIVE' ? s.is_active : status === 'PAUSED' ? !s.is_active : s.last_status === 'FAILED'))
 
   const columns: Column<ScheduledReport>[] = [
-    { key: 'report', header: 'Report', render: (s) => <><div className="font-semibold">{s.report_title}</div><div className="text-[10.5px] text-[var(--text-muted)]">{s.report_key}</div></>, sortValue: (s) => s.report_title },
+    { key: 'report', header: 'Report', render: (s) => <><div className="font-semibold">{s.report_title}</div><div className="text-xs text-slate-500 font-mono">{s.report_key}</div></>, sortValue: (s) => s.report_title },
     { key: 'when', header: 'Schedule', render: (s) => describeSchedule(s) },
-    { key: 'recipients', header: 'Recipients', render: (s) => <span title={s.recipients.join(', ')}>{s.recipients[0]}{s.recipients.length > 1 && <span className="text-[var(--text-muted)]"> +{s.recipients.length - 1}</span>}</span> },
+    { key: 'recipients', header: 'Recipients', render: (s) => <span title={s.recipients.join(', ')}>{s.recipients[0]}{s.recipients.length > 1 && <span className="text-slate-400 font-mono text-xs"> +{s.recipients.length - 1}</span>}</span> },
     { key: 'next', header: 'Next run', render: (s) => (s.is_active ? <span className="tabular">{formatDateTime(s.next_run_at)}</span> : <StatusBadge status="PAUSED" tone="slate" label="Paused" />), sortValue: (s) => s.next_run_at ?? '' },
     {
       key: 'last',
       header: 'Last run',
-      render: (s) => (s.last_run_at ? <div className="flex items-center gap-2"><StatusBadge status={s.last_status === 'SENT' ? 'OK' : 'FAILED'} label={s.last_status ?? '—'} /><span className="tabular text-[11px] text-[var(--text-muted)]">{formatDateTime(s.last_run_at)}</span></div> : <span className="text-[var(--text-muted)]">Never</span>),
+      render: (s) => (s.last_run_at ? <div className="flex items-center gap-2"><StatusBadge status={s.last_status === 'SENT' ? 'OK' : 'FAILED'} label={s.last_status ?? '—'} /><span className="tabular text-xs text-slate-500">{formatDateTime(s.last_run_at)}</span></div> : <span className="text-slate-400">Never</span>),
     },
     { key: 'owner', header: 'Runs as', render: (s) => s.creator?.name ?? '—' },
     {
@@ -153,7 +153,7 @@ export default function ScheduledReportsPage() {
           onRowClick={(s) => setEditing(s)}
           emptyTitle="No scheduled reports"
           emptyHint="Schedule a catalogue report to have it emailed daily, weekly or monthly."
-          renderExpanded={(s) => (s.last_error ? <div className="px-4 py-2 text-[11.5px] text-[var(--status-red)]">{s.last_error}</div> : <div className="px-4 py-2 text-[11.5px] text-[var(--text-muted)]">Recipients: {s.recipients.join(', ')}</div>)}
+          renderExpanded={(s) => (s.last_error ? <div className="px-4 py-2 text-xs text-rose-600 font-medium">{s.last_error}</div> : <div className="px-4 py-2 text-xs text-slate-500">Recipients: {s.recipients.join(', ')}</div>)}
         />
       </div>
 
@@ -264,7 +264,7 @@ function ScheduleForm({ schedule, onDone }: { schedule: ScheduledReport | null; 
             { label: 'Runs as', value: schedule.creator?.name ?? '—' },
             { label: 'Next run', value: schedule.is_active ? formatDateTime(schedule.next_run_at) : 'Paused' },
             { label: 'Last run', value: schedule.last_run_at ? `${schedule.last_status} · ${formatDateTime(schedule.last_run_at)}` : 'Never' },
-            ...(schedule.last_error ? [{ label: 'Last error', value: <span className="text-[var(--status-red)]">{schedule.last_error}</span> }] : []),
+            ...(schedule.last_error ? [{ label: 'Last error', value: <span className="text-rose-600 font-medium">{schedule.last_error}</span> }] : []),
           ]}
         />
       )}
@@ -290,7 +290,7 @@ function ScheduleForm({ schedule, onDone }: { schedule: ScheduledReport | null; 
           {extraFilters.includes('product_id') && (
             <Field label="Product" className="col-span-2">
               {form.filters.product_id ? (
-                <div className="ui-input flex items-center gap-2"><span className="flex-1 truncate">{product?.name ?? savedProduct.data?.name ?? 'Selected product'}</span><button type="button" aria-label="Clear product" onClick={() => { setProduct(null); setFilter('product_id', '') }} className="text-[var(--text-muted)]"><X size={12} /></button></div>
+                <div className="ui-input flex items-center gap-2"><span className="flex-1 truncate">{product?.name ?? savedProduct.data?.name ?? 'Selected product'}</span><button type="button" aria-label="Clear product" onClick={() => { setProduct(null); setFilter('product_id', '') }} className="text-slate-400 hover:text-slate-600"><X size={12} /></button></div>
               ) : (
                 <ProductSearch onSelect={(p) => { setProduct(p); setFilter('product_id', p.id) }} placeholder="Search product…" />
               )}
@@ -328,13 +328,13 @@ function ScheduleForm({ schedule, onDone }: { schedule: ScheduledReport | null; 
       <Field label="Recipients" required error={recipientError} hint="Type an address and press Enter. Up to 20.">
         <div className="ui-input !h-auto min-h-8 flex flex-wrap items-center gap-1 py-1">
           {form.recipients.map((email) => (
-            <span key={email} className="inline-flex items-center gap-1 rounded bg-[var(--surface-2)] border border-[var(--border)] px-1.5 py-[1px] text-[11.5px]">
+            <span key={email} className="inline-flex items-center gap-1 rounded bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-xs text-slate-700">
               {email}
-              <button type="button" aria-label={`Remove ${email}`} className="text-[var(--text-muted)] hover:text-[var(--text)]" onClick={() => set({ recipients: form.recipients.filter((r) => r !== email) })}><X size={11} /></button>
+              <button type="button" aria-label={`Remove ${email}`} className="text-slate-400 hover:text-slate-700" onClick={() => set({ recipients: form.recipients.filter((r) => r !== email) })}><X size={11} /></button>
             </span>
           ))}
           <input
-            className="flex-1 min-w-[160px] bg-transparent outline-none text-[12.5px]"
+            className="flex-1 min-w-[160px] bg-transparent outline-none text-xs"
             type="email"
             value={emailDraft}
             placeholder={form.recipients.length ? '' : 'name@company.co.ke'}
@@ -345,7 +345,7 @@ function ScheduleForm({ schedule, onDone }: { schedule: ScheduledReport | null; 
         </div>
       </Field>
 
-      <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active</label>
+      <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active</label>
 
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
       <div className="flex justify-end gap-2">
