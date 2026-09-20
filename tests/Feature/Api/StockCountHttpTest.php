@@ -40,16 +40,24 @@ class StockCountHttpTest extends TestCase
         $this->postJson("/api/inventory/counts/{$count['id']}/review")->assertStatus(409)->assertJsonPath('error.code', 'INVALID_STATE');
         $this->postJson("/api/inventory/counts/{$count['id']}/start")->assertOk()->assertJsonPath('status', 'COUNTING');
 
-        // A variance without a reason cannot go to review.
+        // Uncounted lines cannot go to review.
         $this->postJson("/api/inventory/counts/{$count['id']}/lines/{$lines['C1']['id']}", ['counted_qty' => '990'])
             ->assertOk()->assertJsonPath('variance_qty', '-10.0000')->assertJsonPath('variance_value', '-20.0000');
         $this->postJson("/api/inventory/counts/{$count['id']}/review")->assertStatus(422)->assertJsonPath('error.code', 'INVALID_INPUT');
 
-        $this->postJson("/api/inventory/counts/{$count['id']}/lines/{$lines['C1']['id']}", ['counted_qty' => '990', 'reason_code' => 'BREAKAGE'])->assertOk();
-        $this->postJson("/api/inventory/counts/{$count['id']}/lines/{$lines['C2']['id']}", ['counted_qty' => '505', 'reason_code' => 'MISCOUNT'])
+        // Once all lines are counted, blind count submits for review.
+        $this->postJson("/api/inventory/counts/{$count['id']}/lines/{$lines['C2']['id']}", ['counted_qty' => '505'])
             ->assertOk()->assertJsonPath('variance_value', '15.0000');
-
         $this->postJson("/api/inventory/counts/{$count['id']}/review")->assertOk()->assertJsonPath('status', 'REVIEW');
+
+        // In review, approving without reason codes on variance lines is blocked.
+        $this->postJson("/api/inventory/counts/{$count['id']}/approve")->assertStatus(422)->assertJsonPath('error.code', 'INVALID_INPUT');
+
+        // Reviewer enters reason codes on variance lines in review mode.
+        $this->postJson("/api/inventory/counts/{$count['id']}/lines/{$lines['C1']['id']}", ['counted_qty' => '990', 'reason_code' => 'BREAKAGE'])->assertOk();
+        $this->postJson("/api/inventory/counts/{$count['id']}/lines/{$lines['C2']['id']}", ['counted_qty' => '505', 'reason_code' => 'MISCOUNT'])->assertOk();
+
+        // Now approval succeeds and ledger/journal rows post.
         $this->postJson("/api/inventory/counts/{$count['id']}/approve")->assertOk()->assertJsonPath('status', 'APPROVED');
 
         $rows = StockLedger::where('source_doc_type', 'stock_count')->where('source_doc_id', $count['id'])->get();

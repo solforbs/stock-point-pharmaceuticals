@@ -24,6 +24,7 @@ export interface CartPanelProps {
   customerInputRef: RefObject<HTMLInputElement | null>
   onOpenPayment: () => void
   onHold: () => void
+  onPreviewCart?: () => void
   onApprove: () => void
   approvePending: boolean
 }
@@ -33,6 +34,7 @@ export function CartPanel({
   customerInputRef,
   onOpenPayment,
   onHold,
+  onPreviewCart,
   onApprove,
   approvePending,
 }: CartPanelProps) {
@@ -231,6 +233,7 @@ export function CartPanel({
         onSetHeaderDiscount={setHeaderDiscount}
         onOpenPayment={onOpenPayment}
         onHold={onHold}
+        onPreviewCart={onPreviewCart}
         onFocusCustomer={() => customerInputRef.current?.focus()}
         onSwitchToRetail={() => setSaleMode('RETAIL')}
       />

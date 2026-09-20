@@ -13,6 +13,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, DrawerFooter, Field, FormSection, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
 import { apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { useStores } from '../../lib/hooks'
 import { usePermissions } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
@@ -176,7 +177,10 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
     onSuccess: (t) => { setResolving(false); done(t, 'discrepancy resolved') },
   })
 
+  const { data: currentUser } = useCurrentUser()
   const t = transfer.data
+  const isCreator = !!currentUser && !!t && t.requested_by === currentUser.id
+
   return (
     <Drawer
       open={!!id}
@@ -187,7 +191,17 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
       actions={
         t ? (
           <div className="flex gap-2">
-            {t.status === 'DRAFT' && perms.has('stock.transfer.approve') && <Button size="sm" variant="success" disabled={approve.isPending} onClick={() => approve.mutate()}>Approve</Button>}
+            {t.status === 'DRAFT' && perms.has('stock.transfer.approve') && (
+              <Button
+                size="sm"
+                variant="success"
+                disabled={approve.isPending || isCreator}
+                onClick={() => approve.mutate()}
+                title={isCreator ? 'You requested this transfer. Another authorized user must approve it (Segregation of Duties).' : undefined}
+              >
+                Approve
+              </Button>
+            )}
             {t.status === 'APPROVED' && perms.has('stock.transfer.dispatch') && <Button size="sm" variant="primary" disabled={dispatch.isPending} onClick={() => dispatch.mutate()}>Dispatch</Button>}
             {t.status === 'DISPATCHED' && perms.has('stock.transfer.receive') && <Button size="sm" variant="success" disabled={receive.isPending} onClick={() => receive.mutate()}>Receive</Button>}
             {t.status === 'DISCREPANCY' && perms.has('stock.transfer.approve') && <Button size="sm" variant="danger" onClick={() => setResolving(true)}>Resolve discrepancy</Button>}
@@ -201,6 +215,11 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
       {t && (
         <div className="space-y-4">
           <div className="flex items-center gap-2"><StatusBadge status={t.status} /></div>
+          {t.status === 'DRAFT' && isCreator && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <span className="font-semibold">Segregation of Duties:</span> You created this transfer request. Another user with transfer approval permission must review and approve it.
+            </div>
+          )}
           <DescriptionList items={[{ label: 'Created', value: formatDateTime(t.created_at) }, { label: 'Dispatched', value: formatDateTime(t.dispatched_at) }, { label: 'Received', value: formatDateTime(t.received_at) }]} />
           <table className="ui-table">
             <thead><tr><th>Product</th><th>Batch</th><th className="text-right">Dispatched</th><th className="text-right">Received</th></tr></thead>

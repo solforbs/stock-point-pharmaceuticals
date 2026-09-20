@@ -62,7 +62,7 @@ class StockCountController extends ApiController
 
     public function enter(Request $request, string $count, string $line, StockCountService $counts): JsonResponse
     {
-        $this->requirePermission($request, 'stock.count.enter');
+        $this->requireAnyPermission($request, ['stock.count.enter', 'stock.count.post']);
 
         $data = $request->validate([
             'counted_qty' => ['required', 'numeric', 'min:0'],

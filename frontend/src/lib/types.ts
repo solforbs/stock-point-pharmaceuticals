@@ -758,6 +758,8 @@ export type StockTransfer = {
   from_store_id: string
   to_store_id: string
   status: 'DRAFT' | 'APPROVED' | 'DISPATCHED' | 'RECEIVED' | 'DISCREPANCY'
+  requested_by?: number | null
+  approved_by?: number | null
   dispatched_at: string | null
   received_at: string | null
   created_at?: string

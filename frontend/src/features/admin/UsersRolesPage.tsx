@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Key, UserCheck } from 'lucide-react'
+import { Eye, EyeOff, Key, UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DeleteRecordButton } from '../../components/DeleteRecordButton'
@@ -219,6 +219,7 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
       assignments,
     }
   })
+  const [showPassword, setShowPassword] = useState(false)
   const set = (patch: Partial<UserFormState>) => setForm({ ...form, ...patch })
 
   function toggleRole(branchId: string, role: string, on: boolean) {
@@ -279,7 +280,25 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
           <Field label="Email" required error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
           <Field label="Phone" error={err?.errors.phone?.[0]}><Input value={form.phone} onChange={(e) => set({ phone: e.target.value })} /></Field>
           <Field label={user ? 'New password' : 'Temporary password'} required={!user} hint="At least 12 characters." error={err?.errors.password?.[0] ?? (form.password && !passwordOk ? 'At least 12 characters.' : null)} className="col-span-1 sm:col-span-2">
-            <Input type="password" autoComplete="new-password" value={form.password} placeholder={user ? 'Leave blank to keep current password' : ''} onChange={(e) => set({ password: e.target.value })} />
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={form.password}
+                placeholder={user ? 'Leave blank to keep current password' : ''}
+                onChange={(e) => set({ password: e.target.value })}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </Field>
         </div>
       </FormSection>

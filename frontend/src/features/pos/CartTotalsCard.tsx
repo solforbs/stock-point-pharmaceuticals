@@ -1,4 +1,4 @@
-import { AlertCircle, Clock, Tag, UserCheck } from 'lucide-react'
+import { AlertCircle, Clock, FileText, Tag, UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { MoneyCell } from '../../components/ui/MoneyCell'
 import { formatMoney, formatPct } from '../../lib/money'
@@ -21,6 +21,7 @@ export interface CartTotalsCardProps {
   onSetHeaderDiscount: (amt: string, reason: string) => void
   onOpenPayment: () => void
   onHold: () => void
+  onPreviewCart?: () => void
   onFocusCustomer?: () => void
   onSwitchToRetail?: () => void
 }
@@ -42,6 +43,7 @@ export function CartTotalsCard({
   onSetHeaderDiscount,
   onOpenPayment,
   onHold,
+  onPreviewCart,
   onFocusCustomer,
   onSwitchToRetail,
 }: CartTotalsCardProps) {
@@ -194,6 +196,19 @@ export function CartTotalsCard({
 
       {/* Side-by-Side Action Buttons */}
       <div className="flex items-center gap-2 pt-1">
+        {onPreviewCart && (
+          <button
+            type="button"
+            onClick={onPreviewCart}
+            disabled={linesCount === 0}
+            className="h-10 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 shadow-xs"
+            title="Review items and print preview"
+          >
+            <FileText size={14} className="text-slate-500" />
+            <span className="hidden sm:inline">Review</span>
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onHold}

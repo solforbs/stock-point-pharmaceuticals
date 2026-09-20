@@ -76,6 +76,11 @@ class StockTransferService
     public function approve(StockTransfer $transfer, int $approverId): StockTransfer
     {
         $this->assertStatus($transfer, 'DRAFT');
+
+        if ($approverId === (int) $transfer->requested_by) {
+            throw new \DomainException('The creator of a transfer cannot approve their own transfer (segregation of duties).');
+        }
+
         $transfer->update(['status' => 'APPROVED', 'approved_by' => $approverId]);
 
         AuditLog::record('TRANSFER_APPROVED', 'stock_transfer', $transfer->id, ['user_id' => $approverId, 'reference' => $transfer->doc_number]);

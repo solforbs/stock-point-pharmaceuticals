@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ClipboardList, Plus, X } from 'lucide-react'
+import { AlertCircle, CheckCircle, ClipboardList, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ProductSearch } from '../../components/ProductSearch'
@@ -169,7 +169,11 @@ function CountDrawer({ id, onClose }: { id: string | null; onClose: () => void }
   const c = count.data
   const approveError = approve.isError ? getApiError(approve.error) : null
   const counting = c?.status === 'COUNTING' && perms.has('stock.count.enter')
+  const reviewing = c?.status === 'REVIEW' && (perms.has('stock.count.post') || perms.has('stock.count.enter'))
+  const canEdit = counting || reviewing
   const allCounted = !!c && (c.lines ?? []).every((l) => l.counted_qty !== null)
+  const varianceLinesWithoutReason = (c?.lines ?? []).filter((l) => Number(l.variance_qty) !== 0 && !l.reason_code)
+  const hasUnexplainedVariance = varianceLinesWithoutReason.length > 0
 
   return (
     <Drawer
@@ -183,7 +187,17 @@ function CountDrawer({ id, onClose }: { id: string | null; onClose: () => void }
           <div className="flex gap-2">
             {c.status === 'PLANNED' && perms.has('stock.count.enter') && <Button size="sm" variant="primary" disabled={start.isPending} onClick={() => start.mutate()}>Start counting</Button>}
             {c.status === 'COUNTING' && perms.has('stock.count.enter') && <Button size="sm" variant="primary" disabled={!allCounted || review.isPending} onClick={() => review.mutate()} title={allCounted ? undefined : 'Count every line first'}>Submit for review</Button>}
-            {c.status === 'REVIEW' && perms.has('stock.count.post') && <Button size="sm" variant="success" disabled={approve.isPending} onClick={() => approve.mutate()}>Approve & post variances</Button>}
+            {c.status === 'REVIEW' && perms.has('stock.count.post') && (
+              <Button
+                size="sm"
+                variant="success"
+                disabled={approve.isPending || hasUnexplainedVariance}
+                onClick={() => approve.mutate()}
+                title={hasUnexplainedVariance ? `${varianceLinesWithoutReason.length} variance line(s) have no reason code. Assign reasons before approving.` : undefined}
+              >
+                Approve & post variances
+              </Button>
+            )}
             {c.status === 'APPROVED' && perms.has('stock.count.post') && <Button size="sm" disabled={close.isPending} onClick={() => close.mutate()}>Close</Button>}
           </div>
         ) : null
@@ -202,39 +216,118 @@ function CountDrawer({ id, onClose }: { id: string | null; onClose: () => void }
       )}
       {c && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={c.status} /><span className="text-xs text-slate-500">{c.status === 'COUNTING' ? 'System quantities are hidden while counting (blind count).' : ''}</span></div>
+          <div className="flex items-center gap-2">
+            <StatusBadge status={c.status} />
+            <span className="text-xs text-slate-500">
+              {c.status === 'COUNTING' && 'System quantities and variances are hidden during counting (blind count).'}
+              {c.status === 'REVIEW' && 'Review mode: inspect variances and assign reason codes before final approval.'}
+            </span>
+          </div>
+
+          {c.status === 'REVIEW' && hasUnexplainedVariance && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold">{varianceLinesWithoutReason.length} line(s) have variances without a reason code.</span> Select a reason code (e.g. Breakage, Expiry, Miscount) and save each line before approving.
+              </div>
+            </div>
+          )}
+
+          {c.status === 'REVIEW' && !hasUnexplainedVariance && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 flex items-start gap-2.5">
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold">All variances are accounted for.</span> Click &ldquo;Approve &amp; post variances&rdquo; to post adjustments to the inventory ledger and journal.
+              </div>
+            </div>
+          )}
+
           <table className="ui-table">
-            <thead><tr><th>Product</th><th>Batch</th>{c.status !== 'COUNTING' && <th className="text-right">System</th>}<th className="text-right">Counted</th>{c.status !== 'COUNTING' && <th className="text-right">Variance</th>}{c.status !== 'COUNTING' && c.lines?.some((l) => l.variance_value !== undefined) && <th className="text-right">Value</th>}<th>Reason</th>{counting && <th />}</tr></thead>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Batch</th>
+                {c.status !== 'COUNTING' && <th className="text-right">System</th>}
+                <th className="text-right">Counted</th>
+                {c.status !== 'COUNTING' && <th className="text-right">Variance</th>}
+                {c.status !== 'COUNTING' && c.lines?.some((l) => l.variance_value !== undefined) && <th className="text-right">Value</th>}
+                <th>Reason</th>
+                {canEdit && <th />}
+              </tr>
+            </thead>
             <tbody>
               {(c.lines ?? []).map((l) => {
                 const e = entries[l.id] ?? { qty: l.counted_qty !== null ? String(Number(l.counted_qty)) : '', reason: l.reason_code ?? '' }
+                const isVariance = Number(l.variance_qty) !== 0
+                const needsReason = c.status === 'REVIEW' && isVariance && !l.reason_code
+
                 return (
-                  <tr key={l.id}>
+                  <tr key={l.id} className={needsReason ? 'bg-amber-50/40' : undefined}>
                     <td>{l.product?.name ?? l.product_id.slice(0, 8)}</td>
-                    <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-500 tabular">exp {formatDate(l.batch.expiry_date)}</div>}</td>
+                    <td className="tabular">
+                      {l.batch?.batch_number ?? l.batch_id.slice(0, 8)}
+                      {l.batch && <div className="text-xs text-slate-500 tabular">exp {formatDate(l.batch.expiry_date)}</div>}
+                    </td>
                     {c.status !== 'COUNTING' && <td className="text-right"><QtyCell value={l.system_qty} /></td>}
                     <td className="text-right">
-                      {counting ? <input value={e.qty} onChange={(ev) => setEntries({ ...entries, [l.id]: { ...e, qty: ev.target.value.replace(/[^\d.]/g, '') } })} className="ui-input h-7 w-24 tabular text-right text-sm" /> : <QtyCell value={l.counted_qty} />}
+                      {canEdit ? (
+                        <input
+                          value={e.qty}
+                          onChange={(ev) => setEntries({ ...entries, [l.id]: { ...e, qty: ev.target.value.replace(/[^\d.]/g, '') } })}
+                          className="ui-input h-7 w-24 tabular text-right text-sm"
+                        />
+                      ) : (
+                        <QtyCell value={l.counted_qty} />
+                      )}
                     </td>
-                    {c.status !== 'COUNTING' && <td className="text-right"><QtyCell value={l.variance_qty} className={l.variance_qty && Number(l.variance_qty) !== 0 ? 'font-bold' : ''} /></td>}
+                    {c.status !== 'COUNTING' && (
+                      <td className="text-right">
+                        <span
+                          className={`tabular font-mono ${
+                            Number(l.variance_qty) < 0
+                              ? 'text-rose-600 font-bold'
+                              : Number(l.variance_qty) > 0
+                              ? 'text-emerald-600 font-bold'
+                              : 'text-slate-400'
+                          }`}
+                        >
+                          {Number(l.variance_qty) > 0 ? `+${Number(l.variance_qty)}` : Number(l.variance_qty)}
+                        </span>
+                      </td>
+                    )}
                     {c.status !== 'COUNTING' && c.lines?.some((x) => x.variance_value !== undefined) && <td className="text-right"><MoneyCell value={l.variance_value ?? null} /></td>}
                     <td>
-                      {counting ? (
-                        <select value={e.reason} onChange={(ev) => setEntries({ ...entries, [l.id]: { ...e, reason: ev.target.value } })} className="ui-input h-7 text-sm">
-                          <option value="">None</option>
+                      {canEdit ? (
+                        <select
+                          value={e.reason}
+                          onChange={(ev) => setEntries({ ...entries, [l.id]: { ...e, reason: ev.target.value } })}
+                          className={`ui-input h-7 text-sm ${needsReason && !e.reason ? 'border-amber-400 bg-amber-50 text-amber-900 font-medium' : ''}`}
+                        >
+                          <option value="">{c.status === 'REVIEW' && isVariance ? 'Select reason (required)...' : 'None'}</option>
                           {(c.variance_reasons ?? []).map((r) => (<option key={r} value={r}>{titleCase(r)}</option>))}
                         </select>
                       ) : (
                         titleCase(l.reason_code) || '—'
                       )}
                     </td>
-                    {counting && <td className="text-right"><Button size="sm" disabled={e.qty === '' || enter.isPending} onClick={() => enter.mutate({ lineId: l.id, qty: e.qty, reason: e.reason })}>{l.counted_qty !== null ? 'Update' : 'Save'}</Button></td>}
+                    {canEdit && (
+                      <td className="text-right">
+                        <Button
+                          size="sm"
+                          variant={needsReason ? 'primary' : 'secondary'}
+                          disabled={(counting && e.qty === '') || enter.isPending}
+                          onClick={() => enter.mutate({ lineId: l.id, qty: e.qty || String(Number(l.counted_qty ?? 0)), reason: e.reason })}
+                        >
+                          {c.status === 'REVIEW' ? (e.reason === (l.reason_code ?? '') && e.qty === String(Number(l.counted_qty ?? 0)) ? 'Saved' : 'Save') : (l.counted_qty !== null ? 'Update' : 'Save')}
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 )
               })}
             </tbody>
           </table>
-          {counting && <p className="text-xs text-slate-500">A variance without a reason code cannot go to review. Reasons: {(c.variance_reasons ?? []).map(titleCase).join(', ')}.</p>}
+          {c.status === 'COUNTING' && <p className="text-xs text-slate-500">Counting is blind: physical quantities are entered without seeing system balances. Once all items are counted, submit for review.</p>}
         </div>
       )}
     </Drawer>

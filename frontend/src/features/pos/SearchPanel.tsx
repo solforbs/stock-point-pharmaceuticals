@@ -129,7 +129,7 @@ export function SearchPanel({
       </div>
 
       {/* Results or Fast-Moving OTC Grid */}
-      <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex-1 overflow-y-auto pos-scroll">
         {query.trim() ? (
           results.length === 0 ? (
             <div className="px-4 py-8 text-center text-xs text-slate-400">

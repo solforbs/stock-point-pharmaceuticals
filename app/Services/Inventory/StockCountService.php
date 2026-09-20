@@ -89,7 +89,7 @@ class StockCountService
     public function enter(StockCountLine $line, string $countedQty, ?string $reasonCode = null): StockCountLine
     {
         $count = $line->count;
-        $this->assertStatus($count, 'COUNTING');
+        $this->assertStatusIn($count, ['COUNTING', 'REVIEW']);
         if (bccomp($countedQty, '0', 4) < 0) {
             throw new \InvalidArgumentException('A counted quantity cannot be negative.');
         }
@@ -110,7 +110,7 @@ class StockCountService
         return $line->fresh();
     }
 
-    /** Every line counted; every variance explained. */
+    /** Every line counted. */
     public function submitForReview(StockCount $count, int $userId): StockCount
     {
         $this->assertStatus($count, 'COUNTING');
@@ -118,10 +118,6 @@ class StockCountService
         $uncounted = $count->lines()->whereNull('counted_qty')->count();
         if ($uncounted > 0) {
             throw new \DomainException("{$uncounted} line(s) have not been counted yet.");
-        }
-        $unexplained = $count->lines()->where('variance_qty', '<>', 0)->whereNull('reason_code')->count();
-        if ($unexplained > 0) {
-            throw new \DomainException("{$unexplained} variance line(s) have no reason code (Part 7.7).");
         }
 
         $count->update(['status' => 'REVIEW']);
@@ -133,6 +129,11 @@ class StockCountService
     public function approve(StockCount $count, int $approverId): StockCount
     {
         $this->assertStatus($count, 'REVIEW');
+
+        $unexplained = $count->lines()->where('variance_qty', '<>', 0)->whereNull('reason_code')->count();
+        if ($unexplained > 0) {
+            throw new \DomainException("{$unexplained} variance line(s) have no reason code (Part 7.7).");
+        }
 
         $store = Store::findOrFail($count->store_id);
         $organisationId = (string) Branch::whereKey($store->branch_id)->value('organisation_id');
@@ -254,6 +255,17 @@ class StockCountService
     {
         if ($count->status !== $expected) {
             throw new InvalidCountStatusException("Stock count {$count->doc_number} is {$count->status}, not {$expected}.");
+        }
+    }
+
+    /**
+     * @param  list<string>  $expected
+     */
+    private function assertStatusIn(StockCount $count, array $expected): void
+    {
+        if (! in_array($count->status, $expected, true)) {
+            $expectedStr = implode(' or ', $expected);
+            throw new InvalidCountStatusException("Stock count {$count->doc_number} is {$count->status}, not {$expectedStr}.");
         }
     }
 }

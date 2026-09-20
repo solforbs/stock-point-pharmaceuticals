@@ -9,12 +9,14 @@ import { usePermission } from '../../lib/permissions'
 import { CartPanel } from './CartPanel'
 import { ModeBanner } from './ModeBanner'
 import { PaymentPanel } from './PaymentPanel'
+import { PosCartPreviewModal } from './PosCartPreviewModal'
 import { PosHeldCartsDrawer } from './PosHeldCartsDrawer'
 import { PosHoldCartModal } from './PosHoldCartModal'
 import { PosPriceChangeModal } from './PosPriceChangeModal'
 import { POS_SHORTCUTS, PosShortcutsModal } from './PosShortcutsModal'
 import { ReceiptView } from './ReceiptView'
 import { SearchPanel } from './SearchPanel'
+import { dSum } from '../../lib/decimal'
 import { useCartStore } from './cartStore'
 import { useCheckout } from './useCheckout'
 import { useQuote } from './useQuote'
@@ -59,6 +61,7 @@ export default function PosPage() {
   const [holdOpen, setHoldOpen] = useState(false)
   const [holdName, setHoldName] = useState('')
   const [resumeOpen, setResumeOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [removeRef, setRemoveRef] = useState<string | null>(null)
 
   // The till only ever works in a sellable store; a remembered store that has
@@ -233,6 +236,7 @@ export default function PosPage() {
             customerInputRef={customerRef}
             onOpenPayment={openPayment}
             onHold={() => setHoldOpen(true)}
+            onPreviewCart={() => setPreviewOpen(true)}
             onApprove={openPayment}
             approvePending={checkout.isPending}
           />
@@ -294,6 +298,17 @@ export default function PosPage() {
         open={helpOpen}
         onClose={() => setHelpOpen(false)}
         canDiscount={canDiscount}
+      />
+
+      <PosCartPreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        customer={useCartStore.getState().customer}
+        lines={lines}
+        quote={useCartStore.getState().quote}
+        estimateTotal={dSum(lines.map((l) => l.localEstimate))}
+        saleMode={saleMode}
+        branchName={user?.active_branch?.name ?? user?.active_branch?.code ?? undefined}
       />
 
       <ConfirmDialog
