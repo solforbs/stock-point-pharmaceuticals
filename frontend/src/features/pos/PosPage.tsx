@@ -187,7 +187,7 @@ export default function PosPage() {
   if (enabledModes.length === 0 && user) return <EmptyState title="Commerce is disabled for this branch" hint="Neither retail nor wholesale mode is enabled." />
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
       <ModeBanner stores={stores.data ?? []} />
 
       {/* POS Interactive Guided Tour Banner */}
@@ -269,7 +269,7 @@ export default function PosPage() {
             }}
           />
         </div>
-        <div className={`${mobileTab === 'cart' ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 flex-col min-h-0`}>
+        <div className={`${mobileTab === 'cart' ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 flex-col min-h-0 h-full overflow-hidden`}>
           <CartPanel
             quoteState={quoteState}
             customerInputRef={customerRef}

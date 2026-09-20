@@ -174,7 +174,7 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <main className={`flex-1 min-w-0 ${isPos ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+        <main className={`flex-1 min-w-0 ${isPos ? 'flex flex-col min-h-0 overflow-hidden' : 'overflow-y-auto'}`}>
           <Outlet />
         </main>
       </div>

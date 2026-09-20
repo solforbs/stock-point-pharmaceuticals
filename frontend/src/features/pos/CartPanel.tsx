@@ -76,7 +76,7 @@ export function CartPanel({
   const paymentEnabled = isFresh && !disabled && lines.length > 0
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col bg-slate-50/50 border-l border-slate-200/80">
+    <div className="flex-1 min-w-0 min-h-0 h-full flex flex-col bg-slate-50/50 border-l border-slate-200/80 overflow-hidden">
       {/* Customer Header */}
       <div id="tour-pos-customer" className="px-3.5 py-2 bg-white border-b border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] shrink-0">
         <div className="flex items-center justify-between mb-1">
@@ -112,7 +112,7 @@ export function CartPanel({
 
       {/* Notifications & Warnings */}
       {modeSwitchNote && quote && modeSwitchNote.beforeTotal !== null && (
-        <div className="mx-3 mt-2 px-3 py-2 rounded-2xl border border-blue-200/80 bg-blue-50 text-xs text-blue-900 flex items-center gap-3">
+        <div className="mx-3 mt-2 px-3 py-2 rounded-2xl border border-blue-200/80 bg-blue-50 text-xs text-blue-900 flex items-center gap-3 shrink-0">
           <span className="flex-1 tabular">
             Re-quoted after mode switch ({modeSwitchNote.from} → {modeSwitchNote.to}): was <b>{formatMoney(modeSwitchNote.beforeTotal)}</b>, now <b>{formatMoney(quote.totals.grand_total)}</b>
           </span>
@@ -127,7 +127,7 @@ export function CartPanel({
       )}
 
       {expired && lines.length > 0 && (
-        <div className="mx-3 mt-2 px-3.5 py-2.5 rounded-2xl border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2.5">
+        <div className="mx-3 mt-2 px-3.5 py-2.5 rounded-2xl border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2.5 shrink-0">
           <AlertTriangle size={15} className="text-amber-600 shrink-0" />
           <span className="flex-1">Quote expired. Prices must be re-confirmed before checkout.</span>
           <button
@@ -142,7 +142,7 @@ export function CartPanel({
       )}
 
       {quoteError && (
-        <div className="mx-3 mt-2 px-3.5 py-2.5 rounded-2xl border border-rose-200 bg-rose-50 text-xs text-rose-900 flex items-center gap-2.5">
+        <div className="mx-3 mt-2 px-3.5 py-2.5 rounded-2xl border border-rose-200 bg-rose-50 text-xs text-rose-900 flex items-center gap-2.5 shrink-0">
           <span className="flex-1">
             <b className="mr-1">{quoteError.code}:</b>
             {quoteError.message}
@@ -169,7 +169,7 @@ export function CartPanel({
       )}
 
       {(flaggedCount > 0 || status === 'AWAITING_APPROVAL') && !disabled && (
-        <div className="mx-3 mt-2">
+        <div className="mx-3 mt-2 shrink-0">
           <ApprovalBar
             title={status === 'AWAITING_APPROVAL' ? 'Approval required before sale can post' : `${flaggedCount} line(s) need manager approval`}
             message={
