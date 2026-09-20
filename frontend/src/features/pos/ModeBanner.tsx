@@ -36,7 +36,7 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
     <div className="h-11 px-3 sm:px-4 flex items-center justify-between gap-2 bg-white border-b border-slate-200/80 shrink-0 select-none overflow-hidden">
       {/* Left: Mode Toggle Pills */}
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider hidden xl:inline">
+        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden xl:inline">
           Sale Mode:
         </span>
         <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg border border-slate-200">

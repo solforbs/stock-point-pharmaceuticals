@@ -75,8 +75,8 @@ export default function LocationsPage() {
 
   const columns: Column<WarehouseLocation>[] = [
     { key: 'code', header: 'Code', render: (l) => <span className="font-semibold tabular">{l.code}</span>, sortValue: (l) => l.code },
-    { key: 'name', header: 'Name', render: (l) => l.name ?? <span className="text-[var(--text-muted)]">—</span>, sortValue: (l) => l.name ?? '' },
-    { key: 'slot', header: 'Aisle › rack › bin', render: (l) => <span className="text-[var(--text-secondary)]">{slotPath(l)}</span>, sortValue: (l) => `${l.aisle ?? ''}|${l.rack ?? ''}|${l.bin ?? ''}` },
+    { key: 'name', header: 'Name', render: (l) => l.name ?? <span className="text-slate-400">—</span>, sortValue: (l) => l.name ?? '' },
+    { key: 'slot', header: 'Aisle › rack › bin', render: (l) => <span className="text-slate-500">{slotPath(l)}</span>, sortValue: (l) => `${l.aisle ?? ''}|${l.rack ?? ''}|${l.bin ?? ''}` },
     { key: 'type', header: 'Type', render: (l) => <StatusBadge status={l.location_type} tone={l.location_type === 'COLD_SHELF' ? 'cold' : 'slate'} label={titleCase(l.location_type)} /> },
     { key: 'capacity', header: 'Capacity', align: 'right', render: (l) => <span className="tabular">{l.capacity ?? '—'}</span>, sortValue: (l) => l.capacity ?? 0 },
     { key: 'on_hand', header: 'On hand (base)', align: 'right', render: (l) => <QtyCell value={l.on_hand_base ?? '0'} />, sortValue: (l) => Number(l.on_hand_base ?? 0) },

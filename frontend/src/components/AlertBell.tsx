@@ -80,7 +80,7 @@ export function AlertBell() {
         <Bell size={17} />
         {total > 0 && (
           <span
-            className={`absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full text-[9.5px] font-bold text-white flex items-center justify-center ${critical > 0 ? 'bg-rose-600' : 'bg-amber-500'}`}
+            className={`absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${critical > 0 ? 'bg-rose-600' : 'bg-amber-500'}`}
           >
             {total > 99 ? '99+' : total}
           </span>
@@ -91,15 +91,15 @@ export function AlertBell() {
         <div className="absolute right-0 mt-2 w-[420px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-slate-200 shadow-xl z-50 overflow-hidden">
           <header className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h3 className="text-[13px] font-bold text-slate-800">Alerts</h3>
-              <p className="text-[11px] text-slate-500">Payment deadlines and shelf life</p>
+              <h3 className="text-sm font-bold text-slate-800">Alerts</h3>
+              <p className="text-xs text-slate-500">Payment deadlines and shelf life</p>
             </div>
             {total > 0 && (
               <button
                 type="button"
                 onClick={() => acknowledgeAll.mutate()}
                 disabled={acknowledgeAll.isPending}
-                className="text-[11.5px] font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
               >
                 Mark all seen
               </button>
@@ -107,9 +107,9 @@ export function AlertBell() {
           </header>
 
           <div className="max-h-[420px] overflow-y-auto">
-            {alerts.isLoading && <p className="px-4 py-6 text-[12px] text-slate-500">Loading…</p>}
+            {alerts.isLoading && <p className="px-4 py-6 text-xs text-slate-500">Loading…</p>}
             {!alerts.isLoading && (alerts.data?.data.length ?? 0) === 0 && (
-              <p className="px-4 py-6 text-[12px] text-slate-500">Nothing needs attention. Invoices are within terms and no stock is short-dated.</p>
+              <p className="px-4 py-6 text-xs text-slate-500">Nothing needs attention. Invoices are within terms and no stock is short-dated.</p>
             )}
             {alerts.data?.data.map((alert) => {
               const Icon = categoryIcon[alert.category] ?? AlertTriangle

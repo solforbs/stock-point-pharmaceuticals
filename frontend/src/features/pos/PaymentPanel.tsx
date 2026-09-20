@@ -210,7 +210,7 @@ export function PaymentPanel({
                 />
               </div>
               {!cashOk && dIsPos(tendered) && (
-                <div className="text-[11.5px] font-bold text-rose-600 pt-1 border-t border-rose-100">
+                <div className="text-xs font-bold text-rose-600 pt-1 border-t border-rose-100">
                   Short by KES {formatMoney(dSub(total, tendered))}
                 </div>
               )}

@@ -61,7 +61,7 @@ export default function PackingPage() {
     { key: 'completed', header: 'Picked', render: (r) => formatDateTime(r.completed_at), sortValue: (r) => r.completed_at ?? '' },
     { key: 'state', header: 'Packing', render: (r) => (r.packed_at ? <StatusBadge status="PACKED" tone="green" label="Packed" /> : <StatusBadge status="AWAITING" tone="amber" label="Awaiting packing" />) },
     { key: 'packages', header: 'Packages', align: 'right', render: (r) => <span className="tabular">{r.package_count ?? '—'}</span> },
-    { key: 'weight', header: 'Weight (kg)', align: 'right', render: (r) => (r.total_weight_kg ? <QtyCell value={r.total_weight_kg} /> : <span className="text-[var(--text-muted)]">—</span>) },
+    { key: 'weight', header: 'Weight (kg)', align: 'right', render: (r) => (r.total_weight_kg ? <QtyCell value={r.total_weight_kg} /> : <span className="text-slate-400">—</span>) },
   ]
 
   return (

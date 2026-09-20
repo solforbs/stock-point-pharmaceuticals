@@ -160,7 +160,7 @@ function SidebarInner({
               className="absolute bottom-20 left-3 right-3 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-900/10 z-50 space-y-2.5"
             >
               <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-slate-800">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                   <Activity size={13} className="text-emerald-500" />
                   Branch & Sync Status
                 </div>

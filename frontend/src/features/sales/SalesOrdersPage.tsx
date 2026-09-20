@@ -227,7 +227,7 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
               </Button>
             )}
             {(o.status === 'CONFIRMED' || o.status === 'IN_PROGRESS' || o.status === 'PARTIALLY_FULFILLED') && (
-              <Link to={`/warehouse/pick-lists?order=${o.id}`} className="inline-flex items-center h-7 px-2.5 rounded-md border border-[var(--border-strong)] text-[11.5px] font-semibold">
+              <Link to={`/warehouse/pick-lists?order=${o.id}`} className="inline-flex items-center h-7 px-2.5 rounded-md border border-slate-300 text-xs font-semibold">
                 Pick
               </Link>
             )}
@@ -304,7 +304,7 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
               </tbody>
             </table>
           </div>
-          <div className="ml-auto w-full sm:w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2 text-[13px] tabular">
+          <div className="ml-auto w-full sm:w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2 text-sm tabular">
             <div className="flex justify-between text-slate-500 font-medium"><span>Subtotal</span><MoneyCell value={o.subtotal} /></div>
             <div className="flex justify-between text-slate-500 font-medium"><span>Discount</span><MoneyCell value={`-${o.discount_total}`} /></div>
             <div className="flex justify-between text-slate-500 font-medium"><span>Tax</span><MoneyCell value={o.tax_total} /></div>

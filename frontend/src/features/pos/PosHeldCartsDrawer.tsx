@@ -33,11 +33,11 @@ export function PosHeldCartsDrawer({
           {heldCarts.map((h) => (
             <div key={h.id} className="ui-card p-3.5 flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold text-[var(--text)] truncate">
+                <div className="text-sm font-bold text-slate-800 truncate">
                   {h.name || 'Unnamed Held Cart'}
                 </div>
-                <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                  <span className="font-semibold text-[var(--color-navy)]">
+                <div className="text-xs text-slate-500 mt-0.5">
+                  <span className="font-semibold text-blue-600">
                     {h.saleMode}
                   </span>{' '}
                   · {h.lines.length} item{h.lines.length === 1 ? '' : 's'} ·{' '}

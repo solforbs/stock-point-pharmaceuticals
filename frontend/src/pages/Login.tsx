@@ -75,17 +75,17 @@ export default function Login() {
   }
 
   const inputClass =
-    'w-full h-[38px] px-3 rounded-md border border-[var(--border)] bg-[var(--input-bg)] text-[var(--text)] outline-none focus:border-[var(--color-navy)]'
+    'w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:border-blue-600 transition-colors'
 
   return (
-    <div className="min-h-svh flex items-center justify-center bg-[var(--bg)] px-4">
+    <div className="min-h-svh flex items-center justify-center bg-slate-50 px-4">
       <form
         onSubmit={onSubmit}
-        className="w-[420px] max-w-full bg-[var(--card)] border border-[var(--border)] rounded-xl p-9 shadow-sm"
+        className="w-[420px] max-w-full bg-white border border-slate-200 rounded-2xl p-9 shadow-sm"
       >
         <div className="flex items-center gap-2.5 mb-7">
-          <div className="w-9 h-9 rounded-lg bg-[var(--color-navy)]" />
-          <div className="text-[17px] font-bold text-[var(--text)]">Stockpoint Pharma ERP</div>
+          <div className="w-9 h-9 rounded-xl bg-blue-600" />
+          <div className="text-lg font-bold text-slate-900">Stockpoint Pharma ERP</div>
         </div>
 
         {step === 'credentials' ? (
@@ -96,14 +96,14 @@ export default function Login() {
             <label className="ui-label">Password</label>
             <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} mb-3`} autoComplete="current-password" />
 
-            <label className="flex items-center gap-2 text-[12px] text-[var(--text-secondary)] mb-2">
+            <label className="flex items-center gap-2 text-xs text-slate-600 mb-2 cursor-pointer">
               <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
               Keep me signed in on this terminal
             </label>
           </>
         ) : (
           <>
-            <p className="text-[12.5px] text-[var(--text-secondary)] mb-4">
+            <p className="text-xs text-slate-600 mb-4">
               This account requires a second factor. Enter the 6-digit code from your authenticator app.
             </p>
             <label className="ui-label">Authenticator code</label>
@@ -116,14 +116,14 @@ export default function Login() {
               autoFocus
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-              className={`${inputClass} mb-3 tabular text-center text-[18px] tracking-[0.4em]`}
+              className={`${inputClass} mb-3 tabular text-center text-lg tracking-[0.4em] font-mono`}
               autoComplete="one-time-code"
             />
           </>
         )}
 
         {errorMessage && (
-          <p role="alert" className="text-[12px] text-[var(--color-danger)] mb-3">
+          <p role="alert" className="text-xs text-rose-600 mb-3">
             {errorMessage}
           </p>
         )}
@@ -131,7 +131,7 @@ export default function Login() {
         <button
           type="submit"
           disabled={active.isPending}
-          className="w-full h-[42px] mt-3 rounded-md bg-[var(--color-navy)] text-white font-bold text-[13px] disabled:opacity-60"
+          className="w-full h-10 mt-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm disabled:opacity-60 transition-colors cursor-pointer"
         >
           {active.isPending ? 'Please wait…' : step === 'mfa' ? 'VERIFY CODE' : 'SIGN IN'}
         </button>
@@ -144,13 +144,13 @@ export default function Login() {
               setCode('')
               verify.reset()
             }}
-            className="w-full mt-2 text-[11.5px] text-[var(--text-muted)] hover:text-[var(--text)]"
+            className="w-full mt-2 text-xs text-slate-500 hover:text-slate-900 cursor-pointer"
           >
             Back to sign in
           </button>
         )}
 
-        <p className="text-[10px] text-[var(--text-muted)] text-center mt-4">
+        <p className="text-xs text-slate-400 text-center mt-4">
           One account for every role and branch — no separate retail or wholesale portal.
         </p>
       </form>
