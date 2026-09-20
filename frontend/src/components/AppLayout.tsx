@@ -23,6 +23,7 @@ export default function AppLayout() {
   const [cmdOpen, setCmdOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const startTour = useTourStore((s) => s.startTour)
+  const startPosTour = useTourStore((s) => s.startPosTour)
 
   useEffect(() => {
     if (!user) return
@@ -115,7 +116,10 @@ export default function AppLayout() {
             {/* Interactive Guided Tour Button */}
             <button
               type="button"
-              onClick={startTour}
+              onClick={() => {
+                if (isPos) startPosTour()
+                else startTour()
+              }}
               title="Start Guided Product Tour"
               className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-all text-xs font-medium cursor-pointer"
             >

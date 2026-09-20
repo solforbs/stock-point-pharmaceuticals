@@ -56,7 +56,7 @@ export function CartTotalsCard({
   const tax = activeQuote ? quote.totals.tax : '0'
 
   return (
-    <div className="bg-white border-t border-slate-200/90 p-3.5 space-y-2.5 shrink-0 shadow-[0_-2px_8px_rgba(0,0,0,0.03)]">
+    <div id="tour-pos-totals" className="bg-white border-t border-slate-200/90 p-3.5 space-y-2.5 shrink-0 shadow-[0_-2px_8px_rgba(0,0,0,0.03)]">
       {/* Financial breakdown compact row */}
       <div className="space-y-1 text-xs">
         <div className="flex items-center justify-between text-slate-500">

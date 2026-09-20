@@ -78,7 +78,7 @@ export function CartPanel({
   return (
     <div className="flex-1 min-w-0 flex flex-col bg-slate-50/50 border-l border-slate-200/80">
       {/* Customer Header */}
-      <div className="px-3.5 py-2 bg-white border-b border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] shrink-0">
+      <div id="tour-pos-customer" className="px-3.5 py-2 bg-white border-b border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] shrink-0">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -186,7 +186,7 @@ export function CartPanel({
       )}
 
       {/* Cart Lines Scroll Area */}
-      <div className="flex-1 min-h-0 overflow-y-auto pos-scroll p-3 space-y-2">
+      <div id="tour-pos-cart-lines" className="flex-1 min-h-0 overflow-y-auto pos-scroll p-3 space-y-2">
         {lines.length === 0 ? (
           <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center p-6 bg-white/70 border border-dashed border-slate-200 rounded-2xl">
             <div className="w-13 h-13 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 shadow-inner ring-4 ring-blue-50/50">

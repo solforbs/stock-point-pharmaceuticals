@@ -93,7 +93,7 @@ export function SearchPanel({
   }
 
   return (
-    <div className="w-[330px] lg:w-[370px] shrink-0 border-r border-slate-200/80 bg-white flex flex-col min-h-0">
+    <div id="tour-pos-search" className="w-[330px] lg:w-[370px] shrink-0 border-r border-slate-200/80 bg-white flex flex-col min-h-0">
       {/* Search & Barcode Scan Bar */}
       <div className="p-3 border-b border-slate-100 bg-white">
         <div className="relative">

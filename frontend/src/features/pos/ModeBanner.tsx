@@ -33,7 +33,7 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
   }
 
   return (
-    <div className="h-11 px-3 sm:px-4 flex items-center justify-between gap-2 bg-white border-b border-slate-200/80 shrink-0 select-none overflow-hidden">
+    <div id="tour-pos-mode-banner" className="h-11 px-3 sm:px-4 flex items-center justify-between gap-2 bg-white border-b border-slate-200/80 shrink-0 select-none overflow-hidden">
       {/* Left: Mode Toggle Pills */}
       <div className="flex items-center gap-2 shrink-0">
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden xl:inline">
