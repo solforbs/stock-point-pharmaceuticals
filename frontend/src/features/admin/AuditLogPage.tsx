@@ -47,10 +47,10 @@ export default function AuditLogPage() {
     { key: 'user', header: 'User', render: (r) => r.username_snapshot ?? (r.user_id !== null ? `#${r.user_id}` : 'system') },
     { key: 'branch', header: 'Branch', render: (r) => <span className="tabular">{branchCode(r.branch_id)}</span> },
     { key: 'action', header: 'Action', render: (r) => <StatusBadge status={r.action} tone="slate" label={r.action} /> },
-    { key: 'entity', header: 'Entity', render: (r) => <>{titleCase(r.entity_type)}<div className="text-[10.5px] text-[var(--text-muted)] tabular">{r.entity_id?.slice(0, 8) ?? ''}</div></> },
+    { key: 'entity', header: 'Entity', render: (r) => <>{titleCase(r.entity_type)}<div className="text-xs text-slate-500 font-mono">{r.entity_id?.slice(0, 8) ?? ''}</div></> },
     { key: 'reference', header: 'Reference', render: (r) => <span className="tabular">{r.reference ?? '—'}</span> },
-    { key: 'changed', header: 'Changed', render: (r) => <span className="text-[11px] text-[var(--text-secondary)]">{(r.changed_fields ?? []).join(', ') || '—'}</span> },
-    { key: 'reason', header: 'Reason', render: (r) => <span className="text-[var(--text-secondary)]">{r.reason ?? '—'}</span> },
+    { key: 'changed', header: 'Changed', render: (r) => <span className="text-xs text-slate-500">{(r.changed_fields ?? []).join(', ') || '—'}</span> },
+    { key: 'reason', header: 'Reason', render: (r) => <span className="text-slate-600">{r.reason ?? '—'}</span> },
   ]
 
   const reset = () => setPage(1)
@@ -73,7 +73,7 @@ export default function AuditLogPage() {
             <Field label="Search" className="w-64"><Input placeholder="Reference, reason or username" value={q} onChange={(e) => { setQ(e.target.value); reset() }} /></Field>
             <Field label="From"><Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); reset() }} /></Field>
             <Field label="To"><Input type="date" value={to} onChange={(e) => { setTo(e.target.value); reset() }} /></Field>
-            <label className="flex items-center gap-2 text-[12px] h-8"><input type="checkbox" checked={allBranches} onChange={(e) => { setAllBranches(e.target.checked); reset() }} /> All branches</label>
+            <label className="flex items-center gap-2 text-xs text-slate-600 h-8 cursor-pointer"><input type="checkbox" checked={allBranches} onChange={(e) => { setAllBranches(e.target.checked); reset() }} /> All branches</label>
           </FilterBar>
           <div className="ui-card">
             <DataTable columns={columns} rows={list.data?.data} rowKey={(r) => r.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={setSelected} selectedKey={selected?.id ?? null} emptyTitle="No audit entries match" maxHeight="70vh" />
@@ -91,15 +91,15 @@ export default function AuditLogPage() {
                 { label: 'Entity', value: <span className="tabular">{selected.entity_type} · {selected.entity_id ?? '—'}</span> },
                 { label: 'Reference', value: selected.reference ?? '—' },
                 { label: 'Reason', value: selected.reason ?? '—' },
-                { label: 'Changed fields', value: (selected.changed_fields ?? []).length ? <div className="flex flex-wrap gap-1">{(selected.changed_fields ?? []).map((f) => <span key={f} className="px-1.5 py-[1px] rounded bg-[var(--surface-2)] border border-[var(--border)] text-[10.5px] tabular">{f}</span>)}</div> : '—' },
+                { label: 'Changed fields', value: (selected.changed_fields ?? []).length ? <div className="flex flex-wrap gap-1">{(selected.changed_fields ?? []).map((f) => <span key={f} className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-xs font-mono text-slate-600">{f}</span>)}</div> : '—' },
               ]}
             />
             <div className="grid gap-3 md:grid-cols-2">
               <Card title="Before">
-                <pre className="p-3 text-[11px] tabular whitespace-pre-wrap break-all max-h-[50vh] overflow-auto">{pretty(selected.before_json)}</pre>
+                <pre className="p-3 text-xs font-mono text-slate-700 whitespace-pre-wrap break-all max-h-[50vh] overflow-auto">{pretty(selected.before_json)}</pre>
               </Card>
               <Card title="After">
-                <pre className="p-3 text-[11px] tabular whitespace-pre-wrap break-all max-h-[50vh] overflow-auto">{pretty(selected.after_json)}</pre>
+                <pre className="p-3 text-xs font-mono text-slate-700 whitespace-pre-wrap break-all max-h-[50vh] overflow-auto">{pretty(selected.after_json)}</pre>
               </Card>
             </div>
           </div>

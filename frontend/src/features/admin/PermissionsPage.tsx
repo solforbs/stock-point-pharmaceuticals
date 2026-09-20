@@ -27,7 +27,7 @@ export default function PermissionsPage() {
         parent="Admin"
         title="Permissions"
         subtitle="Which role holds which permission. Change a role's set on Users & Roles."
-        actions={canView ? <Link to="/admin/users-roles?tab=roles" className="text-[12px] text-[var(--color-navy)] underline">Edit roles</Link> : null}
+        actions={canView ? <Link to="/admin/users-roles?tab=roles" className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline">Edit roles</Link> : null}
       />
       {!canView ? (
         <div className="ui-card"><NoAccess permission="admin.users" /></div>
@@ -43,9 +43,9 @@ export default function PermissionsPage() {
               <table className="ui-table">
                 <thead>
                   <tr>
-                    <th className="sticky left-0 bg-[var(--card)] z-10">Permission</th>
+                    <th className="sticky left-0 bg-white z-10">Permission</th>
                     {roleSets.map((r) => (
-                      <th key={r.id} className="text-center whitespace-nowrap"><div>{r.name}</div><div className="text-[10px] font-normal text-[var(--text-muted)] tabular">{r.users_count} user{r.users_count === 1 ? '' : 's'}</div></th>
+                      <th key={r.id} className="text-center whitespace-nowrap"><div>{r.name}</div><div className="text-xs font-normal text-slate-500 font-mono">{r.users_count} user{r.users_count === 1 ? '' : 's'}</div></th>
                     ))}
                   </tr>
                 </thead>
@@ -54,7 +54,7 @@ export default function PermissionsPage() {
                     <GroupRows key={g.group} group={g.group} permissions={g.permissions} roles={roleSets} />
                   ))}
                   {groups.length === 0 && (
-                    <tr><td colSpan={roleSets.length + 1} className="text-center text-[var(--text-muted)] py-6">No permissions match.</td></tr>
+                    <tr><td colSpan={roleSets.length + 1} className="text-center text-slate-500 py-6">No permissions match.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -69,15 +69,15 @@ export default function PermissionsPage() {
 function GroupRows({ group, permissions, roles }: { group: string; permissions: string[]; roles: { id: number; name: string; set: Set<string> }[] }) {
   return (
     <>
-      <tr className="bg-[var(--surface-2)]">
-        <td colSpan={roles.length + 1} className="font-bold text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">{titleCase(group)}</td>
+      <tr className="bg-slate-50">
+        <td colSpan={roles.length + 1} className="font-bold text-xs uppercase tracking-wide text-slate-500">{titleCase(group)}</td>
       </tr>
       {permissions.map((p) => (
         <tr key={p}>
-          <td className="tabular sticky left-0 bg-[var(--card)] whitespace-nowrap">{p}</td>
+          <td className="font-mono text-xs sticky left-0 bg-white whitespace-nowrap">{p}</td>
           {roles.map((r) => (
             <td key={r.id} className="text-center">
-              {r.set.has(p) ? <Check size={14} className="inline text-[var(--status-green)]" aria-label={`${r.name} holds ${p}`} /> : <span className="text-[var(--border-strong)]">·</span>}
+              {r.set.has(p) ? <Check size={14} className="inline text-emerald-600" aria-label={`${r.name} holds ${p}`} /> : <span className="text-slate-300">·</span>}
             </td>
           ))}
         </tr>

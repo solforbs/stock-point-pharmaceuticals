@@ -122,15 +122,15 @@ export default function DeploymentsPage() {
       {status.error && <InlineError error={status.error} />}
 
       {s && !s.enabled && (
-        <div className="ui-card p-4 border-l-4 text-[12.5px]" style={{ borderLeftColor: 'var(--status-amber)' }}>
+        <div className="ui-card p-4 border-l-4 border-l-amber-500 bg-amber-50/20 text-xs text-slate-700">
           <span className="font-bold">Deploying from the browser is switched off here.</span> Set <code>DEPLOY_ENABLED=true</code> in the
           server's <code>.env</code>. Checking for updates still works.
         </div>
       )}
 
       {s?.update_available && (
-        <div className="ui-card p-4 border-l-4 flex items-center justify-between gap-3" style={{ borderLeftColor: 'var(--status-amber)' }}>
-          <div className="text-[12.5px]">
+        <div className="ui-card p-4 border-l-4 border-l-amber-500 bg-amber-50/20 flex items-center justify-between gap-3">
+          <div className="text-xs text-slate-700">
             <span className="font-bold">Version {s.latest_version} is available.</span> This server runs {s.version ?? 'untagged code'}.
           </div>
           <Button variant="primary" disabled={running || !s.enabled} onClick={() => { setTarget(s.latest_version); setConfirming(true) }}>
@@ -141,7 +141,7 @@ export default function DeploymentsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card title="Running now">
-          <div className="p-4 space-y-2 text-[12.5px]">
+          <div className="p-4 space-y-2 text-xs">
             {!s?.available && <p className="text-slate-500">This copy is not a git checkout, so there is no version to report.</p>}
             {s?.available && (
               <>
@@ -152,11 +152,11 @@ export default function DeploymentsPage() {
                   {s.dirty && <StatusBadge status="DIRTY" tone="amber" label="Uncommitted changes on the server" />}
                 </div>
                 <p className="text-slate-700">{s.subject}</p>
-                <p className="text-[11.5px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   {s.author} · {formatDateTime(s.committed_at)}
                 </p>
-                <p className="text-[11px] text-slate-400 tabular">{s.root}</p>
-                <p className="text-[12px] mt-1">
+                <p className="text-xs font-mono text-slate-400 tabular">{s.root}</p>
+                <p className="text-xs mt-1">
                   <span className="font-bold text-slate-700">Version:</span>{' '}
                   <span className="tabular font-bold text-blue-700">{s.version ?? 'untagged'}</span>
                   {s.version?.endsWith('+') && <span className="text-slate-500"> (newer than the release)</span>}
@@ -167,8 +167,8 @@ export default function DeploymentsPage() {
         </Card>
 
         <Card title={s && s.behind > 0 ? `${s.behind} commit(s) waiting` : 'Up to date'}>
-          <div className="p-4 space-y-2 text-[12.5px]">
-            {s?.fetched_at && <p className="text-[11.5px] text-slate-500">Last checked {formatDateTime(s.fetched_at)}</p>}
+          <div className="p-4 space-y-2 text-xs">
+            {s?.fetched_at && <p className="text-xs text-slate-500">Last checked {formatDateTime(s.fetched_at)}</p>}
             {s?.behind === 0 && <p className="text-slate-600">The server is running the newest commit on {s.branch}.</p>}
             {(s?.incoming.length ?? 0) > 0 && (
               <ul className="space-y-1">
@@ -187,12 +187,12 @@ export default function DeploymentsPage() {
       <Card title="Released versions">
         <div className="p-4">
           {(s?.releases.length ?? 0) === 0 && (
-            <p className="text-[12.5px] text-slate-500">
-              No versions have been released yet. Tag a commit <span className="tabular">v1.0.0</span> and push the tag to publish one.
+            <p className="text-xs text-slate-500">
+              No versions have been released yet. Tag a commit <span className="tabular font-mono">v1.0.0</span> and push the tag to publish one.
             </p>
           )}
           {(s?.releases.length ?? 0) > 0 && (
-            <table className="w-full text-[12.5px]">
+            <table className="w-full text-xs">
               <tbody>
                 {s?.releases.map((r) => {
                   const isRunning = s.version === r.version
@@ -203,7 +203,7 @@ export default function DeploymentsPage() {
                         {isRunning && <StatusBadge status="RUNNING" tone="green" label="running" />}
                       </td>
                       <td className="py-2 pr-3 text-slate-600">{r.notes}</td>
-                      <td className="py-2 pr-3 text-[11px] text-slate-500 whitespace-nowrap">{formatDateTime(r.released_at)}</td>
+                      <td className="py-2 pr-3 text-xs text-slate-500 whitespace-nowrap">{formatDateTime(r.released_at)}</td>
                       <td className="py-2 text-right">
                         {!isRunning && (
                           <Button size="sm" disabled={running || !s.enabled} onClick={() => { setTarget(r.version); setConfirming(true) }}>
@@ -225,16 +225,16 @@ export default function DeploymentsPage() {
         actions={run && run.status !== 'never' ? <StatusBadge status={run.status.toUpperCase()} tone={runTone[run.status]} /> : null}
       >
         <div className="p-4 space-y-2">
-          {run?.status === 'never' && <p className="text-[12.5px] text-slate-500">Nothing has been deployed from this screen yet.</p>}
+          {run?.status === 'never' && <p className="text-xs text-slate-500">Nothing has been deployed from this screen yet.</p>}
           {run && run.status !== 'never' && (
-            <p className="text-[11.5px] text-slate-500">
+            <p className="text-xs text-slate-500">
               {run.run_id} · started {formatDateTime(run.started_at)}
               {run.finished_at && <> · finished {formatDateTime(run.finished_at)}</>}
               {run.exit_code !== null && run.exit_code !== 0 && <span className="text-rose-600 font-bold"> · exit code {run.exit_code}</span>}
             </p>
           )}
           {!!run?.log && (
-            <pre className="bg-slate-900 text-slate-100 text-[11px] leading-relaxed rounded-xl p-3 overflow-auto max-h-[420px] whitespace-pre-wrap">
+            <pre className="bg-slate-900 text-slate-100 text-xs font-mono leading-relaxed rounded-xl p-3 overflow-auto max-h-[420px] whitespace-pre-wrap">
               {run.log}
             </pre>
           )}
@@ -254,15 +254,15 @@ export default function DeploymentsPage() {
           </>
         }
       >
-        <div className="space-y-2 text-[12.5px] text-slate-700">
+        <div className="space-y-2 text-xs text-slate-700">
           <p>This runs the deploy script on the server, in this order:</p>
-          <ol className="list-decimal pl-5 space-y-1 text-[12px]">
+          <ol className="list-decimal pl-5 space-y-1 text-xs">
             <li>back up the database</li>
             <li>fetch {target ? `version ${target}` : `${s?.branch} from GitHub`} and install PHP dependencies</li>
             <li>apply pending migrations and reference seeders</li>
             <li>build the SPA, re-cache and restart the workers</li>
           </ol>
-          <p className="text-[12px] text-slate-500">
+          <p className="text-xs text-slate-500">
             The shop goes into maintenance mode for the database and cache steps — seconds, not the whole build. If it fails, the log
             below shows where it stopped.
           </p>
