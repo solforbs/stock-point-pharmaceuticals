@@ -63,11 +63,11 @@ export default function AppLayout() {
   const today = todayIso()
 
   return (
-    <div className="flex min-h-svh bg-[#f8fafc]">
+    <div className={`flex ${isPos ? 'h-screen max-h-screen overflow-hidden' : 'min-h-svh'} bg-[#f8fafc]`}>
       <Sidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
 
-      <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-14 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 gap-3">
+      <div className={`flex-1 min-w-0 flex flex-col ${isPos ? 'h-full max-h-full overflow-hidden' : ''}`}>
+        <header className="h-14 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 gap-3 shrink-0">
 
           {/* Left section */}
           <div className="flex items-center gap-3 flex-1 min-w-0">

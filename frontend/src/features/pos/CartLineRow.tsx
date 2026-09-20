@@ -110,9 +110,9 @@ export function CartLineRow({
             disabled={disabled}
             aria-label="Remove item"
             title="Remove item (Ctrl+Del)"
-            className="p-1.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-40 cursor-pointer"
+            className="group/trash p-2 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-all disabled:opacity-40 cursor-pointer"
           >
-            <Trash2 size={14} />
+            <Trash2 size={15} className="transition-transform duration-200 group-hover/trash:scale-115 group-hover/trash:-rotate-12" />
           </button>
         </div>
       </div>

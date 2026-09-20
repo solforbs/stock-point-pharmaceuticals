@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Compass, Search, ShoppingCart } from 'lucide-react'
 import { KeyboardHintBar } from '../../components/KeyboardHintBar'
 import { useTourStore } from '../../components/tour/useTourStore'
-import { ConfirmDialog } from '../../components/ui/Modal'
+import { PosRemoveConfirmModal } from './PosRemoveConfirmModal'
 import { EmptyState, LoadingSkeleton } from '../../components/ui/States'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { useStores } from '../../lib/hooks'
@@ -350,12 +350,9 @@ export default function PosPage() {
         branchName={user?.active_branch?.name ?? user?.active_branch?.code ?? undefined}
       />
 
-      <ConfirmDialog
+      <PosRemoveConfirmModal
         open={removeRef !== null}
-        title="Remove item from cart?"
-        message={removeRef ? lines.find((l) => l.lineRef === removeRef)?.productName : undefined}
-        confirmLabel="Remove"
-        danger
+        line={removeRef ? lines.find((l) => l.lineRef === removeRef) ?? null : null}
         onCancel={() => setRemoveRef(null)}
         onConfirm={() => {
           if (removeRef) removeLine(removeRef)

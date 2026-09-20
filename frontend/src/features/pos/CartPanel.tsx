@@ -2,7 +2,7 @@ import { AlertTriangle, RefreshCw, ShoppingBag, User } from 'lucide-react'
 import { useState, type RefObject } from 'react'
 import { ApprovalBar } from '../../components/ApprovalBar'
 import { CustomerPicker } from '../../components/CustomerPicker'
-import { ConfirmDialog } from '../../components/ui/Modal'
+import { PosRemoveConfirmModal } from './PosRemoveConfirmModal'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { dSum } from '../../lib/decimal'
 import { formatMoney } from '../../lib/money'
@@ -238,12 +238,9 @@ export function CartPanel({
         onSwitchToRetail={() => setSaleMode('RETAIL')}
       />
 
-      <ConfirmDialog
+      <PosRemoveConfirmModal
         open={removing !== null}
-        title="Remove item from cart?"
-        message={removing ? lines.find((l) => l.lineRef === removing)?.productName : undefined}
-        confirmLabel="Remove"
-        danger
+        line={removing ? lines.find((l) => l.lineRef === removing) ?? null : null}
         onCancel={() => setRemoving(null)}
         onConfirm={() => {
           if (removing) removeLine(removing)
