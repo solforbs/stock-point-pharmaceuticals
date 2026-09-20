@@ -4,7 +4,7 @@ import { Button } from './primitives'
 export function Pagination({ page, onPage }: { page: Pick<Paginated<unknown>, 'current_page' | 'last_page' | 'total' | 'from' | 'to'> | undefined; onPage: (page: number) => void }) {
   if (!page || page.last_page <= 1) return null
   return (
-    <div className="flex items-center justify-between px-5 py-3 text-[12px] text-slate-500 border-t border-slate-50">
+    <div className="flex items-center justify-between px-5 py-3 text-xs text-slate-500 border-t border-slate-100">
       <span className="tabular font-medium">
         {page.from ?? 0}–{page.to ?? 0} of {page.total}
       </span>

@@ -59,11 +59,11 @@ export function Drawer({
             {/* Header */}
             <header className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-slate-200/90 bg-white/95 backdrop-blur-md shrink-0 shadow-2xs z-10">
               <div className="flex-1 min-w-0">
-                <h2 className="text-[17px] sm:text-[18px] font-black text-slate-900 tracking-tight truncate leading-tight">
+                <h2 className="text-lg font-black text-slate-900 tracking-tight truncate leading-tight">
                   {title}
                 </h2>
                 {subtitle && (
-                  <div className="text-[12px] sm:text-[12.5px] text-slate-500 font-medium mt-0.5 truncate">
+                  <div className="text-xs text-slate-500 font-medium mt-0.5 truncate">
                     {subtitle}
                   </div>
                 )}

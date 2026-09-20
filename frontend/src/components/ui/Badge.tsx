@@ -14,10 +14,10 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 
 const colorMap: Record<BadgeColor, { bg: string; text: string; border: string; dot: string }> = {
   primary: {
-    bg: 'bg-[color-mix(in_srgb,var(--color-navy)_12%,transparent)]',
-    text: 'text-[var(--color-navy)]',
-    border: 'border-[color-mix(in_srgb,var(--color-navy)_25%,transparent)]',
-    dot: 'bg-[var(--color-navy)]',
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
+    border: 'border-blue-200',
+    dot: 'bg-blue-600',
   },
   success: {
     bg: 'bg-emerald-500/12',
@@ -50,10 +50,10 @@ const colorMap: Record<BadgeColor, { bg: string; text: string; border: string; d
     dot: 'bg-purple-500',
   },
   neutral: {
-    bg: 'bg-[var(--surface-2)]',
-    text: 'text-[var(--text-secondary)]',
-    border: 'border-[var(--border)]',
-    dot: 'bg-[var(--text-muted)]',
+    bg: 'bg-slate-100',
+    text: 'text-slate-700',
+    border: 'border-slate-200',
+    dot: 'bg-slate-400',
   },
 }
 
@@ -70,7 +70,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[12px] font-bold tracking-normal transition-colors',
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold tracking-normal transition-colors',
         variant === 'pill' ? 'rounded-full' : 'rounded-md',
         variant === 'outline'
           ? cn('bg-transparent border', c.text, c.border)

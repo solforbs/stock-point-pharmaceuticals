@@ -1,11 +1,18 @@
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react'
 import { useToastStore, type ToastTone } from '../../lib/toast'
 
-const toneColor: Record<ToastTone, string> = {
-  error: 'var(--status-red)',
-  success: 'var(--status-green)',
-  info: 'var(--status-blue)',
-  warning: 'var(--status-amber)',
+const toneBorder: Record<ToastTone, string> = {
+  error: 'border-l-rose-500',
+  success: 'border-l-emerald-500',
+  info: 'border-l-sky-500',
+  warning: 'border-l-amber-500',
+}
+
+const toneIconColor: Record<ToastTone, string> = {
+  error: 'text-rose-500',
+  success: 'text-emerald-500',
+  info: 'text-sky-500',
+  warning: 'text-amber-500',
 }
 
 const toneIcon: Record<ToastTone, typeof Info> = { error: XCircle, success: CheckCircle2, info: Info, warning: AlertTriangle }
@@ -22,15 +29,14 @@ export function Toaster() {
           <div
             key={t.id}
             role="status"
-            className="ui-card shadow-lg px-3.5 py-3 flex gap-2.5 items-start border-l-4"
-            style={{ borderLeftColor: toneColor[t.tone] }}
+            className={`bg-white rounded-lg border border-slate-200 shadow-lg px-3.5 py-3 flex gap-2.5 items-start border-l-4 ${toneBorder[t.tone]}`}
           >
-            <Icon size={16} style={{ color: toneColor[t.tone] }} className="shrink-0 mt-0.5" />
+            <Icon size={16} className={`shrink-0 mt-0.5 ${toneIconColor[t.tone]}`} />
             <div className="flex-1 min-w-0">
-              <div className="text-[12.5px] font-bold text-[var(--text)] break-words">{t.title}</div>
-              {t.message && <div className="text-[11.5px] text-[var(--text-secondary)] mt-0.5 break-words">{t.message}</div>}
+              <div className="text-sm font-semibold text-slate-800 break-words">{t.title}</div>
+              {t.message && <div className="text-xs text-slate-500 mt-0.5 break-words">{t.message}</div>}
             </div>
-            <button type="button" onClick={() => dismiss(t.id)} aria-label="Dismiss" className="text-[var(--text-muted)] hover:text-[var(--text)]">
+            <button type="button" onClick={() => dismiss(t.id)} aria-label="Dismiss" className="text-slate-400 hover:text-slate-600 transition-colors">
               <X size={14} />
             </button>
           </div>

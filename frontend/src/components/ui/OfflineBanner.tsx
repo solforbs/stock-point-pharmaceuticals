@@ -19,7 +19,7 @@ export function OfflineBanner() {
           className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-center pointer-events-none"
         >
           <div
-            className={`pointer-events-auto mt-2.5 px-4 py-2 rounded-2xl shadow-lg border backdrop-blur-md flex items-center gap-2.5 text-[12.5px] font-bold ${
+            className={`pointer-events-auto mt-2.5 px-4 py-2 rounded-2xl shadow-lg border backdrop-blur-md flex items-center gap-2.5 text-xs font-bold ${
               !isOnline
                 ? 'bg-amber-500/95 text-slate-950 border-amber-400 shadow-amber-500/20'
                 : 'bg-emerald-600/95 text-white border-emerald-500 shadow-emerald-600/20'
