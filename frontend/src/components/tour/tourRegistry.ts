@@ -1001,6 +1001,102 @@ export const SOPS_TOUR_STEPS: TourStep[] = [
   },
 ]
 
+export const EMPLOYEES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-employees-new',
+    title: '1. Register Employee',
+    description: 'Add employees with job titles, departments, permanent/contract status, salary, and statutory details (KRA PIN, NSSF, SHIF, bank account).',
+    placement: 'bottom',
+    route: '/people/employees',
+  },
+  {
+    targetId: 'tour-employees-filter',
+    title: '2. Active Payroll Filter',
+    description: 'Filter active payroll staff or inspect historical employee records. Bank details are write-only through secure API channels.',
+    placement: 'bottom',
+    route: '/people/employees',
+  },
+  {
+    targetId: 'tour-employees-table',
+    title: '3. Employee Master Directory',
+    description: 'View employment dates, basic salaries, active status, and click any row to update employee profiles with full audit logging.',
+    placement: 'top',
+    route: '/people/employees',
+  },
+]
+
+export const PAYROLL_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-payroll-bands',
+    title: '1. Statutory Tax & Relief Bands',
+    description: 'View active statutory calculation brackets for PAYE, NSSF, SHIF, Affordable Housing Levy, and personal relief caps in force.',
+    placement: 'bottom',
+    route: '/people/payroll',
+  },
+  {
+    targetId: 'tour-payroll-open',
+    title: '2. Open Monthly Payroll Run',
+    description: 'Initialize a new payroll run for any month/year. Each run stamps the precise statutory band rules in effect for that period.',
+    placement: 'bottom',
+    route: '/people/payroll',
+  },
+  {
+    targetId: 'tour-payroll-table',
+    title: '3. Runs Roster & 4-Stage Workflow',
+    description: 'Manage payroll runs through Compute (variable inputs) → Approve (segregation of duties) → Post Journal → Bank Payout.',
+    placement: 'top',
+    route: '/people/payroll',
+  },
+]
+
+export const LEAVE_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-leave-tabs',
+    title: '1. Requests & Entitlement Balances',
+    description: 'Switch between individual leave requests and the annual entitlement balances matrix (Annual, Sick, Maternity, Paternity, Compassionate).',
+    placement: 'bottom',
+    route: '/people/leave',
+  },
+  {
+    targetId: 'tour-leave-new',
+    title: '2. New Leave Request',
+    description: 'Submit leave applications with automatic Monday–Friday working day calculation. Staff cannot approve their own requests.',
+    placement: 'bottom',
+    route: '/people/leave',
+  },
+  {
+    targetId: 'tour-leave-filters',
+    title: '3. Request Status & Department Filter',
+    description: 'Filter pending manager approvals, approved leaves, and past requests by employee, leave type, and calendar year.',
+    placement: 'bottom',
+    route: '/people/leave',
+  },
+  {
+    targetId: 'tour-leave-table',
+    title: '4. Leave Requests & Approval Pipeline',
+    description: 'Review request dates, working days, supporting documents, and click any row to approve, reject with reason, or cancel.',
+    placement: 'top',
+    route: '/people/leave',
+  },
+]
+
+export const PAYROLL_BANDS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-payroll-bands-add',
+    title: '1. Add New Statutory Band',
+    description: 'Configure new tax brackets, contribution tiers, or relief limits when tax authorities (KRA, NSSF, SHIF) enact new legislation.',
+    placement: 'bottom',
+    route: '/admin/payroll-bands',
+  },
+  {
+    targetId: 'tour-payroll-bands-list',
+    title: '2. Active Tax & Levy Brackets',
+    description: 'Inspect rate percentages, upper/lower bounds, and effective dates. Past processed payroll runs preserve their historical rate snapshots.',
+    placement: 'top',
+    route: '/admin/payroll-bands',
+  },
+]
+
 /**
  * Global Central Tour Registry
  * To add a tour to ANY page in the application, just add a single entry here!
@@ -1300,6 +1396,34 @@ export const REGISTERED_TOURS: TourDefinition[] = [
     title: 'Controlled SOPs & Digital Acknowledgement',
     subtitle: 'Learn how to maintain versioned standard operating procedures and track staff compliance sign-offs',
     steps: SOPS_TOUR_STEPS,
+  },
+  {
+    id: 'employees',
+    route: '/people/employees',
+    title: 'Employee Master Directory',
+    subtitle: 'Learn how to manage employee master records, statutory IDs, job titles, and audited payroll profiles',
+    steps: EMPLOYEES_TOUR_STEPS,
+  },
+  {
+    id: 'payroll',
+    route: '/people/payroll',
+    title: 'Monthly Payroll Processing',
+    subtitle: 'Learn how to open payroll runs, compute statutory deductions, enforce dual approvals, and post journals',
+    steps: PAYROLL_TOUR_STEPS,
+  },
+  {
+    id: 'leave',
+    route: '/people/leave',
+    title: 'Leave & Attendance Management',
+    subtitle: 'Learn how working-day leave requests, balance tracking, and segregated managerial approvals work',
+    steps: LEAVE_TOUR_STEPS,
+  },
+  {
+    id: 'payroll-bands',
+    route: '/admin/payroll-bands',
+    title: 'Statutory Payroll Bands & Tax Rates',
+    subtitle: 'Learn how statutory PAYE, NSSF, SHIF, and Housing Levy tiers are configured and version-locked',
+    steps: PAYROLL_BANDS_TOUR_STEPS,
   },
 ]
 

@@ -83,7 +83,7 @@ export default function LeavePage() {
         title="Leave"
         subtitle="Days are counted Monday to Friday. Only approved leave uses the balance, and nobody approves their own request."
       />
-      <div className="flex gap-1 mb-3 border-b border-slate-200">
+      <div id="tour-leave-tabs" className="flex gap-1 mb-3 border-b border-slate-200">
         {(['requests', 'balances'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)} className={`px-4 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors ${tab === t ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
             {t === 'requests' ? 'Requests' : 'Balances'}
@@ -157,43 +157,45 @@ function RequestsTab({ canApprove }: { canApprove: boolean }) {
 
   return (
     <>
-      <FilterBar>
-        <Field label="Status">
-          <Select value={filters.status} onChange={(e) => { setFilters({ ...filters, status: e.target.value }); setPage(1) }}>
-            <option value="">All</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>)}
-          </Select>
-        </Field>
-        {(employees.data?.data.length ?? 0) > 1 && (
-          <Field label="Employee" className="w-60">
-            <Select value={filters.employee_id} onChange={(e) => { setFilters({ ...filters, employee_id: e.target.value }); setPage(1) }}>
-              <option value="">Everyone</option>
-              {(employees.data?.data ?? []).map((emp) => <option key={emp.id} value={emp.id}>{emp.employee_no} · {emp.name}</option>)}
+      <div id="tour-leave-filters">
+        <FilterBar>
+          <Field label="Status">
+            <Select value={filters.status} onChange={(e) => { setFilters({ ...filters, status: e.target.value }); setPage(1) }}>
+              <option value="">All</option>
+              {STATUSES.map((s) => <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>)}
             </Select>
           </Field>
-        )}
-        <Field label="Type">
-          <Select value={filters.leave_type_id} onChange={(e) => { setFilters({ ...filters, leave_type_id: e.target.value }); setPage(1) }}>
-            <option value="">All types</option>
-            {(types.data?.data ?? []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </Select>
-        </Field>
-        <Field label="Year">
-          <Select value={filters.year} onChange={(e) => { setFilters({ ...filters, year: e.target.value }); setPage(1) }}>
-            <option value="">Any</option>
-            {[year + 1, year, year - 1, year - 2].map((y) => <option key={y} value={y}>{y}</option>)}
-          </Select>
-        </Field>
-        <div className="ml-auto">
-          <Button variant="primary" onClick={() => setCreating(true)} disabled={!employees.data?.data.length} title={employees.data && !employees.data.data.length ? 'No employee record is linked to your user' : undefined}>
-            <Plus size={13} /> New request
-          </Button>
-        </div>
-      </FilterBar>
+          {(employees.data?.data.length ?? 0) > 1 && (
+            <Field label="Employee" className="w-60">
+              <Select value={filters.employee_id} onChange={(e) => { setFilters({ ...filters, employee_id: e.target.value }); setPage(1) }}>
+                <option value="">Everyone</option>
+                {(employees.data?.data ?? []).map((emp) => <option key={emp.id} value={emp.id}>{emp.employee_no} · {emp.name}</option>)}
+              </Select>
+            </Field>
+          )}
+          <Field label="Type">
+            <Select value={filters.leave_type_id} onChange={(e) => { setFilters({ ...filters, leave_type_id: e.target.value }); setPage(1) }}>
+              <option value="">All types</option>
+              {(types.data?.data ?? []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </Select>
+          </Field>
+          <Field label="Year">
+            <Select value={filters.year} onChange={(e) => { setFilters({ ...filters, year: e.target.value }); setPage(1) }}>
+              <option value="">Any</option>
+              {[year + 1, year, year - 1, year - 2].map((y) => <option key={y} value={y}>{y}</option>)}
+            </Select>
+          </Field>
+          <div id="tour-leave-new" className="ml-auto">
+            <Button variant="primary" onClick={() => setCreating(true)} disabled={!employees.data?.data.length} title={employees.data && !employees.data.data.length ? 'No employee record is linked to your user' : undefined}>
+              <Plus size={13} /> New request
+            </Button>
+          </div>
+        </FilterBar>
+      </div>
       {employees.data && !employees.data.data.length && (
         <div className="mb-3 text-xs text-slate-500">Your user is not linked to an employee record, so you cannot request leave yet. Ask payroll to link it.</div>
       )}
-      <div className="ui-card">
+      <div id="tour-leave-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data?.data}

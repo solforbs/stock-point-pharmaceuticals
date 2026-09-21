@@ -42,11 +42,24 @@ export default function EmployeesPage() {
 
   return (
     <Page>
-      <PageHeader parent="People" title="Employees" subtitle="Payroll master data. Bank account numbers are write-only through the API." actions={canProcess ? <Button variant="primary" onClick={() => setEditing('new')}>New employee</Button> : null} />
-      <FilterBar>
-        <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={activeOnly} onChange={(e) => { setActiveOnly(e.target.checked); setPage(1) }} /> Active only</label>
-      </FilterBar>
-      <div className="ui-card">
+      <PageHeader
+        parent="People"
+        title="Employees"
+        subtitle="Payroll master data. Bank account numbers are write-only through the API."
+        actions={
+          canProcess ? (
+            <div id="tour-employees-new">
+              <Button variant="primary" onClick={() => setEditing('new')}>New employee</Button>
+            </div>
+          ) : null
+        }
+      />
+      <div id="tour-employees-filter">
+        <FilterBar>
+          <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={activeOnly} onChange={(e) => { setActiveOnly(e.target.checked); setPage(1) }} /> Active only</label>
+        </FilterBar>
+      </div>
+      <div id="tour-employees-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(e) => e.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(e) => (canProcess ? setEditing(e) : undefined)} emptyTitle="No employees" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

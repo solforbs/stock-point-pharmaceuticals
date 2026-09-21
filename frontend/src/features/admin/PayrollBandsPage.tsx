@@ -121,12 +121,16 @@ export default function PayrollBandsPage() {
         parent="Admin"
         title="Payroll Bands"
         subtitle="The statutory rates payroll is calculated from. For a change on a date, end the old band the day before and add the new one."
-        actions={<Button variant="primary" onClick={openNew}><Plus size={13} /> Add band</Button>}
+        actions={
+          <div id="tour-payroll-bands-add">
+            <Button variant="primary" onClick={openNew}><Plus size={13} /> Add band</Button>
+          </div>
+        }
       />
 
       {listing.error && <InlineError error={listing.error} />}
 
-      <div className="space-y-4">
+      <div id="tour-payroll-bands-list" className="space-y-4">
         {grouped.map(({ type, bands }) => (
           <div key={type} className="ui-card overflow-hidden">
             <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">

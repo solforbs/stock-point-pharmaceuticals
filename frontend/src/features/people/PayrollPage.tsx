@@ -59,16 +59,27 @@ export default function PayrollPage() {
 
   return (
     <Page>
-      <PageHeader parent="People" title="Payroll" subtitle="Open a monthly run, compute with the month's variable inputs, approve (a different person), post the journal, pay from the bank." actions={<Button size="sm" onClick={() => setBandsOpen(true)}>Statutory bands in force</Button>} />
+      <PageHeader
+        parent="People"
+        title="Payroll"
+        subtitle="Open a monthly run, compute with the month's variable inputs, approve (a different person), post the journal, pay from the bank."
+        actions={
+          <div id="tour-payroll-bands">
+            <Button size="sm" onClick={() => setBandsOpen(true)}>Statutory bands in force</Button>
+          </div>
+        }
+      />
       {perms.has('payroll.process') && (
-        <FilterBar>
-          <Field label="Year"><Input inputMode="numeric" className="tabular w-24" value={year} onChange={(e) => setYear(e.target.value.replace(/\D/g, ''))} /></Field>
-          <Field label="Month"><Select value={month} onChange={(e) => setMonth(e.target.value)}>{MONTHS.map((m, i) => (<option key={m} value={i + 1}>{m}</option>))}</Select></Field>
-          <Button variant="primary" disabled={open.isPending} onClick={() => open.mutate()}>{open.isPending ? 'Opening…' : 'Open payroll run'}</Button>
-          {open.isError && <InlineError error={open.error} />}
-        </FilterBar>
+        <div id="tour-payroll-open">
+          <FilterBar>
+            <Field label="Year"><Input inputMode="numeric" className="tabular w-24" value={year} onChange={(e) => setYear(e.target.value.replace(/\D/g, ''))} /></Field>
+            <Field label="Month"><Select value={month} onChange={(e) => setMonth(e.target.value)}>{MONTHS.map((m, i) => (<option key={m} value={i + 1}>{m}</option>))}</Select></Field>
+            <Button variant="primary" disabled={open.isPending} onClick={() => open.mutate()}>{open.isPending ? 'Opening…' : 'Open payroll run'}</Button>
+            {open.isError && <InlineError error={open.error} />}
+          </FilterBar>
+        </div>
       )}
-      <div className="ui-card">
+      <div id="tour-payroll-table" className="ui-card">
         <DataTable columns={columns} rows={runs.data?.data} rowKey={(r) => r.id} isLoading={runs.isLoading} error={runs.error} onRetry={() => runs.refetch()} onRowClick={(r) => setParams({ run: r.id })} selectedKey={selectedId} emptyTitle="No payroll runs" />
         <Pagination page={runs.data} onPage={setPage} />
       </div>
