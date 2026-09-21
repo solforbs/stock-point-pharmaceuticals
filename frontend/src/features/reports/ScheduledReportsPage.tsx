@@ -130,19 +130,25 @@ export default function ScheduledReportsPage() {
         parent="Reports"
         title="Scheduled Reports"
         subtitle="Each schedule emails a CSV to its recipients and runs with the permissions of the person who set it up."
-        actions={<Button variant="primary" onClick={() => setEditing('new')}><Plus size={13} /> New schedule</Button>}
+        actions={
+          <div id="tour-scheduled-new">
+            <Button variant="primary" onClick={() => setEditing('new')}><Plus size={13} /> New schedule</Button>
+          </div>
+        }
       />
-      <FilterBar>
-        <Field label="Show">
-          <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All</option>
-            <option value="ACTIVE">Active</option>
-            <option value="PAUSED">Paused</option>
-            <option value="FAILED">Last run failed</option>
-          </Select>
-        </Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-scheduled-filter">
+        <FilterBar>
+          <Field label="Show">
+            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All</option>
+              <option value="ACTIVE">Active</option>
+              <option value="PAUSED">Paused</option>
+              <option value="FAILED">Last run failed</option>
+            </Select>
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-scheduled-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data ? rows : undefined}

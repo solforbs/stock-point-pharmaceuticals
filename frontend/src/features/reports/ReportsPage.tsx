@@ -81,7 +81,7 @@ export default function ReportsPage() {
       {catalogue.isError && <InlineError error={catalogue.error} />}
       {defs.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-          <div className="space-y-2">
+          <div id="tour-reports-catalogue" className="space-y-2">
             <div className="flex flex-wrap gap-1">
               {groups.map((g) => (
                 <button key={g} type="button" onClick={() => setGroup(g)} className={`h-7 px-2.5 rounded-md text-xs font-semibold transition-colors ${group === g ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{titleCase(g)}</button>
@@ -106,34 +106,33 @@ export default function ReportsPage() {
                   <h2 className="text-base font-bold text-slate-900">{def.title}</h2>
                   <p className="text-xs text-slate-500">{def.description}</p>
                 </div>
-                <FilterBar>
-                  {def.filters.includes('from') && <Field label="From"><Input type="date" value={filters.from ?? ''} onChange={(e) => setFilters({ ...filters, from: e.target.value })} /></Field>}
-                  {def.filters.includes('to') && <Field label="To"><Input type="date" value={filters.to ?? ''} onChange={(e) => setFilters({ ...filters, to: e.target.value })} /></Field>}
-                  {def.filters.includes('customer_id') && <Field label="Customer" className="w-72"><CustomerPicker value={customer} onChange={setCustomer} /></Field>}
-                  {def.filters.includes('product_id') && (
-                    <Field label="Product" className="w-72">
-                      {product ? (
-                        <div className="ui-input flex items-center gap-2"><span className="flex-1 truncate">{product.name}</span><button type="button" onClick={() => setProduct(null)} className="text-slate-400 hover:text-slate-600">×</button></div>
-                      ) : (
-                        <ProductSearch onSelect={setProduct} placeholder="Search product…" />
-                      )}
-                    </Field>
-                  )}
-                  {def.filters.includes('store_id') && (
-                    <Field label="Store"><Select value={filters.store_id ?? ''} onChange={(e) => setFilters({ ...filters, store_id: e.target.value })}><option value="">All</option>{(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code}</option>))}</Select></Field>
-                  )}
-                  {def.filters.includes('category_id') && (
-                    <Field label="Category"><Select value={filters.category_id ?? ''} onChange={(e) => setFilters({ ...filters, category_id: e.target.value })}><option value="">All</option>{(categories.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.code} · {c.name}</option>))}</Select></Field>
-                  )}
-                  {['threshold_pct', 'threshold', 'dead_days', 'open_hour', 'close_hour'].filter((f) => def.filters.includes(f)).map((f) => (
-                    <Field key={f} label={titleCase(f)}><Input inputMode="decimal" className="tabular w-28" value={filters[f] ?? ''} onChange={(e) => setFilters({ ...filters, [f]: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
-                  ))}
-                  <Button variant="primary" onClick={() => run.mutate()} disabled={run.isPending}><Play size={12} /> {run.isPending ? 'Running…' : 'Run'}</Button>
-                  <Button onClick={() => exportCsv.mutate()} disabled={exportCsv.isPending}><Download size={12} /> Export CSV</Button>
-                </FilterBar>
+                <div id="tour-reports-filters">
+                  <FilterBar>
+                    {def.filters.includes('from') && <Field label="From"><Input type="date" value={filters.from ?? ''} onChange={(e) => setFilters({ ...filters, from: e.target.value })} /></Field>}
+                    {def.filters.includes('to') && <Field label="To"><Input type="date" value={filters.to ?? ''} onChange={(e) => setFilters({ ...filters, to: e.target.value })} /></Field>}
+                    {def.filters.includes('as_of') && <Field label="As of"><Input type="date" value={filters.as_of ?? ''} onChange={(e) => setFilters({ ...filters, as_of: e.target.value })} /></Field>}
+                    {def.filters.includes('customer_id') && (
+                      <Field label="Customer" className="w-56"><CustomerPicker value={customer} onChange={setCustomer} /></Field>
+                    )}
+                    {def.filters.includes('product_id') && (
+                      <Field label="Product" className="w-56"><ProductSearch onSelect={setProduct} placeholder={product ? product.name : 'Choose product…'} /></Field>
+                    )}
+                    {def.filters.includes('store_id') && (
+                      <Field label="Store"><Select value={filters.store_id ?? ''} onChange={(e) => setFilters({ ...filters, store_id: e.target.value })}><option value="">All</option>{(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}</Select></Field>
+                    )}
+                    {def.filters.includes('category_id') && (
+                      <Field label="Category"><Select value={filters.category_id ?? ''} onChange={(e) => setFilters({ ...filters, category_id: e.target.value })}><option value="">All</option>{(categories.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.code} · {c.name}</option>))}</Select></Field>
+                    )}
+                    {['threshold_pct', 'threshold', 'dead_days', 'open_hour', 'close_hour'].filter((f) => def.filters.includes(f)).map((f) => (
+                      <Field key={f} label={titleCase(f)}><Input inputMode="decimal" className="tabular w-28" value={filters[f] ?? ''} onChange={(e) => setFilters({ ...filters, [f]: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
+                    ))}
+                    <Button variant="primary" onClick={() => run.mutate()} disabled={run.isPending}><Play size={12} /> {run.isPending ? 'Running…' : 'Run'}</Button>
+                    <Button onClick={() => exportCsv.mutate()} disabled={exportCsv.isPending}><Download size={12} /> Export CSV</Button>
+                  </FilterBar>
+                </div>
                 {run.isError && <InlineError error={run.error} />}
                 {result && result.key === def.key && (
-                  <div className="ui-card">
+                  <div id="tour-reports-table" className="ui-card">
                     <div className="px-3 py-2 text-xs text-slate-500 border-b border-slate-100 tabular">
                       {formatDate(result.from)} → {formatDate(result.to)} · {result.rows.length} rows · generated {formatDateTime(result.generated_at)}
                     </div>

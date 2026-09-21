@@ -1097,6 +1097,71 @@ export const PAYROLL_BANDS_TOUR_STEPS: TourStep[] = [
   },
 ]
 
+export const REPORTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-reports-catalogue',
+    title: '1. Report Categories & Catalogue',
+    description: 'Explore pre-built financial, sales, inventory, procurement, and tax compliance reports. Each report reads authoritative posted transactions.',
+    placement: 'bottom',
+    route: '/reports/catalogue',
+  },
+  {
+    targetId: 'tour-reports-filters',
+    title: '2. Dynamic Report Parameters',
+    description: 'Customize date intervals, customer accounts, medication items, stores, or categories. Run queries on-demand or download clean CSV exports.',
+    placement: 'bottom',
+    route: '/reports/catalogue',
+  },
+  {
+    targetId: 'tour-reports-table',
+    title: '3. Data Grid & Grand Totals',
+    description: 'Inspect typed tabular rows with sorting and totals. Financial and cost data are strictly restricted by user permissions.',
+    placement: 'top',
+    route: '/reports/catalogue',
+  },
+]
+
+export const ANALYTICS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-analytics-filters',
+    title: '1. Time Window & Quick Presets',
+    description: 'Set custom reporting date ranges or select 7-day, 30-day, or 90-day presets to update all analytics charts synchronously.',
+    placement: 'bottom',
+    route: '/reports/analytics',
+  },
+  {
+    targetId: 'tour-analytics-charts',
+    title: '2. Executive KPI Charts & Breakdown',
+    description: 'Interactive visualizations for Net Sales & Gross Profit, Sales by Mode (Retail vs. Wholesale), Top 10 Medications, Inventory Valuation, Expiry Risk, and AR Debt Aging.',
+    placement: 'top',
+    route: '/reports/analytics',
+  },
+]
+
+export const SCHEDULED_REPORTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-scheduled-new',
+    title: '1. Schedule Automated Report',
+    description: 'Configure automated email dispatches of any catalogue report (Daily, Weekly, or Monthly) to executive or finance team members.',
+    placement: 'bottom',
+    route: '/reports/scheduled',
+  },
+  {
+    targetId: 'tour-scheduled-filter',
+    title: '2. Status & Execution Triage',
+    description: 'Monitor active schedules, paused dispatches, and check error logs if email delivery fails.',
+    placement: 'bottom',
+    route: '/reports/scheduled',
+  },
+  {
+    targetId: 'tour-scheduled-table',
+    title: '3. Schedules Registry & Run Now',
+    description: 'Review next execution timestamps, recipient rosters, and click any row to edit or immediately trigger an on-demand delivery test.',
+    placement: 'top',
+    route: '/reports/scheduled',
+  },
+]
+
 /**
  * Global Central Tour Registry
  * To add a tour to ANY page in the application, just add a single entry here!
@@ -1424,6 +1489,27 @@ export const REGISTERED_TOURS: TourDefinition[] = [
     title: 'Statutory Payroll Bands & Tax Rates',
     subtitle: 'Learn how statutory PAYE, NSSF, SHIF, and Housing Levy tiers are configured and version-locked',
     steps: PAYROLL_BANDS_TOUR_STEPS,
+  },
+  {
+    id: 'reports-catalogue',
+    route: '/reports/catalogue',
+    title: 'Central Report Catalogue',
+    subtitle: 'Learn how to generate dynamic pharmaceutical reports, apply filters, and export verified CSV data',
+    steps: REPORTS_TOUR_STEPS,
+  },
+  {
+    id: 'reports-analytics',
+    route: '/reports/analytics',
+    title: 'Executive Analytics & BI Visualizations',
+    subtitle: 'Learn how to monitor revenue trends, margins, retail vs. wholesale performance, and inventory aging',
+    steps: ANALYTICS_TOUR_STEPS,
+  },
+  {
+    id: 'reports-scheduled',
+    route: '/reports/scheduled',
+    title: 'Scheduled Email Report Dispatches',
+    subtitle: 'Learn how to set up automated daily, weekly, or monthly report emails to stakeholders and management',
+    steps: SCHEDULED_REPORTS_TOUR_STEPS,
   },
 ]
 

@@ -146,22 +146,24 @@ export default function AnalyticsPage() {
   return (
     <Page>
       <PageHeader parent="Reports" title="Analytics" subtitle="Posted transactions only, for the active branch. Hover any chart for exact figures; switch a card to its table for the numbers." />
-      <FilterBar>
-        <Field label="From"><Input type="date" value={draft.from} max={draft.to} onChange={(e) => setDraft({ ...draft, from: e.target.value })} /></Field>
-        <Field label="To"><Input type="date" value={draft.to} min={draft.from} onChange={(e) => setDraft({ ...draft, to: e.target.value })} /></Field>
-        <Button variant="primary" disabled={!draft.from || !draft.to || draft.from > draft.to} onClick={() => setRange(draft)}>Apply</Button>
-        <div className="flex gap-1 pb-0.5">
-          {PRESETS.map((p) => {
-            const preset = { from: addDaysIso(-(p.days - 1)), to: todayIso() }
-            const on = range.from === preset.from && range.to === preset.to
-            return (
-              <Button key={p.days} size="sm" variant={on ? 'primary' : 'ghost'} onClick={() => { setDraft(preset); setRange(preset) }}>{p.label}</Button>
-            )
-          })}
-        </div>
-      </FilterBar>
+      <div id="tour-analytics-filters">
+        <FilterBar>
+          <Field label="From"><Input type="date" value={draft.from} max={draft.to} onChange={(e) => setDraft({ ...draft, from: e.target.value })} /></Field>
+          <Field label="To"><Input type="date" value={draft.to} min={draft.from} onChange={(e) => setDraft({ ...draft, to: e.target.value })} /></Field>
+          <Button variant="primary" disabled={!draft.from || !draft.to || draft.from > draft.to} onClick={() => setRange(draft)}>Apply</Button>
+          <div className="flex gap-1 pb-0.5">
+            {PRESETS.map((p) => {
+              const preset = { from: addDaysIso(-(p.days - 1)), to: todayIso() }
+              const on = range.from === preset.from && range.to === preset.to
+              return (
+                <Button key={p.days} size="sm" variant={on ? 'primary' : 'ghost'} onClick={() => { setDraft(preset); setRange(preset) }}>{p.label}</Button>
+              )
+            })}
+          </div>
+        </FilterBar>
+      </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div id="tour-analytics-charts" className="grid gap-4 xl:grid-cols-2">
         <ChartCard
           title="Net sales and gross profit"
           subtitle={`${formatDate(range.from)} – ${formatDate(range.to)} · net ${kes(num(totals.net_sales))} · profit ${kes(num(totals.gross_profit))}`}
