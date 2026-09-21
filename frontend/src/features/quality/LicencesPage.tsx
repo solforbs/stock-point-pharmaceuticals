@@ -125,9 +125,15 @@ export default function LicencesPage() {
         parent="Quality & Compliance"
         title="Licences & Certificates"
         subtitle="Premises, practising, permit and tax certificates in one register. Supplier licences come from the supplier master; a PO to a supplier with an expired licence is refused."
-        actions={canManage ? <Button variant="primary" onClick={() => setCreating(true)}>Add licence</Button> : null}
+        actions={
+          canManage ? (
+            <div id="tour-licences-new">
+              <Button variant="primary" onClick={() => setCreating(true)}>Add licence</Button>
+            </div>
+          ) : null
+        }
       />
-      <div className="grid grid-cols-3 gap-3 mb-4 max-w-2xl">
+      <div id="tour-licences-kpis" className="grid grid-cols-3 gap-3 mb-4 max-w-2xl">
         {([['EXPIRED', 'Expired', summary?.expired], ['EXPIRING', 'Expiring ≤ 60 days', summary?.expiring], ['VALID', 'Valid', summary?.valid]] as const).map(([key, label, count]) => (
           <button key={key} type="button" onClick={() => setStatus(status === key ? '' : key)} className={`ui-card p-3.5 text-left transition-all ${status === key ? 'ring-2 ring-blue-600 border-blue-600' : 'hover:border-slate-300'}`}>
             <div className="text-xs text-slate-500 font-medium">{label}</div>
@@ -135,25 +141,27 @@ export default function LicencesPage() {
           </button>
         ))}
       </div>
-      <FilterBar>
-        <Field label="Search" className="w-64"><Input placeholder="Number, holder or issuer" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
-        <Field label="Holder" className="w-44">
-          <Select value={holderType} onChange={(e) => setHolderType(e.target.value)}>
-            <option value="">All holders</option>
-            {HOLDER_TYPES.map((h) => (<option key={h} value={h}>{titleCase(h)}</option>))}
-          </Select>
-        </Field>
-        <Field label="Status" className="w-40">
-          <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All</option>
-            <option value="EXPIRED">Expired</option>
-            <option value="EXPIRING">Expiring</option>
-            <option value="VALID">Valid</option>
-          </Select>
-        </Field>
-        <label className="flex items-center gap-2 text-xs text-slate-600 pb-2 cursor-pointer"><input type="checkbox" checked={archived} onChange={(e) => setArchived(e.target.checked)} /> Include archived</label>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-licences-filters">
+        <FilterBar>
+          <Field label="Search" className="w-64"><Input placeholder="Number, holder or issuer" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
+          <Field label="Holder" className="w-44">
+            <Select value={holderType} onChange={(e) => setHolderType(e.target.value)}>
+              <option value="">All holders</option>
+              {HOLDER_TYPES.map((h) => (<option key={h} value={h}>{titleCase(h)}</option>))}
+            </Select>
+          </Field>
+          <Field label="Status" className="w-40">
+            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All</option>
+              <option value="EXPIRED">Expired</option>
+              <option value="EXPIRING">Expiring</option>
+              <option value="VALID">Valid</option>
+            </Select>
+          </Field>
+          <label className="flex items-center gap-2 text-xs text-slate-600 pb-2 cursor-pointer"><input type="checkbox" checked={archived} onChange={(e) => setArchived(e.target.checked)} /> Include archived</label>
+        </FilterBar>
+      </div>
+      <div id="tour-licences-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(l) => l.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(l) => setParams({ licence: l.id })} selectedKey={selectedId} emptyTitle="No licences recorded" emptyHint={canManage ? 'Add the premises licence, practising licences and permits so expiry is never a surprise.' : undefined} />
       </div>
       <LicenceDrawer id={selectedId} licence={selected} onClose={() => setParams({})} />

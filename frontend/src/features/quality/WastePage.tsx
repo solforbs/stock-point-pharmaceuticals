@@ -74,12 +74,25 @@ export default function WastePage() {
 
   return (
     <Page>
-      <PageHeader parent="Quality & Compliance" title="Waste & Disposal" subtitle="Disposal batches by reason, with method, contractor, certificate and two-signatory approval. Posting writes the stock off to the dedicated account." actions={perms.has('stock.adjust') ? <Button variant="primary" onClick={() => setCreating(true)}>New disposal</Button> : null} />
-      <FilterBar>
-        <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option><option value="DRAFT">Draft</option><option value="POSTED">Posted</option></Select></Field>
-        <Field label="Reason"><Select value={reasonFilter} onChange={(e) => { setReasonFilter(e.target.value); setPage(1) }}><option value="">All</option>{REASONS.map((r) => (<option key={r} value={r}>{titleCase(r)}</option>))}</Select></Field>
-      </FilterBar>
-      <div className="ui-card">
+      <PageHeader
+        parent="Quality & Compliance"
+        title="Waste & Disposal"
+        subtitle="Disposal batches by reason, with method, contractor, certificate and two-signatory approval. Posting writes the stock off to the dedicated account."
+        actions={
+          perms.has('stock.adjust') ? (
+            <div id="tour-waste-create">
+              <Button variant="primary" onClick={() => setCreating(true)}>New disposal</Button>
+            </div>
+          ) : null
+        }
+      />
+      <div id="tour-waste-filters">
+        <FilterBar>
+          <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option><option value="DRAFT">Draft</option><option value="POSTED">Posted</option></Select></Field>
+          <Field label="Reason"><Select value={reasonFilter} onChange={(e) => { setReasonFilter(e.target.value); setPage(1) }}><option value="">All</option>{REASONS.map((r) => (<option key={r} value={r}>{titleCase(r)}</option>))}</Select></Field>
+        </FilterBar>
+      </div>
+      <div id="tour-waste-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(d) => d.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(d) => setParams({ disposal: d.id })} selectedKey={selectedId} emptyTitle="No disposals" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

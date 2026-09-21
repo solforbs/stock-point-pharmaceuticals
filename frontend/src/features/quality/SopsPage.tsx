@@ -120,29 +120,37 @@ export default function SopsPage() {
         parent="Quality & Compliance"
         title="SOPs & Documents"
         subtitle="Staff acknowledge each version of an SOP; a new version starts acknowledgement again. Every acknowledgement is recorded in the audit log (V6 Part 16.4)."
-        actions={canManage ? <Button variant="primary" onClick={() => setCreating(true)}>New document</Button> : null}
+        actions={
+          canManage ? (
+            <div id="tour-sops-new">
+              <Button variant="primary" onClick={() => setCreating(true)}>New document</Button>
+            </div>
+          ) : null
+        }
       />
-      <FilterBar>
-        <Field label="Search" className="w-56"><Input placeholder="Code or title" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} /></Field>
-        <Field label="Category" className="w-44">
-          <Select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            {CATEGORIES.map((c) => (<option key={c} value={c}>{titleCase(c)}</option>))}
-          </Select>
-        </Field>
-        {canManage && (
-          <Field label="Status" className="w-36">
-            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+      <div id="tour-sops-filters">
+        <FilterBar>
+          <Field label="Search" className="w-56"><Input placeholder="Code or title" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} /></Field>
+          <Field label="Category" className="w-44">
+            <Select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1) }}>
               <option value="">All</option>
-              <option value="DRAFT">Draft</option>
-              <option value="ACTIVE">Active</option>
-              <option value="RETIRED">Retired</option>
+              {CATEGORIES.map((c) => (<option key={c} value={c}>{titleCase(c)}</option>))}
             </Select>
           </Field>
-        )}
-        <label className="flex items-center gap-2 text-xs text-slate-600 pb-2 cursor-pointer"><input type="checkbox" checked={pendingOnly} onChange={(e) => { setPendingOnly(e.target.checked); setPage(1) }} /> Only ones I have not acknowledged</label>
-      </FilterBar>
-      <div className="ui-card">
+          {canManage && (
+            <Field label="Status" className="w-36">
+              <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+                <option value="">All</option>
+                <option value="DRAFT">Draft</option>
+                <option value="ACTIVE">Active</option>
+                <option value="RETIRED">Retired</option>
+              </Select>
+            </Field>
+          )}
+          <label className="flex items-center gap-2 text-xs text-slate-600 pb-2 cursor-pointer"><input type="checkbox" checked={pendingOnly} onChange={(e) => { setPendingOnly(e.target.checked); setPage(1) }} /> Only ones I have not acknowledged</label>
+        </FilterBar>
+      </div>
+      <div id="tour-sops-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(d) => d.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={canManage ? (d) => setParams({ document: d.id }) : undefined} selectedKey={selectedId} emptyTitle={pendingOnly ? 'Nothing waiting for your acknowledgement' : 'No documents'} emptyHint={canManage ? 'Upload an SOP, then activate it so staff can acknowledge it.' : undefined} />
         <Pagination page={list.data} onPage={setPage} />
       </div>

@@ -122,7 +122,7 @@ export default function ColdChainPage() {
       ) : summary.error ? (
         <InlineError error={summary.error} className="mb-4" />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+        <div id="tour-coldchain-stores" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
           {summary.data?.map((s) => (
             <StoreCard key={s.store.id} summary={s} active={s.store.id === activeStoreId} onClick={() => setStoreId(s.store.id)} />
           ))}
@@ -130,7 +130,7 @@ export default function ColdChainPage() {
         </div>
       )}
 
-      <div className="flex gap-2 mb-3">
+      <div id="tour-coldchain-tabs" className="flex gap-2 mb-3">
         {(['readings', 'excursions'] as Tab[]).map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)} className={`h-8 px-3.5 rounded-lg text-xs font-semibold transition-colors ${tab === t ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
             {t === 'readings' ? 'Readings' : 'Excursions'}
@@ -140,11 +140,19 @@ export default function ColdChainPage() {
 
       {tab === 'readings' ? (
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-4">
-          <ReadingsPanel stores={summary.data ?? []} storeId={activeStoreId} onStore={setStoreId} />
-          {canRecord ? <RecordReadingCard stores={summary.data ?? []} defaultStoreId={activeStoreId} /> : null}
+          <div id="tour-coldchain-table">
+            <ReadingsPanel stores={summary.data ?? []} storeId={activeStoreId} onStore={setStoreId} />
+          </div>
+          {canRecord ? (
+            <div id="tour-coldchain-record">
+              <RecordReadingCard stores={summary.data ?? []} defaultStoreId={activeStoreId} />
+            </div>
+          ) : null}
         </div>
       ) : (
-        <ExcursionsPanel stores={summary.data ?? []} onOpen={(id) => setParams({ tab: 'excursions', excursion: id })} selectedId={selectedExcursion} />
+        <div id="tour-coldchain-table">
+          <ExcursionsPanel stores={summary.data ?? []} onOpen={(id) => setParams({ tab: 'excursions', excursion: id })} selectedId={selectedExcursion} />
+        </div>
       )}
 
       <ExcursionDrawer id={selectedExcursion} onClose={() => setParams(tab === 'readings' ? {} : { tab })} />

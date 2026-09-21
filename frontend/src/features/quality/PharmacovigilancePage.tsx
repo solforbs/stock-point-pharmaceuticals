@@ -103,34 +103,42 @@ export default function PharmacovigilancePage() {
         parent="Quality & Compliance"
         title="Pharmacovigilance"
         subtitle="Adverse drug reactions, reported to the PPB (PViMS). Linking a report to its batch is what turns a complaint into a detectable pattern (Part 11.4)."
-        actions={canReport ? <Button variant="primary" onClick={() => setCreating(true)}>New ADR report</Button> : null}
-      />
-      <FilterBar>
-        <Field label="Search" className="w-56"><Input placeholder="Report no., PPB ref, initials" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} /></Field>
-        <Field label="Status" className="w-40">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            {(['DRAFT', 'SUBMITTED', 'CLOSED'] as const).map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-          </Select>
-        </Field>
-        <Field label="Seriousness" className="w-44">
-          <Select value={seriousness} onChange={(e) => { setSeriousness(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            {SERIOUSNESS.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-          </Select>
-        </Field>
-        <Field label="Product" className="w-72">
-          {product ? (
-            <div className="ui-input flex items-center gap-2">
-              <span className="flex-1 truncate">{product.name}</span>
-              <button type="button" aria-label="Clear product" onClick={() => { setProduct(null); setPage(1) }} className="text-slate-400 hover:text-slate-600"><X size={13} /></button>
+        actions={
+          canReport ? (
+            <div id="tour-adr-new">
+              <Button variant="primary" onClick={() => setCreating(true)}>New ADR report</Button>
             </div>
-          ) : (
-            <ProductSearch placeholder="Filter by product…" onSelect={(p) => { setProduct({ id: p.id, code: p.code, name: p.name }); setPage(1) }} />
-          )}
-        </Field>
-      </FilterBar>
-      <div className="ui-card">
+          ) : null
+        }
+      />
+      <div id="tour-adr-filters">
+        <FilterBar>
+          <Field label="Search" className="w-56"><Input placeholder="Report no., PPB ref, initials" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} /></Field>
+          <Field label="Status" className="w-40">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All</option>
+              {(['DRAFT', 'SUBMITTED', 'CLOSED'] as const).map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+            </Select>
+          </Field>
+          <Field label="Seriousness" className="w-44">
+            <Select value={seriousness} onChange={(e) => { setSeriousness(e.target.value); setPage(1) }}>
+              <option value="">All</option>
+              {SERIOUSNESS.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+            </Select>
+          </Field>
+          <Field label="Product" className="w-72">
+            {product ? (
+              <div className="ui-input flex items-center gap-2">
+                <span className="flex-1 truncate">{product.name}</span>
+                <button type="button" aria-label="Clear product" onClick={() => { setProduct(null); setPage(1) }} className="text-slate-400 hover:text-slate-600"><X size={13} /></button>
+              </div>
+            ) : (
+              <ProductSearch placeholder="Filter by product…" onSelect={(p) => { setProduct({ id: p.id, code: p.code, name: p.name }); setPage(1) }} />
+            )}
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-adr-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(r) => r.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(r) => setParams({ report: r.id })} selectedKey={selectedId} emptyTitle="No ADR reports" emptyHint="Record any suspected adverse reaction a patient or customer reports, even if the link to the medicine is uncertain." />
         <Pagination page={list.data} onPage={setPage} />
       </div>

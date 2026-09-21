@@ -826,6 +826,181 @@ export const STATEMENTS_TOUR_STEPS: TourStep[] = [
   },
 ]
 
+export const QUARANTINE_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-quarantine-tabs',
+    title: '1. Holding States & QC Gates',
+    description: 'Toggle between Quarantined stock (hard-blocked from dispensing) and Pending QC stock (new goods receipts awaiting release by a pharmacist).',
+    placement: 'bottom',
+    route: '/quality/quarantine',
+  },
+  {
+    targetId: 'tour-quarantine-table',
+    title: '2. Quarantined Batches & Audit Trail',
+    description: 'Inspect held batches, expiry dates, supplier source, and landed cost. Releasing stock requires authorized quality permissions and writes an audit log.',
+    placement: 'top',
+    route: '/quality/quarantine',
+  },
+]
+
+export const WASTE_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-waste-create',
+    title: '1. Draft Destruction & Waste Batch',
+    description: 'Initiate a formal disposal record for expired, damaged, recalled, or cold-chain excursion stock with destruction method and contractor.',
+    placement: 'bottom',
+    route: '/quality/waste',
+  },
+  {
+    targetId: 'tour-waste-filters',
+    title: '2. Disposal Reasons & Status Filter',
+    description: 'Filter disposal manifests across Draft and Posted states and specific disposal reasons (Expired, Damaged, Recalled, Excursion).',
+    placement: 'bottom',
+    route: '/quality/waste',
+  },
+  {
+    targetId: 'tour-waste-table',
+    title: '3. Disposal Manifests & Two-Witness Sign-off',
+    description: 'Review disposal batches and certificates. Posting requires two authorized staff witnesses and automatically posts inventory write-offs to financial ledgers.',
+    placement: 'top',
+    route: '/quality/waste',
+  },
+]
+
+export const RECALLS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-recalls-initiate',
+    title: '1. Initiate Pharmaceutical Recall',
+    description: 'Initiate manufacturer, PPB, or internal drug recalls. Instantly locks affected batches across all stores and traces every distributed unit.',
+    placement: 'bottom',
+    route: '/quality/recalls',
+  },
+  {
+    targetId: 'tour-recalls-filter',
+    title: '2. Recall Lifecycle Stages',
+    description: 'Track recall execution across the full pipeline: Initiated → Scoped → Blocked → Notified → Recovering → Reconciled → Dispositioned → Closed.',
+    placement: 'bottom',
+    route: '/quality/recalls',
+  },
+  {
+    targetId: 'tour-recalls-table',
+    title: '3. Recall Registry & Recovery Percentage',
+    description: 'Review scoped customer rosters, total units distributed, quantity recovered, and real-time percentage effectiveness metrics.',
+    placement: 'top',
+    route: '/quality/recalls',
+  },
+]
+
+export const COLD_CHAIN_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-coldchain-stores',
+    title: '1. Live Temperature & Store Status',
+    description: 'Monitor real-time temperatures across refrigerated store rooms and cold boxes, tracking accepted ranges (e.g. 2.0°C – 8.0°C) and open excursion alerts.',
+    placement: 'bottom',
+    route: '/quality/cold-chain',
+  },
+  {
+    targetId: 'tour-coldchain-tabs',
+    title: '2. Readings Log & Excursions Queue',
+    description: 'Switch between the sequential temperature readings audit log and active temperature excursion incidents requiring pharmacist review.',
+    placement: 'bottom',
+    route: '/quality/cold-chain',
+  },
+  {
+    targetId: 'tour-coldchain-record',
+    title: '3. Record Temperature Log',
+    description: 'Log manual thermometer checks or data logger telemetry with humidity levels and timestamps. Out-of-window entries automatically trigger excursion alerts.',
+    placement: 'bottom',
+    route: '/quality/cold-chain',
+  },
+  {
+    targetId: 'tour-coldchain-table',
+    title: '4. Visual Trends & Excursion Triage',
+    description: 'Analyze time-series thermal charts, duration above threshold, and triage stock disposition (No Impact, Quarantine, or Waste Disposal).',
+    placement: 'top',
+    route: '/quality/cold-chain',
+  },
+]
+
+export const PHARMACOVIGILANCE_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-adr-new',
+    title: '1. Report Adverse Drug Reaction (ADR)',
+    description: 'Log any suspected patient adverse drug reaction, linking symptoms, onset timeline, and suspect medication to identify safety patterns.',
+    placement: 'bottom',
+    route: '/quality/pharmacovigilance',
+  },
+  {
+    targetId: 'tour-adr-filters',
+    title: '2. Seriousness & Product Filters',
+    description: 'Triage reported incidents by seriousness (Non-Serious, Serious, Life-Threatening, Fatal), submission status, and specific medication.',
+    placement: 'bottom',
+    route: '/quality/pharmacovigilance',
+  },
+  {
+    targetId: 'tour-adr-table',
+    title: '3. PPB PViMS Regulatory Escalation',
+    description: 'Track clinical outcomes, link reports directly to batch numbers, and record Pharmacy and Poisons Board (PPB) regulatory transmission references.',
+    placement: 'top',
+    route: '/quality/pharmacovigilance',
+  },
+]
+
+export const LICENCES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-licences-new',
+    title: '1. Register Compliance Licence',
+    description: 'Record PPB premises licences, pharmacist and pharmtech annual practice licences, single business permits, fire safety, and KRA TCC.',
+    placement: 'bottom',
+    route: '/quality/licences',
+  },
+  {
+    targetId: 'tour-licences-kpis',
+    title: '2. Expiry Warning Gates (60 Days)',
+    description: 'Interactive compliance tiles categorizing licences as Expired, Expiring within 60 days, and Valid to prevent regulatory non-compliance.',
+    placement: 'bottom',
+    route: '/quality/licences',
+  },
+  {
+    targetId: 'tour-licences-filters',
+    title: '3. Holder & Category Filters',
+    description: 'Filter credentials by Organization, Branch, Employee, or Supplier credentials with search by certificate reference.',
+    placement: 'bottom',
+    route: '/quality/licences',
+  },
+  {
+    targetId: 'tour-licences-table',
+    title: '4. Licence Register & Enforcement',
+    description: 'Inspect document attachments and verify active status. The procurement engine automatically refuses purchase orders to suppliers with expired licences.',
+    placement: 'top',
+    route: '/quality/licences',
+  },
+]
+
+export const SOPS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-sops-new',
+    title: '1. New Controlled Document',
+    description: 'Upload and register controlled standard operating procedures (SOPs), clinical policies, forms, and work instructions with automated versioning.',
+    placement: 'bottom',
+    route: '/quality/sops',
+  },
+  {
+    targetId: 'tour-sops-filters',
+    title: '2. Categories & Unread Filter',
+    description: 'Browse documents by category and toggle "Only ones I have not acknowledged" to see procedures awaiting your compliance sign-off.',
+    placement: 'bottom',
+    route: '/quality/sops',
+  },
+  {
+    targetId: 'tour-sops-table',
+    title: '3. Staff Acknowledgement & Audit Log',
+    description: 'Read controlled versions and submit binding electronic sign-offs. When an SOP is updated, staff acknowledgement is automatically reset for the new version.',
+    placement: 'top',
+    route: '/quality/sops',
+  },
+]
+
 /**
  * Global Central Tour Registry
  * To add a tour to ANY page in the application, just add a single entry here!
@@ -1076,6 +1251,55 @@ export const REGISTERED_TOURS: TourDefinition[] = [
     title: 'Trial Balance & Financial Statements',
     subtitle: 'Learn how to verify total debits and credits across all accounts to guarantee balanced books',
     steps: STATEMENTS_TOUR_STEPS,
+  },
+  {
+    id: 'quarantine',
+    route: '/quality/quarantine',
+    title: 'Quality Quarantine & QC Gates',
+    subtitle: 'Learn how to manage holding states, incoming goods QC inspection, and pharmacist release audits',
+    steps: QUARANTINE_TOUR_STEPS,
+  },
+  {
+    id: 'waste',
+    route: '/quality/waste',
+    title: 'Waste & Pharmaceutical Destruction',
+    subtitle: 'Learn how to draft disposal batches, execute two-witness approvals, and post write-offs',
+    steps: WASTE_TOUR_STEPS,
+  },
+  {
+    id: 'recalls',
+    route: '/quality/recalls',
+    title: 'Batch Recalls & Traceability',
+    subtitle: 'Learn how to initiate drug recalls, lock suspect batches, trace customers, and track recovery rates',
+    steps: RECALLS_TOUR_STEPS,
+  },
+  {
+    id: 'cold-chain',
+    route: '/quality/cold-chain',
+    title: 'Cold Chain & Temperature Excursions',
+    subtitle: 'Learn how to monitor thermal ranges, log manual/logger readings, and triage temperature excursions',
+    steps: COLD_CHAIN_TOUR_STEPS,
+  },
+  {
+    id: 'pharmacovigilance',
+    route: '/quality/pharmacovigilance',
+    title: 'Pharmacovigilance & ADR Reporting',
+    subtitle: 'Learn how to capture adverse drug reactions, trace suspect batches, and record PPB references',
+    steps: PHARMACOVIGILANCE_TOUR_STEPS,
+  },
+  {
+    id: 'licences',
+    route: '/quality/licences',
+    title: 'Licences & Regulatory Compliance',
+    subtitle: 'Learn how to monitor premises, practising, and supplier licences with automated 60-day alerts',
+    steps: LICENCES_TOUR_STEPS,
+  },
+  {
+    id: 'sops',
+    route: '/quality/sops',
+    title: 'Controlled SOPs & Digital Acknowledgement',
+    subtitle: 'Learn how to maintain versioned standard operating procedures and track staff compliance sign-offs',
+    steps: SOPS_TOUR_STEPS,
   },
 ]
 

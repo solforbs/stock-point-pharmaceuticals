@@ -66,11 +66,24 @@ export default function RecallsPage() {
 
   return (
     <Page>
-      <PageHeader parent="Quality & Compliance" title="Recalls" subtitle="Initiate, scope, block, notify, recover, reconcile, disposition and close — every step from posted data." actions={canInitiate ? <Button variant="danger" onClick={() => setCreating(true)}>Initiate recall</Button> : null} />
-      <FilterBar>
-        <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option>{STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}</Select></Field>
-      </FilterBar>
-      <div className="ui-card">
+      <PageHeader
+        parent="Quality & Compliance"
+        title="Recalls"
+        subtitle="Initiate, scope, block, notify, recover, reconcile, disposition and close — every step from posted data."
+        actions={
+          canInitiate ? (
+            <div id="tour-recalls-initiate">
+              <Button variant="danger" onClick={() => setCreating(true)}>Initiate recall</Button>
+            </div>
+          ) : null
+        }
+      />
+      <div id="tour-recalls-filter">
+        <FilterBar>
+          <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option>{STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}</Select></Field>
+        </FilterBar>
+      </div>
+      <div id="tour-recalls-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(r) => r.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(r) => setParams({ recall: r.id })} selectedKey={selectedId} emptyTitle="No recalls" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
