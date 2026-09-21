@@ -45,7 +45,7 @@ export default function TaxCentrePage() {
   return (
     <Page>
       <PageHeader parent="Finance" title="Tax Centre" subtitle={s ? `eTIMS ${s.enabled ? `enabled (${s.driver} driver)` : 'not enabled on this server'}. Sales post whether or not KRA answers; this queue is what is still outstanding.` : 'eTIMS queue'} actions={<Button size="sm" onClick={() => queue.refetch()}><RefreshCw size={12} /> Refresh</Button>} />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div id="tour-tax-status-cards" className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {STATUSES.map((st) => {
           const n = s ? s[st.toLowerCase() as 'failed' | 'pending' | 'submitted' | 'not_configured'] : null
           const color = st === 'FAILED' ? 'var(--status-red)' : st === 'PENDING' ? 'var(--status-amber)' : st === 'SUBMITTED' ? 'var(--status-green)' : 'var(--status-slate)'
@@ -57,7 +57,7 @@ export default function TaxCentrePage() {
           )
         })}
       </div>
-      <div className="ui-card">
+      <div id="tour-tax-queue-table" className="ui-card">
         <DataTable columns={columns} rows={queue.data?.data} rowKey={(r) => `${r.type}-${r.id}`} isLoading={queue.isLoading} error={queue.error} onRetry={() => queue.refetch()} emptyTitle={`Nothing ${titleCase(status).toLowerCase()}`} />
       </div>
       <p className="text-xs text-slate-500 mt-3">Tax codes, effective-dated rates and VAT return preparation live in Reports (VAT return) until their admin endpoints exist.</p>

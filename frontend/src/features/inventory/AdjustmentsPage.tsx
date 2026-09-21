@@ -86,28 +86,32 @@ export default function AdjustmentsPage() {
         subtitle="Mandatory reason codes for write-offs, damages, and variances with secondary dual-control approval queues"
         actions={
           canAdjust ? (
-            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-              New adjustment
-            </PrimaryAction>
+            <div id="tour-adjustments-new">
+              <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+                New adjustment
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
-      <FilterBar>
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit">
-          {[['PENDING', 'Approval queue'], ['', 'All'], ['APPROVED', 'Approved'], ['REJECTED', 'Rejected']].map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => { setStatus(v); setPage(1) }}
-              className={`h-7 px-3 rounded-lg text-xs font-bold transition-all ${status === v ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </FilterBar>
-      <div className="ui-card">
-        <DataTable columns={columns} rows={list.data?.data} rowKey={(a) => a.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(a) => setParams({ adjustment: a.id })} selectedKey={selectedId} emptyTitle={status === 'PENDING' ? 'Nothing awaiting approval' : 'No adjustments'} />
+      <div id="tour-adjustments-filters">
+        <FilterBar>
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit">
+            {[['PENDING', 'Approval queue'], ['', 'All'], ['APPROVED', 'Approved'], ['REJECTED', 'Rejected']].map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => { setStatus(v); setPage(1) }}
+                className={`h-8 px-3 rounded-lg text-xs font-bold transition-all ${status === v ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </FilterBar>
+      </div>
+      <div id="tour-adjustments-table" className="ui-card">
+        <DataTable columns={columns} rows={list.data?.data} rowKey={(a) => a.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(a) => setParams({ adjustment: a.id })} selectedKey={selectedId} emptyTitle="No adjustments" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
 

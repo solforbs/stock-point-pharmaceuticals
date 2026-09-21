@@ -45,9 +45,11 @@ export default function DeliveriesPage() {
     <Page>
       <PageHeader parent="Warehouse" title="Deliveries" subtitle="Every delivery note for the branch. Open a dispatched note to record who received the goods." />
       <FilterBar>
-        <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option>{STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}</Select></Field>
+        <div id="tour-deliveries-status" className="w-full sm:w-56">
+          <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option>{STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}</Select></Field>
+        </div>
       </FilterBar>
-      <div className="ui-card">
+      <div id="tour-deliveries-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(d) => d.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(d) => setParams({ note: d.id })} selectedKey={selectedId} emptyTitle="No delivery notes" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

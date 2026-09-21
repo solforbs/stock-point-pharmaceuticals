@@ -54,10 +54,11 @@ export default function PayablesPage() {
     <Page>
       <PageHeader parent="Finance" title="Payables" subtitle="What is owed to suppliers from matched invoices. A payment can never exceed the balance." />
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
-        <div className="ui-card">
+        <div id="tour-payables-table" className="ui-card">
           <DataTable columns={columns} rows={suppliers.data ? owed : undefined} rowKey={(s) => s.id} isLoading={suppliers.isLoading} error={suppliers.error} emptyTitle="Nothing owed" emptyHint="Payables appear once a supplier invoice matches." initialSort={{ key: 'payable', dir: 'desc' }} />
         </div>
-        <Card title="Record supplier payment">
+        <div id="tour-payables-form">
+          <Card title="Record supplier payment">
           <div className="p-4 space-y-3">
             <Field label="Supplier" required>
               <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
@@ -85,6 +86,7 @@ export default function PayablesPage() {
             {last && <div className="text-xs text-slate-500 tabular">Last payment {formatMoney(last.amount)} via {last.method}{last.reference ? ` (${last.reference})` : ''}; remaining {formatMoney(last.payable_balance)}.</div>}
           </div>
         </Card>
+        </div>
       </div>
     </Page>
   )

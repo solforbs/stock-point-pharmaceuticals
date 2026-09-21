@@ -77,17 +77,21 @@ export default function GoodsReceiptsPage() {
         subtitle="Mandatory batch & expiry verification, cold chain temperature logging, and PENDING QC quarantine creation"
         actions={
           canCreate ? (
-            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-              New goods receipt
-            </PrimaryAction>
+            <div id="tour-grn-new">
+              <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+                New goods receipt
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
-      <FilterBar>
-        <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All Statuses</option><option value="DRAFT">Draft</option><option value="POSTED">Posted</option></Select></Field>
-        <Field label="Supplier"><Select value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setPage(1) }}><option value="">All Suppliers</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select></Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-grn-filters">
+        <FilterBar>
+          <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All Statuses</option><option value="DRAFT">Draft</option><option value="POSTED">Posted</option></Select></Field>
+          <Field label="Supplier"><Select value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setPage(1) }}><option value="">All Suppliers</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select></Field>
+        </FilterBar>
+      </div>
+      <div id="tour-grn-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(g) => g.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(g) => setParams({ receipt: g.id })} selectedKey={selectedId} emptyTitle="No goods receipts" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

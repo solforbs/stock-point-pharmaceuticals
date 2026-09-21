@@ -71,30 +71,34 @@ export default function CreditControlPage() {
     <Page>
       <PageHeader parent="Customers" title="Credit Control" subtitle="Limits, holds and exposure. The server checks credit at order confirmation and dispatch." />
       <FilterBar>
-        <Field label="Search" className="w-72"><Input placeholder="Customer" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
+        <div id="tour-credit-search" className="w-full sm:w-80">
+          <Field label="Search"><Input placeholder="Search customer name or code…" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
+        </div>
       </FilterBar>
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
-        <div className="ui-card">
+        <div id="tour-credit-table" className="ui-card">
           <DataTable columns={columns} rows={list.data?.data} rowKey={(c) => c.id} isLoading={list.isLoading} error={list.error} onRowClick={setSelected} selectedKey={selected?.id ?? null} emptyTitle="No customers" />
           <Pagination page={list.data} onPage={setPage} />
         </div>
-        <Card title={selected ? selected.name : 'Select a customer'}>
-          <div className="p-4 space-y-3">
-            {!selected ? (
-              <p className="text-xs text-slate-500">Pick a customer to change the limit or place a hold.</p>
-            ) : (
-              <>
-                <Field label="Credit limit (KES)"><Input inputMode="decimal" className="tabular text-right" value={limit} disabled={!canOverride} onChange={(e) => setLimit(e.target.value.replace(/[^\d.]/g, ''))} /></Field>
-                <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={onHold} disabled={!canOverride} onChange={(e) => setOnHold(e.target.checked)} /> Place on credit hold (blocks credit sales)</label>
-                {onHold && <Field label="Hold reason" required><Textarea rows={2} value={holdReason} disabled={!canOverride} onChange={(e) => setHoldReason(e.target.value)} /></Field>}
-                {save.isError && <InlineError error={save.error} />}
-                <Button variant="primary" className="w-full" disabled={!canOverride || save.isPending || (onHold && !holdReason.trim())} onClick={() => save.mutate()} title={canOverride ? undefined : 'Needs customer.credit.override'}>
-                  {save.isPending ? 'Saving…' : 'Save credit settings'}
-                </Button>
-              </>
-            )}
-          </div>
-        </Card>
+        <div id="tour-credit-editor">
+          <Card title={selected ? selected.name : 'Select a customer'}>
+            <div className="p-4 space-y-3">
+              {!selected ? (
+                <p className="text-xs text-slate-500">Pick a customer to change the limit or place a hold.</p>
+              ) : (
+                <>
+                  <Field label="Credit limit (KES)"><Input inputMode="decimal" className="tabular text-right" value={limit} disabled={!canOverride} onChange={(e) => setLimit(e.target.value.replace(/[^\d.]/g, ''))} /></Field>
+                  <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={onHold} disabled={!canOverride} onChange={(e) => setOnHold(e.target.checked)} /> Place on credit hold (blocks credit sales)</label>
+                  {onHold && <Field label="Hold reason" required><Textarea rows={2} value={holdReason} disabled={!canOverride} onChange={(e) => setHoldReason(e.target.value)} /></Field>}
+                  {save.isError && <InlineError error={save.error} />}
+                  <Button variant="primary" className="w-full" disabled={!canOverride || save.isPending || (onHold && !holdReason.trim())} onClick={() => save.mutate()} title={canOverride ? undefined : 'Needs customer.credit.override'}>
+                    {save.isPending ? 'Saving…' : 'Save credit settings'}
+                  </Button>
+                </>
+              )}
+            </div>
+          </Card>
+        </div>
       </div>
     </Page>
   )

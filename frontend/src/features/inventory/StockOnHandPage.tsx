@@ -35,26 +35,28 @@ export default function StockOnHandPage() {
         title="Stock on Hand"
         subtitle="The authoritative live view of stock across the 8 balance states, calculated per store."
       />
-      <FilterBar>
-        <Field label="Store">
-          <Select value={storeId} onChange={(e) => setStoreId(e.target.value)}>
-            <option value="">All stores</option>
-            {(stores.data ?? []).map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.code} · {s.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Search product">
-          <Input
-            placeholder="Name, code, barcode…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </Field>
-      </FilterBar>
-      <div className="ui-card overflow-hidden">
+      <div id="tour-stock-filters">
+        <FilterBar>
+          <Field label="Store">
+            <Select value={storeId} onChange={(e) => setStoreId(e.target.value)}>
+              <option value="">All stores</option>
+              {(stores.data ?? []).map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.code} · {s.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Search product">
+            <Input
+              placeholder="Name, code, barcode…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-stock-table" className="ui-card overflow-hidden">
         <StockStatesTable
           rows={stock.data?.data}
           showCost={showCost}

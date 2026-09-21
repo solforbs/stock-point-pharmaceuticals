@@ -127,27 +127,29 @@ export default function ReconciliationPage() {
         parent="Finance"
         title="Payments & Reconciliation"
         subtitle="Tick the receipts that appear on a bank or M-PESA statement and reconcile them against its reference. Reversed receipts cannot be reconciled."
-        actions={canReconcile ? <Button variant="primary" disabled={!selected.size} onClick={() => setReconciling(true)}>Reconcile selected{selected.size ? ` (${selected.size})` : ''}</Button> : null}
+        actions={canReconcile ? <Button id="tour-reconciliation-action" variant="primary" disabled={!selected.size} onClick={() => setReconciling(true)}>Reconcile selected{selected.size ? ` (${selected.size})` : ''}</Button> : null}
       />
-      <FilterBar>
-        <Field label="From" className="w-40"><Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); resetSelection() }} /></Field>
-        <Field label="To" className="w-40"><Input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); resetSelection() }} /></Field>
-        <Field label="Method" className="w-40">
-          <Select value={method} onChange={(e) => { setMethod(e.target.value); setPage(1); resetSelection() }}>
-            <option value="">All methods</option>
-            {PAYMENT_METHODS.map((m) => (<option key={m} value={m}>{titleCase(m)}</option>))}
-          </Select>
-        </Field>
-        <Field label="Status" className="w-44">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value as '' | 'reconciled' | 'unreconciled'); setPage(1); resetSelection() }}>
-            <option value="">All</option>
-            <option value="unreconciled">Unreconciled</option>
-            <option value="reconciled">Reconciled</option>
-          </Select>
-        </Field>
-      </FilterBar>
+      <div id="tour-reconciliation-filters">
+        <FilterBar>
+          <Field label="From" className="w-40"><Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); resetSelection() }} /></Field>
+          <Field label="To" className="w-40"><Input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); resetSelection() }} /></Field>
+          <Field label="Method" className="w-40">
+            <Select value={method} onChange={(e) => { setMethod(e.target.value); setPage(1); resetSelection() }}>
+              <option value="">All methods</option>
+              {PAYMENT_METHODS.map((m) => (<option key={m} value={m}>{titleCase(m)}</option>))}
+            </Select>
+          </Field>
+          <Field label="Status" className="w-44">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value as '' | 'reconciled' | 'unreconciled'); setPage(1); resetSelection() }}>
+              <option value="">All</option>
+              <option value="unreconciled">Unreconciled</option>
+              <option value="reconciled">Reconciled</option>
+            </Select>
+          </Field>
+        </FilterBar>
+      </div>
 
-      <div className="grid gap-3 mb-4 grid-cols-2 lg:grid-cols-5">
+      <div id="tour-reconciliation-totals" className="grid gap-3 mb-4 grid-cols-2 lg:grid-cols-5">
         {(list.data?.totals ?? []).map((t) => (
           <div key={t.method} className="ui-card p-3">
             <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{titleCase(t.method)} · {t.count} receipt{t.count === 1 ? '' : 's'}</div>
@@ -165,7 +167,7 @@ export default function ReconciliationPage() {
           <Button size="sm" variant="ghost" onClick={resetSelection}>Clear selection</Button>
         </div>
       )}
-      <div className="ui-card">
+      <div id="tour-reconciliation-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data?.data}

@@ -70,16 +70,18 @@ export default function ChartOfAccountsPage() {
         <div className="ui-card"><NoAccess permission="report.financial.view" /></div>
       ) : (
         <>
-          <FilterBar>
-            <Field label="Type">
-              <Select value={type} onChange={(e) => setType(e.target.value)}>
-                <option value="">All</option>
-                {types.map((t) => (<option key={t} value={t}>{titleCase(t)}</option>))}
-              </Select>
-            </Field>
-            <Field label="Search" className="w-72"><Input placeholder="Code, name or system role" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
-          </FilterBar>
-          <div className="ui-card">
+          <div id="tour-coa-filters">
+            <FilterBar>
+              <Field label="Type">
+                <Select value={type} onChange={(e) => setType(e.target.value)}>
+                  <option value="">All</option>
+                  {types.map((t) => (<option key={t} value={t}>{titleCase(t)}</option>))}
+                </Select>
+              </Field>
+              <Field label="Search" className="w-72"><Input placeholder="Code, name or system role" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
+            </FilterBar>
+          </div>
+          <div id="tour-coa-table" className="ui-card">
             {accounts.isLoading && <LoadingSkeleton rows={8} />}
             {accounts.isError && <ErrorState error={accounts.error} onRetry={() => accounts.refetch()} />}
             {accounts.data && rows.length === 0 && <EmptyState title="No accounts match" />}

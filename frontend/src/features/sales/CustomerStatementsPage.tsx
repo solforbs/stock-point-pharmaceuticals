@@ -98,22 +98,31 @@ export default function CustomerStatementsPage() {
         parent="Sell"
         title="Customer Statements"
         subtitle="Every invoice, receipt and credit note for a customer with a running balance, plus what is owed by age."
-        actions={<Button variant="primary" disabled={!s} onClick={() => window.print()}><Printer size={13} /> Print</Button>}
+        actions={
+          <div id="tour-statements-print">
+            <Button variant="primary" disabled={!s} onClick={() => window.print()}><Printer size={13} /> Print</Button>
+          </div>
+        }
       />
       <FilterBar>
-        <Field label="Customer" className="w-96"><CustomerPicker value={customer} onChange={setCustomer} /></Field>
-        <Field label="From" className="w-40"><Input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></Field>
-        <Field label="To" className="w-40"><Input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></Field>
+        <div id="tour-statements-customer">
+          <Field label="Customer" className="w-full sm:w-96"><CustomerPicker value={customer} onChange={setCustomer} /></Field>
+        </div>
+        <div id="tour-statements-date" className="flex items-end gap-3 flex-wrap">
+          <Field label="From" className="w-40"><Input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></Field>
+          <Field label="To" className="w-40"><Input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></Field>
+        </div>
       </FilterBar>
 
-      {!customer ? (
-        <div className="ui-card"><EmptyState title="Choose a customer" hint="Pick a customer and a date range to see their statement." /></div>
-      ) : statement.isLoading ? (
-        <div className="ui-card"><LoadingSkeleton rows={8} /></div>
-      ) : statement.error || !s ? (
-        <div className="ui-card"><ErrorState error={statement.error} onRetry={() => statement.refetch()} /></div>
-      ) : (
-        <div id="customer-statement-sheet" className="ui-card p-5 space-y-4">
+      <div id="tour-statements-preview">
+        {!customer ? (
+          <div className="ui-card"><EmptyState title="Choose a customer" hint="Pick a customer and a date range to see their statement." /></div>
+        ) : statement.isLoading ? (
+          <div className="ui-card"><LoadingSkeleton rows={8} /></div>
+        ) : statement.error || !s ? (
+          <div className="ui-card"><ErrorState error={statement.error} onRetry={() => statement.refetch()} /></div>
+        ) : (
+          <div id="customer-statement-sheet" className="ui-card p-5 space-y-4">
           <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-3">
             <div>
               <div className="text-base font-bold text-slate-900">{s.organisation?.legal_name || s.organisation?.name || user?.active_branch?.name}</div>
@@ -189,6 +198,7 @@ export default function CustomerStatementsPage() {
           </footer>
         </div>
       )}
+      </div>
     </Page>
   )
 }

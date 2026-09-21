@@ -69,21 +69,25 @@ export default function CountsPage() {
         subtitle="Blind batch-level stocktaking with variance analysis and dual-control approval"
         actions={
           perms.has('stock.count.enter') ? (
-            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-              Plan a count
-            </PrimaryAction>
+            <div id="tour-counts-new">
+              <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+                Plan a count
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
-      <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All Statuses</option>
-            {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-          </Select>
-        </Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-counts-filters">
+        <FilterBar>
+          <Field label="Status">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All Statuses</option>
+              {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+            </Select>
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-counts-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(c) => c.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(c) => setParams({ count: c.id })} selectedKey={selectedId} emptyTitle="No counts" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

@@ -82,24 +82,28 @@ export default function SalesOrdersPage() {
         title="Sales Orders"
         subtitle="Confirmed wholesale & facility orders reserve inventory, trigger warehouse pick lists, and schedule dispatch"
         actions={
-          <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-            New sales order
-          </PrimaryAction>
+          <div id="tour-sales-orders-new">
+            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+              New sales order
+            </PrimaryAction>
+          </div>
         }
       />
-      <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All Statuses</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-sales-orders-filters">
+        <FilterBar>
+          <Field label="Status">
+            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All Statuses</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-sales-orders-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(o) => o.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(o) => setParams({ order: o.id })} selectedKey={selectedId} emptyTitle="No sales orders" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

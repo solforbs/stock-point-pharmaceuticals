@@ -80,14 +80,19 @@ export default function PickListsPage() {
       {generate.isError && <InlineError error={generate.error} className="mb-3" />}
       <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <div className="space-y-4">
-          <Card title="Orders awaiting picking">
-            <DataTable columns={orderColumns} rows={orders.data ? pickable : undefined} rowKey={(o) => o.id} isLoading={orders.isLoading} error={orders.error} emptyTitle="No confirmed orders" rowClassName={(o) => (o.id === preselectedOrder ? 'is-selected' : '')} />
-          </Card>
-          <Card title="Open pick lists">
-            <DataTable columns={listColumns} rows={openLists.data ? resumable : undefined} rowKey={(l) => l.id} isLoading={openLists.isLoading} error={openLists.error} emptyTitle="Nothing in progress" selectedKey={listId} />
-          </Card>
+          <div id="tour-picklist-pending">
+            <Card title="Orders awaiting picking">
+              <DataTable columns={orderColumns} rows={orders.data ? pickable : undefined} rowKey={(o) => o.id} isLoading={orders.isLoading} error={orders.error} emptyTitle="No confirmed orders" rowClassName={(o) => (o.id === preselectedOrder ? 'is-selected' : '')} />
+            </Card>
+          </div>
+          <div id="tour-picklist-open">
+            <Card title="Open pick lists">
+              <DataTable columns={listColumns} rows={openLists.data ? resumable : undefined} rowKey={(l) => l.id} isLoading={openLists.isLoading} error={openLists.error} emptyTitle="Nothing in progress" selectedKey={listId} />
+            </Card>
+          </div>
         </div>
-        <Card title={pl ? `Pick list ${pl.doc_number}` : 'Pick list'} actions={pl ? <StatusBadge status={pl.status} /> : null}>
+        <div id="tour-picklist-detail">
+          <Card title={pl ? `Pick list ${pl.doc_number}` : 'Pick list'} actions={pl ? <StatusBadge status={pl.status} /> : null}>
           {!listId ? (
             <div className="p-6 text-sm text-slate-500">Generate a pick list from an order, or resume an open one.</div>
           ) : list.isLoading ? (
@@ -136,6 +141,7 @@ export default function PickListsPage() {
             </div>
           ) : null}
         </Card>
+        </div>
       </div>
     </Page>
   )

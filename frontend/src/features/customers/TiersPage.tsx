@@ -72,12 +72,16 @@ export default function TiersPage() {
         <div className="ui-card"><NoAccess permission="sale.view" /></div>
       ) : (
         <div className="grid gap-4 xl:grid-cols-[minmax(320px,2fr)_3fr]">
-          <Card title="Customer tiers" actions={canManage ? <Button size="sm" variant="primary" onClick={() => setCreatingTier(true)}>New tier</Button> : null}>
-            <DataTable columns={tierColumns} rows={tiers.data} rowKey={(t) => t.id} isLoading={tiers.isLoading} error={tiers.error} onRetry={() => tiers.refetch()} emptyTitle="No tiers" />
-          </Card>
-          <Card title="Price lists" actions={canManage ? <Button size="sm" variant="primary" onClick={() => setCreatingList(true)}>New price list</Button> : null}>
-            <DataTable columns={listColumns} rows={lists.data} rowKey={(l) => l.id} isLoading={lists.isLoading} error={lists.error} onRetry={() => lists.refetch()} onRowClick={(l) => setParams({ list: l.id })} selectedKey={selectedId} emptyTitle="No price lists" />
-          </Card>
+          <div id="tour-tiers-card">
+            <Card title="Customer tiers" actions={canManage ? <Button size="sm" variant="primary" onClick={() => setCreatingTier(true)}>New tier</Button> : null}>
+              <DataTable columns={tierColumns} rows={tiers.data} rowKey={(t) => t.id} isLoading={tiers.isLoading} error={tiers.error} onRetry={() => tiers.refetch()} emptyTitle="No tiers" />
+            </Card>
+          </div>
+          <div id="tour-pricelists-card">
+            <Card title="Price lists" actions={canManage ? <Button size="sm" variant="primary" onClick={() => setCreatingList(true)}>New price list</Button> : null}>
+              <DataTable columns={listColumns} rows={lists.data} rowKey={(l) => l.id} isLoading={lists.isLoading} error={lists.error} onRetry={() => lists.refetch()} onRowClick={(l) => setParams({ list: l.id })} selectedKey={selectedId} emptyTitle="No price lists" />
+            </Card>
+          </div>
         </div>
       )}
       <Drawer open={!!selected} onClose={() => setParams({})} title={selected?.name ?? ''} subtitle={selected ? `${selected.code} · ${selected.currency} · ${selected.prices_include_tax ? 'prices include tax' : 'prices exclude tax'}` : undefined} width={900}>

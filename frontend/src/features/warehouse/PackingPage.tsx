@@ -72,16 +72,18 @@ export default function PackingPage() {
         subtitle="Completed pick lists waiting to go out. Record how many packages each order went into before dispatch."
         actions={<Link to="/warehouse/dispatch"><Button>Go to dispatch</Button></Link>}
       />
-      <FilterBar>
-        <Field label="Show" className="w-52">
-          <Select value={packed} onChange={(e) => { setPacked(e.target.value as '' | 'no' | 'yes'); setPage(1) }}>
-            <option value="">All awaiting dispatch</option>
-            <option value="no">Awaiting packing</option>
-            <option value="yes">Packed</option>
-          </Select>
-        </Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-packing-ready">
+        <FilterBar>
+          <Field label="Show" className="w-52">
+            <Select value={packed} onChange={(e) => { setPacked(e.target.value as '' | 'no' | 'yes'); setPage(1) }}>
+              <option value="">All awaiting dispatch</option>
+              <option value="no">Awaiting packing</option>
+              <option value="yes">Packed</option>
+            </Select>
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-packing-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={queue.data?.data}

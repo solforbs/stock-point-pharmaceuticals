@@ -35,7 +35,7 @@ export default function ReturnsPage() {
         title="Returns & Reverse Logistics"
         subtitle="Customer returns inspected line by line before restocking; supplier returns reverse receipts and generate debit notes."
       />
-      <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit mb-4">
+      <div id="tour-returns-tabs" className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit mb-4">
         {(['customer', 'supplier'] as const).map((t) => (
           <button
             key={t}
@@ -79,16 +79,18 @@ function CustomerReturns() {
 
   return (
     <>
-      <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            {['DRAFT', 'POSTED', 'REJECTED'].map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-          </Select>
-        </Field>
-        <div className="ml-auto text-xs text-slate-500 self-center">Start a return from the sale: Invoices → open the sale → <strong className="font-semibold text-slate-700">Return items</strong>.</div>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-returns-filter">
+        <FilterBar>
+          <Field label="Status">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All</option>
+              {['DRAFT', 'POSTED', 'REJECTED'].map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+            </Select>
+          </Field>
+          <div className="ml-auto text-xs text-slate-500 self-center">Start a return from the sale: Invoices → open the sale → <strong className="font-semibold text-slate-700">Return items</strong>.</div>
+        </FilterBar>
+      </div>
+      <div id="tour-returns-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(r) => r.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(r) => setParams({ return: r.id })} selectedKey={selectedId} emptyTitle="No customer returns" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

@@ -75,13 +75,15 @@ export default function RequisitionsPage() {
         subtitle="Departmental medicine demands, approvals workflow, and conversion to supplier purchase orders."
         actions={
           perms.has('requisition.create') ? (
-            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-              New requisition
-            </PrimaryAction>
+            <div id="tour-requisitions-new">
+              <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+                New requisition
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
-      <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit mb-4">
+      <div id="tour-requisitions-tabs" className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit mb-4">
         {(['requisitions', 'reorder'] as const).map((t) => (
           <button
             key={t}
@@ -97,14 +99,16 @@ export default function RequisitionsPage() {
       {tab === 'requisitions' ? (
         <>
           <FilterBar>
-            <Field label="Status">
-              <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-                <option value="">All</option>
-                {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-              </Select>
-            </Field>
+            <div id="tour-requisitions-status" className="w-full sm:w-56">
+              <Field label="Status">
+                <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+                  <option value="">All</option>
+                  {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+                </Select>
+              </Field>
+            </div>
           </FilterBar>
-          <div className="ui-card">
+          <div id="tour-requisitions-table" className="ui-card">
             <DataTable columns={columns} rows={list.data?.data} rowKey={(r) => r.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(r) => setParams({ requisition: r.id })} selectedKey={selectedId} emptyTitle="No requisitions" />
             <Pagination page={list.data} onPage={setPage} />
           </div>

@@ -38,8 +38,8 @@ export default function ReceivablesPage() {
 
   return (
     <Page>
-      <PageHeader parent="Finance" title="Receivables" subtitle={ageing.data ? `AR ageing as of ${formatDate(ageing.data.as_of)}` : 'AR ageing'} actions={canRecord ? <Button variant="primary" onClick={() => setPaying({} as ArAgeingRow)}>Record customer payment</Button> : null} />
-      <div className="ui-card">
+      <PageHeader parent="Finance" title="Receivables" subtitle={ageing.data ? `AR ageing as of ${formatDate(ageing.data.as_of)}` : 'AR ageing'} actions={canRecord ? <Button id="tour-receivables-record" variant="primary" onClick={() => setPaying({} as ArAgeingRow)}>Record customer payment</Button> : null} />
+      <div id="tour-receivables-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={ageing.data?.data}

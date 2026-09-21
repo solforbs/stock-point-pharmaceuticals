@@ -8,6 +8,7 @@ import { AlertBell } from './AlertBell'
 import { MessagesBell } from './MessagesBell'
 import Sidebar from './Sidebar'
 import { ProductTour } from './tour/ProductTour'
+import { TourPromptBanner } from './tour/TourPromptBanner'
 import { useTourStore } from './tour/useTourStore'
 import { CommandPalette } from './ui/CommandPalette'
 import { KeyboardShortcutsModal } from './ui/KeyboardShortcutsModal'
@@ -22,8 +23,7 @@ export default function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const startTour = useTourStore((s) => s.startTour)
-  const startPosTour = useTourStore((s) => s.startPosTour)
+  const startTourForRoute = useTourStore((s) => s.startTourForRoute)
 
   useEffect(() => {
     if (!user) return
@@ -116,10 +116,7 @@ export default function AppLayout() {
             {/* Interactive Guided Tour Button */}
             <button
               type="button"
-              onClick={() => {
-                if (isPos) startPosTour()
-                else startTour()
-              }}
+              onClick={() => startTourForRoute(location.pathname)}
               title="Start Guided Product Tour"
               className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-all text-xs font-medium cursor-pointer"
             >
@@ -173,6 +170,9 @@ export default function AppLayout() {
             )}
           </div>
         </header>
+
+        {/* Dynamic Guided Tour Prompt Banner (shows if not dismissed in this session) */}
+        <TourPromptBanner />
 
         <main className={`flex-1 min-w-0 ${isPos ? 'flex flex-col min-h-0 overflow-hidden' : 'overflow-y-auto'}`}>
           <Outlet />

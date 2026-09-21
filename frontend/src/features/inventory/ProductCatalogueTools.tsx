@@ -6,7 +6,7 @@ import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
 import { InlineError } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { Button, Card, Field, Input, Select } from '../../components/ui/primitives'
+import { Button, Card, Field, FileDropzone, Input, Select } from '../../components/ui/primitives'
 import { api, apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { csvToObjects, downloadBlob } from '../../lib/csv'
 import { usePermission } from '../../lib/permissions'
@@ -217,20 +217,38 @@ function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClo
           </Card>
         )}
 
-        <Card title="1. Choose the file">
-          <div className="p-4 space-y-3">
-            <div className="text-xs text-slate-600">
-              Start from <button type="button" className="text-blue-600 hover:text-blue-700 hover:underline font-semibold" onClick={onExport}>Export CSV</button>, edit it in Excel and save as CSV.
-              Columns read: {IMPORT_COLUMNS.join(', ')}. Others (name, default_price) are ignored. is_active takes 1/0 or yes/no.
+        <Card padded title="1. Choose the CSV file">
+          <div className="space-y-4">
+            <div className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+              Start by downloading the catalogue template via <button type="button" className="text-blue-600 hover:text-blue-700 hover:underline font-semibold" onClick={onExport}>Export CSV</button>, edit it in Excel and save as standard CSV format.
+              <span className="block text-slate-500 mt-1">Columns parsed: {IMPORT_COLUMNS.join(', ')}. Others (name, default_price) are ignored. is_active takes 1/0 or yes/no.</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-              <Field label="CSV file" required>
-                <input type="file" accept=".csv,text/csv" className="text-xs text-slate-600" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+              <Field label="CSV file" required hint="Max size 10MB · UTF-8 CSV format">
+                <FileDropzone
+                  fileName={fileName}
+                  onFileSelect={(file) => void onFile(file)}
+                  onClear={() => {
+                    setFileName('')
+                    setText('')
+                    reset()
+                  }}
+                  hint="Click to browse or drop your CSV file"
+                />
               </Field>
-              <label className="flex items-center gap-2 text-xs text-slate-700">
-                <input type="checkbox" checked={createCategories} onChange={(e) => { setCreateCategories(e.target.checked); reset() }} />
-                Create missing categories (named after their code; rename them under Categories)
-              </label>
+              <div className="pt-2 sm:pt-6">
+                <label className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={createCategories}
+                    onChange={(e) => { setCreateCategories(e.target.checked); reset() }}
+                    className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-slate-700 leading-relaxed">
+                    <strong>Auto-create missing categories</strong> (named after their code; rename them later under Categories)
+                  </span>
+                </label>
+              </div>
             </div>
             {parsed && parsed.missing.length > 0 && <div className="text-xs text-rose-600 font-medium">The file has no “code” column, so no product can be matched.</div>}
             {parsed && parsed.missing.length === 0 && rows.length === 0 && <div className="text-xs text-rose-600 font-medium">The file has a header but no rows.</div>}

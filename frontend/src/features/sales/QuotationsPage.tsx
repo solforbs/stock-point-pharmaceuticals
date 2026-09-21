@@ -96,18 +96,24 @@ export default function QuotationsPage() {
         parent="Commerce & Stock"
         title="Wholesale Quotations"
         subtitle="Formal price quotations with customer tier pricing, credit limit validation, and 1-click conversion to sales orders"
-        actions={<PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New Quotation</PrimaryAction>}
+        actions={
+          <div id="tour-quotations-new">
+            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New Quotation</PrimaryAction>
+          </div>
+        }
       />
-      <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All Statuses</option>
-            {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-          </Select>
-        </Field>
-        <Field label="Filter by Customer" className="w-full sm:w-80"><CustomerPicker value={filterCustomer} onChange={(c) => { setFilterCustomer(c); setPage(1) }} placeholder="Search customer…" /></Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-quotations-filters">
+        <FilterBar>
+          <Field label="Status">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All Statuses</option>
+              {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+            </Select>
+          </Field>
+          <Field label="Filter by Customer" className="w-full sm:w-80"><CustomerPicker value={filterCustomer} onChange={(c) => { setFilterCustomer(c); setPage(1) }} placeholder="Search customer…" /></Field>
+        </FilterBar>
+      </div>
+      <div id="tour-quotations-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(q) => q.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(q) => setParams({ quotation: q.id })} selectedKey={selectedId} emptyTitle="No quotations" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

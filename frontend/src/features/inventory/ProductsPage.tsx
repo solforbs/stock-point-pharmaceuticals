@@ -84,27 +84,38 @@ export default function ProductsPage() {
         parent="Inventory & Formulations"
         title="Medication & Product Catalogue"
         subtitle="Manage active stock-keeping units, pharmaceutical strengths, packaging factor UOMs, and reorder levels"
-        actions={<><ProductCatalogueActions />{canCreate ? <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New product</PrimaryAction> : null}</>}
+        actions={
+          <>
+            <ProductCatalogueActions />
+            {canCreate ? (
+              <div id="tour-products-new">
+                <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New product</PrimaryAction>
+              </div>
+            ) : null}
+          </>
+        }
       />
-      <FilterBar>
-        <Field label="Search" className="w-72">
-          <Input placeholder="Name, code, SKU or generic" value={q} onChange={(e) => setQ(e.target.value)} />
-        </Field>
-        <Field label="Barcode (exact)" className="w-52">
-          <Input placeholder="Scan…" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
-        </Field>
-        {canSeeStock && (
-          <Field label="Stock" className="w-48">
-            <Select value={stockFilter} onChange={(e) => { setStockFilter(e.target.value); setPage(1) }}>
-              <option value="">All products</option>
-              <option value="in_stock">In stock</option>
-              <option value="out_of_stock">Out of stock</option>
-              <option value="below_reorder">Below reorder point</option>
-            </Select>
+      <div id="tour-products-filters">
+        <FilterBar>
+          <Field label="Search" className="w-full sm:w-72">
+            <Input placeholder="Name, code, SKU or generic" value={q} onChange={(e) => setQ(e.target.value)} />
           </Field>
-        )}
-      </FilterBar>
-      <div className="ui-card">
+          <Field label="Barcode (exact)" className="w-full sm:w-52">
+            <Input placeholder="Scan…" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+          </Field>
+          {canSeeStock && (
+            <Field label="Stock" className="w-full sm:w-48">
+              <Select value={stockFilter} onChange={(e) => { setStockFilter(e.target.value); setPage(1) }}>
+                <option value="">All products</option>
+                <option value="in_stock">In stock</option>
+                <option value="out_of_stock">Out of stock</option>
+                <option value="below_reorder">Below reorder point</option>
+              </Select>
+            </Field>
+          )}
+        </FilterBar>
+      </div>
+      <div id="tour-products-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data?.data}
@@ -444,18 +455,20 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
       subtitle="Register a new medicine or supply item in the catalogue"
       width={820}
       footer={
-        <div className="flex items-center justify-between gap-3 w-full">
-          <div className="flex-1">
+        <div className="flex items-center justify-between gap-2.5 w-full flex-wrap sm:flex-nowrap">
+          <div className="flex-1 min-w-full sm:min-w-0">
             {err && !Object.keys(err.errors).length && <InlineError error={create.error} />}
           </div>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button
-            variant="primary"
-            disabled={!canSubmit}
-            onClick={() => create.mutate()}
-          >
-            {create.isPending ? 'Saving…' : 'Create Product →'}
-          </Button>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button onClick={onClose}>Cancel</Button>
+            <Button
+              variant="primary"
+              disabled={!canSubmit}
+              onClick={() => create.mutate()}
+            >
+              {create.isPending ? 'Saving…' : 'Create Product →'}
+            </Button>
+          </div>
         </div>
       }
     >

@@ -34,7 +34,8 @@ export function ProductTour() {
     }
 
     function updateRect() {
-      const el = document.getElementById(currentStep.targetId)
+      const cleanId = currentStep.targetId.replace(/^#/, '')
+      const el = document.getElementById(cleanId) || document.querySelector(currentStep.targetId)
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
         const rect = el.getBoundingClientRect()
@@ -45,13 +46,12 @@ export function ProductTour() {
           height: rect.height,
         })
       } else {
-        // Fallback if target element is hidden (e.g. on different screen sizes)
         setTargetRect(null)
       }
     }
 
     // Measure after layout stabilizes
-    const timer = setTimeout(updateRect, 150)
+    const timer = setTimeout(updateRect, 120)
     window.addEventListener('resize', updateRect)
     window.addEventListener('scroll', updateRect, true)
 
@@ -69,7 +69,7 @@ export function ProductTour() {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         endTour()
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
         nextStep()
       } else if (e.key === 'ArrowLeft') {
         prevStep()
@@ -118,7 +118,7 @@ export function ProductTour() {
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 pointer-events-auto overflow-hidden">
-        {/* SVG Mask: Punches a real, 100% transparent hole directly over targetRect so target is crystal clear */}
+        {/* SVG Mask: Punches a 100% transparent hole directly over targetRect so target is crystal clear */}
         <svg className="fixed inset-0 w-full h-full pointer-events-none z-40">
           <defs>
             <mask id="tour-spotlight-mask">
@@ -151,7 +151,7 @@ export function ProductTour() {
           />
         </svg>
 
-        {/* Crisp Spotlight Ring with subtle high-tech glow */}
+        {/* Crisp Spotlight Ring with subtle blue high-tech glow */}
         {targetRect && (
           <motion.div
             layoutId="tour-spotlight-ring"

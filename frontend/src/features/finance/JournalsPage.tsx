@@ -87,35 +87,37 @@ export default function JournalsPage() {
         subtitle="Every posted journal, append-only; expand a row for its lines or post manual entries."
         actions={
           canPost ? (
-            <Button variant="primary" onClick={() => setIsCreating(true)}>
+            <Button id="tour-journals-new" variant="primary" onClick={() => setIsCreating(true)}>
               <Plus size={14} className="mr-1 inline" /> New Journal Entry
             </Button>
           ) : null
         }
       />
-      <FilterBar>
-        <Field label="Search">
-          <Input
-            placeholder="JE-0001 or narration…"
-            value={filters.q}
-            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
-          />
-        </Field>
-        <Field label="Source type">
-          <Input
-            placeholder="manual, sale, payment…"
-            value={filters.source_doc_type}
-            onChange={(e) => setFilters({ ...filters, source_doc_type: e.target.value })}
-          />
-        </Field>
-        <Field label="From">
-          <Input type="date" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
-        </Field>
-        <Field label="To">
-          <Input type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
-        </Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-journals-filters">
+        <FilterBar>
+          <Field label="Search">
+            <Input
+              placeholder="JE-0001 or narration…"
+              value={filters.q}
+              onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+            />
+          </Field>
+          <Field label="Source type">
+            <Input
+              placeholder="manual, sale, payment…"
+              value={filters.source_doc_type}
+              onChange={(e) => setFilters({ ...filters, source_doc_type: e.target.value })}
+            />
+          </Field>
+          <Field label="From">
+            <Input type="date" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
+          </Field>
+          <Field label="To">
+            <Input type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-journals-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data?.data}

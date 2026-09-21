@@ -45,32 +45,34 @@ export default function BatchesPage() {
   return (
     <Page>
       <PageHeader parent="Inventory" title="Batches & Expiry" subtitle="Expiry tiers at 30 / 90 / 180 days. Open a batch for its full trace: movements and recipients." />
-      <FilterBar>
-        <Field label="Expiring within">
-          <div className="flex gap-1">
-            {[
-              ['', 'Any'],
-              ['0', 'Expired'],
-              ['30', '30 d'],
-              ['90', '90 d'],
-              ['180', '180 d'],
-            ].map(([v, label]) => (
-              <Button key={v} size="sm" variant={within === v ? 'primary' : 'secondary'} onClick={() => { setWithin(v); setPage(1) }}>
-                {label}
-              </Button>
-            ))}
-          </div>
-        </Field>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>{titleCase(s)}</option>
-            ))}
-          </Select>
-        </Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-batches-filters">
+        <FilterBar>
+          <Field label="Expiring within">
+            <div className="flex gap-1">
+              {[
+                ['', 'Any'],
+                ['0', 'Expired'],
+                ['30', '30 d'],
+                ['90', '90 d'],
+                ['180', '180 d'],
+              ].map(([v, label]) => (
+                <Button key={v} size="sm" variant={within === v ? 'primary' : 'secondary'} onClick={() => { setWithin(v); setPage(1) }}>
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Status">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>{titleCase(s)}</option>
+              ))}
+            </Select>
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-batches-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(b) => b.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(b) => setParams({ batch: b.id })} selectedKey={selectedId} emptyTitle="No batches match" initialSort={{ key: 'expiry', dir: 'asc' }} />
         <Pagination page={list.data} onPage={setPage} />
       </div>

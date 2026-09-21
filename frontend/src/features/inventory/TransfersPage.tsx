@@ -73,21 +73,25 @@ export default function TransfersPage() {
         subtitle="Move inventory securely between facility branches and quarantine warehouses with custody tracking"
         actions={
           perms.has('stock.transfer.create') ? (
-            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-              New transfer
-            </PrimaryAction>
+            <div id="tour-transfers-new">
+              <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+                New transfer
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
-      <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All Statuses</option>
-            {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-          </Select>
-        </Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-transfers-filters">
+        <FilterBar>
+          <Field label="Status">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All Statuses</option>
+              {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+            </Select>
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-transfers-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(t) => t.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(t) => setParams({ transfer: t.id })} selectedKey={selectedId} emptyTitle="No transfers" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

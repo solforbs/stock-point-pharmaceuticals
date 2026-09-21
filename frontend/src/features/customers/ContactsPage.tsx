@@ -59,7 +59,7 @@ export default function ContactsPage() {
   return (
     <Page>
       <PageHeader parent="Customers" title="Contacts" subtitle="The people you deal with at each customer, and a log of every call, visit and message with follow-ups that stay due until done." />
-      <div className="flex gap-1 mb-3">
+      <div id="tour-contacts-tabs" className="flex gap-1 mb-3">
         {(['contacts', 'interactions'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setParams(t === 'contacts' ? {} : { tab: t })} className={`h-8 px-4 rounded-md text-xs font-semibold transition-colors ${tab === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
             {t === 'contacts' ? 'Contacts' : 'Interactions'}
@@ -67,7 +67,7 @@ export default function ContactsPage() {
         ))}
       </div>
       <FilterBar>
-        <Field label="Customer" className="w-96"><CustomerPicker value={customer} onChange={setCustomer} placeholder="All customers — search to filter…" /></Field>
+        <Field id="tour-contacts-customer" label="Customer" className="w-96"><CustomerPicker value={customer} onChange={setCustomer} placeholder="All customers — search to filter…" /></Field>
       </FilterBar>
       {tab === 'contacts' ? <ContactsTab customer={customer} /> : <InteractionsTab customer={customer} />}
     </Page>
@@ -101,9 +101,9 @@ function ContactsTab({ customer }: { customer: Customer | null }) {
     <>
       <div className="flex items-end justify-between gap-3 mb-3">
         <Field label="Search" className="w-72"><Input placeholder="Name, role, phone or email" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} /></Field>
-        {canManage && <Button variant="primary" onClick={() => setCreating(true)}>New contact</Button>}
+        {canManage && <Button id="tour-contacts-new" variant="primary" onClick={() => setCreating(true)}>New contact</Button>}
       </div>
-      <div className="ui-card">
+      <div id="tour-contacts-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data?.data}

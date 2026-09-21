@@ -1,0 +1,1084 @@
+export interface TourStep {
+  targetId: string
+  title: string
+  description: string
+  placement?: 'bottom' | 'top' | 'left' | 'right'
+  route?: string
+}
+
+export interface TourDefinition {
+  id: string
+  route: string
+  title: string
+  subtitle: string
+  steps: TourStep[]
+}
+
+export const DEFAULT_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-search',
+    title: 'Universal Medicine & Action Search',
+    description: 'Press Ctrl+K anytime to quickly look up medicines, batch stock, customers, or jump directly to any page across the entire system.',
+    placement: 'bottom',
+    route: '/dashboard',
+  },
+  {
+    targetId: 'tour-pos-button',
+    title: 'One-Tap Live POS Terminal',
+    description: 'Launch the high-speed retail checkout counter with automated price-tiering, eTIMS compliance, and batch barcode scanning.',
+    placement: 'bottom',
+    route: '/dashboard',
+  },
+  {
+    targetId: 'tour-branch-selector',
+    title: 'Active Branch & Dispensary',
+    description: 'Switch between retail stores and main warehouses. All inventory checks and sales transactions immediately bind to the selected active branch.',
+    placement: 'right',
+    route: '/dashboard',
+  },
+  {
+    targetId: 'tour-sync-status',
+    title: 'System Health & eTIMS Sync',
+    description: 'Real-time status of your local database synchronization, background job queue, and Kenya Revenue Authority (eTIMS) transmissions.',
+    placement: 'top',
+    route: '/dashboard',
+  },
+  {
+    targetId: 'tour-approvals-queue',
+    title: 'Operational Approvals Hub',
+    description: 'Review pending stock adjustments, supplier purchase orders, clinical quarantine releases, and customer credit over-limit approvals.',
+    placement: 'top',
+    route: '/dashboard',
+  },
+]
+
+export const POS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-pos-mode-toggle',
+    title: '1. Sale Mode (Retail vs Wholesale)',
+    description: 'Switch between Retail for walk-in patients (cash/M-Pesa) and Wholesale for bulk clinic orders with special tier discounts.',
+    placement: 'bottom',
+    route: '/sell/pos',
+  },
+  {
+    targetId: 'tour-pos-stock-room',
+    title: '2. Physical Stock Room',
+    description: 'Tells the POS which physical counter or storeroom to deduct medicine stock from. If stock is in the MAIN warehouse, switch rooms here.',
+    placement: 'bottom',
+    route: '/sell/pos',
+  },
+  {
+    targetId: 'tour-pos-search-box',
+    title: '3. Scan Barcode or Search Drug (F2)',
+    description: 'Scan medicine barcodes directly with your barcode reader, search by drug name, or 1-tap any fast-moving medicine from the catalog.',
+    placement: 'right',
+    route: '/sell/pos',
+  },
+  {
+    targetId: 'tour-pos-customer',
+    title: '4. Patient & Customer Account (F5)',
+    description: 'Walk-ins are set by default. For wholesale orders to clinics or hospitals, choose their customer account to apply custom prices and 30-day credit.',
+    placement: 'bottom',
+    route: '/sell/pos',
+  },
+  {
+    targetId: 'tour-pos-payment-cta',
+    title: '5. Instant Payment Checkout (F10)',
+    description: 'Prices and taxes are automatically verified with a guaranteed price lock. Click Proceed to Payment or press F10 to take Cash, M-Pesa, or invoice on Credit.',
+    placement: 'top',
+    route: '/sell/pos',
+  },
+]
+
+export const QUOTATIONS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-quotations-new',
+    title: '1. New Quotation Drawer',
+    description: 'Create a formal price quotation with automatic price tiering (HOSP, PHARM, NGO), bulk item additions, and a 7-day validity lock.',
+    placement: 'bottom',
+    route: '/sell/quotations',
+  },
+  {
+    targetId: 'tour-quotations-filters',
+    title: '2. Filter Bar & Customer Search',
+    description: 'Quickly filter quotations by status (Draft, Sent, Accepted, Converted) or search by institutional customer name.',
+    placement: 'bottom',
+    route: '/sell/quotations',
+  },
+  {
+    targetId: 'tour-quotations-table',
+    title: '3. Quotations Ledger & 1-Click Conversion',
+    description: 'Inspect quote status, validity dates, and download PDFs. Click any row to review line margins and 1-click convert into a confirmed sales order.',
+    placement: 'top',
+    route: '/sell/quotations',
+  },
+]
+
+export const SALES_ORDERS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-sales-orders-new',
+    title: '1. Create Sales Order',
+    description: 'Place an institutional sales order to reserve batch stock under customer payment and credit terms.',
+    placement: 'bottom',
+    route: '/sell/sales-orders',
+  },
+  {
+    targetId: 'tour-sales-orders-filters',
+    title: '2. Order Status Pipeline',
+    description: 'Filter orders through their operational lifecycle: DRAFT, CONFIRMED, IN_PROGRESS, PARTIALLY_FULFILLED, and FULFILLED.',
+    placement: 'bottom',
+    route: '/sell/sales-orders',
+  },
+  {
+    targetId: 'tour-sales-orders-table',
+    title: '3. Sales Orders Registry',
+    description: 'Click any order to view ordered quantities, credit verification checks, line discounts, and warehouse pick list statuses.',
+    placement: 'top',
+    route: '/sell/sales-orders',
+  },
+]
+
+export const INVOICES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-invoices-mode',
+    title: '1. Sale Mode Filtering',
+    description: 'Switch between Retail counter receipts, Wholesale commercial sales, and Clinic Dispensing invoices.',
+    placement: 'bottom',
+    route: '/sell/invoices',
+  },
+  {
+    targetId: 'tour-invoices-filters',
+    title: '2. Status & Date Range Filters',
+    description: 'Filter POSTED sales or audit VOIDED transactions across custom date ranges for accurate daily and monthly reconciliations.',
+    placement: 'bottom',
+    route: '/sell/invoices',
+  },
+  {
+    targetId: 'tour-invoices-table',
+    title: '3. Invoices Ledger & eTIMS Receipts',
+    description: 'Select any invoice row to inspect batch allocations, cashier signatures, payment splits, and download official eTIMS tax receipts with verified QR codes.',
+    placement: 'top',
+    route: '/sell/invoices',
+  },
+]
+
+export const RETURNS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-returns-tabs',
+    title: '1. Customer vs Supplier Returns',
+    description: 'Toggle between Customer returns (credit notes & restock inspection) and Supplier returns (reversing goods receipts for debit notes).',
+    placement: 'bottom',
+    route: '/sell/returns',
+  },
+  {
+    targetId: 'tour-returns-filter',
+    title: '2. Return Status Filter',
+    description: 'Filter returns across DRAFT, POSTED, and REJECTED states to manage pending quality inspections.',
+    placement: 'bottom',
+    route: '/sell/returns',
+  },
+  {
+    targetId: 'tour-returns-table',
+    title: '3. Returns Roster',
+    description: 'View original invoice links, credit values, and refund methods (Cash, M-Pesa, or Account Credit balance).',
+    placement: 'top',
+    route: '/sell/returns',
+  },
+]
+
+export const CUSTOMER_STATEMENTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-statements-customer',
+    title: '1. Select Customer Account',
+    description: 'Choose any hospital, clinic, or wholesale customer to instantly load their complete financial ledger and credit balance.',
+    placement: 'bottom',
+    route: '/sell/statements',
+  },
+  {
+    targetId: 'tour-statements-date',
+    title: '2. Statement Period Filter',
+    description: 'Set custom date intervals (e.g. monthly billing cycle) to recalculate opening balance and running debit/credit entries.',
+    placement: 'bottom',
+    route: '/sell/statements',
+  },
+  {
+    targetId: 'tour-statements-preview',
+    title: '3. Ledger & 30/60/90+ Day Debt Aging',
+    description: 'Generates an itemized running ledger of every invoice, receipt, and credit note with outstanding debt aging across Current, 1–30, 31–60, and 90+ days.',
+    placement: 'top',
+    route: '/sell/statements',
+  },
+  {
+    targetId: 'tour-statements-print',
+    title: '4. Print Official A4 Statement',
+    description: '1-click print or export an official A4 customer statement complete with running balance and official pharmacy tax headers.',
+    placement: 'left',
+    route: '/sell/statements',
+  },
+]
+
+export const PRODUCTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-products-new',
+    title: '1. New Product Registration',
+    description: 'Register new pharmaceutical SKUs with strength, therapeutic category, default pricing, and packaging UOM factors.',
+    placement: 'bottom',
+    route: '/inventory/products',
+  },
+  {
+    targetId: 'tour-products-filters',
+    title: '2. Search & Stock Filters',
+    description: 'Look up drugs by name, generic formulation, exact barcode scan, or filter products below reorder point.',
+    placement: 'bottom',
+    route: '/inventory/products',
+  },
+  {
+    targetId: 'tour-products-table',
+    title: '3. Medication Catalog',
+    description: 'Review on-hand quantities, free-to-sell stock, nearest batch expiries, and click any item to edit master data.',
+    placement: 'top',
+    route: '/inventory/products',
+  },
+]
+
+export const STOCK_ON_HAND_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-stock-filters',
+    title: '1. Store & Product Filters',
+    description: 'Filter live inventory balances across main warehouses, dispensing rooms, and retail stores.',
+    placement: 'bottom',
+    route: '/inventory/stock-on-hand',
+  },
+  {
+    targetId: 'tour-stock-table',
+    title: '2. Authoritative 8-State Balance View',
+    description: 'Inspect live balances categorized by Physical, Reserved, Quarantined, Free to Sell, and Landed Valuation.',
+    placement: 'top',
+    route: '/inventory/stock-on-hand',
+  },
+]
+
+export const BATCHES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-batches-filters',
+    title: '1. Expiry Horizon Filters',
+    description: 'Monitor batches by critical expiry thresholds: Expired, 30 days, 90 days, or 180 days out.',
+    placement: 'bottom',
+    route: '/inventory/batches',
+  },
+  {
+    targetId: 'tour-batches-table',
+    title: '2. Batch Traceability Roster',
+    description: 'Open any batch to trace complete movement genealogy, received supplier invoices, and patient dispensing history.',
+    placement: 'top',
+    route: '/inventory/batches',
+  },
+]
+
+export const COUNTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-counts-new',
+    title: '1. Initiate Stocktake Count',
+    description: 'Plan a blind inventory count session for any store or selected medication list.',
+    placement: 'bottom',
+    route: '/inventory/counts',
+  },
+  {
+    targetId: 'tour-counts-filters',
+    title: '2. Count Session Pipeline',
+    description: 'Filter counts through DRAFT, COUNTING, REVIEW, and POSTED phases.',
+    placement: 'bottom',
+    route: '/inventory/counts',
+  },
+  {
+    targetId: 'tour-counts-table',
+    title: '3. Counts Registry & Variance Review',
+    description: 'Review physical counts against system balances, record variance explanation reasons, and dual-control approve adjustments.',
+    placement: 'top',
+    route: '/inventory/counts',
+  },
+]
+
+export const TRANSFERS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-transfers-new',
+    title: '1. New Stock Transfer',
+    description: 'Initiate custody-controlled batch transfers between stores without generating fiscal invoices.',
+    placement: 'bottom',
+    route: '/inventory/transfers',
+  },
+  {
+    targetId: 'tour-transfers-filters',
+    title: '2. Transfer Lifecycle',
+    description: 'Track transfers across DRAFT, DISPATCHED, and RECEIVED segregation of duties.',
+    placement: 'bottom',
+    route: '/inventory/transfers',
+  },
+  {
+    targetId: 'tour-transfers-table',
+    title: '3. Transfers Roster',
+    description: 'Inspect dispatch quantities, carrier notes, and receiving verification timestamps.',
+    placement: 'top',
+    route: '/inventory/transfers',
+  },
+]
+
+export const ADJUSTMENTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-adjustments-new',
+    title: '1. New Stock Adjustment',
+    description: 'Post inventory write-offs, breakages, or found stock with mandatory regulatory reason codes.',
+    placement: 'bottom',
+    route: '/inventory/adjustments',
+  },
+  {
+    targetId: 'tour-adjustments-filters',
+    title: '2. Approval Queue Filter',
+    description: 'Separate routine adjustments from high-value variances waiting for supervisor dual-control approval.',
+    placement: 'bottom',
+    route: '/inventory/adjustments',
+  },
+  {
+    targetId: 'tour-adjustments-table',
+    title: '3. Adjustments Ledger',
+    description: 'Review financial ledger impact, posted values, and management approval stamps.',
+    placement: 'top',
+    route: '/inventory/adjustments',
+  },
+]
+
+export const REQUISITIONS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-requisitions-tabs',
+    title: '1. Requisitions & Reorder Advisor',
+    description: 'Toggle between raised departmental stock demands and the automated Reorder Suggestion algorithm based on historical run-rate and minimum safety stock.',
+    placement: 'bottom',
+    route: '/buy/requisitions',
+  },
+  {
+    targetId: 'tour-requisitions-new',
+    title: '2. Raise New Requisition',
+    description: 'Draft internal demands for medicines, specify fulfillment deadlines, and submit for clinical management approval.',
+    placement: 'bottom',
+    route: '/buy/requisitions',
+  },
+  {
+    targetId: 'tour-requisitions-status',
+    title: '3. Approval Filter',
+    description: 'Filter requisitions by Draft, Pending Approval, Approved, or Converted to Supplier PO.',
+    placement: 'bottom',
+    route: '/buy/requisitions',
+  },
+  {
+    targetId: 'tour-requisitions-table',
+    title: '4. Requisitions Ledger & PO Conversion',
+    description: 'Click any requisition to review itemized lines, approve demands, or 1-click convert approved requisitions directly into supplier purchase orders.',
+    placement: 'top',
+    route: '/buy/requisitions',
+  },
+]
+
+export const PURCHASE_ORDERS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-po-new',
+    title: '1. Raise Purchase Order (PO)',
+    description: 'Create supplier purchase orders with contracted vendor price lists, packaging units (packs/tins), and expected delivery dates.',
+    placement: 'bottom',
+    route: '/buy/purchase-orders',
+  },
+  {
+    targetId: 'tour-po-status',
+    title: '2. Order Lifecycle Filter',
+    description: 'Monitor orders as they progress from Draft → Approved → Sent to Vendor → Partially Received → Closed.',
+    placement: 'bottom',
+    route: '/buy/purchase-orders',
+  },
+  {
+    targetId: 'tour-po-table',
+    title: '3. Orders Ledger & PDF Export',
+    description: 'Track procurement commitments, download official purchase order PDFs to email vendors, and drill into delivery line progress.',
+    placement: 'top',
+    route: '/buy/purchase-orders',
+  },
+]
+
+export const GOODS_RECEIPTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-grn-new',
+    title: '1. New Goods Receipt (GRN)',
+    description: 'Receive physical stock shipments against purchase orders or process emergency unscheduled stock intakes.',
+    placement: 'bottom',
+    route: '/buy/goods-receipts',
+  },
+  {
+    targetId: 'tour-grn-filters',
+    title: '2. Filter Deliveries & Vendors',
+    description: 'Filter received goods by status (Draft vs Posted) or specific pharmaceutical supplier.',
+    placement: 'bottom',
+    route: '/buy/goods-receipts',
+  },
+  {
+    targetId: 'tour-grn-table',
+    title: '3. Batch Quality & Cold Chain Intake',
+    description: 'All received items mandate batch number, expiry date, delivery temperature check, and enter PENDING_QC quarantine before release.',
+    placement: 'top',
+    route: '/buy/goods-receipts',
+  },
+]
+
+export const SUPPLIER_INVOICES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-invoices-record',
+    title: '1. Record Supplier Commercial Invoice',
+    description: 'Capture invoice numbers, invoice dates, VAT breakdown, and credit due dates as billed by the distributor.',
+    placement: 'bottom',
+    route: '/buy/supplier-invoices',
+  },
+  {
+    targetId: 'tour-invoices-match-filter',
+    title: '2. 3-Way Match Status Filter',
+    description: 'Switch between Unmatched invoices, Exceptions (price/quantity discrepancies), and fully Matched accounts payable.',
+    placement: 'bottom',
+    route: '/buy/supplier-invoices',
+  },
+  {
+    targetId: 'tour-invoices-table',
+    title: '3. Invoices Ledger & Payables Commitment',
+    description: 'Click any invoice to run the 3-way match against the original PO and physical GRN. Only verified matches post to Accounts Payable.',
+    placement: 'top',
+    route: '/buy/supplier-invoices',
+  },
+]
+
+export const SUPPLIERS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-suppliers-new',
+    title: '1. Onboard New Supplier',
+    description: 'Register licensed pharmaceutical manufacturers, wholesale distributors, and local agents with verified tax PINs.',
+    placement: 'bottom',
+    route: '/buy/suppliers',
+  },
+  {
+    targetId: 'tour-suppliers-search',
+    title: '2. Search & Regulatory Verification',
+    description: 'Quickly find suppliers by trade name or vendor code with real-time fuzzy search.',
+    placement: 'bottom',
+    route: '/buy/suppliers',
+  },
+  {
+    targetId: 'tour-suppliers-table',
+    title: '3. PPB Licences, Terms & Payable Balances',
+    description: 'Monitor Pharmacy & Poisons Board (PPB) operational licence validity, agreed credit terms (e.g. 30/60 days), and total outstanding payables.',
+    placement: 'top',
+    route: '/buy/suppliers',
+  },
+]
+
+export const PICK_LISTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-picklist-pending',
+    title: '1. Orders Awaiting Picking',
+    description: 'Confirmed sales orders automatically queue here. Click any order to generate an itemized warehouse pick list with shelf locations.',
+    placement: 'right',
+    route: '/warehouse/pick-lists',
+  },
+  {
+    targetId: 'tour-picklist-open',
+    title: '2. Active Pick Lists',
+    description: 'Track pick lists currently in progress on the warehouse floor. Resume anytime to record picked items.',
+    placement: 'right',
+    route: '/warehouse/pick-lists',
+  },
+  {
+    targetId: 'tour-picklist-detail',
+    title: '3. Batch Picking & Shelf Locations',
+    description: 'Verify batch numbers, check expiry dates, record actual picked units, and 1-click complete the pick for packaging and dispatch.',
+    placement: 'left',
+    route: '/warehouse/pick-lists',
+  },
+]
+
+export const PACKING_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-packing-ready',
+    title: '1. Ready for Packing Filter',
+    description: 'Filter orders that have finished picking and are awaiting carton packaging, sealing, or tote assignment.',
+    placement: 'bottom',
+    route: '/warehouse/packing',
+  },
+  {
+    targetId: 'tour-packing-table',
+    title: '2. Packing Queue & Parcel Bagging',
+    description: 'Select an order to record parcel counts, seal numbers, and package dimensions before shipping.',
+    placement: 'top',
+    route: '/warehouse/packing',
+  },
+]
+
+export const DISPATCH_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-dispatch-select',
+    title: '1. Select Packed Order',
+    description: 'Choose any order that has finished picking and packing to prepare its dispatch waybill.',
+    placement: 'bottom',
+    route: '/warehouse/dispatch',
+  },
+  {
+    targetId: 'tour-dispatch-form',
+    title: '2. Driver & Vehicle Registration',
+    description: 'Log transport details including vehicle registration, driver full name, contact phone, and any on-delivery cash/M-Pesa tender.',
+    placement: 'bottom',
+    route: '/warehouse/dispatch',
+  },
+  {
+    targetId: 'tour-dispatch-note',
+    title: '3. Delivery Note & Invoice Posting',
+    description: 'Confirming dispatch locks warehouse stock, generates the official delivery note, and posts the final sales invoice.',
+    placement: 'left',
+    route: '/warehouse/dispatch',
+  },
+]
+
+export const DELIVERIES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-deliveries-status',
+    title: '1. Delivery Status Filter',
+    description: 'Filter delivery notes by Dispatched, In Transit, Delivered, or Cancelled.',
+    placement: 'bottom',
+    route: '/warehouse/deliveries',
+  },
+  {
+    targetId: 'tour-deliveries-table',
+    title: '2. Deliveries Ledger & Electronic POD',
+    description: 'Click any delivery note to trace vehicle and driver details, inspect dispatched batch items, and record recipient proof of delivery (ePOD).',
+    placement: 'top',
+    route: '/warehouse/deliveries',
+  },
+]
+
+export const LOCATIONS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-locations-new',
+    title: '1. Create Storage Location',
+    description: 'Configure new warehouse zones, temperature-controlled cold shelves, quarantine bays, and standard bin locations.',
+    placement: 'bottom',
+    route: '/warehouse/locations',
+  },
+  {
+    targetId: 'tour-locations-store',
+    title: '2. Storeroom & Branch Selector',
+    description: 'Switch between retail dispensary shelves and main wholesale warehouse racks.',
+    placement: 'bottom',
+    route: '/warehouse/locations',
+  },
+  {
+    targetId: 'tour-locations-table',
+    title: '3. Aisle, Rack & Bin Hierarchy',
+    description: 'Inspect bin storage capacity, on-hand item quantities, and shelf active/inactive status.',
+    placement: 'top',
+    route: '/warehouse/locations',
+  },
+]
+
+export const CUSTOMERS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-customers-new',
+    title: '1. Onboard Customer Account',
+    description: 'Create individual walk-in profiles, wholesale hospitals, clinics, or retail pharmacy accounts.',
+    placement: 'bottom',
+    route: '/customers/list',
+  },
+  {
+    targetId: 'tour-customers-search',
+    title: '2. Instant Customer Search',
+    description: 'Find accounts immediately by account code, trade name, phone number, or tax PIN.',
+    placement: 'bottom',
+    route: '/customers/list',
+  },
+  {
+    targetId: 'tour-customers-table',
+    title: '3. Customer Directory & Balances',
+    description: 'View customer pricing tier, credit allowance, current ledger balance, and active/hold status.',
+    placement: 'top',
+    route: '/customers/list',
+  },
+]
+
+export const TIERS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-tiers-card',
+    title: '1. Pricing Tiers',
+    description: 'Define customer pricing classes such as Wholesale A, Retail Standard, Government Tender, or Staff Discounts.',
+    placement: 'bottom',
+    route: '/customers/tiers',
+  },
+  {
+    targetId: 'tour-pricelists-card',
+    title: '2. Price Lists & Item Overrides',
+    description: 'Set custom selling prices and special bulk contract pricing for specific medications.',
+    placement: 'top',
+    route: '/customers/tiers',
+  },
+]
+
+export const CREDIT_CONTROL_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-credit-search',
+    title: '1. Search Credit Accounts',
+    description: 'Search accounts to assess credit risk, payment terms, or adjust credit limits.',
+    placement: 'bottom',
+    route: '/customers/credit-control',
+  },
+  {
+    targetId: 'tour-credit-table',
+    title: '2. Credit Exposure Ledger',
+    description: 'Monitor real-time credit limit, current outstanding balance, and available remaining credit.',
+    placement: 'top',
+    route: '/customers/credit-control',
+  },
+  {
+    targetId: 'tour-credit-editor',
+    title: '3. Credit Review & Terms Adjustment',
+    description: 'Update credit limit, extend payment grace days, or place high-risk accounts on credit stop.',
+    placement: 'left',
+    route: '/customers/credit-control',
+  },
+]
+
+export const CONTACTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-contacts-tabs',
+    title: '1. Contacts vs Interactions',
+    description: 'Toggle between key stakeholder directory and the client communication audit log.',
+    placement: 'bottom',
+    route: '/customers/contacts',
+  },
+  {
+    targetId: 'tour-contacts-customer',
+    title: '2. Customer Filter',
+    description: 'Focus communication logs and contact details on a specific hospital or pharmacy client.',
+    placement: 'bottom',
+    route: '/customers/contacts',
+  },
+  {
+    targetId: 'tour-contacts-new',
+    title: '3. Add Contact Person',
+    description: 'Record buyers, chief pharmacists, procurement officers, and delivery receiving clerks.',
+    placement: 'bottom',
+    route: '/customers/contacts',
+  },
+  {
+    targetId: 'tour-contacts-table',
+    title: '4. Contact Details & Direct Actions',
+    description: 'One-click call or email contacts directly from the directory.',
+    placement: 'top',
+    route: '/customers/contacts',
+  },
+]
+
+export const RECEIVABLES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-receivables-record',
+    title: '1. Record Customer Payment',
+    description: 'Capture inbound client payments via M-PESA, Bank transfer, or Cheque, with automatic or line-by-line invoice allocation.',
+    placement: 'bottom',
+    route: '/finance/receivables',
+  },
+  {
+    targetId: 'tour-receivables-table',
+    title: '2. Accounts Receivable (AR) Ageing',
+    description: 'Track outstanding balances across aging buckets (Current, 1-30, 31-60, 61-90, 90+ days), credit limits, and credit stops.',
+    placement: 'top',
+    route: '/finance/receivables',
+  },
+]
+
+export const PAYABLES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-payables-table',
+    title: '1. Outstanding Supplier Payables',
+    description: 'View vendor balances generated from 3-way matched purchase orders and verified goods receipts.',
+    placement: 'right',
+    route: '/finance/payables',
+  },
+  {
+    targetId: 'tour-payables-form',
+    title: '2. Post Supplier Payment',
+    description: 'Disburse supplier payments via Bank transfer, M-PESA, or Cheque with automatic Dr AP / Cr Bank general ledger posting.',
+    placement: 'left',
+    route: '/finance/payables',
+  },
+]
+
+export const RECONCILIATION_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-reconciliation-filters',
+    title: '1. Date & Channel Filters',
+    description: 'Filter payments by date range, payment method (M-PESA, Bank, Cash), and reconciliation status.',
+    placement: 'bottom',
+    route: '/finance/reconciliation',
+  },
+  {
+    targetId: 'tour-reconciliation-totals',
+    title: '2. Method Totals & Variances',
+    description: 'Monitor cleared receipts, verified reconciled totals, and outstanding unreconciled amounts per payment channel.',
+    placement: 'bottom',
+    route: '/finance/reconciliation',
+  },
+  {
+    targetId: 'tour-reconciliation-action',
+    title: '3. Bulk Reconcile Action',
+    description: 'Select receipts matching your bank or M-PESA statement and click here to lock them with statement reference numbers.',
+    placement: 'bottom',
+    route: '/finance/reconciliation',
+  },
+  {
+    targetId: 'tour-reconciliation-table',
+    title: '4. Receipts Ledger & Audit Trail',
+    description: 'Review receipt timestamps, customer codes, receiving cashier, and reconciler sign-offs.',
+    placement: 'top',
+    route: '/finance/reconciliation',
+  },
+]
+
+export const JOURNALS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-journals-new',
+    title: '1. Create Manual Journal Entry',
+    description: 'Post custom double-entry adjusting journals with balanced debit and credit allocations across accounts.',
+    placement: 'bottom',
+    route: '/finance/journals',
+  },
+  {
+    targetId: 'tour-journals-filters',
+    title: '2. Search & Document Filters',
+    description: 'Filter journal entries by reference number, source transaction type (sales, receipts, write-offs), or date range.',
+    placement: 'bottom',
+    route: '/finance/journals',
+  },
+  {
+    targetId: 'tour-journals-table',
+    title: '3. Append-Only General Ledger',
+    description: 'Expand any journal entry to inspect line-item debit/credit splits and trigger authorized reversing journals.',
+    placement: 'top',
+    route: '/finance/journals',
+  },
+]
+
+export const CHART_OF_ACCOUNTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-coa-filters',
+    title: '1. Account Class Filters',
+    description: 'Filter accounts by classification: Assets, Liabilities, Equity, Revenue, COGS, and Operating Expenses.',
+    placement: 'bottom',
+    route: '/finance/chart-of-accounts',
+  },
+  {
+    targetId: 'tour-coa-table',
+    title: '2. Account Hierarchy & Balances',
+    description: 'View the nested chart of accounts, postable status, system roles (Bank, AR, AP, VAT), and live Dr/Cr balances.',
+    placement: 'top',
+    route: '/finance/chart-of-accounts',
+  },
+]
+
+export const TAX_CENTRE_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-tax-status-cards',
+    title: '1. eTIMS Transmission Status',
+    description: 'Check real-time Kenya Revenue Authority (KRA) eTIMS status: Failed, Pending, and Successfully Submitted.',
+    placement: 'bottom',
+    route: '/finance/tax-centre',
+  },
+  {
+    targetId: 'tour-tax-queue-table',
+    title: '2. Fiscal Document Queue & Retry',
+    description: 'Inspect tax control codes, KRA validation errors, and trigger manual one-click resubmissions for failed sales.',
+    placement: 'top',
+    route: '/finance/tax-centre',
+  },
+]
+
+export const PERIODS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-periods-table',
+    title: '1. Financial Periods & Month-End Close',
+    description: 'Manage fiscal periods. Closing enforces the automated checklist: journals must balance and stock ledger must reconcile before locking.',
+    placement: 'top',
+    route: '/finance/periods',
+  },
+]
+
+export const STATEMENTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-statements-filter',
+    title: '1. As-Of Date Selector',
+    description: 'Choose the reporting cut-off date to generate snapshot trial balance reports.',
+    placement: 'bottom',
+    route: '/finance/statements',
+  },
+  {
+    targetId: 'tour-statements-table',
+    title: '2. Trial Balance Verification',
+    description: 'Confirm that total debits equal total credits across all posted accounts to guarantee balanced financial books.',
+    placement: 'top',
+    route: '/finance/statements',
+  },
+]
+
+/**
+ * Global Central Tour Registry
+ * To add a tour to ANY page in the application, just add a single entry here!
+ * AppLayout automatically detects the route and renders the white prompt card and spotlight tour.
+ */
+export const REGISTERED_TOURS: TourDefinition[] = [
+  {
+    id: 'dashboard',
+    route: '/dashboard',
+    title: 'Dashboard Overview',
+    subtitle: 'Learn the core navigation, universal search, branch switching, and operations queue',
+    steps: DEFAULT_TOUR_STEPS,
+  },
+  {
+    id: 'pos',
+    route: '/sell/pos',
+    title: 'PharmaPoint POS Terminal',
+    subtitle: 'Master fast drug barcode scanning, stock room selection, patient accounts, and payment checkout',
+    steps: POS_TOUR_STEPS,
+  },
+  {
+    id: 'quotations',
+    route: '/sell/quotations',
+    title: 'Wholesale Quotations',
+    subtitle: 'Learn how to create tier-priced quotes, download PDFs, and 1-click convert to sales orders',
+    steps: QUOTATIONS_TOUR_STEPS,
+  },
+  {
+    id: 'sales-orders',
+    route: '/sell/sales-orders',
+    title: 'Wholesale Sales Orders',
+    subtitle: 'Learn how to manage order fulfillment pipelines, credit limits, and warehouse inventory reservations',
+    steps: SALES_ORDERS_TOUR_STEPS,
+  },
+  {
+    id: 'invoices',
+    route: '/sell/invoices',
+    title: 'Sales Invoices & Receipts',
+    subtitle: 'Learn how to inspect posted retail receipts, wholesale invoices, and eTIMS tax certificates',
+    steps: INVOICES_TOUR_STEPS,
+  },
+  {
+    id: 'returns',
+    route: '/sell/returns',
+    title: 'Returns & Reverse Logistics',
+    subtitle: 'Learn how customer return inspections, quarantine dispositions, and credit notes work',
+    steps: RETURNS_TOUR_STEPS,
+  },
+  {
+    id: 'customer-statements',
+    route: '/sell/statements',
+    title: 'Customer Statements & Debt Aging',
+    subtitle: 'Learn how to review customer accounts, trace 30/60/90+ day debt aging, and print statements',
+    steps: CUSTOMER_STATEMENTS_TOUR_STEPS,
+  },
+  {
+    id: 'products',
+    route: '/inventory/products',
+    title: 'Medication & Product Catalogue',
+    subtitle: 'Learn how to register pharmaceutical SKUs, packaging UOM factors, and reorder points',
+    steps: PRODUCTS_TOUR_STEPS,
+  },
+  {
+    id: 'stock-on-hand',
+    route: '/inventory/stock-on-hand',
+    title: 'Stock on Hand',
+    subtitle: 'Learn how to inspect authoritative 8-state live balances across all store rooms',
+    steps: STOCK_ON_HAND_TOUR_STEPS,
+  },
+  {
+    id: 'batches',
+    route: '/inventory/batches',
+    title: 'Batches & Expiry Tracking',
+    subtitle: 'Learn how to monitor 30/90/180-day expiry horizons and batch movement history',
+    steps: BATCHES_TOUR_STEPS,
+  },
+  {
+    id: 'counts',
+    route: '/inventory/counts',
+    title: 'Physical Stock Counts',
+    subtitle: 'Learn how to run blind counting, variance reviews, and supervisor sign-offs',
+    steps: COUNTS_TOUR_STEPS,
+  },
+  {
+    id: 'transfers',
+    route: '/inventory/transfers',
+    title: 'Inter-Store Transfers',
+    subtitle: 'Learn how to dispatch and receive custody-tracked stock transfers between stores',
+    steps: TRANSFERS_TOUR_STEPS,
+  },
+  {
+    id: 'adjustments',
+    route: '/inventory/adjustments',
+    title: 'Stock Adjustments',
+    subtitle: 'Learn how to submit reason-coded stock write-offs and approve value adjustments',
+    steps: ADJUSTMENTS_TOUR_STEPS,
+  },
+  {
+    id: 'requisitions',
+    route: '/buy/requisitions',
+    title: 'Purchase Requisitions & Demand',
+    subtitle: 'Learn how to raise departmental medicine demands, review approvals, and use the reorder advisor',
+    steps: REQUISITIONS_TOUR_STEPS,
+  },
+  {
+    id: 'purchase-orders',
+    route: '/buy/purchase-orders',
+    title: 'Purchase Orders (PO)',
+    subtitle: 'Learn how to raise supplier POs, manage approval workflows, track deliveries, and print official order PDFs',
+    steps: PURCHASE_ORDERS_TOUR_STEPS,
+  },
+  {
+    id: 'goods-receipts',
+    route: '/buy/goods-receipts',
+    title: 'Goods Receipts (GRN)',
+    subtitle: 'Learn how to verify incoming supplier shipments, log cold chain temperatures, and intake batches into quarantine',
+    steps: GOODS_RECEIPTS_TOUR_STEPS,
+  },
+  {
+    id: 'supplier-invoices',
+    route: '/buy/supplier-invoices',
+    title: 'Supplier Invoices & 3-Way Match',
+    subtitle: 'Learn how to record vendor commercial invoices and verify PO vs GRN vs Invoice to commit payables',
+    steps: SUPPLIER_INVOICES_TOUR_STEPS,
+  },
+  {
+    id: 'suppliers',
+    route: '/buy/suppliers',
+    title: 'Suppliers & Vendor Compliance',
+    subtitle: 'Learn how to onboard licensed distributors, track PPB regulatory license expiries, and manage payment terms',
+    steps: SUPPLIERS_TOUR_STEPS,
+  },
+  {
+    id: 'pick-lists',
+    route: '/warehouse/pick-lists',
+    title: 'Warehouse Pick Lists',
+    subtitle: 'Learn how to generate warehouse pick lists, fulfill order lines from bin shelves, and complete orders for dispatch',
+    steps: PICK_LISTS_TOUR_STEPS,
+  },
+  {
+    id: 'packing',
+    route: '/warehouse/packing',
+    title: 'Order Packing & Parcels',
+    subtitle: 'Learn how to pack picked medications into parcels, record parcel quantities, and prepare totes for dispatch',
+    steps: PACKING_TOUR_STEPS,
+  },
+  {
+    id: 'dispatch',
+    route: '/warehouse/dispatch',
+    title: 'Dispatch & Vehicle Waybills',
+    subtitle: 'Learn how to assign drivers, log vehicle registration numbers, collect on-delivery tender, and post official delivery notes',
+    steps: DISPATCH_TOUR_STEPS,
+  },
+  {
+    id: 'deliveries',
+    route: '/warehouse/deliveries',
+    title: 'Deliveries & Proof of Delivery (ePOD)',
+    subtitle: 'Learn how to track shipment dispatches, monitor delivery status, and capture electronic recipient sign-offs',
+    steps: DELIVERIES_TOUR_STEPS,
+  },
+  {
+    id: 'locations',
+    route: '/warehouse/locations',
+    title: 'Warehouse Storage Locations',
+    subtitle: 'Learn how to organize pharmacy storerooms into aisles, racks, and cold-shelf bins for precise item tracking',
+    steps: LOCATIONS_TOUR_STEPS,
+  },
+  {
+    id: 'customers',
+    route: '/customers/list',
+    title: 'Customer Directory & Accounts',
+    subtitle: 'Learn how to manage hospital, clinic, pharmacy and patient accounts, credit terms, and pricing tiers',
+    steps: CUSTOMERS_TOUR_STEPS,
+  },
+  {
+    id: 'tiers',
+    route: '/customers/tiers',
+    title: 'Pricing Tiers & Custom Price Lists',
+    subtitle: 'Learn how to configure wholesale, clinic, and tender tier pricing and item-specific contract rates',
+    steps: TIERS_TOUR_STEPS,
+  },
+  {
+    id: 'credit-control',
+    route: '/customers/credit-control',
+    title: 'Credit Control & Debt Risk Management',
+    subtitle: 'Learn how to manage credit limits, payment grace periods, credit holds, and outstanding balances',
+    steps: CREDIT_CONTROL_TOUR_STEPS,
+  },
+  {
+    id: 'contacts',
+    route: '/customers/contacts',
+    title: 'Contacts & Communication Logs',
+    subtitle: 'Learn how to track customer contacts, roles, direct phone lines, and log customer communications',
+    steps: CONTACTS_TOUR_STEPS,
+  },
+  {
+    id: 'receivables',
+    route: '/finance/receivables',
+    title: 'Accounts Receivable & Ageing Matrix',
+    subtitle: 'Learn how to manage customer debt aging, credit exposures, and record incoming patient payments',
+    steps: RECEIVABLES_TOUR_STEPS,
+  },
+  {
+    id: 'payables',
+    route: '/finance/payables',
+    title: 'Accounts Payable & Supplier Settlements',
+    subtitle: 'Learn how to review supplier payables resulting from 3-way matched GRNs and disburse payments',
+    steps: PAYABLES_TOUR_STEPS,
+  },
+  {
+    id: 'reconciliation',
+    route: '/finance/reconciliation',
+    title: 'Bank & M-PESA Reconciliation',
+    subtitle: 'Learn how to match customer receipts with bank/M-PESA statement lines and keep clear audit trails',
+    steps: RECONCILIATION_TOUR_STEPS,
+  },
+  {
+    id: 'journals',
+    route: '/finance/journals',
+    title: 'General Journal Entries',
+    subtitle: 'Learn how to inspect the append-only double-entry general ledger and post balanced manual journal adjustments',
+    steps: JOURNALS_TOUR_STEPS,
+  },
+  {
+    id: 'chart-of-accounts',
+    route: '/finance/chart-of-accounts',
+    title: 'Chart of Accounts (COA)',
+    subtitle: 'Learn how the nested chart of accounts, system roles, and posted debit/credit balances work',
+    steps: CHART_OF_ACCOUNTS_TOUR_STEPS,
+  },
+  {
+    id: 'tax-centre',
+    route: '/finance/tax-centre',
+    title: 'eTIMS Tax & KRA Compliance Centre',
+    subtitle: 'Learn how to monitor real-time KRA fiscal submission queues, inspect control codes, and retry transmissions',
+    steps: TAX_CENTRE_TOUR_STEPS,
+  },
+  {
+    id: 'periods',
+    route: '/finance/periods',
+    title: 'Fiscal Periods & Month-End Closing',
+    subtitle: 'Learn how fiscal periods are monitored and how automated integrity checklists validate balanced ledgers before locking',
+    steps: PERIODS_TOUR_STEPS,
+  },
+  {
+    id: 'statements',
+    route: '/finance/statements',
+    title: 'Trial Balance & Financial Statements',
+    subtitle: 'Learn how to verify total debits and credits across all accounts to guarantee balanced books',
+    steps: STATEMENTS_TOUR_STEPS,
+  },
+]
+
+export function getTourForRoute(pathname: string): TourDefinition | null {
+  return REGISTERED_TOURS.find((t) => pathname === t.route || pathname.startsWith(t.route + '/')) ?? null
+}

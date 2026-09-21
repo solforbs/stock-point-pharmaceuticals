@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Compass, Search, ShoppingCart } from 'lucide-react'
+import { Search, ShoppingCart } from 'lucide-react'
 import { KeyboardHintBar } from '../../components/KeyboardHintBar'
-import { useTourStore } from '../../components/tour/useTourStore'
 import { PosRemoveConfirmModal } from './PosRemoveConfirmModal'
 import { EmptyState, LoadingSkeleton } from '../../components/ui/States'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
@@ -54,9 +53,6 @@ export default function PosPage() {
   const reset = useCartStore((s) => s.reset)
 
   const [mobileTab, setMobileTab] = useState<'catalog' | 'cart'>('cart')
-  const startPosTour = useTourStore((s) => s.startPosTour)
-  const hasSeenPosTour = useTourStore((s) => s.hasSeenPosTour)
-  const [tourDismissed, setTourDismissed] = useState(false)
 
   const quoteState = useQuote()
   const checkout = useCheckout()
@@ -189,37 +185,6 @@ export default function PosPage() {
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden">
       <ModeBanner stores={stores.data ?? []} />
-
-      {/* POS Interactive Guided Tour Banner */}
-      {!hasSeenPosTour && !tourDismissed && (
-        <div className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between gap-3 shrink-0 shadow-xs animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-              <Compass size={14} className="text-white" />
-            </span>
-            <p className="text-xs font-semibold truncate sm:whitespace-normal">
-              <strong className="font-bold">New to PharmaPoint POS?</strong> Take a 60-second interactive tour to master scanning medicines, stock rooms, and payments.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setTourDismissed(true)}
-              className="px-2.5 py-1 rounded-full text-xs font-bold text-white/80 hover:text-white hover:bg-white/15 transition-colors cursor-pointer"
-            >
-              Not interested
-            </button>
-            <button
-              type="button"
-              onClick={() => startPosTour()}
-              className="px-3.5 py-1 rounded-full bg-white text-blue-700 hover:bg-blue-50 text-xs font-extrabold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <Compass size={13} />
-              <span>Start Tour</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Mobile Segmented Pill Bar (only visible on mobile/small tablets) */}
       <div className="md:hidden p-2 bg-white border-b border-slate-200/80 shrink-0">

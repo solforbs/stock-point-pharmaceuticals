@@ -89,18 +89,28 @@ export default function LocationsPage() {
         parent="Warehouse"
         title="Locations"
         subtitle="Aisles, racks and bins inside each store. Stock is attributed to a location when it is put away on receipt."
-        actions={canManage ? <Button variant="primary" disabled={!effectiveStoreId} onClick={() => setCreating(true)}>New location</Button> : null}
+        actions={
+          canManage ? (
+            <div id="tour-locations-new">
+              <Button variant="primary" disabled={!effectiveStoreId} onClick={() => setCreating(true)}>
+                New location
+              </Button>
+            </div>
+          ) : null
+        }
       />
       <FilterBar>
-        <Field label="Store" className="w-64">
-          <Select value={effectiveStoreId} onChange={(e) => { setStoreId(e.target.value); setSelectedId(null) }}>
-            {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
-          </Select>
-        </Field>
+        <div id="tour-locations-store" className="w-full sm:w-64">
+          <Field label="Store">
+            <Select value={effectiveStoreId} onChange={(e) => { setStoreId(e.target.value); setSelectedId(null) }}>
+              {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+            </Select>
+          </Field>
+        </div>
         <label className="flex items-center gap-2 text-xs font-medium text-slate-700 pb-2"><input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Show deactivated</label>
         {list.data && <div className="text-xs text-slate-500 pb-2">{list.data.length} locations across {aisleCount} aisle{aisleCount === 1 ? '' : 's'}</div>}
       </FilterBar>
-      <div className="ui-card">
+      <div id="tour-locations-table" className="ui-card">
         {stores.isSuccess && !stores.data.length ? (
           <EmptyState title="No stores in this branch" hint="Add a store under Administration › Branches first." />
         ) : (

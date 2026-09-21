@@ -50,16 +50,31 @@ export default function SupplierInvoicesPage() {
 
   return (
     <Page>
-      <PageHeader parent="Buy" title="Supplier Invoices" subtitle="Record the invoice as received, then match it against the PO and GRN. A match creates the payable; an exception does not." actions={canMatch ? <Button variant="primary" onClick={() => setCreating(true)}>Record supplier invoice</Button> : null} />
+      <PageHeader
+        parent="Buy"
+        title="Supplier Invoices"
+        subtitle="Record the invoice as received, then match it against the PO and GRN. A match creates the payable; an exception does not."
+        actions={
+          canMatch ? (
+            <div id="tour-invoices-record">
+              <Button variant="primary" onClick={() => setCreating(true)}>
+                Record supplier invoice
+              </Button>
+            </div>
+          ) : null
+        }
+      />
       <FilterBar>
-        <div className="flex gap-1">
+        <div id="tour-invoices-match-filter" className="flex flex-wrap gap-1">
           {[['', 'All'], ['UNMATCHED', 'Unmatched'], ['EXCEPTION', 'Exceptions'], ['MATCHED', 'Matched']].map(([v, label]) => (
             <Button key={v} size="sm" variant={matchStatus === v ? 'primary' : 'secondary'} onClick={() => { setMatchStatus(v); setPage(1) }}>{label}</Button>
           ))}
         </div>
-        <Field label="Supplier"><Select value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setPage(1) }}><option value="">All</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select></Field>
+        <div className="w-full sm:w-60">
+          <Field label="Supplier"><Select value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setPage(1) }}><option value="">All</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select></Field>
+        </div>
       </FilterBar>
-      <div className="ui-card">
+      <div id="tour-invoices-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(i) => i.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(i) => setParams({ invoice: i.id })} selectedKey={selectedId} emptyTitle="No supplier invoices" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

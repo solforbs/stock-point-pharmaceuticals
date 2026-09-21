@@ -86,23 +86,27 @@ export default function PurchaseOrdersPage() {
         subtitle="DRAFT → APPROVED → SENT. Goods receipting completes procurement."
         actions={
           canCreate ? (
-            <PrimaryAction onClick={() => setCreating(true)}>
-              New Purchase Order
-            </PrimaryAction>
+            <div id="tour-po-new">
+              <PrimaryAction onClick={() => setCreating(true)}>
+                New Purchase Order
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
       <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </Select>
-        </Field>
+        <div id="tour-po-status" className="w-full sm:w-60">
+          <Field label="Status">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </Select>
+          </Field>
+        </div>
       </FilterBar>
-      <div className="ui-card">
+      <div id="tour-po-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data?.data}

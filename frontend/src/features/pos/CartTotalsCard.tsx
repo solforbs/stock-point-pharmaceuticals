@@ -1,6 +1,7 @@
 import { AlertCircle, Clock, FileText, Tag, UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { MoneyCell } from '../../components/ui/MoneyCell'
+import { MovingBorderButton } from '../../components/ui/moving-border'
 import { formatMoney, formatPct } from '../../lib/money'
 import type { Quote } from '../../lib/types'
 
@@ -230,16 +231,30 @@ export function CartTotalsCard({
             <UserCheck size={16} />
             <span>SELECT CUSTOMER (F5)</span>
           </button>
+        ) : paymentEnabled ? (
+          <MovingBorderButton
+            id="tour-pos-payment-cta"
+            onClick={onOpenPayment}
+            borderRadius="1rem"
+            containerClassName="flex-1 h-11"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 border-transparent flex items-center justify-center gap-2.5 cursor-pointer"
+            borderClassName="bg-[radial-gradient(#93c5fd_40%,transparent_60%)]"
+            duration={2200}
+          >
+            <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-xs font-mono font-bold">
+              F10
+            </span>
+            <span>PROCEED TO PAYMENT</span>
+          </MovingBorderButton>
         ) : (
           <button
             id="tour-pos-payment-cta"
             type="button"
-            onClick={onOpenPayment}
-            disabled={!paymentEnabled}
-            title={paymentEnabled ? undefined : linesCount === 0 ? 'Add items to cart' : 'Waiting for price quote…'}
-            className="flex-1 h-11 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:shadow-none flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+            disabled
+            title={linesCount === 0 ? 'Add items to cart' : 'Waiting for price quote…'}
+            className="flex-1 h-11 rounded-2xl bg-slate-200 text-slate-400 font-bold text-sm opacity-60 cursor-not-allowed flex items-center justify-center gap-2.5"
           >
-            <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-xs font-mono font-bold">
+            <span className="px-2 py-0.5 rounded-full bg-slate-300 text-slate-500 text-xs font-mono font-bold">
               F10
             </span>
             <span>PROCEED TO PAYMENT</span>

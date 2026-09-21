@@ -27,10 +27,12 @@ export default function StatementsPage() {
   return (
     <Page>
       <PageHeader parent="Finance" title="Financial Statements" subtitle="Trial balance derived from posted journals only. Profit & loss and balance sheet are in Reports." actions={tb.data ? <StatusBadge status={tb.data.balanced ? 'OK' : 'FAILED'} label={tb.data.balanced ? 'Balanced' : 'Out of balance'} /> : null} />
-      <FilterBar>
-        <Field label="As of"><Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} /></Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-statements-filter">
+        <FilterBar>
+          <Field label="As of"><Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} /></Field>
+        </FilterBar>
+      </div>
+      <div id="tour-statements-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={tb.data?.accounts.filter((a) => Number(a.debit) !== 0 || Number(a.credit) !== 0)}

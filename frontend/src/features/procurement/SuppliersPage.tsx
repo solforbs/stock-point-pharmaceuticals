@@ -73,16 +73,20 @@ export default function SuppliersPage() {
         subtitle="Licensed pharmaceutical manufacturers, importers, and distributors with regulatory compliance checks"
         actions={
           canManage ? (
-            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-              New supplier
-            </PrimaryAction>
+            <div id="tour-suppliers-new">
+              <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+                New supplier
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
       <FilterBar>
-        <Field label="Search" className="w-72"><Input placeholder="Search supplier name or code..." value={q} onChange={(e) => setQ(e.target.value)} /></Field>
+        <div id="tour-suppliers-search" className="w-full sm:w-80">
+          <Field label="Search"><Input placeholder="Search supplier name or code..." value={q} onChange={(e) => setQ(e.target.value)} /></Field>
+        </div>
       </FilterBar>
-      <div className="ui-card">
+      <div id="tour-suppliers-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data?.data}

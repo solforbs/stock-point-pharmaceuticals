@@ -50,7 +50,7 @@ export default function PeriodsPage() {
           )}
         </div>
       )}
-      <div className="ui-card">
+      <div id="tour-periods-table" className="ui-card">
         <DataTable columns={columns} rows={periods.data} rowKey={(p) => p.id} isLoading={periods.isLoading} error={periods.error} onRetry={() => periods.refetch()} emptyTitle="No financial periods" />
       </div>
       <ConfirmDialog
