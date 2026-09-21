@@ -347,6 +347,71 @@ export const ADJUSTMENTS_TOUR_STEPS: TourStep[] = [
   },
 ]
 
+export const STOCK_LEDGER_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-ledger-filters',
+    title: '1. Stock Movement Filters & Running Balance',
+    description: 'Filter immutable ledger movements by medication SKU, specific batch number, physical store room, and transaction type. Choosing a batch and store displays an authoritative running balance.',
+    placement: 'bottom',
+    route: '/inventory/stock-ledger',
+  },
+  {
+    targetId: 'tour-ledger-table',
+    title: '2. Append-Only Inventory Ledger',
+    description: 'Inspect every chronological debit and credit transaction, unit costs, landed valuations, and linked source documents.',
+    placement: 'top',
+    route: '/inventory/stock-ledger',
+  },
+]
+
+export const VALUATION_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-valuation-filter',
+    title: '1. Store Valuation Scope',
+    description: 'Switch between individual branch store rooms or calculate overall company-wide pharmacy stock valuation.',
+    placement: 'bottom',
+    route: '/inventory/valuation',
+  },
+  {
+    targetId: 'tour-valuation-totals',
+    title: '2. Total Inventory Valuation (WAC vs. Retail)',
+    description: 'Real-time totals comparing total inventory value at weighted average cost (WAC) against potential yield at default retail prices.',
+    placement: 'bottom',
+    route: '/inventory/valuation',
+  },
+  {
+    targetId: 'tour-valuation-table',
+    title: '3. Itemized Stock Valuation Grid',
+    description: 'Review product-by-product on-hand stock quantities, batch unit costs, and total extended valuations.',
+    placement: 'top',
+    route: '/inventory/valuation',
+  },
+]
+
+export const OPENING_STOCK_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-opening-template',
+    title: '1. Download CSV Stock Take Template',
+    description: 'Download the standardized opening stock CSV template with required columns: product_code, batch_number, expiry_date, qty, and unit_cost.',
+    placement: 'left',
+    route: '/inventory/opening-stock',
+  },
+  {
+    targetId: 'tour-opening-store-file',
+    title: '2. Store Selection & CSV File Upload',
+    description: 'Select the target pharmacy store room and upload your completed go-live stock take spreadsheet with drag-and-drop support.',
+    placement: 'bottom',
+    route: '/inventory/opening-stock',
+  },
+  {
+    targetId: 'tour-opening-validation',
+    title: '3. Pre-Commit Validation & Ledger Posting',
+    description: 'Every row is validated against master product codes, unit costs, and expiry dates before any data is posted. Any error halts the entire batch to guarantee ledger integrity.',
+    placement: 'top',
+    route: '/inventory/opening-stock',
+  },
+]
+
 export const REQUISITIONS_TOUR_STEPS: TourStep[] = [
   {
     targetId: 'tour-requisitions-tabs',
@@ -1507,6 +1572,27 @@ export const REGISTERED_TOURS: TourDefinition[] = [
     title: 'Stock Adjustments',
     subtitle: 'Learn how to submit reason-coded stock write-offs and approve value adjustments',
     steps: ADJUSTMENTS_TOUR_STEPS,
+  },
+  {
+    id: 'stock-ledger',
+    route: '/inventory/stock-ledger',
+    title: 'Stock Ledger & Running Balances',
+    subtitle: 'Learn how to trace append-only stock transactions, movement types, and batch running balances',
+    steps: STOCK_LEDGER_TOUR_STEPS,
+  },
+  {
+    id: 'valuation',
+    route: '/inventory/valuation',
+    title: 'Stock Valuation (Cost & Retail)',
+    subtitle: 'Learn how inventory on-hand balances are valued at weighted average cost and retail prices',
+    steps: VALUATION_TOUR_STEPS,
+  },
+  {
+    id: 'opening-stock',
+    route: '/inventory/opening-stock',
+    title: 'Opening Stock Go-Live Import',
+    subtitle: 'Learn how initial stock balances are uploaded via CSV, validated against master records, and posted',
+    steps: OPENING_STOCK_TOUR_STEPS,
   },
   {
     id: 'requisitions',

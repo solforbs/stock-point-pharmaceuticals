@@ -85,10 +85,12 @@ export default function OpeningStockPage() {
         title="Opening stock"
         subtitle="Load the go-live stock take once per store. Every row is checked first; one bad row posts nothing (Part 7.1)."
         actions={
-          <Button onClick={downloadTemplate} className="gap-2">
-            <Download size={15} />
-            <span>Download CSV template</span>
-          </Button>
+          <div id="tour-opening-template">
+            <Button onClick={downloadTemplate} className="gap-2">
+              <Download size={15} />
+              <span>Download CSV template</span>
+            </Button>
+          </div>
         }
       />
 
@@ -120,45 +122,48 @@ export default function OpeningStockPage() {
         </div>
       )}
 
-      <Card padded title="1. Choose the store and the file">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-          <Field label="Target store" required hint="Select which pharmacy store will receive this initial stock.">
-            <Select value={storeId} onChange={(e) => { setStoreId(e.target.value); setValidated(false) }}>
-              <option value="">Choose a store…</option>
-              {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
-            </Select>
-          </Field>
-          <Field label="CSV data file" required hint="Columns: product_code, batch_number, expiry_date (YYYY-MM-DD), qty, unit_cost.">
-            <FileDropzone
-              fileName={fileName}
-              onFileSelect={onFile}
-              onClear={() => {
-                setFileName('')
-                setText('')
-                setValidated(false)
-              }}
-              hint="Max 10MB · Validated per product base unit"
-            />
-          </Field>
-        </div>
-        {parsed && parsed.missing.length > 0 && (
-          <div className="mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-semibold flex items-center gap-2">
-            <AlertCircle size={16} className="shrink-0 text-rose-600" />
-            <span>The file is missing required column(s): {parsed.missing.join(', ')}.</span>
+      <div id="tour-opening-store-file">
+        <Card padded title="1. Choose the store and the file">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+            <Field label="Target store" required hint="Select which pharmacy store will receive this initial stock.">
+              <Select value={storeId} onChange={(e) => { setStoreId(e.target.value); setValidated(false) }}>
+                <option value="">Choose a store…</option>
+                {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+              </Select>
+            </Field>
+            <Field label="CSV data file" required hint="Columns: product_code, batch_number, expiry_date (YYYY-MM-DD), qty, unit_cost.">
+              <FileDropzone
+                fileName={fileName}
+                onFileSelect={onFile}
+                onClear={() => {
+                  setFileName('')
+                  setText('')
+                  setValidated(false)
+                }}
+                hint="Max 10MB · Validated per product base unit"
+              />
+            </Field>
           </div>
-        )}
-      </Card>
+          {parsed && parsed.missing.length > 0 && (
+            <div className="mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-semibold flex items-center gap-2">
+              <AlertCircle size={16} className="shrink-0 text-rose-600" />
+              <span>The file is missing required column(s): {parsed.missing.join(', ')}.</span>
+            </div>
+          )}
+        </Card>
+      </div>
 
       {rows.length > 0 && parsed?.missing.length === 0 && (
-        <Card
-          className="mt-5"
-          title={`2. Validate & post ${rows.length} row(s) from ${fileName}`}
-          actions={
-            <span className="inline-flex items-center px-3 py-1 rounded-lg bg-slate-100 text-xs tabular font-semibold text-slate-700 border border-slate-200/80">
-              Value at cost ≈ {formatKes(totalValue.toFixed(2))}
-            </span>
-          }
-        >
+        <div id="tour-opening-validation">
+          <Card
+            className="mt-5"
+            title={`2. Validate & post ${rows.length} row(s) from ${fileName}`}
+            actions={
+              <span className="inline-flex items-center px-3 py-1 rounded-lg bg-slate-100 text-xs tabular font-semibold text-slate-700 border border-slate-200/80">
+                Value at cost ≈ {formatKes(totalValue.toFixed(2))}
+              </span>
+            }
+          >
           <div className="max-h-[440px] overflow-auto">
             <table className="ui-table">
               <thead>
@@ -240,7 +245,8 @@ export default function OpeningStockPage() {
             </div>
           </div>
         </Card>
-      )}
-    </Page>
+      </div>
+    )}
+  </Page>
   )
 }
