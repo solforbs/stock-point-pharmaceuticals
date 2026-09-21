@@ -62,20 +62,22 @@ export default function AuditLogPage() {
         <div className="ui-card"><NoAccess permission="audit.view" /></div>
       ) : (
         <>
-          <FilterBar>
-            <Field label="Action">
-              <Select value={action} onChange={(e) => { setAction(e.target.value); reset() }}>
-                <option value="">All</option>
-                {(list.data?.actions ?? (action ? [action] : [])).map((a) => (<option key={a} value={a}>{a}</option>))}
-              </Select>
-            </Field>
-            <Field label="Entity type"><Input className="w-40" placeholder="e.g. sale, user" value={entityType} onChange={(e) => { setEntityType(e.target.value); reset() }} /></Field>
-            <Field label="Search" className="w-64"><Input placeholder="Reference, reason or username" value={q} onChange={(e) => { setQ(e.target.value); reset() }} /></Field>
-            <Field label="From"><Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); reset() }} /></Field>
-            <Field label="To"><Input type="date" value={to} onChange={(e) => { setTo(e.target.value); reset() }} /></Field>
-            <label className="flex items-center gap-2 text-xs text-slate-600 h-8 cursor-pointer"><input type="checkbox" checked={allBranches} onChange={(e) => { setAllBranches(e.target.checked); reset() }} /> All branches</label>
-          </FilterBar>
-          <div className="ui-card">
+          <div id="tour-audit-filters">
+            <FilterBar>
+              <Field label="Action">
+                <Select value={action} onChange={(e) => { setAction(e.target.value); reset() }}>
+                  <option value="">All</option>
+                  {(list.data?.actions ?? (action ? [action] : [])).map((a) => (<option key={a} value={a}>{a}</option>))}
+                </Select>
+              </Field>
+              <Field label="Entity type"><Input className="w-40" placeholder="e.g. sale, user" value={entityType} onChange={(e) => { setEntityType(e.target.value); reset() }} /></Field>
+              <Field label="Search" className="w-64"><Input placeholder="Reference, reason or username" value={q} onChange={(e) => { setQ(e.target.value); reset() }} /></Field>
+              <Field label="From"><Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); reset() }} /></Field>
+              <Field label="To"><Input type="date" value={to} onChange={(e) => { setTo(e.target.value); reset() }} /></Field>
+              <label className="flex items-center gap-2 text-xs text-slate-600 h-8 cursor-pointer"><input type="checkbox" checked={allBranches} onChange={(e) => { setAllBranches(e.target.checked); reset() }} /> All branches</label>
+            </FilterBar>
+          </div>
+          <div id="tour-audit-table" className="ui-card">
             <DataTable columns={columns} rows={list.data?.data} rowKey={(r) => r.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={setSelected} selectedKey={selected?.id ?? null} emptyTitle="No audit entries match" maxHeight="70vh" />
             <Pagination page={list.data} onPage={setPage} />
           </div>

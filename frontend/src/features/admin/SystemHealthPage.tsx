@@ -95,7 +95,7 @@ export default function SystemHealthPage() {
 
       {h && c && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div id="tour-health-kpis" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             <Tile title="Database" check={c.database} metric={c.database.latency_ms != null ? `${c.database.latency_ms} ms · ${c.database.size_mb} MB` : null} />
             <Tile title="Queue" check={c.queue} metric={`${c.queue.pending} waiting · ${c.queue.failed} failed · ${c.queue.connection}`} />
             <Tile title="Scheduler" check={c.scheduler} metric={c.scheduler.last_run_at ? `Last run ${formatDateTime(c.scheduler.last_run_at)}` : 'No heartbeat recorded'} />
@@ -115,7 +115,7 @@ export default function SystemHealthPage() {
             </Tile>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div id="tour-health-reconcile" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card title="Application">
               <div className="p-4">
                 <DescriptionList items={[
@@ -152,15 +152,17 @@ export default function SystemHealthPage() {
             </Card>
           </div>
 
-          <Card
-            title={`Failed jobs (${c.queue.failed})`}
-            actions={h.failed_jobs.length > 0 ? <Button size="sm" disabled={retry.isPending} onClick={() => retry.mutate([])}>{retry.isPending ? 'Retrying…' : 'Retry all'}</Button> : null}
-          >
-            <DataTable columns={jobColumns} rows={h.failed_jobs} rowKey={(j) => String(j.id)} emptyTitle="No failed jobs" emptyHint="Background work (eTIMS transmission, scheduled reports, mail) is completing normally." />
-            {c.queue.failed > h.failed_jobs.length && (
-              <div className="px-4 py-2 border-t border-slate-200 text-xs text-slate-500">Showing the {h.failed_jobs.length} most recent of {c.queue.failed}. Retry all covers every one.</div>
-            )}
-          </Card>
+          <div id="tour-health-jobs">
+            <Card
+              title={`Failed jobs (${c.queue.failed})`}
+              actions={h.failed_jobs.length > 0 ? <Button size="sm" disabled={retry.isPending} onClick={() => retry.mutate([])}>{retry.isPending ? 'Retrying…' : 'Retry all'}</Button> : null}
+            >
+              <DataTable columns={jobColumns} rows={h.failed_jobs} rowKey={(j) => String(j.id)} emptyTitle="No failed jobs" emptyHint="Background work (eTIMS transmission, scheduled reports, mail) is completing normally." />
+              {c.queue.failed > h.failed_jobs.length && (
+                <div className="px-4 py-2 border-t border-slate-200 text-xs text-slate-500">Showing the {h.failed_jobs.length} most recent of {c.queue.failed}. Retry all covers every one.</div>
+              )}
+            </Card>
+          </div>
         </div>
       )}
 

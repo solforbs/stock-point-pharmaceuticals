@@ -67,7 +67,7 @@ export default function AlertsPage() {
         }
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div id="tour-alerts-categories" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {(['RECEIVABLE', 'PAYABLE', 'EXPIRY'] as const).map((key) => {
           const stats = summary.data?.by_category[key]
           const Icon = key === 'EXPIRY' ? PackageX : CalendarClock
@@ -86,8 +86,8 @@ export default function AlertsPage() {
         })}
       </div>
 
-      <div className="ui-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center gap-2">
+      <div id="tour-alerts-table" className="ui-card overflow-hidden">
+        <div id="tour-alerts-filters" className="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center gap-2">
           <Select value={category} onChange={(e) => setCategory(e.target.value)} className="w-auto">
             <option value="">All categories</option>
             {(['RECEIVABLE', 'PAYABLE', 'EXPIRY'] as const).map((c) => (<option key={c} value={c}>{categoryLabel[c]}</option>))}

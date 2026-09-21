@@ -43,7 +43,9 @@ export default function SettingsPage() {
   return (
     <Page>
       <PageHeader parent="Admin" title="Settings" subtitle="Settings are versioned, never edited in place; a branch value overrides the organisation value for that branch only (Part 17.4)." />
-      <OrganisationCard />
+      <div id="tour-settings-org">
+        <OrganisationCard />
+      </div>
       {!canManage ? (
         <div className="ui-card"><NoAccess permission="admin.settings" /></div>
       ) : (
@@ -51,7 +53,7 @@ export default function SettingsPage() {
           {settings.isLoading && <div className="ui-card"><LoadingSkeleton /></div>}
           {settings.isError && <InlineError error={settings.error} />}
           {settings.data && (
-            <div className="space-y-4">
+            <div id="tour-settings-scopes" className="space-y-4">
               <div className="text-xs text-slate-500">Showing values in force for <b>{user?.active_branch?.code ?? settings.data.branch_id}</b>.</div>
               {scopes.map((scope) => (
                 <section key={scope} className="ui-card">

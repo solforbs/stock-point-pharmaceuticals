@@ -80,7 +80,7 @@ export default function BackupPage() {
         title="Backup"
         subtitle={l ? `${l.schedule} Backups older than ${l.retention_days} days are deleted automatically.` : 'Compressed MySQL dumps of the whole database.'}
         actions={
-          <div className="flex items-center gap-2">
+          <div id="tour-backup-run" className="flex items-center gap-2">
             <Button disabled={create.isPending || l?.mysqldump_available === false} onClick={() => create.mutate('database')}>
               <DatabaseBackup size={13} /> {create.isPending && create.variables === 'database' ? 'Backing up…' : 'Database only'}
             </Button>
@@ -114,7 +114,7 @@ export default function BackupPage() {
         {create.isError && <InlineError error={create.error} />}
 
         {l && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div id="tour-backup-stats" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Card>
               <div className="p-4">
                 <div className="text-xs text-slate-500">Latest database backup</div>
@@ -139,7 +139,7 @@ export default function BackupPage() {
           </div>
         )}
 
-        <div className="ui-card">
+        <div id="tour-backup-table" className="ui-card">
           <DataTable
             columns={columns}
             rows={l?.data}

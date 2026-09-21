@@ -32,7 +32,7 @@ export default function NumberSequencesPage() {
       {!canView ? (
         <div className="ui-card"><NoAccess permission="admin.settings" /></div>
       ) : (
-        <div className="ui-card">
+        <div id="tour-sequences-table" className="ui-card">
           <div className="px-4 py-2 border-b border-slate-200 text-xs text-slate-500">
             Sequences cannot be edited or reset from the application. Annual sequences roll over automatically at fiscal year end.
           </div>

@@ -42,12 +42,12 @@ export default function BranchesPage() {
         parent="Admin"
         title="Branches & Stores"
         subtitle="Every stock balance and every sale belongs to a store inside a branch (Part 17.1). Stores cannot be deleted once they hold stock."
-        actions={canManage ? <Button variant="primary" onClick={() => setCreating(true)}>New branch</Button> : null}
+        actions={canManage ? <div id="tour-branches-new"><Button variant="primary" onClick={() => setCreating(true)}>New branch</Button></div> : null}
       />
       {!canManage ? (
         <div className="ui-card"><NoAccess permission="admin.settings" /></div>
       ) : (
-        <div className="ui-card">
+        <div id="tour-branches-table" className="ui-card">
           <DataTable columns={columns} rows={branches.data} rowKey={(b) => b.id} isLoading={branches.isLoading} error={branches.error} onRetry={() => branches.refetch()} onRowClick={(b) => { setEditing(false); setAddingStore(false); setEditingStore(null); setSelectedId(b.id) }} selectedKey={selectedId} emptyTitle="No branches" />
         </div>
       )}

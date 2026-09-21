@@ -108,7 +108,7 @@ export default function DeploymentsPage() {
         title="Deployments"
         subtitle="Pull the latest code from GitHub and run it through the deploy script."
         actions={
-          <div className="flex items-center gap-2">
+          <div id="tour-deploy-actions" className="flex items-center gap-2">
             <Button disabled={check.isPending || running} onClick={() => check.mutate()}>
               <RefreshCw size={13} className={check.isPending ? 'animate-spin' : ''} /> {check.isPending ? 'Checking…' : 'Check for updates'}
             </Button>
@@ -139,7 +139,7 @@ export default function DeploymentsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div id="tour-deploy-status" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card title="Running now">
           <div className="p-4 space-y-2 text-xs">
             {!s?.available && <p className="text-slate-500">This copy is not a git checkout, so there is no version to report.</p>}

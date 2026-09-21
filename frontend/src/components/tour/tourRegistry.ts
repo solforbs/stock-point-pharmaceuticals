@@ -1162,6 +1162,255 @@ export const SCHEDULED_REPORTS_TOUR_STEPS: TourStep[] = [
   },
 ]
 
+export const USERS_ROLES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-users-tabs',
+    title: '1. Users & Global Roles',
+    description: 'Switch between individual user accounts and global role permission definitions. Role definitions are organisation-wide while assignments are per-branch.',
+    placement: 'bottom',
+    route: '/admin/users-roles',
+  },
+  {
+    targetId: 'tour-users-filters',
+    title: '2. Search & Account Status',
+    description: 'Search staff by name, email or username, and filter by active/locked status.',
+    placement: 'bottom',
+    route: '/admin/users-roles',
+  },
+  {
+    targetId: 'tour-users-new',
+    title: '3. Onboard Staff Account',
+    description: 'Create a new employee user account, enforce strong passwords, require MFA, and allocate branch-specific security roles.',
+    placement: 'left',
+    route: '/admin/users-roles',
+  },
+  {
+    targetId: 'tour-users-table',
+    title: '4. Staff Accounts & Security Triage',
+    description: 'Inspect assigned branch roles, active MFA status, and click any user to manage password resets, unlock locked accounts, or edit roles.',
+    placement: 'top',
+    route: '/admin/users-roles',
+  },
+]
+
+export const BRANCHES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-branches-new',
+    title: '1. Register Branch Facility',
+    description: 'Create a new physical pharmacy branch or regional warehouse facility with county location and operational settings.',
+    placement: 'left',
+    route: '/admin/branches',
+  },
+  {
+    targetId: 'tour-branches-table',
+    title: '2. Branch & Store Inventory Hierarchy',
+    description: 'Every stock balance and sale belongs to a store room inside a branch. Click any branch to configure Retail, Wholesale, and Dispensing modes, and manage internal stores (Main, Cold Room, Quarantine).',
+    placement: 'top',
+    route: '/admin/branches',
+  },
+]
+
+export const PERMISSIONS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-permissions-filter',
+    title: '1. Filter Permission Capabilities',
+    description: 'Search granular security permissions (e.g. stock.adjust, price.manage, audit.view) across the entire system catalogue.',
+    placement: 'bottom',
+    route: '/admin/permissions',
+  },
+  {
+    targetId: 'tour-permissions-matrix',
+    title: '2. Role × Permission Security Matrix',
+    description: 'Audit which system roles possess specific operational and financial capabilities. To adjust a role permissions set, click "Edit roles" at the top.',
+    placement: 'top',
+    route: '/admin/permissions',
+  },
+]
+
+export const SETTINGS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-settings-org',
+    title: '1. Organisation Identity & Regulatory Profile',
+    description: 'Inspect your registered pharmaceutical company name, corporate tax PIN, and headquarters contact details.',
+    placement: 'bottom',
+    route: '/admin/settings',
+  },
+  {
+    targetId: 'tour-settings-scopes',
+    title: '2. Scoped Configuration Parameters',
+    description: 'Settings are strictly versioned. A branch setting overrides the organisation default for that location only. Configure POS modes, rounding rules, and system timeouts.',
+    placement: 'top',
+    route: '/admin/settings',
+  },
+]
+
+export const SECURITY_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-security-mfa',
+    title: '1. Two-Factor Authentication (TOTP)',
+    description: 'Enforce multi-factor authentication (MFA) via Google Authenticator or Microsoft Authenticator for finance, admin, and clinical audit access.',
+    placement: 'bottom',
+    route: '/admin/security',
+  },
+]
+
+export const NUMBER_SEQUENCES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-sequences-table',
+    title: '1. Gapless Document Numbering',
+    description: 'Inspect authoritative sequence counters for Invoices, Goods Receipts, Requisitions, and Adjustments. Document numbers are issued inside posting transactions so rolled-back operations never burn a number.',
+    placement: 'top',
+    route: '/admin/number-sequences',
+  },
+]
+
+export const AUDIT_LOG_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-audit-filters',
+    title: '1. Audit Trail Filter & Search',
+    description: 'Search immutable audit events by user, action, entity type (sale, user, batch, payment), reference ID, or date range.',
+    placement: 'bottom',
+    route: '/admin/audit-log',
+  },
+  {
+    targetId: 'tour-audit-table',
+    title: '2. Immutable Change Log & Diff Viewer',
+    description: 'Select any row to inspect the full Before and After JSON payloads, exact changed fields, user IP address, and timestamp.',
+    placement: 'top',
+    route: '/admin/audit-log',
+  },
+]
+
+export const SYSTEM_HEALTH_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-health-kpis',
+    title: '1. Health Heartbeats & Subsystems',
+    description: 'Live status indicators for Database latency, asynchronous Queue backlogs, Scheduler cron heartbeats, Disk space, and automated Backups.',
+    placement: 'bottom',
+    route: '/admin/system-health',
+  },
+  {
+    targetId: 'tour-health-reconcile',
+    title: '2. Stock Ledger vs. General Ledger Reconciliation',
+    description: 'Automated drift monitoring between the physical inventory valuation and general ledger inventory accounts. Any mismatch is flagged immediately.',
+    placement: 'top',
+    route: '/admin/system-health',
+  },
+  {
+    targetId: 'tour-health-jobs',
+    title: '3. Failed Background Jobs & Queue Recovery',
+    description: 'Inspect any background job errors (eTIMS transmission, mail, nightly scans) with 1-click retry and discard controls.',
+    placement: 'top',
+    route: '/admin/system-health',
+  },
+]
+
+export const BACKUP_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-backup-run',
+    title: '1. On-Demand Database & File Backups',
+    description: 'Trigger immediate compressed MySQL database dumps or full system archive zips before software updates or major audits.',
+    placement: 'bottom',
+    route: '/admin/backup',
+  },
+  {
+    targetId: 'tour-backup-stats',
+    title: '2. Backup Metrics & Retention Policy',
+    description: 'Review the latest backup timestamp, total storage consumed, and automated retention window.',
+    placement: 'bottom',
+    route: '/admin/backup',
+  },
+  {
+    targetId: 'tour-backup-table',
+    title: '3. Downloadable Backup Archives',
+    description: 'Download recent database snapshots to store securely off-site on encrypted media or dedicated cloud cold storage.',
+    placement: 'top',
+    route: '/admin/backup',
+  },
+]
+
+export const SYNC_CENTRE_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-sync-connectivity',
+    title: '1. Network & Server Connectivity',
+    description: 'Real-time telemetry showing browser network status, server round-trip latency (ping), and offline selling queue status.',
+    placement: 'bottom',
+    route: '/admin/sync-centre',
+  },
+  {
+    targetId: 'tour-sync-etims',
+    title: '2. KRA eTIMS Fiscal Submission Queue',
+    description: 'Monitor tax transmission metrics: Pending, Submitted, Failed, and Unconfigured documents.',
+    placement: 'bottom',
+    route: '/admin/sync-centre',
+  },
+  {
+    targetId: 'tour-sync-terminals',
+    title: '3. POS Terminal Activity (Last 24 Hours)',
+    description: 'Track active point-of-sale terminals, transaction volume, void counts, and last posted timestamps across branch tills.',
+    placement: 'top',
+    route: '/admin/sync-centre',
+  },
+]
+
+export const ALERTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-alerts-categories',
+    title: '1. Standing Risk Categories',
+    description: 'High-priority risk summaries: Overdue customer receivables, unpaid supplier payables, and expiring medication shelf-life risk.',
+    placement: 'bottom',
+    route: '/admin/alerts',
+  },
+  {
+    targetId: 'tour-alerts-filters',
+    title: '2. Triage & Severity Filters',
+    description: 'Filter alerts by Critical, Warning, or Info, and toggle acknowledged items.',
+    placement: 'bottom',
+    route: '/admin/alerts',
+  },
+  {
+    targetId: 'tour-alerts-table',
+    title: '3. Actionable Alert Registry',
+    description: 'Jump directly to the affected invoice or medication batch, or mark alerts as seen once addressed.',
+    placement: 'top',
+    route: '/admin/alerts',
+  },
+]
+
+export const DEPLOYMENTS_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-deploy-actions',
+    title: '1. Update Checks & Deployment Actions',
+    description: 'Check remote GitHub repository for new commits, tags, or patches, and execute zero-downtime deployment pipelines.',
+    placement: 'left',
+    route: '/admin/deployments',
+  },
+  {
+    targetId: 'tour-deploy-status',
+    title: '2. Active Code Commit & Release Status',
+    description: 'Inspect currently deployed git commit hash, branch, release tags, and uncommitted server modifications.',
+    placement: 'top',
+    route: '/admin/deployments',
+  },
+]
+
+export const PRICING_RULES_TOUR_STEPS: TourStep[] = [
+  {
+    targetId: 'tour-pricing-tabs',
+    title: '1. Pricing Engine Rule Tiers',
+    description: 'Configure Promotions, Quantity Price Breaks, Discount Policies, Cashier Discount Authority, and Customer Contract Prices.',
+    placement: 'bottom',
+    route: '/admin/pricing-rules',
+  },
+  {
+    targetId: 'tour-pricing-content',
+    title: '2. Rule Editor & Price Simulator',
+    description: 'Manage prioritized discount rules (cheapest valid rule wins) and test calculations with the built-in pricing simulator.',
+    placement: 'top',
+    route: '/admin/pricing-rules',
+  },
+]
+
 /**
  * Global Central Tour Registry
  * To add a tour to ANY page in the application, just add a single entry here!
@@ -1510,6 +1759,97 @@ export const REGISTERED_TOURS: TourDefinition[] = [
     title: 'Scheduled Email Report Dispatches',
     subtitle: 'Learn how to set up automated daily, weekly, or monthly report emails to stakeholders and management',
     steps: SCHEDULED_REPORTS_TOUR_STEPS,
+  },
+  {
+    id: 'users-roles',
+    route: '/admin/users-roles',
+    title: 'Users & Roles Management',
+    subtitle: 'Learn how to manage user accounts, assign branch-specific roles, enforce MFA, and unlock accounts',
+    steps: USERS_ROLES_TOUR_STEPS,
+  },
+  {
+    id: 'branches',
+    route: '/admin/branches',
+    title: 'Branches & Internal Stores',
+    subtitle: 'Learn how branch facilities, operational sale modes, and store inventory rooms (Main, Cold, Quarantine) are configured',
+    steps: BRANCHES_TOUR_STEPS,
+  },
+  {
+    id: 'permissions',
+    route: '/admin/permissions',
+    title: 'Role × Permission Security Matrix',
+    subtitle: 'Audit which system roles possess specific operational, financial, and clinical capabilities',
+    steps: PERMISSIONS_TOUR_STEPS,
+  },
+  {
+    id: 'settings',
+    route: '/admin/settings',
+    title: 'Application & Branch Settings',
+    subtitle: 'Learn how versioned configuration parameters and branch overrides are managed without in-place edits',
+    steps: SETTINGS_TOUR_STEPS,
+  },
+  {
+    id: 'security',
+    route: '/admin/security',
+    title: 'Account Security & Two-Factor Auth',
+    subtitle: 'Enrol and manage authenticator TOTP protections for privileged administrative and finance actions',
+    steps: SECURITY_TOUR_STEPS,
+  },
+  {
+    id: 'number-sequences',
+    route: '/admin/number-sequences',
+    title: 'Gapless Number Sequences',
+    subtitle: 'Inspect authoritative transaction counters and gapless document numbering sequences',
+    steps: NUMBER_SEQUENCES_TOUR_STEPS,
+  },
+  {
+    id: 'audit-log',
+    route: '/admin/audit-log',
+    title: 'Immutable System Audit Trail',
+    subtitle: 'Track who did what, when, with complete before-and-after JSON snapshots and IP logs',
+    steps: AUDIT_LOG_TOUR_STEPS,
+  },
+  {
+    id: 'system-health',
+    route: '/admin/system-health',
+    title: 'System Health & Subsystem Telemetry',
+    subtitle: 'Monitor database latency, queue backlogs, ledger reconciliation drift, and failed background jobs',
+    steps: SYSTEM_HEALTH_TOUR_STEPS,
+  },
+  {
+    id: 'backup',
+    route: '/admin/backup',
+    title: 'Database & System Backups',
+    subtitle: 'Generate on-demand compressed MySQL database snapshots and manage off-site disaster recovery',
+    steps: BACKUP_TOUR_STEPS,
+  },
+  {
+    id: 'sync-centre',
+    route: '/admin/sync-centre',
+    title: 'Sync Centre & Telemetry',
+    subtitle: 'Check device-to-server connectivity, round-trip latency, eTIMS queues, and 24h POS terminal transactions',
+    steps: SYNC_CENTRE_TOUR_STEPS,
+  },
+  {
+    id: 'alerts',
+    route: '/admin/alerts',
+    title: 'Standing Alerts & Operational Triage',
+    subtitle: 'Review overdue customer debt, supplier invoice deadlines, and expiring drug shelf-life risk',
+    steps: ALERTS_TOUR_STEPS,
+  },
+  {
+    id: 'deployments',
+    route: '/admin/deployments',
+    title: 'Deployments & Version Management',
+    subtitle: 'Check GitHub for remote updates, inspect git commit statuses, and run zero-downtime deploys',
+    steps: DEPLOYMENTS_TOUR_STEPS,
+  },
+  {
+    id: 'pricing-rules',
+    route: '/admin/pricing-rules',
+    title: 'Pricing Engine Rules & Simulator',
+    subtitle: 'Configure promotions, quantity breaks, discount authority, and test calculations in the pricing simulator',
+    steps: PRICING_RULES_TOUR_STEPS,
   },
 ]
 

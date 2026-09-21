@@ -33,13 +33,15 @@ export default function PermissionsPage() {
         <div className="ui-card"><NoAccess permission="admin.users" /></div>
       ) : (
         <>
-          <FilterBar>
-            <Field label="Filter permissions" className="w-72"><Input placeholder="e.g. stock.adjust" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
-          </FilterBar>
+          <div id="tour-permissions-filter">
+            <FilterBar>
+              <Field label="Filter permissions" className="w-72"><Input placeholder="e.g. stock.adjust" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
+            </FilterBar>
+          </div>
           {(roles.isLoading || catalogue.isLoading) && <div className="ui-card"><LoadingSkeleton /></div>}
           {(roles.isError || catalogue.isError) && <InlineError error={roles.error ?? catalogue.error} />}
           {roles.data && catalogue.data && (
-            <div className="ui-card overflow-auto max-h-[75vh]">
+            <div id="tour-permissions-matrix" className="ui-card overflow-auto max-h-[75vh]">
               <table className="ui-table">
                 <thead>
                   <tr>

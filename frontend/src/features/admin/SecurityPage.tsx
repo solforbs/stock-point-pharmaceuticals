@@ -45,7 +45,8 @@ export default function SecurityPage() {
       <PageHeader parent="Admin" title="Security" subtitle="Your sign-in protections for this account." />
 
       <div className="grid gap-4 md:grid-cols-2 max-w-4xl">
-        <Card title="Two-factor authentication (TOTP)">
+        <div id="tour-security-mfa">
+          <Card title="Two-factor authentication (TOTP)">
           <div className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-500">Status</span>
@@ -60,6 +61,7 @@ export default function SecurityPage() {
             </Button>
           </div>
         </Card>
+      </div>
 
         {setup && (
           <Card title="Finish enrolment">

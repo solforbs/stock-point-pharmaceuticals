@@ -49,7 +49,7 @@ export default function UsersRolesPage() {
         <div className="ui-card"><NoAccess permission="admin.users" /></div>
       ) : (
         <>
-          <div className="flex gap-1 mb-4">
+          <div id="tour-users-tabs" className="flex gap-1 mb-4">
             {(['users', 'roles'] as Tab[]).map((t) => (
               <button key={t} type="button" onClick={() => setParams({ tab: t })} className={`h-8 px-4 rounded-md text-xs font-semibold transition-colors ${tab === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
                 {titleCase(t)}
@@ -113,18 +113,20 @@ function UsersTab() {
 
   return (
     <>
-      <FilterBar>
-        <Field label="Search" className="w-72"><Input placeholder="Name, username or email" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} /></Field>
-        <Field label="Status">
-          <Select value={active} onChange={(e) => { setActive(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            <option value="1">Active</option>
-            <option value="0">Inactive</option>
-          </Select>
-        </Field>
-        <div className="ml-auto"><Button variant="primary" onClick={() => setCreating(true)}>New user</Button></div>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-users-filters">
+        <FilterBar>
+          <Field label="Search" className="w-72"><Input placeholder="Name, username or email" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} /></Field>
+          <Field label="Status">
+            <Select value={active} onChange={(e) => { setActive(e.target.value); setPage(1) }}>
+              <option value="">All</option>
+              <option value="1">Active</option>
+              <option value="0">Inactive</option>
+            </Select>
+          </Field>
+          <div id="tour-users-new" className="ml-auto"><Button variant="primary" onClick={() => setCreating(true)}>New user</Button></div>
+        </FilterBar>
+      </div>
+      <div id="tour-users-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(u) => String(u.id)} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(u) => { setEditing(false); setSelectedId(u.id) }} selectedKey={selectedId === null ? null : String(selectedId)} emptyTitle="No users match" />
         <Pagination page={list.data} onPage={setPage} />
       </div>

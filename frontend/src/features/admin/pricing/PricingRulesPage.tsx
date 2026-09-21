@@ -38,7 +38,7 @@ export default function PricingRulesPage() {
         title="Pricing Rules"
         subtitle={canManage ? 'Contract price, promotion, tier list, mode list, branch list, default: the cheapest valid rule wins. Every change is audited.' : 'Read-only: changing rules needs the price.manage permission.'}
       />
-      <div className="flex flex-wrap gap-1 mb-4 border-b border-slate-200">
+      <div id="tour-pricing-tabs" className="flex flex-wrap gap-1 mb-4 border-b border-slate-200">
         {TABS.filter((t) => t.key !== 'simulator' || canSimulate).map((t) => (
           <button
             key={t.key}
@@ -50,12 +50,14 @@ export default function PricingRulesPage() {
           </button>
         ))}
       </div>
-      {tab === 'promotions' && <PromotionsTab canManage={canManage} />}
-      {tab === 'breaks' && <PriceBreaksTab canManage={canManage} />}
-      {tab === 'policies' && <DiscountPoliciesTab canManage={canManage} />}
-      {tab === 'authority' && <DiscountAuthorityTab canManage={canManage} />}
-      {tab === 'contracts' && <CustomerPricesTab canManage={canManage} />}
-      {tab === 'simulator' && <SimulatorTab />}
+      <div id="tour-pricing-content">
+        {tab === 'promotions' && <PromotionsTab canManage={canManage} />}
+        {tab === 'breaks' && <PriceBreaksTab canManage={canManage} />}
+        {tab === 'policies' && <DiscountPoliciesTab canManage={canManage} />}
+        {tab === 'authority' && <DiscountAuthorityTab canManage={canManage} />}
+        {tab === 'contracts' && <CustomerPricesTab canManage={canManage} />}
+        {tab === 'simulator' && <SimulatorTab />}
+      </div>
     </Page>
   )
 }
