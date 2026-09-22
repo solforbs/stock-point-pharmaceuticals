@@ -31,6 +31,8 @@ class RoleSeeder extends Seeder
             'payment.reconcile',
             'leave.request', 'leave.approve', 'report.schedule', 'report.review', 'price.manage', 'price.simulate',
             'training.manage',
+            // Supplier quotes: the director awards; buyers prepare (client item 19).
+            'rfq.view', 'rfq.award',
         ],
         'Operations Manager' => [
             'sale.view', 'product.view', 'product.edit', 'customer.manage', 'supplier.view', 'supplier.manage',
@@ -45,6 +47,7 @@ class RoleSeeder extends Seeder
             'report.view', 'report.financial.view',
             'leave.approve', 'report.schedule', 'report.review', 'price.manage', 'price.simulate',
             'training.manage',
+            'rfq.view', 'rfq.manage', 'rfq.award',
         ],
         'Pharmacist' => [
             'sale.view', 'product.view', 'requisition.view', 'requisition.create', 'sale.create', 'stock.view', 'stock.fefo.override', 'quality.release',
@@ -71,6 +74,7 @@ class RoleSeeder extends Seeder
         ],
         'Procurement Officer' => [
             'product.view', 'supplier.view', 'supplier.manage', 'stock.view', 'requisition.view', 'requisition.approve', 'supplier.return', 'report.view', 'po.create', 'grn.create', 'invoice.match', 'product.create',
+            'rfq.view', 'rfq.manage',
         ],
         'Finance Officer' => [
             'sale.view', 'product.view', 'supplier.view', 'finance.ar.view', 'finance.ap.view', 'customer.credit.override', 'report.view',
@@ -78,10 +82,11 @@ class RoleSeeder extends Seeder
             'report.financial.view', 'product.cost.view',
             'payment.reconcile',
             'leave.request', 'leave.approve', 'report.schedule', 'report.review',
+            'rfq.view',
         ],
         'Auditor' => [
             'sale.view', 'product.view', 'supplier.view', 'finance.ar.view', 'finance.ap.view', 'audit.view', 'report.view', 'report.financial.view', 'stock.view', 'product.cost.view', 'payroll.view', 'report.review',
-            'licence.view',
+            'licence.view', 'rfq.view',
             'leave.request',
         ],
         'System Administrator' => [

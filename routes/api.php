@@ -44,6 +44,7 @@ use App\Http\Controllers\Api\RecordDeletionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RequisitionController;
 use App\Http\Controllers\Api\ReturnController;
+use App\Http\Controllers\Api\RfqController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\ScheduledReportController;
 use App\Http\Controllers\Api\ScheduledReportRunController;
@@ -217,6 +218,20 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/supplier-invoices', [ProcurementController::class, 'storeSupplierInvoice']);
     Route::post('/supplier-invoices/{invoice}/match', [ProcurementController::class, 'matchSupplierInvoice']);
     Route::post('/supplier-payments', [ProcurementController::class, 'storeSupplierPayment']);
+
+    // Supplier quotes and competitive bid analysis (client item 19)
+    Route::get('/rfqs', [RfqController::class, 'index']);
+    Route::post('/rfqs', [RfqController::class, 'store']);
+    Route::get('/rfqs/{rfq}', [RfqController::class, 'show']);
+    Route::patch('/rfqs/{rfq}', [RfqController::class, 'update']);
+    Route::post('/rfqs/{rfq}/send', [RfqController::class, 'send']);
+    Route::put('/rfqs/{rfq}/quotes/{supplier}', [RfqController::class, 'recordQuote']);
+    Route::post('/rfqs/{rfq}/close', [RfqController::class, 'close']);
+    Route::post('/rfqs/{rfq}/cancel', [RfqController::class, 'cancel']);
+    Route::get('/rfqs/{rfq}/analysis', [RfqController::class, 'analysis']);
+    Route::post('/rfqs/{rfq}/award', [RfqController::class, 'award']);
+    Route::get('/rfqs/{rfq}/suppliers/{supplier}/pdf', [RfqController::class, 'rfqPdf']);
+    Route::get('/rfqs/{rfq}/summary-pdf', [RfqController::class, 'summaryPdf']);
 
     // Part 11 — returns, waste; Part 8.4 — recalls
     Route::get('/customer-returns', [ReturnController::class, 'index']);

@@ -24,6 +24,7 @@ class PermissionSeeder extends Seeder
         'customer.credit.override',
         'requisition.view', 'requisition.create', 'requisition.approve',
         'po.create', 'po.approve', 'grn.create', 'grn.qc.release', 'invoice.match',
+        'rfq.view', 'rfq.manage', 'rfq.award',
         'return.create', 'return.post', 'supplier.return',
         'payment.record',
         'journal.post', 'journal.reverse', 'period.close', 'tax.etims.manage',
