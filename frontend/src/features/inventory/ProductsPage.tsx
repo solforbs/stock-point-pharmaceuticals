@@ -184,7 +184,7 @@ export default function ProductsPage() {
   )
 }
 
-type EditForm = { name: string; generic_name: string; strength: string; category_id: string; dosage_form_id: string; storage_condition_id: string; tax_code_id: string; base_uom_id: string; default_price: string; reorder_point: string; safety_stock: string; lead_time_days: string; pack_integrity: boolean; is_active: boolean }
+type EditForm = { name: string; generic_name: string; strength: string; description: string; category_id: string; dosage_form_id: string; storage_condition_id: string; tax_code_id: string; base_uom_id: string; default_price: string; reorder_point: string; safety_stock: string; lead_time_days: string; pack_integrity: boolean; is_active: boolean }
 
 function ProductEditForm({ product, onDone }: { product: Product; onDone: () => void }) {
   const queryClient = useQueryClient()
@@ -197,6 +197,7 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
     name: product.name,
     generic_name: product.generic_name ?? '',
     strength: product.strength ?? '',
+    description: product.description ?? '',
     category_id: product.category?.id ?? '',
     dosage_form_id: product.dosage_form?.id ?? '',
     storage_condition_id: product.storage_condition?.id ?? '',
@@ -218,6 +219,7 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
         name: form.name,
         generic_name: form.generic_name || null,
         strength: form.strength || null,
+        description: form.description || null,
         category_id: form.category_id || null,
         dosage_form_id: form.dosage_form_id || null,
         storage_condition_id: form.storage_condition_id || null,
@@ -249,6 +251,7 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
           <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
           <Field label="Generic name"><Input value={form.generic_name} onChange={(e) => set({ generic_name: e.target.value })} /></Field>
           <Field label="Strength"><Input value={form.strength} onChange={(e) => set({ strength: e.target.value })} /></Field>
+          <Field label="Description / key features" className="col-span-1 sm:col-span-2" hint="For non-pharma items: size, material, colour, model…"><Input value={form.description} maxLength={500} onChange={(e) => set({ description: e.target.value })} /></Field>
           <Field label="Category"><Select value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}><option value="">None</option>{(categories.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.code} · {c.name}</option>))}</Select></Field>
           <Field label="Dosage form" className="col-span-1 sm:col-span-2"><Select value={form.dosage_form_id} onChange={(e) => set({ dosage_form_id: e.target.value })}><option value="">None</option>{(dosageForms.data ?? []).map((d) => (<option key={d.id} value={d.id}>{d.code} · {d.name}</option>))}</Select></Field>
         </div>
@@ -327,6 +330,7 @@ function ProductDrawer({ id, onClose }: { id: string | null; onClose: () => void
           <DescriptionList
             items={[
               { label: 'Generic', value: p.generic_name ?? '—' },
+              { label: 'Description', value: p.description || '—' },
               { label: 'SKU / GTIN', value: `${p.sku ?? '—'} / ${p.gtin ?? '—'}` },
               { label: 'Category', value: p.category?.name ?? '—' },
               { label: 'Manufacturer', value: p.manufacturer?.name ?? '—' },
@@ -463,7 +467,7 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
   const dosageForms = useDosageForms()
   const storageConditions = useStorageConditions()
   const taxCodes = useTaxCodes()
-  const [form, setForm] = useState({ code: '', name: '', generic_name: '', strength: '', sku: '', gtin: '', category_id: '', dosage_form_id: '', storage_condition_id: '', tax_code_id: '', base_uom_id: '', default_price: '', reorder_point: '0', safety_stock: '0', lead_time_days: '0', is_discrete: true, pack_integrity: false, requires_batch: true })
+  const [form, setForm] = useState({ code: '', name: '', generic_name: '', strength: '', description: '', sku: '', gtin: '', category_id: '', dosage_form_id: '', storage_condition_id: '', tax_code_id: '', base_uom_id: '', default_price: '', reorder_point: '0', safety_stock: '0', lead_time_days: '0', is_discrete: true, pack_integrity: false, requires_batch: true })
   const [rows, setRows] = useState<UomRow[]>([])
 
   const create = useMutation({
@@ -473,6 +477,7 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
         ...form,
         generic_name: form.generic_name || null,
         strength: form.strength || null,
+        description: form.description || null,
         sku: form.sku || null,
         gtin: form.gtin || null,
         category_id: form.category_id || null,
@@ -535,6 +540,9 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
             </Field>
             <Field label="Strength / Concentration">
               <Input value={form.strength} onChange={(e) => set({ strength: e.target.value })} placeholder="e.g. 500mg, 5mg/mL" />
+            </Field>
+            <Field label="Description / key features" hint="For non-pharma items that have no strength.">
+              <Input value={form.description} maxLength={500} onChange={(e) => set({ description: e.target.value })} placeholder="e.g. Digital thermometer, 10-second reading, flexible tip" />
             </Field>
             <Field label="Default Price (per base unit)">
               <div className="relative">
