@@ -12,7 +12,6 @@ const InvitationPage = lazy(() => import('./features/onboarding/InvitationPage')
 const AssistantWidget = lazy(() => import('./features/assistant/AssistantWidget'))
 const SiteLayout = lazy(() => import('./features/site/SiteLayout'))
 const HomePage = lazy(() => import('./features/site/HomePage'))
-const SiteHome = lazy(() => import('./features/site/SiteHome'))
 const FeaturesPage = lazy(() => import('./features/site/FeaturesPage'))
 const PricingPage = lazy(() => import('./features/site/PricingPage'))
 const AboutPage = lazy(() => import('./features/site/AboutPage'))
@@ -117,9 +116,11 @@ function App() {
     <>
       <Suspense fallback={<PageLoadingSkeleton />}>
         <Routes>
-          {/* The public site: the front door for anyone not signed in. */}
+          {/* The front door is /home; the bare root simply points at it. */}
+          <Route path="/" element={<Navigate to="/home" replace />} />
+
+          {/* The public site, reachable whether or not anyone is signed in. */}
           <Route element={<SiteLayout />}>
-            <Route path="/" element={<SiteHome />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/features" element={<FeaturesPage />} />
             <Route path="/pricing" element={<PricingPage />} />
