@@ -1,10 +1,10 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRight, Check, ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
 import { AppPreview } from './AppPreview'
 import { CallToAction } from './SiteLayout'
-import { HEADLINE_POINTS, HOW_IT_WORKS, MODULES, SLIDES } from './content'
+import { HEADLINE_POINTS, HOW_IT_WORKS, MODULES, SLIDES, TOWNS } from './content'
 import { CountUp, Reveal, RevealItem } from './motion'
 
 export default function HomePage() {
@@ -12,6 +12,7 @@ export default function HomePage() {
     <>
       <HeroSlider />
       <TrustStrip />
+      <Coverage />
       <ModuleShelf />
       <SellingFloor />
       <Warehouse />
@@ -176,6 +177,37 @@ function TrustStrip() {
           </RevealItem>
         ))}
       </Reveal>
+    </section>
+  )
+}
+
+/**
+ * Where the system can be run: anywhere in the country. The band scrolls so
+ * the list reads as coverage rather than as a wall of place names.
+ */
+function Coverage() {
+  return (
+    <section className="overflow-hidden border-b border-slate-100 bg-slate-50 py-9">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <p className="flex flex-wrap items-center justify-center gap-2 text-center font-display text-lg font-bold text-slate-900 sm:text-xl">
+          <MapPin className="h-5 w-5 text-blue-600" aria-hidden />
+          Set up and supported in every county in Kenya
+        </p>
+        <p className="mt-1.5 text-center text-slate-500">
+          Remotely as standard, on site when it is worth the journey — from a single counter to a national distributor.
+        </p>
+      </div>
+
+      <div className="mt-6 flex w-max animate-[site-marquee_46s_linear_infinite] gap-3 pr-3 motion-reduce:animate-none">
+        {[...TOWNS, ...TOWNS].map((town, index) => (
+          <span
+            key={`${town}-${index}`}
+            className="whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600"
+          >
+            {town}
+          </span>
+        ))}
+      </div>
     </section>
   )
 }

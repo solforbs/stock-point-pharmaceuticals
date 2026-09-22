@@ -9,8 +9,8 @@ export default function ContactPage() {
     <>
       <PageIntro
         eyebrow="Contact"
-        title="Talk to us"
-        body="Whether you are weighing the system up or already running on it, here is how to reach us."
+        title="Talk to us, wherever you trade"
+        body="Whether you are weighing the system up or already running on it, and whether your counter is in Nairobi or a county town, here is how to reach us."
         image="blisters.jpg"
       />
 
@@ -65,8 +65,10 @@ export default function ContactPage() {
                   <MapPin className="h-5 w-5" aria-hidden />
                 </span>
                 <div>
-                  <dt className="font-semibold text-slate-900">Lodwar, Turkana County</dt>
-                  <dd className="mt-1 text-slate-600">Kenya. We work with pharmacies across the country, on site and remotely.</dd>
+                  <dt className="font-semibold text-slate-900">Anywhere in Kenya</dt>
+                  <dd className="mt-1 text-slate-600">
+                    We set up and support pharmacies in every county — remotely as standard, on site when it is worth the journey.
+                  </dd>
                 </div>
               </div>
               <div className="flex gap-4">

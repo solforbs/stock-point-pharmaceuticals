@@ -262,6 +262,17 @@ export const SLIDES: Slide[] = [
   },
 ]
 
+/**
+ * Where the system is available: everywhere. The list is coverage, not a
+ * customer roll — it says where we will set a pharmacy up, which is any
+ * town in the country.
+ */
+export const TOWNS = [
+  'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika', 'Machakos', 'Meru', 'Nyeri', 'Kakamega',
+  'Kisii', 'Kericho', 'Malindi', 'Garissa', 'Kitale', 'Embu', 'Naivasha', 'Bungoma', 'Lodwar', 'Isiolo',
+  'Voi', 'Narok', 'Kitui', 'Migori', 'Wajir', 'Nanyuki', 'Homa Bay', 'Busia', 'Kilifi', 'Marsabit',
+]
+
 /** How to reach us, written once and used everywhere. */
 export const PHONE = '0759 900 802'
 export const PHONE_HREF = 'tel:+254759900802'

@@ -11,8 +11,8 @@ const BELIEFS = [
   },
   {
     icon: MapPin,
-    title: 'Built where it is used',
-    body: 'Lodwar is not Nairobi. The connection drops, the power goes, and the nearest support desk is far away. The software has to keep working anyway.',
+    title: 'Built for Kenyan conditions',
+    body: 'A counter in Nairobi and a counter in Wajir do not get the same connection or the same power. The system is built for the harder of the two, which is why it works everywhere.',
   },
   {
     icon: Wrench,
@@ -32,7 +32,7 @@ export default function AboutPage() {
       <PageIntro
         eyebrow="About"
         title="Software for the pharmacy business, written where pharmacies work"
-        body="Stockpoint Solforbs builds the system a Kenyan pharmacy actually needs: the counter, the store, the supplier, the regulator and the books — in one place, and dependable on the days the line is down."
+        body="Stockpoint Solforbs builds the system a Kenyan pharmacy actually needs — the counter, the store, the supplier, the regulator and the books, in one place. It is used by pharmacies, wholesalers and hospital pharmacies across the country, wherever they trade."
         image="pharmacy-counter.jpg"
       />
 
@@ -64,6 +64,11 @@ export default function AboutPage() {
               product is delivered.
             </p>
             <p className="mt-4 leading-relaxed text-slate-600">
+              None of that needs us in the room. Setup, data loading and training are done remotely wherever you are — Nairobi,
+              Mombasa, Kisumu, Eldoret, Nakuru or a county town a day's drive from the nearest supplier — and on site when the job
+              calls for it.
+            </p>
+            <p className="mt-4 leading-relaxed text-slate-600">
               The platform is hosted and maintained for you: backups before every update, security patches applied, and new
               features added as the regulations and the business change.
             </p>
@@ -71,7 +76,7 @@ export default function AboutPage() {
           <Reveal as="div" className="grid grid-cols-2 gap-5 self-start">
             {[
               ['Retail & wholesale', 'One system, both trades'],
-              ['Multi-branch', 'Separate, then consolidated'],
+              ['Countrywide', 'Every county, set up remotely'],
               ['Offline-capable', 'The till never stops'],
               ['KRA-ready', 'eTIMS when you are'],
             ].map(([title, detail]) => (

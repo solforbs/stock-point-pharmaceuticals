@@ -112,7 +112,7 @@ function DashboardScreen({ quiet }: { quiet: boolean | null }) {
         <>
             <div className="flex items-baseline justify-between">
                 <h3 className="text-sm font-bold text-slate-900">
-                    Lodwar Main Branch
+                    Main Branch
                 </h3>
                 <span className="text-[10px] text-slate-400">Today</span>
             </div>

@@ -173,7 +173,7 @@ function UtilityBar() {
         </a>
 
         <div className="ml-auto flex items-center gap-4">
-          <span className="hidden text-slate-400 sm:inline">Lodwar, Kenya</span>
+          <span className="hidden text-slate-400 sm:inline">Serving pharmacies countrywide</span>
           <Link to="/login" className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-blue-600">
             <UserRound className="h-4 w-4" aria-hidden />
             Sign in
@@ -460,7 +460,8 @@ function SiteFooter() {
         <div className="md:col-span-2">
           <Brand />
           <p className="mt-5 max-w-sm text-slate-500">
-            Pharmaceutical ERP, point of sale and supply chain for pharmacies, wholesalers and hospital pharmacies in Kenya.
+            Pharmaceutical ERP, point of sale and supply chain for pharmacies, wholesalers and hospital pharmacies — in every
+            county in Kenya, from a single counter to a national distributor.
           </p>
           <div className="mt-6 flex flex-col gap-3">
             <a href={PHONE_HREF} className="flex items-center gap-2.5 text-slate-700 transition-colors hover:text-blue-600">
@@ -524,7 +525,7 @@ function SiteFooter() {
       <div className="border-t border-slate-200">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-5 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <span>© {new Date().getFullYear()} Stockpoint Solforbs. All rights reserved.</span>
-          <span>Lodwar, Turkana County, Kenya</span>
+          <span>Every county in Kenya · set up remotely or on site</span>
         </div>
       </div>
     </footer>
