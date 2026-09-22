@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring } from 'framer-motion'
-import { ArrowRight, Menu, ShieldCheck, X } from 'lucide-react'
+import { ArrowRight, Mail, Menu, MessageCircle, PhoneCall, ShieldCheck, X } from 'lucide-react'
 import AssistantWidget from '../assistant/AssistantWidget'
-import { SITE_NAV } from './content'
+import { EMAIL, EMAIL_HREF, PHONE, PHONE_HREF, SITE_NAV, WHATSAPP_HREF } from './content'
 import { Blob } from './motion'
 
 /**
@@ -36,7 +36,7 @@ export default function SiteLayout() {
   }, [])
 
   return (
-    <div className="min-h-svh bg-[#f8fafc] flex flex-col font-sans text-slate-700">
+    <div className="site-type min-h-svh bg-[#f8fafc] flex flex-col text-slate-700">
       <header
         className={`sticky top-0 z-40 border-b bg-white/85 backdrop-blur-md transition-all duration-300 ${
           scrolled ? 'border-slate-200 shadow-sm' : 'border-transparent'
@@ -58,7 +58,7 @@ export default function SiteLayout() {
 
           <nav className="ml-auto hidden items-center gap-1 md:flex">
             {SITE_NAV.map((item) => (
-              <NavLink key={item.to} to={item.to} className="group relative rounded-lg px-3 py-2 text-sm font-medium">
+              <NavLink key={item.to} to={item.to} className="group relative rounded-lg px-3.5 py-2 text-[15px] font-semibold">
                 {({ isActive }) => (
                   <>
                     <span className={isActive ? 'text-blue-700' : 'text-slate-600 transition-colors group-hover:text-slate-900'}>
@@ -78,13 +78,13 @@ export default function SiteLayout() {
           </nav>
 
           <div className="ml-auto flex items-center gap-2 md:ml-0">
-            <Link to="/login" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:text-slate-900 sm:block">
+            <Link to="/login" className="hidden rounded-lg px-3 py-2 text-[15px] font-semibold text-slate-600 transition-colors hover:text-slate-900 sm:block">
               Sign in
             </Link>
             <motion.div whileHover={quiet ? undefined : { y: -2 }} whileTap={{ scale: 0.97 }} className="hidden sm:block">
               <Link
                 to="/request-quote"
-                className="block rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors hover:bg-blue-700"
+                className="block rounded-xl bg-blue-600 px-5 py-2.5 text-[15px] font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors hover:bg-blue-700"
               >
                 Request a demo
               </Link>
@@ -198,13 +198,13 @@ export function CallToAction({
         <Blob className="-right-20 -top-24 h-64 w-64 bg-blue-600/30" />
         <Blob className="-bottom-24 -left-16 h-64 w-64 bg-emerald-500/20" />
         <div className="relative">
-          <h2 className="font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">{title}</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-slate-300 sm:text-base">{body}</p>
+          <h2 className="font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">{title}</h2>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-slate-300">{body}</p>
           <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <motion.div whileHover={quiet ? undefined : { y: -2 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
               <Link
                 to="/request-quote"
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-base font-semibold text-slate-900 transition-colors hover:bg-slate-100"
               >
                 Request a demo
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
@@ -213,7 +213,7 @@ export function CallToAction({
             <motion.div whileHover={quiet ? undefined : { y: -2 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
               <Link
                 to="/pricing"
-                className="inline-flex w-full items-center justify-center rounded-xl border border-white/25 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-white/25 px-7 py-3.5 text-base font-semibold text-white transition-colors hover:bg-white/10"
               >
                 See the plans
               </Link>
@@ -236,14 +236,32 @@ function SiteFooter() {
             </span>
             <span className="font-display text-base font-bold tracking-tight text-slate-900">Stockpoint Solforbs</span>
           </div>
-          <p className="mt-3 max-w-sm text-sm text-slate-500">
+          <p className="mt-4 max-w-sm text-slate-500">
             Pharmaceutical ERP, point of sale and supply chain for pharmacies, wholesalers and hospital pharmacies in Kenya.
           </p>
+          <div className="mt-5 flex flex-col gap-2.5">
+            <a href={PHONE_HREF} className="group flex items-center gap-2.5 text-slate-700 transition-colors hover:text-blue-600">
+              <PhoneCall className="h-4.5 w-4.5 text-blue-600" aria-hidden />
+              <span className="font-semibold">{PHONE}</span>
+            </a>
+            <a href={EMAIL_HREF} className="group flex items-center gap-2.5 text-slate-700 transition-colors hover:text-blue-600">
+              <Mail className="h-4.5 w-4.5 text-blue-600" aria-hidden />
+              <span className="font-semibold">{EMAIL}</span>
+            </a>
+            <a
+              href={WHATSAPP_HREF}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex w-fit items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden /> Chat on WhatsApp
+            </a>
+          </div>
         </div>
 
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900">Product</h3>
-          <ul className="mt-3 space-y-2 text-sm">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Product</h3>
+          <ul className="mt-4 space-y-2.5">
             {SITE_NAV.filter((item) => item.to !== '/home').map((item) => (
               <li key={item.to}>
                 <Link to={item.to} className="text-slate-500 transition-colors hover:text-blue-600">{item.label}</Link>
@@ -253,8 +271,8 @@ function SiteFooter() {
         </div>
 
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900">Get started</h3>
-          <ul className="mt-3 space-y-2 text-sm">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Get started</h3>
+          <ul className="mt-4 space-y-2.5">
             <li><Link to="/request-quote" className="text-slate-500 transition-colors hover:text-blue-600">Request a demo</Link></li>
             <li><Link to="/login" className="text-slate-500 transition-colors hover:text-blue-600">Sign in</Link></li>
             <li><Link to="/contact" className="text-slate-500 transition-colors hover:text-blue-600">Talk to us</Link></li>

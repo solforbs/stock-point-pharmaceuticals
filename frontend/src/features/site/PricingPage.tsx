@@ -26,6 +26,7 @@ export default function PricingPage() {
         eyebrow="Pricing"
         title="One price, every module"
         body="No per-module licence and no charge for the reports. Pick the plan that matches your branches and your team, and start with a free seven-day trial."
+        image="dispensary.jpg"
       />
 
       <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
@@ -88,8 +89,8 @@ function PlanCard({ plan, interval, featured }: { plan: Plan; interval: Interval
           Most chosen
         </span>
       )}
-      <h2 className="font-display text-lg font-bold tracking-tight text-slate-900">{plan.name}</h2>
-      {plan.description && <p className="mt-1 text-sm text-slate-500">{plan.description}</p>}
+      <h2 className="font-display text-xl font-bold tracking-tight text-slate-900">{plan.name}</h2>
+      {plan.description && <p className="mt-1.5 text-slate-500">{plan.description}</p>}
 
       <motion.div key={interval} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="mt-6 flex items-baseline gap-1.5">
         {unavailable ? (
@@ -97,7 +98,7 @@ function PlanCard({ plan, interval, featured }: { plan: Plan; interval: Interval
         ) : (
           <>
             <span className="text-sm font-semibold text-slate-500">{plan.currency}</span>
-            <span className="font-display text-4xl font-bold tracking-tight text-slate-900">{formatMoney(price ?? '0')}</span>
+            <span className="font-display text-5xl font-extrabold tracking-tight text-slate-900">{formatMoney(price ?? '0')}</span>
             <span className="text-sm text-slate-500">/{interval === 'YEARLY' ? 'year' : 'month'}</span>
           </>
         )}
@@ -110,8 +111,8 @@ function PlanCard({ plan, interval, featured }: { plan: Plan; interval: Interval
 
       <ul className="mt-5 flex-1 space-y-2.5">
         {(plan.features ?? []).map((feature) => (
-          <li key={feature} className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-700">
-            <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+          <li key={feature} className="flex items-start gap-3 leading-relaxed text-slate-700">
+            <Check className="mt-1 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
             {feature}
           </li>
         ))}
@@ -119,7 +120,7 @@ function PlanCard({ plan, interval, featured }: { plan: Plan; interval: Interval
 
       <Link
         to="/request-quote"
-        className={`mt-7 inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${
+        className={`mt-8 inline-flex items-center justify-center rounded-xl px-5 py-3.5 text-base font-semibold transition-colors ${
           featured
             ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700'
             : 'border border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
@@ -152,15 +153,15 @@ function Faqs() {
   return (
     <section className="border-y border-slate-200/70 bg-white">
       <div className="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
-        <h2 className="text-center font-display text-3xl font-bold tracking-tight text-slate-900">Questions we are asked</h2>
+        <h2 className="text-center font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Questions we are asked</h2>
         <div className="mt-10 divide-y divide-slate-100">
           {FAQS.map((faq) => (
             <details key={faq.question} className="group py-5">
-              <summary className="flex cursor-pointer items-center justify-between gap-4 text-left font-display text-base font-semibold text-slate-900 marker:content-['']">
+              <summary className="flex cursor-pointer items-center justify-between gap-4 text-left font-display text-lg font-bold text-slate-900 marker:content-['']">
                 {faq.question}
                 <span className="shrink-0 text-xl leading-none text-blue-600 transition-transform group-open:rotate-45" aria-hidden>+</span>
               </summary>
-              <p className="mt-3 text-sm leading-relaxed text-slate-600">{faq.answer}</p>
+              <p className="mt-3 leading-relaxed text-slate-600">{faq.answer}</p>
             </details>
           ))}
         </div>

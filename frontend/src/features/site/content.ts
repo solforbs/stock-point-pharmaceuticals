@@ -202,6 +202,13 @@ export const TRUST_POINTS: Highlight[] = [
   { icon: Users, title: 'Trained, not just installed', body: 'The training pack is part of the product, not an afterthought.' },
 ]
 
+/** How to reach us, written once and used everywhere. */
+export const PHONE = '0759 900 802'
+export const PHONE_HREF = 'tel:+254759900802'
+export const WHATSAPP_HREF = 'https://wa.me/254759900802'
+export const EMAIL = 'solforbs@gmail.com'
+export const EMAIL_HREF = 'mailto:solforbs@gmail.com'
+
 /** The public pages, in the order they appear in the header. */
 export const SITE_NAV = [
   { to: '/home', label: 'Home' },

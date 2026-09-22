@@ -13,9 +13,10 @@ export default function FeaturesPage() {
         eyebrow="Features"
         title="Eight modules, one system"
         body="They share one product list, one set of prices and one ledger. Nothing is retyped between them, and nothing disagrees."
+        image="pills.jpg"
       />
 
-      <section className="mx-auto w-full max-w-6xl px-4 pb-8 sm:px-6">
+      <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
         <Reveal className="grid gap-6 md:grid-cols-2" amount={0.1}>
           {MODULES.map((module) => (
             <RevealItem
@@ -33,14 +34,14 @@ export default function FeaturesPage() {
                   <module.icon className="h-5 w-5" aria-hidden />
                 </motion.span>
                 <div>
-                  <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900">{module.name}</h2>
-                  <p className="mt-1 text-sm text-slate-500">{module.summary}</p>
+                  <h2 className="font-display text-xl font-bold tracking-tight text-slate-900">{module.name}</h2>
+                  <p className="mt-1 text-slate-500">{module.summary}</p>
                 </div>
               </div>
               <ul className="mt-5 space-y-2.5 border-t border-slate-100 pt-5">
                 {module.points.map((point) => (
-                  <li key={point} className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-700">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+                  <li key={point} className="flex items-start gap-3 leading-relaxed text-slate-700">
+                    <Check className="mt-1 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
                     {point}
                   </li>
                 ))}

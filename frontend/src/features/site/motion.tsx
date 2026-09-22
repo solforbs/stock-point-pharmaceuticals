@@ -1,5 +1,5 @@
 import { animate, motion, useInView, useReducedMotion, type Variants } from 'framer-motion'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 /**
  * The site's motion vocabulary in one place, so every page moves the same way.
@@ -91,27 +91,35 @@ export function CountUp({ value, className }: { value: string; className?: strin
   const quiet = useReducedMotion()
   const ref = useRef<HTMLSpanElement>(null)
   const inView = useInView(ref, { once: true, amount: 0.6 })
-  const match = value.match(/^(\D*)(\d+)(\D*)$/)
-  const [shown, setShown] = useState(match ? 0 : null)
+  // Parsed once per value. A fresh match array every render would make the
+  // effect below re-run each frame, restarting the count from zero forever.
+  const { prefix, target, suffix } = useMemo(() => {
+    const match = value.match(/^(\D*)(\d+)(\D*)$/)
+
+    return match
+      ? { prefix: match[1], target: Number(match[2]), suffix: match[3] }
+      : { prefix: '', target: null as number | null, suffix: '' }
+  }, [value])
+  const [shown, setShown] = useState(0)
 
   useEffect(() => {
-    if (!match || !inView || quiet) return
-    const controls = animate(0, Number(match[2]), {
+    if (target === null || !inView || quiet) return
+    const controls = animate(0, target, {
       duration: 1.1,
       ease: [0.22, 1, 0.36, 1],
       onUpdate: (latest) => setShown(Math.round(latest)),
     })
 
     return () => controls.stop()
-  }, [inView, match, quiet])
+  }, [inView, target, quiet])
 
-  if (!match) return <span className={className}>{value}</span>
+  if (target === null) return <span className={className}>{value}</span>
 
   return (
     <span ref={ref} className={className}>
-      {match[1]}
-      {quiet || !inView ? match[2] : shown}
-      {match[3]}
+      {prefix}
+      {quiet ? target : inView ? shown : 0}
+      {suffix}
     </span>
   )
 }

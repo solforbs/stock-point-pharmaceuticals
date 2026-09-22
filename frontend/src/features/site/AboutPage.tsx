@@ -33,6 +33,7 @@ export default function AboutPage() {
         eyebrow="About"
         title="Software for the pharmacy business, written where pharmacies work"
         body="Stockpoint Solforbs builds the system a Kenyan pharmacy actually needs: the counter, the store, the supplier, the regulator and the books — in one place, and dependable on the days the line is down."
+        image="pharmacy-counter.jpg"
       />
 
       <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
@@ -46,8 +47,8 @@ export default function AboutPage() {
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
                 <belief.icon className="h-5 w-5" aria-hidden />
               </span>
-              <h2 className="mt-4 font-display text-lg font-semibold tracking-tight text-slate-900">{belief.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{belief.body}</p>
+              <h2 className="mt-5 font-display text-xl font-bold tracking-tight text-slate-900">{belief.title}</h2>
+              <p className="mt-2.5 leading-relaxed text-slate-600">{belief.body}</p>
             </RevealItem>
           ))}
         </Reveal>
@@ -56,7 +57,7 @@ export default function AboutPage() {
       <section className="border-y border-slate-200/70 bg-white">
         <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2">
           <div>
-            <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900">What we do</h2>
+            <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">What we do</h2>
             <p className="mt-4 leading-relaxed text-slate-600">
               We set the system up with your own products, prices and opening stock, train your team inside it, and stay with you
               through the first months of live trading. Support is not a separate contract you discover later — it is how the
@@ -75,8 +76,8 @@ export default function AboutPage() {
               ['KRA-ready', 'eTIMS when you are'],
             ].map(([title, detail]) => (
               <RevealItem key={title} hover className="rounded-2xl bg-slate-50 p-5 transition-colors hover:bg-blue-50">
-                <div className="font-display text-base font-semibold text-slate-900">{title}</div>
-                <div className="mt-1 text-xs text-slate-500">{detail}</div>
+                <div className="font-display text-lg font-bold text-slate-900">{title}</div>
+                <div className="mt-1 text-sm text-slate-500">{detail}</div>
               </RevealItem>
             ))}
           </Reveal>

@@ -1,0 +1,12 @@
+Photography on the public site comes from Pexels and is used under the Pexels
+licence (free for commercial use, no attribution required — recorded here as a
+courtesy and so the sources can be traced).
+
+hero-pharmacist.jpg    pexels.com/photo/19471014  — pharmacist taking notes
+pharmacy-counter.jpg   pexels.com/photo/14797863  — pharmacist at a retail counter
+pills.jpg              pexels.com/photo/19497086  — assorted tablets and capsules
+warehouse.jpg          pexels.com/photo/4487383   — distribution warehouse aisles
+dispensary.jpg         pexels.com/photo/8657297   — dispensary counter
+blisters.jpg           pexels.com/photo/3683073   — blister packs
+
+login-hero.jpg is the existing sign-in page image and is not from this set.
