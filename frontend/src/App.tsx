@@ -10,6 +10,13 @@ const Login = lazy(() => import('./pages/Login'))
 const RequestQuotePage = lazy(() => import('./features/onboarding/RequestQuotePage'))
 const InvitationPage = lazy(() => import('./features/onboarding/InvitationPage'))
 const AssistantWidget = lazy(() => import('./features/assistant/AssistantWidget'))
+const SiteLayout = lazy(() => import('./features/site/SiteLayout'))
+const HomePage = lazy(() => import('./features/site/HomePage'))
+const SiteHome = lazy(() => import('./features/site/SiteHome'))
+const FeaturesPage = lazy(() => import('./features/site/FeaturesPage'))
+const PricingPage = lazy(() => import('./features/site/PricingPage'))
+const AboutPage = lazy(() => import('./features/site/AboutPage'))
+const ContactPage = lazy(() => import('./features/site/ContactPage'))
 const PlatformPage = lazy(() => import('./features/platform/PlatformPage'))
 const BillingPage = lazy(() => import('./features/billing/BillingPage'))
 const BillingCallbackPage = lazy(() => import('./features/billing/BillingCallbackPage'))
@@ -110,7 +117,15 @@ function App() {
     <>
       <Suspense fallback={<PageLoadingSkeleton />}>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* The public site: the front door for anyone not signed in. */}
+          <Route element={<SiteLayout />}>
+            <Route path="/" element={<SiteHome />} />
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+          </Route>
           <Route path="/login" element={<><Login /><AssistantWidget /></>} />
           {/* Reached without signing in: asking for a quote and the one-time emailed links. */}
           <Route path="/request-quote" element={<><RequestQuotePage /><AssistantWidget /></>} />
