@@ -126,6 +126,7 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'employees', label: 'Employees', path: '/people/employees' },
       { key: 'payroll', label: 'Payroll', path: '/people/payroll' },
       { key: 'leave', label: 'Leave', path: '/people/leave' },
+      { key: 'training', label: 'Training', path: '/training' },
     ],
   },
   {

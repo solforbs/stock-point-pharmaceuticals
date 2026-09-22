@@ -1445,3 +1445,113 @@ export type OpenedInvitation = {
   contact_phone: string | null
   town: string | null
 }
+
+/* Training centre (client item 17). Knowledge-check answers never reach the browser. */
+export type TrainingModuleProgress = {
+  lessons_viewed: number
+  lessons_total: number
+  tasks_completed: number
+  tasks_verified: number
+  tasks_total: number
+  attempts: number
+  best_score: number | null
+  passed: boolean
+  feedback_rating: number | null
+  started: boolean
+  completed: boolean
+  completed_at: string | null
+}
+
+export type TrainingModuleCard = {
+  key: string
+  title: string
+  summary: string
+  audience: string
+  recommended: boolean
+  lesson_count: number
+  task_count: number
+  question_count: number
+  progress: TrainingModuleProgress
+}
+
+export type TrainingOverview = {
+  pass_mark: number
+  can_manage: boolean
+  roles: string[]
+  modules: TrainingModuleCard[]
+}
+
+export type TrainingLesson = {
+  key: string
+  title: string
+  summary: string
+  body: string[]
+  steps: string[]
+  tips: string[]
+  route: string | null
+  route_label: string | null
+  tour: string | null
+}
+
+export type TrainingTask = {
+  key: string
+  title: string
+  instructions: string
+  checklist: string[]
+  route: string | null
+  auto_verified: boolean
+}
+
+export type TrainingQuestion = { id: string; question: string; options: string[] }
+
+export type TrainingTaskState = {
+  task: string
+  started_at: string | null
+  completed_at: string | null
+  is_verified: boolean
+  verification_detail: string | null
+  note: string | null
+}
+
+export type TrainingAttempt = { id: string; correct: number; total: number; score_pct: number; passed: boolean; created_at: string }
+
+export type TrainingModuleDetail = {
+  pass_mark: number
+  module: {
+    key: string
+    title: string
+    summary: string
+    audience: string
+    lessons: TrainingLesson[]
+    tasks: TrainingTask[]
+    quiz: TrainingQuestion[]
+  }
+  progress: TrainingModuleProgress
+  lessons_viewed: Record<string, string>
+  tasks: Record<string, TrainingTaskState>
+  attempts: TrainingAttempt[]
+  feedback: { rating: number; comments: string | null; updated_at: string } | null
+}
+
+export type TrainingQuizResult = {
+  attempt: TrainingAttempt
+  best_score: number
+  pass_mark: number
+  review: { question_id: string; lesson: string | null }[]
+}
+
+export type TrainingReport = {
+  pass_mark: number
+  modules: { key: string; title: string; audience: string }[]
+  staff: { id: number; name: string; username: string | null; is_active: boolean; roles: string[]; modules: Record<string, TrainingModuleProgress> }[]
+}
+
+export type TrainingFeedbackRow = {
+  id: string
+  module_key: string
+  module_title: string
+  rating: number
+  comments: string | null
+  user: { id: number; name: string; username: string | null } | null
+  updated_at: string
+}
