@@ -49,6 +49,7 @@ use App\Http\Controllers\Api\ScheduledReportController;
 use App\Http\Controllers\Api\ScheduledReportRunController;
 use App\Http\Controllers\Api\StockCountController;
 use App\Http\Controllers\Api\StockTransferController;
+use App\Http\Controllers\Api\TrainingController;
 use App\Models\Branch;
 use App\Services\Sales\SaleModes;
 use Illuminate\Http\Request;
@@ -418,6 +419,18 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/messages', [MessageController::class, 'store']);
     Route::post('/messages/read-all', [MessageController::class, 'markAllRead']);
     Route::post('/messages/{message}/read', [MessageController::class, 'markRead']);
+
+    // Client item 17 — the training centre: lessons, practice tasks, knowledge checks, feedback.
+    Route::get('/training', [TrainingController::class, 'index']);
+    Route::get('/training/report', [TrainingController::class, 'report']);
+    Route::get('/training/feedback', [TrainingController::class, 'feedbackIndex']);
+    Route::get('/training/certificates/{user}/{module}', [TrainingController::class, 'certificate'])->whereNumber('user');
+    Route::get('/training/modules/{module}', [TrainingController::class, 'show']);
+    Route::post('/training/modules/{module}/lessons/{lesson}/viewed', [TrainingController::class, 'viewLesson']);
+    Route::post('/training/modules/{module}/tasks/{task}/start', [TrainingController::class, 'startTask']);
+    Route::post('/training/modules/{module}/tasks/{task}/complete', [TrainingController::class, 'completeTask']);
+    Route::post('/training/modules/{module}/quiz', [TrainingController::class, 'submitQuiz']);
+    Route::post('/training/modules/{module}/feedback', [TrainingController::class, 'feedback']);
 
     Route::get('/alerts', [AlertController::class, 'index']);
     Route::get('/alerts/summary', [AlertController::class, 'summary']);

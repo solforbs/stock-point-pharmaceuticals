@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Eye, EyeOff, ArrowLeft, ShieldCheck, Cpu } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api, apiGet, ensureCsrfCookie, getApiError } from '../lib/api'
 import { formatDateTime, todayIso } from '../lib/format'
 import type { CurrentUser, DashboardSummary, Paginated, Sale } from '../lib/types'
@@ -21,7 +21,12 @@ type LoginResult = { mfa_required: true } | { mfa_required?: false; email: strin
  */
 export default function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
+  // A link opened while signed out (e.g. the training link sent to new
+  // staff) lands on its page after sign-in. Only in-app paths are honoured.
+  const from = (location.state as { from?: string } | null)?.from
+  const returnTo = from && from.startsWith('/') && !from.startsWith('//') && from !== '/login' ? from : '/dashboard'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -54,7 +59,7 @@ export default function Login() {
 
     const { data } = await api.get<CurrentUser>('/api/user')
     queryClient.setQueryData(['auth', 'user'], data)
-    navigate(!data.organisation && data.is_platform_admin ? '/platform' : '/dashboard')
+    navigate(!data.organisation && data.is_platform_admin ? '/platform' : returnTo)
   }
 
   const login = useMutation({

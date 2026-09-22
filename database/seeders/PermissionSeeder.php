@@ -30,7 +30,7 @@ class PermissionSeeder extends Seeder
         'quality.release', 'recall.initiate', 'waste.approve',
         'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view', 'licence.manage', 'document.manage',
         'payroll.view', 'payroll.process', 'payroll.approve.own',
-        'leave.request', 'leave.approve', 'report.schedule',
+        'leave.request', 'leave.approve', 'report.schedule', 'training.manage',
         'admin.users', 'admin.settings', 'record.delete', 'deploy.run',
         'audit.view', 'report.view', 'report.financial.view', 'report.review',
     ];

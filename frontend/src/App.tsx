@@ -78,6 +78,8 @@ const SopsPage = lazy(() => import('./features/quality/SopsPage'))
 const EmployeesPage = lazy(() => import('./features/people/EmployeesPage'))
 const PayrollPage = lazy(() => import('./features/people/PayrollPage'))
 const LeavePage = lazy(() => import('./features/people/LeavePage'))
+const TrainingPage = lazy(() => import('./features/people/training/TrainingPage'))
+const TrainingModulePage = lazy(() => import('./features/people/training/TrainingModulePage'))
 const ReportsPage = lazy(() => import('./features/reports/ReportsPage'))
 const AnalyticsPage = lazy(() => import('./features/reports/AnalyticsPage'))
 const ScheduledReportsPage = lazy(() => import('./features/reports/ScheduledReportsPage'))
@@ -198,6 +200,10 @@ function App() {
             <Route path="/quality/licences" element={<LicencesPage />} />
             <Route path="/quality/sops" element={<SopsPage />} />
             <Route path="/people/leave" element={<LeavePage />} />
+            {/* Client item 17 — the training link sent to new staff is /training. */}
+            <Route path="/training" element={<TrainingPage />} />
+            <Route path="/training/:moduleKey" element={<TrainingModulePage />} />
+            <Route path="/people/training" element={<Navigate to="/training" replace />} />
             <Route path="/reports/analytics" element={<AnalyticsPage />} />
             <Route path="/reports/scheduled" element={<ScheduledReportsPage />} />
             <Route path="/reports/inbox" element={<ReportInboxPage />} />

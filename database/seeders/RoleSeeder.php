@@ -30,6 +30,7 @@ class RoleSeeder extends Seeder
             'payroll.process', 'payroll.approve.own',
             'payment.reconcile',
             'leave.request', 'leave.approve', 'report.schedule', 'report.review', 'price.manage', 'price.simulate',
+            'training.manage',
         ],
         'Operations Manager' => [
             'sale.view', 'product.view', 'product.edit', 'customer.manage', 'supplier.view', 'supplier.manage',
@@ -43,6 +44,7 @@ class RoleSeeder extends Seeder
             'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view', 'licence.manage', 'document.manage',
             'report.view', 'report.financial.view',
             'leave.approve', 'report.schedule', 'report.review', 'price.manage', 'price.simulate',
+            'training.manage',
         ],
         'Pharmacist' => [
             'sale.view', 'product.view', 'requisition.view', 'requisition.create', 'sale.create', 'stock.view', 'stock.fefo.override', 'quality.release',
@@ -85,6 +87,7 @@ class RoleSeeder extends Seeder
         'System Administrator' => [
             'admin.users', 'admin.settings', 'audit.view', 'record.delete',
             'licence.view', 'licence.manage', 'document.manage',
+            'training.manage',
         ],
     ];
 
