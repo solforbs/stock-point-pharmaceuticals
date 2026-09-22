@@ -105,6 +105,12 @@ class RoleSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
+        // A database seeded before a permission was added lacks it; make sure
+        // every permission a standard role names exists before assigning it.
+        foreach (array_unique(array_merge(...array_values(self::ROLE_PERMISSIONS))) as $permission) {
+            Permission::findOrCreate($permission, 'web');
+        }
+
         app(TenantContext::class)->run($organisationId, function () use ($organisationId) {
             foreach (self::ROLE_PERMISSIONS as $roleName => $permissions) {
                 Role::firstOrCreate(['organisation_id' => $organisationId, 'name' => $roleName, 'guard_name' => 'web', 'branch_id' => null])

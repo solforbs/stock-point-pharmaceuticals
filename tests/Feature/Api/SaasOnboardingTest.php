@@ -8,6 +8,7 @@ use App\Mail\TenantRequestReceivedMail;
 use App\Mail\TenantRequestRejectedMail;
 use App\Models\ChartOfAccount;
 use App\Models\Organisation;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\TenantInvitation;
 use App\Models\TenantRequest;
@@ -15,6 +16,7 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
 
@@ -133,6 +135,19 @@ class SaasOnboardingTest extends TestCase
 
         $this->postJson('/auth/login', ['email' => 'peter@kakuma.test', 'password' => self::PASSWORD])->assertOk();
         $this->getJson('/api/user')->assertOk()->assertJsonPath('organisation.name', 'Kakuma Health Pharmacy');
+    }
+
+    public function test_provisioning_works_on_a_database_seeded_before_a_permission_existed(): void
+    {
+        // Found on a real database: a permission added after it was seeded
+        // made every registration fail when the standard roles were copied.
+        Permission::where('name', 'record.delete')->delete();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        Sanctum::actingAs($this->user);
+
+        $this->postJson('/api/platform/tenants', ['institution_name' => 'Late Seed Pharmacy', 'contact_email' => 'l@example.test', 'admin_name' => 'L', 'admin_email' => 'l@example.test'])
+            ->assertCreated();
+        $this->assertTrue(Permission::where('name', 'record.delete')->exists());
     }
 
     public function test_the_platform_console_is_for_platform_administrators_and_spans_every_institution(): void
