@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Services\Pricing\PriceQuoteService;
 use App\Services\Pricing\PricingSimulator;
 use App\Services\Sales\SaleModes;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,19 +22,19 @@ class PricingController extends ApiController
 
         $data = $request->validate([
             'sale_mode' => ['required', 'in:RETAIL,WHOLESALE,DISPENSING'],
-            'store_id' => ['required', 'uuid', 'exists:stores,id'],
-            'customer_id' => ['nullable', 'uuid', 'exists:customers,id'],
+            'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
+            'customer_id' => ['nullable', 'uuid', TenantRules::exists('customers')],
             'header_discount' => ['nullable', 'numeric', 'min:0'],
             'header_discount_reason' => ['nullable', 'string', 'max:255'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.line_ref' => ['nullable', 'string', 'max:20'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
             'lines.*.requested_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'lines.*.requested_discount_amount' => ['nullable', 'numeric', 'min:0'],
             'lines.*.requested_discount_reason' => ['nullable', 'string', 'max:255'],
-            'lines.*.batch_id' => ['nullable', 'uuid', 'exists:product_batches,id'],
+            'lines.*.batch_id' => ['nullable', 'uuid', TenantRules::exists('product_batches')],
             'lines.*.override_reason' => ['nullable', 'string', 'max:255'],
         ]);
 

@@ -4,12 +4,12 @@ namespace Tests\Feature;
 
 use App\Console\Commands\CreateAdminUser;
 use App\Models\AuditLog;
+use App\Models\Permission;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Permission;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
 

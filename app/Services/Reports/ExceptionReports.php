@@ -111,6 +111,8 @@ class ExceptionReports
             $query = DB::table($table)->whereNotNull('doc_number');
             if (Schema::hasColumn($table, 'branch_id')) {
                 $query->where('branch_id', $ctx->branchId);
+            } elseif (Schema::hasColumn($table, 'store_id')) {
+                $query->whereIn('store_id', DB::table('stores')->select('id')->where('branch_id', $ctx->branchId));
             }
             $numbers = $query->pluck('doc_number');
             $byPrefix = [];

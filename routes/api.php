@@ -70,6 +70,7 @@ Route::middleware(['auth:sanctum', 'branch.context'])->get('/user', function (Re
         // not $user->permissions, which is direct grants only and is
         // normally empty since every permission here comes through a role.
         'permissions' => $user->getAllPermissions()->pluck('name'),
+        'organisation' => $user->organisation?->only(['id', 'name', 'legal_name']),
         'active_branch_id' => $activeBranchId,
         'active_branch' => $active,
         'branches' => $branches->values(),
@@ -294,8 +295,9 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::post('/adr-reports/{report}/submit', [AdrReportController::class, 'submit']);
     Route::post('/adr-reports/{report}/close', [AdrReportController::class, 'close']);
     Route::get('/licences', [LicenceController::class, 'index']);
-    Route::get('/licences/{licence}', [LicenceController::class, 'show']);
+    // Before {licence}, which also answers synthetic ids such as supplier:<uuid>.
     Route::get('/licences/holders', [LicenceController::class, 'holders']);
+    Route::get('/licences/{licence}', [LicenceController::class, 'show']);
     Route::post('/licences', [LicenceController::class, 'store']);
     Route::match(['post', 'patch'], '/licences/{licence}', [LicenceController::class, 'update']);
     Route::get('/licences/{licence}/document', [LicenceController::class, 'document']);

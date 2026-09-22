@@ -12,14 +12,15 @@ use App\Models\ProductDiscountPolicy;
 use App\Models\ProductPrice;
 use App\Models\ProductUom;
 use App\Models\Promotion;
+use App\Models\Role;
 use App\Models\RoleDiscountAuthority;
 use App\Services\Pricing\PriceQuoteService;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -238,7 +239,7 @@ class PricingRuleController extends ApiController
     public function discountAuthorities(Request $request): JsonResponse
     {
         $this->requireRead($request);
-        $authorities = RoleDiscountAuthority::all()->keyBy('role_id');
+        $authorities = RoleDiscountAuthority::whereIn('role_id', Role::query()->select('id'))->get()->keyBy('role_id');
 
         return response()->json(['data' => Role::whereNull('branch_id')->orderBy('name')->get(['id', 'name'])
             ->map(fn (Role $role) => ['role_id' => $role->id, 'role' => $role->name, 'authority' => $authorities->get($role->id)])]);
@@ -302,7 +303,7 @@ class PricingRuleController extends ApiController
         $data = $request->validate([
             'customer_id' => ['required', 'uuid', Rule::exists('customers', 'id')->where('organisation_id', $organisationId)],
             'product_id' => ['required', 'uuid', Rule::exists('products', 'id')->where('organisation_id', $organisationId)],
-            'uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
+            'uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'unit_price' => ['required', 'numeric', 'min:0'],
             'contract_ref' => ['required', 'string', 'max:100'],
             'effective_from' => ['required', 'date'],
@@ -374,7 +375,7 @@ class PricingRuleController extends ApiController
             'store_id' => ['required', 'uuid', Rule::exists('stores', 'id')->where('branch_id', $branchId)],
             'customer_id' => ['nullable', 'uuid', Rule::exists('customers', 'id')->where('organisation_id', $organisationId)],
             'product_id' => ['required', 'uuid', Rule::exists('products', 'id')->where('organisation_id', $organisationId)],
-            'uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
+            'uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'quantity' => ['required', 'numeric', 'gt:0'],
             'requested_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'quote_date' => ['nullable', 'date'],
@@ -444,11 +445,11 @@ class PricingRuleController extends ApiController
     {
         return [
             'lines' => [$required ? 'required' : 'sometimes', 'array', 'min:1', 'max:200'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'lines.*.buy_qty' => ['nullable', 'numeric', 'gt:0'],
             'lines.*.free_qty' => ['nullable', 'numeric', 'gt:0'],
-            'lines.*.bonus_product_id' => ['nullable', 'uuid', 'exists:products,id'],
+            'lines.*.bonus_product_id' => ['nullable', 'uuid', TenantRules::exists('products')],
             'lines.*.promo_price' => ['nullable', 'numeric', 'min:0'],
             'lines.*.discount_pct' => ['nullable', 'numeric', 'gt:0', 'max:100'],
             'lines.*.max_free_per_order' => ['nullable', 'numeric', 'gt:0'],

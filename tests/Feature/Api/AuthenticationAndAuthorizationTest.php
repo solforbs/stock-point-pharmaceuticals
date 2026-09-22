@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Permission;
 use App\Models\Product;
+use App\Models\Role;
 use Laravel\Sanctum\Sanctum;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -67,7 +67,7 @@ class AuthenticationAndAuthorizationTest extends TestCase
     public function test_a_user_with_a_branch_scoped_role_can_create_a_product_in_that_branch(): void
     {
         Permission::create(['name' => 'product.create', 'guard_name' => 'web']);
-        $role = Role::create(['name' => 'Storekeeper', 'guard_name' => 'web', 'branch_id' => null]);
+        $role = Role::create(['organisation_id' => $this->org->id, 'name' => 'Storekeeper', 'guard_name' => 'web', 'branch_id' => null]);
         $role->givePermissionTo('product.create');
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($this->branch->id);

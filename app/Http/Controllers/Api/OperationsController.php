@@ -29,6 +29,7 @@ class OperationsController extends ApiController
     public function systemHealth(Request $request, SystemHealthService $health): JsonResponse
     {
         $this->requirePermission($request, 'admin.settings');
+        $this->requirePlatformAdmin($request);
 
         return response()->json($health->report($this->organisationId($request)) + [
             'failed_jobs' => $health->recentFailures(),
@@ -39,6 +40,7 @@ class OperationsController extends ApiController
     public function retryFailedJobs(Request $request): JsonResponse
     {
         $this->requirePermission($request, 'admin.settings');
+        $this->requirePlatformAdmin($request);
         $data = $request->validate([
             'ids' => ['nullable', 'array', 'max:100'],
             'ids.*' => ['string', 'max:64'],
@@ -60,6 +62,7 @@ class OperationsController extends ApiController
     public function forgetFailedJob(Request $request, string $id): JsonResponse
     {
         $this->requirePermission($request, 'admin.settings');
+        $this->requirePlatformAdmin($request);
 
         $job = DB::table('failed_jobs')->where('uuid', $id)->first();
         if (! $job) {
@@ -78,6 +81,7 @@ class OperationsController extends ApiController
     public function backups(Request $request, BackupService $backups): JsonResponse
     {
         $this->requirePermission($request, 'admin.settings');
+        $this->requirePlatformAdmin($request);
 
         return response()->json([
             'data' => $backups->list(),
@@ -91,6 +95,7 @@ class OperationsController extends ApiController
     public function createBackup(Request $request, BackupService $backups): JsonResponse
     {
         $this->requirePermission($request, 'admin.settings');
+        $this->requirePlatformAdmin($request);
         $data = $request->validate(['kind' => ['nullable', 'in:database,full']]);
 
         try {
@@ -108,6 +113,7 @@ class OperationsController extends ApiController
     public function downloadBackup(Request $request, BackupService $backups, string $name): BinaryFileResponse
     {
         $this->requirePermission($request, 'admin.settings');
+        $this->requirePlatformAdmin($request);
 
         $path = preg_match(BackupService::NAME_PATTERN, $name) === 1 ? $backups->pathFor($name) : null;
         if ($path === null) {

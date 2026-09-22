@@ -116,7 +116,7 @@ class RecordDeletionController extends ApiController
         }
 
         /** @var User $model */
-        $remaining = User::where('is_active', true)->whereKeyNot($model->getKey())->get()
+        $remaining = User::where('organisation_id', $this->organisationId($request))->where('is_active', true)->whereKeyNot($model->getKey())->get()
             ->filter(fn (User $u) => $u->can('admin.users'))->count();
 
         if ($remaining === 0) {
@@ -134,8 +134,18 @@ class RecordDeletionController extends ApiController
         $this->requirePermission($request, 'record.delete');
         $this->requirePermission($request, $definition['permission']);
 
+        // Tenant-owned models filter themselves to the signed-in institution;
+        // users and contacts are confined here explicitly.
+        $organisationId = $this->organisationId($request);
+        $query = $definition['model']::query();
+        if ($type === 'users') {
+            $query->where('organisation_id', $organisationId);
+        } elseif ($type === 'customer-contacts') {
+            $query->whereIn('customer_id', Customer::query()->select('id'));
+        }
+
         /** @var Model|null $model */
-        $model = $definition['model']::query()->find($id);
+        $model = $query->find($id);
         if ($model === null) {
             throw new RecordNotDeletableException('NOT_FOUND', 404, 'No record with that id exists.');
         }

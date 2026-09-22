@@ -6,6 +6,7 @@ use App\Models\Recall;
 use App\Models\WasteDisposal;
 use App\Services\Quality\RecallService;
 use App\Services\Quality\WasteDisposalService;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -43,7 +44,7 @@ class QualityController extends ApiController
             'external_reference' => ['nullable', 'string', 'max:100'],
             'reason' => ['required', 'string', 'min:5', 'max:1000'],
             'batch_ids' => ['required', 'array', 'min:1'],
-            'batch_ids.*' => ['uuid', 'exists:product_batches,id'],
+            'batch_ids.*' => ['uuid', TenantRules::exists('product_batches')],
         ]);
 
         $recall = $recalls->initiate($data + ['organisation_id' => $this->organisationId($request), 'user_id' => $request->user()->id]);
@@ -115,21 +116,21 @@ class QualityController extends ApiController
         $this->requirePermission($request, 'stock.adjust');
 
         $data = $request->validate([
-            'store_id' => ['required', 'uuid', 'exists:stores,id'],
+            'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'reason' => ['required', 'in:EXPIRED,DAMAGED,RECALLED,EXCURSION,CONTAMINATED'],
-            'recall_id' => ['nullable', 'uuid', 'exists:recalls,id'],
+            'recall_id' => ['nullable', 'uuid', TenantRules::exists('recalls')],
             'disposal_method' => ['nullable', 'string', 'max:100'],
             'disposal_contractor' => ['nullable', 'string', 'max:150'],
             'certificate_reference' => ['nullable', 'string', 'max:100'],
             'ppb_reference' => ['nullable', 'string', 'max:100'],
-            'witnessed_by_1' => ['nullable', 'integer', 'exists:users,id'],
-            'witnessed_by_2' => ['nullable', 'integer', 'exists:users,id', 'different:witnessed_by_1'],
+            'witnessed_by_1' => ['nullable', 'integer', TenantRules::exists('users')],
+            'witnessed_by_2' => ['nullable', 'integer', TenantRules::exists('users'), 'different:witnessed_by_1'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'photos' => ['nullable', 'array'],
             'photos.*' => ['string', 'max:500'],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.batch_id' => ['required', 'uuid', 'exists:product_batches,id'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.batch_id' => ['required', 'uuid', TenantRules::exists('product_batches')],
             'lines.*.qty_base' => ['required', 'numeric', 'gt:0'],
         ]);
 
@@ -146,8 +147,8 @@ class QualityController extends ApiController
             'disposal_contractor' => ['nullable', 'string', 'max:150'],
             'certificate_reference' => ['nullable', 'string', 'max:100'],
             'ppb_reference' => ['nullable', 'string', 'max:100'],
-            'witnessed_by_1' => ['nullable', 'integer', 'exists:users,id'],
-            'witnessed_by_2' => ['nullable', 'integer', 'exists:users,id', 'different:witnessed_by_1'],
+            'witnessed_by_1' => ['nullable', 'integer', TenantRules::exists('users')],
+            'witnessed_by_2' => ['nullable', 'integer', TenantRules::exists('users'), 'different:witnessed_by_1'],
         ]);
 
         return response()->json($waste->post($this->findDisposal($request, $disposal), $request->user()->id, $data));

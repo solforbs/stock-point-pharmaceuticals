@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SharedAcrossOrganisations;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class StorageCondition extends Model
 {
-    use HasUuids;
+    use HasUuids, SharedAcrossOrganisations;
 
     protected $fillable = [
         'organisation_id', 'code', 'name', 'min_temp_c', 'max_temp_c',

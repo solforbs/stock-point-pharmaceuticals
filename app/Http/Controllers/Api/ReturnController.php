@@ -8,6 +8,7 @@ use App\Models\SupplierReturn;
 use App\Services\Inventory\ReturnReasons;
 use App\Services\Procurement\SupplierReturnService;
 use App\Services\Sales\CustomerReturnService;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -49,15 +50,15 @@ class ReturnController extends ApiController
         $this->requirePermission($request, 'return.create');
 
         $data = $request->validate([
-            'sale_id' => ['required', 'uuid', 'exists:sales,id'],
-            'store_id' => ['required', 'uuid', 'exists:stores,id'],
+            'sale_id' => ['required', 'uuid', TenantRules::exists('sales')],
+            'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'reason' => ['required', 'string', 'min:5', 'max:1000'],
-            'recall_id' => ['nullable', 'uuid', 'exists:recalls,id'],
+            'recall_id' => ['nullable', 'uuid', TenantRules::exists('recalls')],
             'refund_method' => ['nullable', 'in:CASH,MPESA,BANK,CUSTOMER_ACCOUNT'],
             'refund_reference' => ['nullable', 'string', 'max:100'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.sale_line_id' => ['required', 'uuid'],
-            'lines.*.batch_id' => ['required', 'uuid', 'exists:product_batches,id'],
+            'lines.*.batch_id' => ['required', 'uuid', TenantRules::exists('product_batches')],
             'lines.*.qty_base' => ['required', 'numeric', 'gt:0'],
             'lines.*.disposition' => ['nullable', 'in:RESALEABLE,QUARANTINE,DESTROY,REJECT'],
             'lines.*.inspection_notes' => ['nullable', 'string', 'max:255'],
@@ -94,7 +95,7 @@ class ReturnController extends ApiController
     public function post(Request $request, string $return, CustomerReturnService $returns): JsonResponse
     {
         $this->requirePermission($request, 'return.post');
-        $data = $request->validate(['witness_user_id' => ['nullable', 'integer', 'exists:users,id']]);
+        $data = $request->validate(['witness_user_id' => ['nullable', 'integer', TenantRules::exists('users')]]);
 
         return response()->json($returns->post($this->find($request, $return), $request->user()->id, $data['witness_user_id'] ?? null));
     }
@@ -131,13 +132,13 @@ class ReturnController extends ApiController
         $this->requirePermission($request, 'supplier.return');
 
         $data = $request->validate([
-            'supplier_id' => ['required', 'uuid', 'exists:suppliers,id'],
-            'store_id' => ['required', 'uuid', 'exists:stores,id'],
+            'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
+            'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'reason' => ['required', 'string', 'min:3', 'max:1000'],
-            'recall_id' => ['nullable', 'uuid', 'exists:recalls,id'],
+            'recall_id' => ['nullable', 'uuid', TenantRules::exists('recalls')],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.batch_id' => ['required', 'uuid', 'exists:product_batches,id'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.batch_id' => ['required', 'uuid', TenantRules::exists('product_batches')],
             'lines.*.qty_base' => ['required', 'numeric', 'gt:0'],
             'lines.*.return_reason' => ['nullable', Rule::in(ReturnReasons::SUPPLIER)],
             'lines.*.remarks' => ['nullable', 'required_if:lines.*.return_reason,OTHER', 'string', 'max:500'],

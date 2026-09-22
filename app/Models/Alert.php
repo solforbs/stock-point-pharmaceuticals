@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganisation;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +19,7 @@ use Illuminate\Support\Carbon;
  */
 class Alert extends Model
 {
-    use HasUuids;
+    use BelongsToOrganisation, HasUuids;
 
     public const CATEGORIES = ['RECEIVABLE', 'PAYABLE', 'EXPIRY'];
 

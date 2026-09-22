@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganisation;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class LeaveType extends Model
 {
-    use HasUuids;
+    use BelongsToOrganisation, HasUuids;
 
     protected $fillable = [
         'organisation_id', 'code', 'name', 'days_per_year', 'is_paid', 'requires_document', 'carry_forward_max', 'is_active',

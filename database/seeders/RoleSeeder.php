@@ -3,9 +3,11 @@
 namespace Database\Seeders;
 
 use App\Console\Commands\CreateAdminUser;
+use App\Models\Organisation;
+use App\Models\Permission;
+use App\Models\Role;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RoleSeeder extends Seeder
@@ -86,26 +88,36 @@ class RoleSeeder extends Seeder
         ],
     ];
 
+    /** Every institution gets its own copy of the standard roles. */
     public function run(): void
     {
-        // Role *definitions* are global (branch_id null) — only the later
-        // assignment of a role to a user needs a concrete branch.
+        foreach (Organisation::pluck('id') as $organisationId) {
+            self::provision((string) $organisationId);
+        }
+    }
+
+    /**
+     * Creates (or re-syncs) one institution's standard roles. Role
+     * *definitions* carry no branch — only the later assignment of a role to
+     * a user needs a concrete branch.
+     */
+    public static function provision(string $organisationId): void
+    {
         app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
-        foreach (self::ROLE_PERMISSIONS as $roleName => $permissions) {
-            $role = Role::firstOrCreate(
-                ['name' => $roleName, 'guard_name' => 'web', 'branch_id' => null]
-            );
-            $role->syncPermissions($permissions);
-        }
+        app(TenantContext::class)->run($organisationId, function () use ($organisationId) {
+            foreach (self::ROLE_PERMISSIONS as $roleName => $permissions) {
+                Role::firstOrCreate(['organisation_id' => $organisationId, 'name' => $roleName, 'guard_name' => 'web', 'branch_id' => null])
+                    ->syncPermissions($permissions);
+            }
 
-        // The owner role. It is created here rather than waiting for
-        // `user:create-admin --full-access`, so a production database has it
-        // from the first seed and deploying (deploy.run) has a home even
-        // before anyone holds it. It carries every permission there is,
-        // including ones added by later releases.
-        Role::firstOrCreate(['name' => CreateAdminUser::SUPER_ADMINISTRATOR, 'guard_name' => 'web', 'branch_id' => null])
-            ->syncPermissions(Permission::where('guard_name', 'web')->get());
+            // The institution's owner role. It carries every permission there
+            // is, including ones added by later releases; the platform-level
+            // operations (backups, deployment) additionally need a platform
+            // administrator, so owning an institution never reaches them.
+            Role::firstOrCreate(['organisation_id' => $organisationId, 'name' => CreateAdminUser::SUPER_ADMINISTRATOR, 'guard_name' => 'web', 'branch_id' => null])
+                ->syncPermissions(Permission::where('guard_name', 'web')->get());
+        });
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

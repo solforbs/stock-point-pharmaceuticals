@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenantBranch;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class GoodsReceipt extends Model
 {
-    use HasUuids;
+    use BelongsToTenantBranch, HasUuids;
 
     protected $fillable = [
         'doc_number', 'purchase_order_id', 'supplier_id', 'branch_id', 'store_id',

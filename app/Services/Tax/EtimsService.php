@@ -5,6 +5,7 @@ namespace App\Services\Tax;
 use App\Jobs\SubmitToEtims;
 use App\Models\AuditLog;
 use App\Models\CustomerReturn;
+use App\Models\Organisation;
 use App\Models\Sale;
 use App\Services\Tax\Etims\EtimsDriver;
 use App\Services\Tax\Etims\EtimsResult;
@@ -83,7 +84,7 @@ class EtimsService
 
         return [
             'document_type' => 'INVOICE',
-            'seller_pin' => config('etims.seller.pin'),
+            'seller_pin' => $this->sellerPin($sale->organisation_id),
             'branch_code' => config('etims.seller.branch_code'),
             'invoice_number' => $sale->doc_number,
             'invoice_date' => $sale->posted_at->toIso8601String(),
@@ -117,7 +118,7 @@ class EtimsService
 
         return [
             'document_type' => 'CREDIT_NOTE',
-            'seller_pin' => config('etims.seller.pin'),
+            'seller_pin' => $this->sellerPin($return->organisation_id),
             'branch_code' => config('etims.seller.branch_code'),
             'credit_note_number' => $return->credit_note_number,
             'credit_note_date' => $return->posted_at?->toIso8601String(),
@@ -136,6 +137,17 @@ class EtimsService
             'tax_total' => (string) $return->tax_total,
             'grand_total' => (string) $return->grand_total,
         ];
+    }
+
+    /**
+     * Each institution files under its own KRA PIN; the configured PIN is
+     * only the fallback for an institution that has not recorded one yet.
+     */
+    private function sellerPin(string $organisationId): ?string
+    {
+        $pin = trim((string) Organisation::whereKey($organisationId)->value('kra_pin'));
+
+        return $pin !== '' ? $pin : config('etims.seller.pin');
     }
 
     private function enqueue(Model $document, string $type): void

@@ -3,14 +3,14 @@
 namespace Tests\Feature\Api;
 
 use App\Mail\PurchaseOrderSentMail;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\Store;
 use App\Models\User;
 use App\Models\UserMessage;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -46,7 +46,7 @@ class WorkflowNotificationsTest extends TestCase
      */
     private function userWith(string $email, string $roleName, array $permissions): User
     {
-        $user = User::create([
+        $user = $this->colleague([
             'name' => ucfirst(explode('@', $email)[0]), 'username' => explode('@', $email)[0], 'email' => $email,
             'password' => Hash::make('a-long-enough-password'), 'is_active' => true,
         ]);
@@ -54,7 +54,7 @@ class WorkflowNotificationsTest extends TestCase
         foreach ($permissions as $name) {
             Permission::findOrCreate($name, 'web');
         }
-        $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web', 'branch_id' => null]);
+        $role = Role::firstOrCreate(['organisation_id' => $this->org->id, 'name' => $roleName, 'guard_name' => 'web', 'branch_id' => null]);
         $role->syncPermissions($permissions);
 
         $registrar = app(PermissionRegistrar::class);
@@ -162,7 +162,10 @@ class WorkflowNotificationsTest extends TestCase
             'lines' => [['product_id' => $this->amox->id, 'batch_id' => $batch->id, 'qty_base' => '10']],
         ])->assertCreated()->json();
 
+        // Segregation of duties: someone other than the requester approves.
+        Sanctum::actingAs($this->userWith('transfers@stockpoint.test', 'Transfer approvers', ['stock.transfer.approve']));
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/approve")->assertOk();
+        Sanctum::actingAs($this->user);
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/dispatch")->assertOk();
 
         $this->assertSame(1, UserMessage::where('category', 'TRANSFER')->where('recipient_id', $receiver->id)->count());

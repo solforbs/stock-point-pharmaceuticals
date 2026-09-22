@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenantBranch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class UserMessage extends Model
 {
-    use HasUuids;
+    use BelongsToTenantBranch, HasUuids;
 
     public const PRIORITIES = ['NORMAL', 'HIGH', 'URGENT'];
 

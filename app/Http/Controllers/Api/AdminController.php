@@ -5,16 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\NumberSequence;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\Setting;
 use App\Models\Store;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -47,6 +49,7 @@ class AdminController extends ApiController
 
         $term = trim((string) $request->input('q', ''));
         $users = User::query()
+            ->where('organisation_id', $this->organisationId($request))
             ->when($term !== '', fn ($q) => $q->where(fn ($w) => $w->where('name', 'like', "%{$term}%")->orWhere('username', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%")))
             ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
             ->orderBy('name')->paginate($request->integer('per_page', 50));
@@ -60,7 +63,7 @@ class AdminController extends ApiController
     public function user(Request $request, int $user): JsonResponse
     {
         $this->requirePermission($request, 'admin.users');
-        $userModel = User::findOrFail($user);
+        $userModel = $this->tenantUser($request, $user);
 
         return response()->json($this->userPayload($userModel, ($this->assignmentsFor([$userModel->id])[$userModel->id] ?? [])));
     }
@@ -98,7 +101,7 @@ class AdminController extends ApiController
     public function updateUser(Request $request, int $user): JsonResponse
     {
         $this->requirePermission($request, 'admin.users');
-        $user = User::findOrFail($user);
+        $user = $this->tenantUser($request, $user);
 
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:150'],
@@ -155,7 +158,7 @@ class AdminController extends ApiController
     public function unlockUser(Request $request, int $user): JsonResponse
     {
         $this->requirePermission($request, 'admin.users');
-        $user = User::findOrFail($user);
+        $user = $this->tenantUser($request, $user);
         $user->forceFill(['failed_login_attempts' => 0, 'locked_until' => null])->save();
         AuditLog::record('USER_UNLOCKED', 'user', (string) $user->id, ['reference' => $user->email]);
 
@@ -191,12 +194,12 @@ class AdminController extends ApiController
         app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:60', Rule::unique('roles', 'name')->where('guard_name', 'web')],
+            'name' => ['required', 'string', 'max:60', Rule::unique('roles', 'name')->where('guard_name', 'web')->where('organisation_id', $this->organisationId($request))],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
-        $role = Role::create(['name' => $data['name'], 'guard_name' => 'web']);
+        $role = Role::create(['name' => $data['name'], 'guard_name' => 'web', 'branch_id' => null]);
         $role->syncPermissions($data['permissions'] ?? []);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         AuditLog::record('ROLE_CREATED', 'role', (string) $role->id, ['reference' => $role->name, 'after_json' => ['permissions' => $data['permissions'] ?? []]]);
@@ -290,7 +293,7 @@ class AdminController extends ApiController
             'code' => ['required', 'string', 'max:20', Rule::unique('stores', 'code')->where('branch_id', $branch->id)],
             'name' => ['required', 'string', 'max:100'],
             'store_type' => ['required', 'in:MAIN,COLD,QUARANTINE,RETAIL,TRANSIT,DISPENSARY'],
-            'storage_condition_id' => ['nullable', 'uuid', 'exists:storage_conditions,id'],
+            'storage_condition_id' => ['nullable', 'uuid', TenantRules::exists('storage_conditions')],
             'is_sellable' => ['nullable', 'boolean'],
         ]);
 
@@ -310,7 +313,7 @@ class AdminController extends ApiController
             'code' => ['sometimes', 'required', 'string', 'max:20', Rule::unique('stores', 'code')->where('branch_id', $branch->id)->ignore($store->id)],
             'name' => ['sometimes', 'required', 'string', 'max:100'],
             'store_type' => ['sometimes', 'required', 'in:MAIN,COLD,QUARANTINE,RETAIL,TRANSIT,DISPENSARY'],
-            'storage_condition_id' => ['nullable', 'uuid', 'exists:storage_conditions,id'],
+            'storage_condition_id' => ['nullable', 'uuid', TenantRules::exists('storage_conditions')],
             'is_sellable' => ['nullable', 'boolean'],
         ]);
 
@@ -446,6 +449,12 @@ class AdminController extends ApiController
 
     // ---- helpers ----------------------------------------------------------
 
+    /** A user of the signed-in institution; any other institution's user is "not found". */
+    private function tenantUser(Request $request, int $id): User
+    {
+        return User::where('organisation_id', $this->organisationId($request))->findOrFail($id);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -453,9 +462,9 @@ class AdminController extends ApiController
     {
         return [
             'assignments' => ['nullable', 'array'],
-            'assignments.*.branch_id' => ['required', 'uuid', 'exists:branches,id'],
+            'assignments.*.branch_id' => ['required', 'uuid', TenantRules::exists('branches')],
             'assignments.*.roles' => ['required', 'array', 'min:1'],
-            'assignments.*.roles.*' => ['string', Rule::exists('roles', 'name')->where('guard_name', 'web')],
+            'assignments.*.roles.*' => ['string', Rule::exists('roles', 'name')->where('guard_name', 'web')->where('organisation_id', app(TenantContext::class)->organisationId())],
         ];
     }
 

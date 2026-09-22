@@ -45,20 +45,26 @@ class ChartOfAccountsSeeder extends Seeder
         ['6010', 'Salaries and wages', 'EXPENSE', 'SALARIES_EXPENSE'],
     ];
 
+    /** Every institution gets the standard chart and an open current period. */
     public function run(): void
     {
-        $org = Organisation::firstOrFail();
+        foreach (Organisation::pluck('id') as $organisationId) {
+            self::provision((string) $organisationId);
+        }
+    }
 
+    public static function provision(string $organisationId): void
+    {
         foreach (self::ACCOUNTS as [$code, $name, $type, $role]) {
-            ChartOfAccount::firstOrCreate(
-                ['organisation_id' => $org->id, 'code' => $code],
+            ChartOfAccount::withoutGlobalScopes()->firstOrCreate(
+                ['organisation_id' => $organisationId, 'code' => $code],
                 ['name' => $name, 'account_type' => $type, 'system_role' => $role, 'is_postable' => true]
             );
         }
 
         $year = (int) now()->format('Y');
-        FinancialPeriod::firstOrCreate(
-            ['organisation_id' => $org->id, 'fiscal_year' => $year, 'period_no' => now()->month],
+        FinancialPeriod::withoutGlobalScopes()->firstOrCreate(
+            ['organisation_id' => $organisationId, 'fiscal_year' => $year, 'period_no' => now()->month],
             [
                 'start_date' => now()->startOfMonth(),
                 'end_date' => now()->endOfMonth(),

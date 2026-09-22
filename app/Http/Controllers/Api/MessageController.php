@@ -48,7 +48,7 @@ class MessageController extends ApiController
 
         $data = $request->validate([
             // Null addresses everyone working in the branch.
-            'recipient_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('is_active', true)],
+            'recipient_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('is_active', true)->where('organisation_id', $this->organisationId($request))],
             'subject' => ['required', 'string', 'max:150'],
             'body' => ['required', 'string', 'max:5000'],
             'priority' => ['nullable', Rule::in(UserMessage::PRIORITIES)],
@@ -101,7 +101,7 @@ class MessageController extends ApiController
             ->distinct()->pluck('model_id');
 
         return response()->json(
-            User::whereIn('id', $ids)->where('is_active', true)
+            User::whereIn('id', $ids)->where('organisation_id', $this->organisationId($request))->where('is_active', true)
                 ->whereKeyNot($request->user()->id)
                 ->orderBy('name')->get(['id', 'name', 'username'])
         );

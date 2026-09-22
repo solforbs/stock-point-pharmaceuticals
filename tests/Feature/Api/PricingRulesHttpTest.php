@@ -5,9 +5,9 @@ namespace Tests\Feature\Api;
 use App\Models\AuditLog;
 use App\Models\PriceList;
 use App\Models\ProductPrice;
+use App\Models\Role;
 use App\Models\RoleDiscountAuthority;
 use Laravel\Sanctum\Sanctum;
-use Spatie\Permission\Models\Role;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
 

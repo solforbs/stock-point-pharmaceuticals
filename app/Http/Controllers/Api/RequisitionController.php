@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\Notifications\Notifier;
 use App\Services\Procurement\ReorderAdvisor;
 use App\Services\Procurement\RequisitionService;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -39,7 +40,7 @@ class RequisitionController extends ApiController
             'needed_by' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
             'lines.*.qty_base' => ['required', 'numeric', 'gt:0'],
             'lines.*.notes' => ['nullable', 'string', 'max:255'],
         ]);
@@ -108,14 +109,14 @@ class RequisitionController extends ApiController
         $this->requirePermission($request, 'po.create');
 
         $data = $request->validate([
-            'supplier_id' => ['required', 'uuid', 'exists:suppliers,id'],
+            'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
             'expected_date' => ['nullable', 'date'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.requisition_line_id' => ['required', 'uuid'],
-            'lines.*.uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
+            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'lines.*.qty_ordered' => ['required', 'numeric', 'gt:0'],
             'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'lines.*.tax_code_id' => ['nullable', 'uuid', 'exists:tax_codes,id'],
+            'lines.*.tax_code_id' => ['nullable', 'uuid', TenantRules::exists('tax_codes')],
         ]);
 
         return response()->json($requisitions->convertToPurchaseOrder($this->find($request, $requisition), $data + ['user_id' => $request->user()->id]), 201);

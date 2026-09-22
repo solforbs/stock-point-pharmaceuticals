@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductUom;
 use App\Services\Inventory\InventoryReport;
 use App\Services\Sales\ProductInsight;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -193,18 +194,18 @@ class ProductController extends ApiController
 
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:255', Rule::unique('products', 'code')->where('organisation_id', $organisationId)],
-            'sku' => ['nullable', 'string', 'max:255', Rule::unique('products', 'sku')],
+            'sku' => ['nullable', 'string', 'max:255', Rule::unique('products', 'sku')->where('organisation_id', $organisationId)],
             'gtin' => ['nullable', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'generic_name' => ['nullable', 'string', 'max:255'],
             'strength' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
-            'dosage_form_id' => ['nullable', 'uuid', 'exists:dosage_forms,id'],
-            'category_id' => ['nullable', 'uuid', 'exists:product_categories,id'],
-            'manufacturer_id' => ['nullable', 'uuid', 'exists:manufacturers,id'],
-            'base_uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
-            'tax_code_id' => ['nullable', 'uuid', 'exists:tax_codes,id'],
-            'storage_condition_id' => ['nullable', 'uuid', 'exists:storage_conditions,id'],
+            'dosage_form_id' => ['nullable', 'uuid', TenantRules::exists('dosage_forms')],
+            'category_id' => ['nullable', 'uuid', TenantRules::exists('product_categories')],
+            'manufacturer_id' => ['nullable', 'uuid', TenantRules::exists('manufacturers')],
+            'base_uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
+            'tax_code_id' => ['nullable', 'uuid', TenantRules::exists('tax_codes')],
+            'storage_condition_id' => ['nullable', 'uuid', TenantRules::exists('storage_conditions')],
             'is_discrete' => ['boolean'],
             'pack_integrity' => ['boolean'],
             'requires_batch' => ['boolean'],
@@ -213,12 +214,12 @@ class ProductController extends ApiController
             'lead_time_days' => ['integer', 'min:0'],
             'default_price' => ['nullable', 'numeric', 'min:0'],
             'uoms' => ['nullable', 'array'],
-            'uoms.*.uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
+            'uoms.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'uoms.*.factor_to_base' => ['required', 'integer', 'min:2'],
             'uoms.*.is_purchase' => ['nullable', 'boolean'],
             'uoms.*.is_sales' => ['nullable', 'boolean'],
             'uoms.*.is_default_sales' => ['nullable', 'boolean'],
-            'uoms.*.barcode' => ['nullable', 'string', 'max:64', 'unique:product_uoms,barcode'],
+            'uoms.*.barcode' => ['nullable', 'string', 'max:64', Rule::unique('product_uoms', 'barcode')->where(fn ($q) => $q->whereIn('product_id', Product::select('id')))],
         ]);
 
         $product = DB::transaction(function () use ($validated, $organisationId, $request) {
@@ -274,12 +275,12 @@ class ProductController extends ApiController
             'generic_name' => ['nullable', 'string', 'max:255'],
             'strength' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
-            'category_id' => ['nullable', 'uuid', 'exists:product_categories,id'],
-            'dosage_form_id' => ['nullable', 'uuid', 'exists:dosage_forms,id'],
-            'manufacturer_id' => ['nullable', 'uuid', 'exists:manufacturers,id'],
-            'tax_code_id' => ['nullable', 'uuid', 'exists:tax_codes,id'],
-            'storage_condition_id' => ['nullable', 'uuid', 'exists:storage_conditions,id'],
-            'base_uom_id' => ['sometimes', 'uuid', 'exists:units_of_measure,id'],
+            'category_id' => ['nullable', 'uuid', TenantRules::exists('product_categories')],
+            'dosage_form_id' => ['nullable', 'uuid', TenantRules::exists('dosage_forms')],
+            'manufacturer_id' => ['nullable', 'uuid', TenantRules::exists('manufacturers')],
+            'tax_code_id' => ['nullable', 'uuid', TenantRules::exists('tax_codes')],
+            'storage_condition_id' => ['nullable', 'uuid', TenantRules::exists('storage_conditions')],
+            'base_uom_id' => ['sometimes', 'uuid', TenantRules::exists('units_of_measure')],
             'pack_integrity' => ['sometimes', 'boolean'],
             'reorder_point' => ['sometimes', 'numeric', 'min:0'],
             'safety_stock' => ['sometimes', 'numeric', 'min:0'],

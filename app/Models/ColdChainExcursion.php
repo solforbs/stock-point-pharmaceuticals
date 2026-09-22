@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenantBranch;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,7 @@ use Illuminate\Support\Carbon;
  */
 class ColdChainExcursion extends Model
 {
-    use HasUuids;
+    use BelongsToTenantBranch, HasUuids;
 
     protected $fillable = [
         'branch_id', 'store_id', 'started_at', 'ended_at', 'min_temp', 'max_temp', 'range_min', 'range_max',

@@ -4,13 +4,15 @@ namespace App\Console\Commands;
 
 use App\Models\AuditLog;
 use App\Models\Branch;
+use App\Models\Organisation;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -36,11 +38,47 @@ class CreateAdminUser extends Command
         {--username= : Username (defaults to the part of the email before @)}
         {--password= : Password, at least 12 characters (a strong one is generated and shown once when omitted)}
         {--branch=* : Branch code(s) to grant access to (defaults to every active branch)}
-        {--full-access : Also grant the Super Administrator role carrying every permission (setup and development only)}';
+        {--full-access : Also grant the Super Administrator role carrying every permission (setup and development only)}
+        {--organisation= : The institution (organisation id or exact name); required once more than one exists}
+        {--platform : Also make the account a platform administrator (backups, deployment, shared reference data)}';
 
     protected $description = 'Create an administrator account and assign its roles per branch (Part 18.3)';
 
-    public function handle(): int
+    public function handle(TenantContext $tenant): int
+    {
+        $organisation = $this->resolveOrganisation();
+        if (! $organisation) {
+            return self::FAILURE;
+        }
+
+        // Everything below happens inside the one institution.
+        return $tenant->run($organisation->id, fn () => $this->createIn($organisation));
+    }
+
+    private function resolveOrganisation(): ?Organisation
+    {
+        $wanted = (string) $this->option('organisation');
+        if ($wanted !== '') {
+            $organisation = Organisation::whereKey($wanted)->orWhere('name', $wanted)->first();
+            if (! $organisation) {
+                $this->error("No institution matches \"{$wanted}\".");
+            }
+
+            return $organisation;
+        }
+
+        $all = Organisation::orderBy('name')->get();
+        if ($all->count() === 1) {
+            return $all->first();
+        }
+        $this->error($all->isEmpty()
+            ? 'No institution exists yet; run the OrganisationSeeder first.'
+            : 'More than one institution exists; name one with --organisation ('.$all->pluck('name')->implode(', ').').');
+
+        return null;
+    }
+
+    private function createIn(Organisation $organisation): int
     {
         $email = Str::lower(trim((string) $this->argument('email')));
         $username = (string) ($this->option('username') ?: Str::before($email, '@'));
@@ -80,19 +118,24 @@ class CreateAdminUser extends Command
 
         $registrar = app(PermissionRegistrar::class);
 
-        $user = DB::transaction(function () use ($email, $username, $password, $branches, $sysAdmin, $registrar) {
+        $user = DB::transaction(function () use ($email, $username, $password, $branches, $sysAdmin, $registrar, $organisation) {
             $user = User::create([
                 'name' => (string) ($this->option('name') ?: 'System Administrator'),
                 'username' => $username,
                 'email' => $email,
                 'password' => $password,
             ]);
-            $user->forceFill(['is_active' => true, 'email_verified_at' => now()])->save();
+            $user->forceFill([
+                'organisation_id' => $organisation->id,
+                'is_active' => true,
+                'email_verified_at' => now(),
+                'is_platform_admin' => (bool) $this->option('platform'),
+            ])->save();
 
             $roles = [$sysAdmin];
             if ($this->option('full-access')) {
                 $registrar->setPermissionsTeamId(null);
-                $super = Role::firstOrCreate(['name' => self::SUPER_ADMINISTRATOR, 'guard_name' => 'web', 'branch_id' => null]);
+                $super = Role::firstOrCreate(['organisation_id' => $organisation->id, 'name' => self::SUPER_ADMINISTRATOR, 'guard_name' => 'web', 'branch_id' => null]);
                 $super->syncPermissions(Permission::where('guard_name', 'web')->get());
                 $roles[] = $super;
             }
@@ -116,6 +159,7 @@ class CreateAdminUser extends Command
 
         $this->info("Administrator {$user->email} created.");
         $this->table(['Field', 'Value'], [
+            ['Institution', $organisation->name],
             ['Name', $user->name],
             ['Email', $user->email],
             ['Username', $user->username],

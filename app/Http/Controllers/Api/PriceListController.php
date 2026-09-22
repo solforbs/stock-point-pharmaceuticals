@@ -7,6 +7,7 @@ use App\Models\CustomerTier;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ProductPrice;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -40,8 +41,8 @@ class PriceListController extends ApiController
             'code' => ['required', 'string', 'max:30', Rule::unique('price_lists', 'code')->where('organisation_id', $organisationId)],
             'name' => ['required', 'string', 'max:100'],
             'sale_mode' => ['nullable', 'in:RETAIL,WHOLESALE,DISPENSING'],
-            'tier_id' => ['nullable', 'uuid', 'exists:customer_tiers,id'],
-            'branch_id' => ['nullable', 'uuid', 'exists:branches,id'],
+            'tier_id' => ['nullable', 'uuid', TenantRules::exists('customer_tiers')],
+            'branch_id' => ['nullable', 'uuid', TenantRules::exists('branches')],
             'currency' => ['nullable', 'string', 'size:3'],
             'prices_include_tax' => ['nullable', 'boolean'],
             'effective_from' => ['nullable', 'date'],
@@ -105,8 +106,8 @@ class PriceListController extends ApiController
         $list = PriceList::where('organisation_id', $this->organisationId($request))->findOrFail($list);
 
         $data = $request->validate([
-            'product_id' => ['required', 'uuid', 'exists:products,id'],
-            'uom_id' => ['nullable', 'uuid', 'exists:units_of_measure,id'],
+            'product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'uom_id' => ['nullable', 'uuid', TenantRules::exists('units_of_measure')],
             'factor_type' => ['required', 'in:FIXED,COST_PLUS_MARKUP,TARGET_MARGIN,LIST_RELATIVE'],
             'unit_price' => ['nullable', 'numeric', 'min:0', 'required_if:factor_type,FIXED'],
             'factor_value' => ['nullable', 'numeric', 'min:0', 'required_unless:factor_type,FIXED'],
@@ -161,7 +162,7 @@ class PriceListController extends ApiController
         $data = $request->validate([
             'code' => ['required', 'string', 'max:30', Rule::unique('customer_tiers', 'code')->where('organisation_id', $organisationId)],
             'name' => ['required', 'string', 'max:100'],
-            'default_price_list_id' => ['nullable', 'uuid', 'exists:price_lists,id'],
+            'default_price_list_id' => ['nullable', 'uuid', TenantRules::exists('price_lists')],
             'default_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'max_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'credit_terms_days' => ['nullable', 'integer', 'min:0', 'max:365'],

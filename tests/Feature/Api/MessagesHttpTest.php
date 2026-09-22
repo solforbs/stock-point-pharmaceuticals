@@ -26,7 +26,7 @@ class MessagesHttpTest extends TestCase
     {
         parent::setUp();
         $this->buildWorld();
-        $this->colleague = User::create([
+        $this->colleague = $this->colleague([
             'name' => 'Counter Two', 'username' => 'counter2', 'email' => 'counter2@stockpoint.test',
             'password' => Hash::make('a-long-enough-password'), 'is_active' => true,
         ]);

@@ -11,6 +11,7 @@ use App\Services\Inventory\InventoryReport;
 use App\Services\Inventory\OpeningStockService;
 use App\Services\Inventory\OpeningStockValidationException;
 use App\Services\Inventory\StockAdjustmentService;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -99,12 +100,12 @@ class InventoryController extends ApiController
         $this->requirePermission($request, 'stock.adjust');
 
         $data = $request->validate([
-            'store_id' => ['required', 'uuid', 'exists:stores,id'],
+            'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'reason_code' => ['required', 'in:BREAKAGE,THEFT,EXPIRY,SAMPLING,CORRECTION_OF_ERROR,DONATION,COLD_CHAIN_LOSS'],
             'notes' => ['nullable', 'string', 'max:500'],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.batch_id' => ['required', 'uuid', 'exists:product_batches,id'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.batch_id' => ['required', 'uuid', TenantRules::exists('product_batches')],
             'lines.*.qty_base' => ['required', 'numeric', 'not_in:0'],
         ]);
 

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\RoleDiscountAuthority;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 
 class DiscountAuthoritySeeder extends Seeder
 {

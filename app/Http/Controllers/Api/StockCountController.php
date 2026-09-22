@@ -6,6 +6,7 @@ use App\Models\StockCount;
 use App\Models\StockCountLine;
 use App\Models\Store;
 use App\Services\Inventory\StockCountService;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -45,9 +46,9 @@ class StockCountController extends ApiController
         $this->requirePermission($request, 'stock.count.enter');
 
         $data = $request->validate([
-            'store_id' => ['required', 'uuid', 'exists:stores,id'],
+            'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'product_ids' => ['nullable', 'array'],
-            'product_ids.*' => ['uuid', 'exists:products,id'],
+            'product_ids.*' => ['uuid', TenantRules::exists('products')],
         ]);
 
         return response()->json($counts->plan($data + ['user_id' => $request->user()->id]), 201);

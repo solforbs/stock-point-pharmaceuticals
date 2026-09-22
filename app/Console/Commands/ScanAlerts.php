@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Branch;
 use App\Services\Alerts\AlertDigestMailer;
 use App\Services\Alerts\AlertScanner;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Console\Command;
 
 /**
@@ -20,7 +21,7 @@ class ScanAlerts extends Command
 
     protected $description = 'Recompute payment-deadline and expiry alerts for every branch (Part 17)';
 
-    public function handle(AlertScanner $scanner, AlertDigestMailer $mailer): int
+    public function handle(AlertScanner $scanner, AlertDigestMailer $mailer, TenantContext $tenant): int
     {
         $branches = Branch::query()
             ->when($this->option('branch'), fn ($q, $code) => $q->where('code', $code))
@@ -35,8 +36,11 @@ class ScanAlerts extends Command
 
         $rows = [];
         foreach ($branches as $branch) {
-            $result = $scanner->scan($branch);
-            $mailed = $this->option('no-mail') ? ['sent' => '—'] : $mailer->send($branch);
+            // Each branch is scanned as its own institution.
+            [$result, $mailed] = $tenant->run($branch->organisation_id, fn () => [
+                $scanner->scan($branch),
+                $this->option('no-mail') ? ['sent' => '—'] : $mailer->send($branch),
+            ]);
             $rows[] = [$branch->code, $result['opened'], $result['refreshed'], $result['resolved'], $mailed['sent']];
         }
 

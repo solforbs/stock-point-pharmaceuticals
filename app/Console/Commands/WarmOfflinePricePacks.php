@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Branch;
 use App\Models\Store;
 use App\Models\User;
 use App\Services\Sales\OfflineSaleService;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Console\Command;
 
 /**
@@ -19,17 +21,8 @@ class WarmOfflinePricePacks extends Command
 
     protected $description = 'Re-price selling stores for the POS offline price packs (Part 16.7)';
 
-    public function handle(OfflineSaleService $offline): int
+    public function handle(OfflineSaleService $offline, TenantContext $tenant): int
     {
-        // A walk-in price never involves a discount, so whose authority the
-        // quote is run under makes no difference; it only has to be someone.
-        $user = User::query()->orderBy('id')->first();
-        if (! $user) {
-            $this->warn('No users yet; nothing to price.');
-
-            return self::SUCCESS;
-        }
-
         $stores = Store::where('is_sellable', true)
             ->when($this->option('store'), fn ($q, $code) => $q->where('code', $code))
             ->orderBy('code')
@@ -37,8 +30,18 @@ class WarmOfflinePricePacks extends Command
 
         $rows = [];
         foreach ($stores as $store) {
+            // A walk-in price never involves a discount, so whose authority the
+            // quote runs under makes no difference; it only has to be someone
+            // of the store's own institution.
+            $organisationId = Branch::whereKey($store->branch_id)->value('organisation_id');
+            $user = User::where('organisation_id', $organisationId)->orderBy('id')->first();
+            if (! $user) {
+                $rows[] = [$store->code, 0, 'no users yet'];
+
+                continue;
+            }
             $started = microtime(true);
-            $priced = $offline->warmPriceMap($store, $user);
+            $priced = $tenant->run($organisationId, fn () => $offline->warmPriceMap($store, $user));
             $rows[] = [$store->code, $priced, round(microtime(true) - $started, 1).'s'];
         }
 

@@ -4,13 +4,13 @@ namespace Tests\Feature\Api;
 
 use App\Console\Commands\CreateAdminUser;
 use App\Models\AuditLog;
+use App\Models\Role;
 use App\Services\Admin\DeploymentFailedException;
 use App\Services\Admin\DeploymentService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Facades\File;
 use Laravel\Sanctum\Sanctum;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -33,6 +33,8 @@ class DeploymentHttpTest extends TestCase
     private function actAsDeployer(): void
     {
         $this->grantPermissions(['deploy.run']);
+        // Deploying replaces the code every institution runs on.
+        $this->user->forceFill(['is_platform_admin' => true])->save();
         Sanctum::actingAs($this->user);
     }
 
@@ -171,6 +173,11 @@ class DeploymentHttpTest extends TestCase
         $this->postJson('/api/admin/deployments')->assertStatus(403);
 
         $assign(CreateAdminUser::SUPER_ADMINISTRATOR);
+        Sanctum::actingAs($this->user);
+        // Owning an institution is not running the platform.
+        $this->getJson('/api/admin/deployments')->assertStatus(403);
+
+        $this->user->forceFill(['is_platform_admin' => true])->save();
         Sanctum::actingAs($this->user);
         $this->getJson('/api/admin/deployments')->assertOk();
     }

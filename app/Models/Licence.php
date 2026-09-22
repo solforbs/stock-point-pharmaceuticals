@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganisation;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -15,7 +16,7 @@ use Illuminate\Support\Carbon;
  */
 class Licence extends Model
 {
-    use HasUuids;
+    use BelongsToOrganisation, HasUuids;
 
     /** Days before expiry at which a licence counts as EXPIRING. */
     public const EXPIRING_WITHIN_DAYS = 60;

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenantStore;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class StockCount extends Model
 {
-    use HasUuids;
+    use BelongsToTenantStore, HasUuids;
 
     protected $fillable = ['doc_number', 'store_id', 'status', 'created_by', 'approved_by', 'approved_at'];
 

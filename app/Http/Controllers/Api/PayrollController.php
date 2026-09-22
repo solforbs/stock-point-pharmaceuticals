@@ -7,6 +7,8 @@ use App\Models\Employee;
 use App\Models\PayrollBand;
 use App\Models\PayrollRun;
 use App\Services\Payroll\PayrollService;
+use App\Services\Tenancy\TenantContext;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -100,7 +102,7 @@ class PayrollController extends ApiController
         $this->requirePermission($request, 'payroll.process');
         $data = $request->validate([
             'inputs' => ['nullable', 'array'],
-            'inputs.*.employee_id' => ['required', 'uuid', 'exists:employees,id'],
+            'inputs.*.employee_id' => ['required', 'uuid', TenantRules::exists('employees')],
             'inputs.*.allowances' => ['nullable', 'numeric', 'min:0'],
             'inputs.*.overtime' => ['nullable', 'numeric', 'min:0'],
             'inputs.*.pension_contribution' => ['nullable', 'numeric', 'min:0'],
@@ -158,10 +160,10 @@ class PayrollController extends ApiController
         $sometimes = $existing ? 'sometimes' : 'required';
 
         return [
-            'employee_no' => [$sometimes, 'string', 'max:30', Rule::unique('employees', 'employee_no')->ignore($existing?->id)],
+            'employee_no' => [$sometimes, 'string', 'max:30', Rule::unique('employees', 'employee_no')->where('organisation_id', app(TenantContext::class)->organisationId())->ignore($existing?->id)],
             'name' => [$sometimes, 'string', 'max:150'],
-            'branch_id' => ['nullable', 'uuid', 'exists:branches,id'],
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'branch_id' => ['nullable', 'uuid', TenantRules::exists('branches')],
+            'user_id' => ['nullable', 'integer', TenantRules::exists('users')],
             'national_id' => ['nullable', 'string', 'max:30'],
             'kra_pin' => ['nullable', 'string', 'max:20'],
             'nssf_no' => ['nullable', 'string', 'max:30'],

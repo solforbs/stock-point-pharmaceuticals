@@ -19,6 +19,7 @@ use App\Services\Notifications\Notifier;
 use App\Services\Procurement\GoodsReceiptService;
 use App\Services\Procurement\SupplierPaymentService;
 use App\Services\Procurement\ThreeWayMatchService;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -126,14 +127,14 @@ class ProcurementController extends ApiController
         $this->requirePermission($request, 'po.create');
 
         $data = $request->validate([
-            'supplier_id' => ['required', 'uuid', 'exists:suppliers,id'],
+            'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
             'expected_date' => ['nullable', 'date'],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'lines.*.qty_ordered' => ['required', 'numeric', 'gt:0'],
             'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'lines.*.tax_code_id' => ['nullable', 'uuid', 'exists:tax_codes,id'],
+            'lines.*.tax_code_id' => ['nullable', 'uuid', TenantRules::exists('tax_codes')],
         ]);
 
         $supplier = Supplier::findOrFail($data['supplier_id']);
@@ -264,14 +265,14 @@ class ProcurementController extends ApiController
         $this->requirePermission($request, 'grn.create');
 
         $data = $request->validate([
-            'purchase_order_id' => ['nullable', 'uuid', 'exists:purchase_orders,id'],
-            'supplier_id' => ['required', 'uuid', 'exists:suppliers,id'],
-            'store_id' => ['required', 'uuid', 'exists:stores,id'],
+            'purchase_order_id' => ['nullable', 'uuid', TenantRules::exists('purchase_orders')],
+            'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
+            'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'is_emergency' => ['nullable', 'boolean'],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.purchase_order_line_id' => ['nullable', 'uuid', 'exists:purchase_order_lines,id'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
+            'lines.*.purchase_order_line_id' => ['nullable', 'uuid', TenantRules::exists('purchase_order_lines')],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'lines.*.qty_delivered' => ['required', 'numeric', 'min:0'],
             'lines.*.qty_accepted' => ['required', 'numeric', 'min:0'],
             'lines.*.qty_rejected' => ['nullable', 'numeric', 'min:0'],
@@ -359,14 +360,14 @@ class ProcurementController extends ApiController
         $this->requirePermission($request, 'invoice.match');
 
         $data = $request->validate([
-            'supplier_id' => ['required', 'uuid', 'exists:suppliers,id'],
+            'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
             'invoice_number' => ['required', 'string', 'max:100'],
             'invoice_date' => ['required', 'date'],
             'due_date' => ['nullable', 'date'],
             'tax_total' => ['nullable', 'numeric', 'min:0'],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.purchase_order_line_id' => ['required', 'uuid', 'exists:purchase_order_lines,id'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
+            'lines.*.purchase_order_line_id' => ['required', 'uuid', TenantRules::exists('purchase_order_lines')],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
             'lines.*.qty' => ['required', 'numeric', 'gt:0'],
             'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
         ]);
@@ -417,7 +418,7 @@ class ProcurementController extends ApiController
         $this->requirePermission($request, 'payment.record');
 
         $data = $request->validate([
-            'supplier_id' => ['required', 'uuid', 'exists:suppliers,id'],
+            'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
             'method' => ['required', 'in:CASH,MPESA,BANK,CHEQUE'],
             'reference' => ['nullable', 'string', 'max:100'],
             'amount' => ['required', 'numeric', 'gt:0'],

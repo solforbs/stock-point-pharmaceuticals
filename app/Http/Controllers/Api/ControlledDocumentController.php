@@ -7,6 +7,7 @@ use App\Models\ControlledDocument;
 use App\Models\DocumentAcknowledgement;
 use App\Models\DocumentVersion;
 use App\Models\User;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -74,7 +75,7 @@ class ControlledDocumentController extends ApiController
             'title' => ['required', 'string', 'max:255'],
             'category' => ['required', 'in:SOP,POLICY,FORM,WORK_INSTRUCTION,OTHER'],
             'review_due_date' => ['nullable', 'date'],
-            'owner_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'owner_user_id' => ['nullable', 'integer', TenantRules::exists('users')],
         ] + $this->versionRules());
 
         $doc = DB::transaction(function () use ($data, $orgId, $request) {
@@ -108,7 +109,7 @@ class ControlledDocumentController extends ApiController
             'title' => ['sometimes', 'string', 'max:255'],
             'category' => ['sometimes', 'in:SOP,POLICY,FORM,WORK_INSTRUCTION,OTHER'],
             'review_due_date' => ['sometimes', 'nullable', 'date'],
-            'owner_user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
+            'owner_user_id' => ['sometimes', 'nullable', 'integer', TenantRules::exists('users')],
         ]);
         $before = $doc->only(array_keys($data));
         $doc->update($data);
@@ -217,7 +218,7 @@ class ControlledDocumentController extends ApiController
         $acks = $version
             ? $version->acknowledgements()->with('user:id,name,username')->orderBy('acknowledged_at')->get()
             : collect();
-        $pending = User::where('is_active', true)->whereNotIn('id', $acks->pluck('user_id'))->orderBy('name')->get(['id', 'name', 'username']);
+        $pending = User::where('organisation_id', $this->organisationId($request))->where('is_active', true)->whereNotIn('id', $acks->pluck('user_id'))->orderBy('name')->get(['id', 'name', 'username']);
 
         return response()->json([
             'version' => $version,

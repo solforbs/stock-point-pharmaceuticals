@@ -6,6 +6,7 @@ use App\Models\Sale;
 use App\Services\Finance\ReceiptService;
 use App\Services\Sales\CheckoutService;
 use App\Services\Sales\VoidSaleService;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -78,7 +79,7 @@ class SaleController extends ApiController
 
         $data = $request->validate([
             'quote_id' => ['required', 'uuid'],
-            'store_id' => ['required', 'uuid', 'exists:stores,id'],
+            'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'terminal_id' => ['nullable', 'string', 'max:50'],
             'sub_type' => ['nullable', 'string', 'max:30'],
             'approve' => ['nullable', 'boolean'],

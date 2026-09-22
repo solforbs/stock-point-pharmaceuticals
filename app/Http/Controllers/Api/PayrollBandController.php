@@ -51,8 +51,9 @@ class PayrollBandController extends ApiController
         $this->requirePermission($request, 'admin.settings');
         $data = $this->validated($request);
 
-        // Statutory rates apply to the whole installation, like the seeded ones.
-        $band = PayrollBand::create($data + ['organisation_id' => null]);
+        // A band created here is this institution's own override; the shared
+        // statutory rows are maintained by the platform.
+        $band = PayrollBand::create($data);
 
         AuditLog::record('PAYROLL_BAND_CREATED', 'payroll_band', $band->id, [
             'reference' => $band->band_type.' #'.$band->sequence,

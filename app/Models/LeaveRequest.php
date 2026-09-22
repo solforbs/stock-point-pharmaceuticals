@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganisation;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,7 +18,7 @@ use Illuminate\Support\Carbon;
  */
 class LeaveRequest extends Model
 {
-    use HasUuids;
+    use BelongsToOrganisation, HasUuids;
 
     protected $fillable = [
         'organisation_id', 'doc_number', 'employee_id', 'leave_type_id', 'start_date', 'end_date', 'days', 'reason',

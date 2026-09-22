@@ -18,7 +18,14 @@ export type NavItem = {
   label: string
   icon: LucideIcon
   path: string
-  children?: { key: string; label: string; path: string }[]
+  /** platformOnly: pages that act on the whole platform, shown to platform administrators only. */
+  children?: { key: string; label: string; path: string; platformOnly?: boolean }[]
+}
+
+/** Hides the platform-only pages (backups, deployment, system health) from institution users. */
+export function withPlatformItems(items: NavItem[], isPlatformAdmin: boolean): NavItem[] {
+  if (isPlatformAdmin) return items
+  return items.map((item) => (item.children ? { ...item, children: item.children.filter((child) => !child.platformOnly) } : item))
 }
 
 // Mirrors the blueprint's Part 2.2 information architecture — 11 top-level
@@ -134,10 +141,10 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'number-sequences', label: 'Number Sequences', path: '/admin/number-sequences' },
       { key: 'audit-log', label: 'Audit Log', path: '/admin/audit-log' },
       { key: 'alerts', label: 'Alerts', path: '/admin/alerts' },
-      { key: 'deployments', label: 'CI/CD & Deployments', path: '/admin/deployments' },
+      { key: 'deployments', label: 'CI/CD & Deployments', path: '/admin/deployments', platformOnly: true },
       { key: 'sync-centre', label: 'Sync Centre', path: '/admin/sync-centre' },
-      { key: 'system-health', label: 'System Health', path: '/admin/system-health' },
-      { key: 'backup', label: 'Backup', path: '/admin/backup' },
+      { key: 'system-health', label: 'System Health', path: '/admin/system-health', platformOnly: true },
+      { key: 'backup', label: 'Backup', path: '/admin/backup', platformOnly: true },
     ],
   },
 ]

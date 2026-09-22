@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenantStore;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class StockTransfer extends Model
 {
-    use HasUuids;
+    use BelongsToTenantStore, HasUuids;
+
+    /**
+     * A transfer is visible through its source store, and both ends must be
+     * the institution's own.
+     *
+     * @return list<string>
+     */
+    public function tenantStoreColumns(): array
+    {
+        return ['from_store_id', 'to_store_id'];
+    }
 
     protected $fillable = [
         'doc_number', 'from_store_id', 'to_store_id', 'status',

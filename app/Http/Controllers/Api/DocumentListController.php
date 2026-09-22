@@ -171,7 +171,7 @@ class DocumentListController extends ApiController
         $term = trim((string) $request->input('q', ''));
 
         return response()->json(
-            User::query()->where('is_active', true)
+            User::query()->where('organisation_id', $this->organisationId($request))->where('is_active', true)
                 ->when($term !== '', fn ($q) => $q->where(fn ($w) => $w->where('name', 'like', "%{$term}%")->orWhere('username', 'like', "%{$term}%")))
                 ->orderBy('name')->limit(50)->get(['id', 'name', 'username'])
         );

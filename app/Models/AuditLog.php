@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganisation;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -10,12 +12,12 @@ use Illuminate\Support\Str;
 
 class AuditLog extends Model
 {
-    use HasUuids;
+    use BelongsToOrganisation, HasUuids;
 
     public $timestamps = false; // append-only — occurred_at is the only timestamp
 
     protected $fillable = [
-        'occurred_at', 'user_id', 'username_snapshot', 'branch_id', 'terminal_id',
+        'organisation_id', 'occurred_at', 'user_id', 'username_snapshot', 'branch_id', 'terminal_id',
         'ip', 'user_agent', 'action', 'entity_type', 'entity_id', 'reference',
         'before_json', 'after_json', 'changed_fields', 'reason', 'approval_id', 'request_id',
     ];
@@ -41,6 +43,11 @@ class AuditLog extends Model
 
         return static::create(array_merge([
             'occurred_at' => now(),
+            // The acting institution: the request's, else that of the user the
+            // event is about (a failed second factor happens before sign-in).
+            'organisation_id' => app(TenantContext::class)->organisationId()
+                ?? $user?->organisation_id
+                ?? (isset($attributes['user_id']) ? User::whereKey($attributes['user_id'])->value('organisation_id') : null),
             'user_id' => $user?->getKey(),
             'username_snapshot' => $username,
             'branch_id' => RequestFacade::instance()->attributes->get('active_branch_id'),

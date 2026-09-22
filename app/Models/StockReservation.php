@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganisation;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Support\Carbon;
  */
 class StockReservation extends Model
 {
-    use HasUuids;
+    use BelongsToOrganisation, HasUuids;
 
     protected $fillable = [
         'organisation_id', 'product_id', 'batch_id', 'store_id', 'qty_base',

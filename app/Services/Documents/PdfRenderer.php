@@ -4,6 +4,7 @@ namespace App\Services\Documents;
 
 use App\Models\Branch;
 use App\Models\Organisation;
+use App\Services\Tenancy\TenantContext;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 
@@ -39,7 +40,7 @@ class PdfRenderer
     public function letterhead(?string $branchId): array
     {
         $branch = $branchId ? Branch::find($branchId) : null;
-        $organisation = Organisation::where('id', $branch?->organisation_id)->first() ?? Organisation::first();
+        $organisation = Organisation::find($branch?->organisation_id ?? app(TenantContext::class)->organisationId());
 
         $pin = trim((string) $organisation?->kra_pin);
         $placeholder = $pin === '' || preg_match('/^P0{6,}/i', $pin) === 1;

@@ -36,6 +36,10 @@ export type CurrentUser = {
   mfa_required?: boolean
   roles?: { id: number; name: string }[]
   permissions: string[]
+  /** The institution this account belongs to; every screen shows only its data. */
+  organisation?: { id: string; name: string; legal_name: string | null } | null
+  /** Runs the platform itself: backups, deployment, system health. */
+  is_platform_admin?: boolean
   active_branch_id: string | null
   active_branch: Branch | null
   branches: Branch[]

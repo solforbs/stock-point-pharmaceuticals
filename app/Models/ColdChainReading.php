@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenantBranch;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Support\Carbon;
  */
 class ColdChainReading extends Model
 {
-    use HasUuids;
+    use BelongsToTenantBranch, HasUuids;
 
     protected $fillable = [
         'branch_id', 'store_id', 'recorded_at', 'temperature_c', 'humidity_pct',

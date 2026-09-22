@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\ScheduledReport;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -52,6 +53,15 @@ class ScheduledReportService
      * @return array{status: string, error: ?string, rows: ?int, from: ?string, to: ?string}
      */
     public function run(ScheduledReport $schedule, ?Carbon $at = null, bool $advance = false): array
+    {
+        // A schedule runs as its own institution, never the scheduler's.
+        return app(TenantContext::class)->run($schedule->organisation_id, fn () => $this->runForTenant($schedule, $at, $advance));
+    }
+
+    /**
+     * @return array{status: string, error: ?string, rows: ?int, from: ?string, to: ?string}
+     */
+    private function runForTenant(ScheduledReport $schedule, ?Carbon $at, bool $advance): array
     {
         $at ??= now();
         $registrar = app(PermissionRegistrar::class);

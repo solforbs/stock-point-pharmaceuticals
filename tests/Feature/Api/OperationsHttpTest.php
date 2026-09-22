@@ -31,6 +31,8 @@ class OperationsHttpTest extends TestCase
         config(['backup.path' => $this->backupDir, 'backup.retention_days' => 30]);
         Cache::forget('scheduler:last_run');
         $this->grantPermissions(['admin.settings']);
+        // Backups and system health span every institution on the platform.
+        $this->user->forceFill(['is_platform_admin' => true])->save();
         Sanctum::actingAs($this->user);
     }
 

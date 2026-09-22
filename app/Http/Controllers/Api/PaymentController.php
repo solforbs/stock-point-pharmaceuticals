@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\CustomerCredit;
 use App\Models\Payment;
 use App\Services\Finance\ReceiptService;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,12 +18,12 @@ class PaymentController extends ApiController
         $this->requirePermission($request, 'payment.record');
 
         $data = $request->validate([
-            'customer_id' => ['required', 'uuid', 'exists:customers,id'],
+            'customer_id' => ['required', 'uuid', TenantRules::exists('customers')],
             'method' => ['required', 'in:CASH,MPESA,BANK,CARD,CHEQUE'],
             'reference' => ['nullable', 'string', 'max:100'],
             'amount' => ['required', 'numeric', 'gt:0'],
             'allocations' => ['nullable', 'array'],
-            'allocations.*.sale_id' => ['required', 'uuid', 'exists:sales,id'],
+            'allocations.*.sale_id' => ['required', 'uuid', TenantRules::exists('sales')],
             'allocations.*.amount' => ['required', 'numeric', 'gt:0'],
         ]);
 

@@ -4,10 +4,10 @@ namespace Tests\Feature\Api;
 
 use App\Models\JournalEntry;
 use App\Models\ProductBatch;
+use App\Models\Role;
 use App\Models\StockLedger;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;

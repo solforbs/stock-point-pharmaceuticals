@@ -16,6 +16,7 @@ use App\Services\Sales\PickingService;
 use App\Services\Sales\QuotationService;
 use App\Services\Sales\SaleModes;
 use App\Services\Sales\SalesOrderService;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,14 +36,14 @@ class OrderController extends ApiController
         }
 
         $data = $request->validate([
-            'customer_id' => ['required', 'uuid', 'exists:customers,id'],
-            'store_id' => ['required', 'uuid', 'exists:stores,id'],
+            'customer_id' => ['required', 'uuid', TenantRules::exists('customers')],
+            'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'valid_until' => ['required', 'date', 'after:today'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'header_discount' => ['nullable', 'numeric', 'min:0'],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
             'lines.*.requested_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'lines.*.requested_discount_reason' => ['nullable', 'string', 'max:255'],
@@ -107,14 +108,14 @@ class OrderController extends ApiController
         $key = $this->idempotencyKey($request);
 
         $data = $request->validate([
-            'customer_id' => ['required', 'uuid', 'exists:customers,id'],
-            'store_id' => ['required', 'uuid', 'exists:stores,id'],
+            'customer_id' => ['required', 'uuid', TenantRules::exists('customers')],
+            'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'required_date' => ['nullable', 'date'],
             'payment_terms' => ['nullable', 'in:ACCOUNT,CASH_ON_DELIVERY'],
             'header_discount' => ['nullable', 'numeric', 'min:0'],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.uom_id' => ['required', 'uuid', 'exists:units_of_measure,id'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
             'lines.*.requested_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'lines.*.requested_discount_reason' => ['nullable', 'string', 'max:255'],

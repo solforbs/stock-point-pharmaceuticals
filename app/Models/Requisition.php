@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenantBranch;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +17,7 @@ use Illuminate\Support\Carbon;
  */
 class Requisition extends Model
 {
-    use HasUuids;
+    use BelongsToTenantBranch, HasUuids;
 
     protected $fillable = ['doc_number', 'branch_id', 'status', 'requested_by', 'approved_by', 'needed_by', 'notes'];
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganisation;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -11,7 +12,7 @@ use Illuminate\Support\Carbon;
  */
 class Supplier extends Model
 {
-    use HasUuids;
+    use BelongsToOrganisation, HasUuids;
 
     protected $fillable = [
         'organisation_id', 'code', 'name', 'contact_name', 'email', 'phone', 'address',

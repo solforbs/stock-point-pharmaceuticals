@@ -6,6 +6,7 @@ use App\Models\AdrReport;
 use App\Models\AuditLog;
 use App\Models\NumberSequence;
 use App\Models\ProductBatch;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -199,9 +200,9 @@ class AdrReportController extends ApiController
     private function rules(): array
     {
         return [
-            'product_id' => ['required', 'uuid', 'exists:products,id'],
-            'batch_id' => ['nullable', 'uuid', 'exists:product_batches,id'],
-            'customer_id' => ['nullable', 'uuid', 'exists:customers,id'],
+            'product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'batch_id' => ['nullable', 'uuid', TenantRules::exists('product_batches')],
+            'customer_id' => ['nullable', 'uuid', TenantRules::exists('customers')],
             'patient_initials' => ['required', 'string', 'max:10'],
             'patient_age' => ['nullable', 'integer', 'between:0,130'],
             'patient_sex' => ['nullable', 'in:M,F,U'],

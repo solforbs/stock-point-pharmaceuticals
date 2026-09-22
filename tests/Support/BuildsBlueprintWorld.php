@@ -12,6 +12,7 @@ use App\Models\GoodsReceiptLine;
 use App\Models\JournalEntryLine;
 use App\Models\NumberSequence;
 use App\Models\Organisation;
+use App\Models\Permission;
 use App\Models\PriceBreak;
 use App\Models\PriceList;
 use App\Models\Product;
@@ -19,6 +20,7 @@ use App\Models\ProductBatch;
 use App\Models\ProductDiscountPolicy;
 use App\Models\ProductPrice;
 use App\Models\ProductUom;
+use App\Models\Role;
 use App\Models\RoleDiscountAuthority;
 use App\Models\Sale;
 use App\Models\StockBalance;
@@ -33,8 +35,6 @@ use App\Services\Sales\CheckoutService;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -77,6 +77,7 @@ trait BuildsBlueprintWorld
             'base_currency' => 'KES',
             'fiscal_year_start' => 1,
         ]);
+        $this->user->forceFill(['organisation_id' => $this->org->id])->save();
 
         $this->branch = Branch::create([
             'organisation_id' => $this->org->id,
@@ -146,6 +147,20 @@ trait BuildsBlueprintWorld
             'credit_limit' => '1000000.0000',
             'current_balance' => '0.0000',
         ]);
+    }
+
+    /**
+     * Another person in the same institution (a witness, an approver, a
+     * message recipient).
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    protected function colleague(array $attributes): User
+    {
+        $user = User::create($attributes);
+        $user->forceFill(['organisation_id' => $this->org->id])->save();
+
+        return $user;
     }
 
     protected function uom(string $code): ProductUom
@@ -297,7 +312,7 @@ trait BuildsBlueprintWorld
             Permission::findOrCreate($name, 'web');
         }
 
-        $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web', 'branch_id' => null]);
+        $role = Role::firstOrCreate(['organisation_id' => $this->org->id, 'name' => $roleName, 'guard_name' => 'web', 'branch_id' => null]);
         $role->syncPermissions($permissions);
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($this->branch->id);
@@ -311,7 +326,7 @@ trait BuildsBlueprintWorld
 
     protected function grantAuthority(string $line, string $header = '0', bool $mayOverrideFloor = false, string $roleName = 'Wholesale rep'): Role
     {
-        $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web', 'branch_id' => null]);
+        $role = Role::firstOrCreate(['organisation_id' => $this->org->id, 'name' => $roleName, 'guard_name' => 'web', 'branch_id' => null]);
         RoleDiscountAuthority::updateOrCreate(['role_id' => $role->id], [
             'max_line_discount_pct' => $line,
             'max_header_discount_pct' => $header,

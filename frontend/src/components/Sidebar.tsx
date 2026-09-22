@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
-import { NAV_ITEMS, type NavItem } from '../lib/navigation'
+import { NAV_ITEMS, withPlatformItems, type NavItem } from '../lib/navigation'
 import { SyncStatusChip } from './SyncStatusChip'
 import { SidebarBranchSelector } from './navigation/SidebarBranchSelector'
 import { SidebarNavGroup } from './navigation/SidebarNavGroup'
@@ -63,9 +63,14 @@ function SidebarInner({
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
               <Pill size={16} />
             </div>
-            <span className="font-display font-extrabold tracking-tight text-[15px] text-slate-900 truncate">
-              PharmaPoint
-            </span>
+            <div className="min-w-0 leading-tight">
+              <div className="font-display font-extrabold tracking-tight text-[15px] text-slate-900 truncate">PharmaPoint</div>
+              {user?.organisation && (
+                <div className="text-[11px] font-semibold text-slate-500 truncate" title={user.organisation.legal_name ?? user.organisation.name}>
+                  {user.organisation.name}
+                </div>
+              )}
+            </div>
           </div>
         )}
         <div className="flex items-center gap-1 ml-auto">
@@ -90,7 +95,7 @@ function SidebarInner({
       </header>
 
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {SECTIONS.map((sec, idx) => (
+        {SECTIONS.map((sec) => ({ ...sec, items: withPlatformItems(sec.items, !!user?.is_platform_admin) })).map((sec, idx) => (
           <div key={sec.title ?? idx} className="space-y-0.5">
             {!collapsed && sec.title && (
               <div className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">

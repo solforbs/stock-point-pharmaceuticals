@@ -6,6 +6,7 @@ use App\Models\StockTransfer;
 use App\Models\Store;
 use App\Services\Inventory\StockTransferService;
 use App\Services\Notifications\Notifier;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -38,11 +39,11 @@ class StockTransferController extends ApiController
         $this->requirePermission($request, 'stock.transfer.create');
 
         $data = $request->validate([
-            'from_store_id' => ['required', 'uuid', 'exists:stores,id', 'different:to_store_id'],
-            'to_store_id' => ['required', 'uuid', 'exists:stores,id'],
+            'from_store_id' => ['required', 'uuid', TenantRules::exists('stores'), 'different:to_store_id'],
+            'to_store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'lines' => ['required', 'array', 'min:1'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.batch_id' => ['required', 'uuid', 'exists:product_batches,id'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.batch_id' => ['required', 'uuid', TenantRules::exists('product_batches')],
             'lines.*.qty_base' => ['required', 'numeric', 'gt:0'],
         ]);
 

@@ -7,6 +7,7 @@ use App\Models\LeaveRequest;
 use App\Services\Leave\LeaveException;
 use App\Services\Leave\LeaveService;
 use App\Services\Notifications\Notifier;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -67,8 +68,8 @@ class LeaveController extends ApiController
     {
         $this->requireAnyLeavePermission($request);
         $data = $request->validate([
-            'employee_id' => ['required', 'uuid', 'exists:employees,id'],
-            'leave_type_id' => ['required', 'uuid', 'exists:leave_types,id'],
+            'employee_id' => ['required', 'uuid', TenantRules::exists('employees')],
+            'leave_type_id' => ['required', 'uuid', TenantRules::exists('leave_types')],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'reason' => ['nullable', 'string', 'max:1000'],

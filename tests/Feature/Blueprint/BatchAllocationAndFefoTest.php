@@ -133,7 +133,9 @@ class BatchAllocationAndFefoTest extends TestCase
             'user_id' => $this->user->id,
             'lines' => [['product_id' => $this->amox->id, 'batch_id' => $b2401->id, 'qty_base' => '150.0000']],
         ]);
-        $transfers->approve($transfer, $this->user->id);
+        // Segregation of duties: the requester cannot approve their own transfer.
+        $approver = $this->colleague(['name' => 'Transfer Approver', 'username' => 'trf-approver', 'email' => 'trf-approver@example.test', 'password' => 'password-long-enough']);
+        $transfers->approve($transfer, $approver->id);
         $transfers->dispatch($transfer, $this->user->id);
         $transfers->receive($transfer, $this->user->id);
 

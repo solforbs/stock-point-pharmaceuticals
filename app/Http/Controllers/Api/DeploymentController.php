@@ -20,6 +20,7 @@ class DeploymentController extends ApiController
     public function status(Request $request, DeploymentService $deployments): JsonResponse
     {
         $this->requirePermission($request, 'deploy.run');
+        $this->requirePlatformAdmin($request);
 
         return response()->json($deployments->status() + [
             'enabled' => (bool) config('deployment.enabled'),
@@ -31,6 +32,7 @@ class DeploymentController extends ApiController
     public function check(Request $request, DeploymentService $deployments): JsonResponse
     {
         $this->requirePermission($request, 'deploy.run');
+        $this->requirePlatformAdmin($request);
 
         $result = $deployments->fetch();
         if (! $result['ok']) {
@@ -44,6 +46,7 @@ class DeploymentController extends ApiController
     public function deploy(Request $request, DeploymentService $deployments): JsonResponse
     {
         $this->requirePermission($request, 'deploy.run');
+        $this->requirePlatformAdmin($request);
 
         if (! config('deployment.enabled')) {
             return $this->error('DEPLOY_DISABLED', 'Deploying from the browser is switched off here (DEPLOY_ENABLED).', 422);

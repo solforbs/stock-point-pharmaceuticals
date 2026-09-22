@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganisation;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class StockLedger extends Model
 {
-    use HasUuids;
+    use BelongsToOrganisation, HasUuids;
 
     public $timestamps = false; // append-only; created_at is set explicitly, no updated_at at all
 

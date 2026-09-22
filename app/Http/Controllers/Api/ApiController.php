@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Branch;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -52,9 +52,23 @@ abstract class ApiController extends Controller
         return (string) $branchId;
     }
 
+    /** The signed-in user's institution: the tenant every query is confined to. */
     protected function organisationId(Request $request): string
     {
-        return (string) Branch::whereKey($this->branchId($request))->value('organisation_id');
+        $organisationId = $request->attributes->get('active_organisation_id') ?? app(TenantContext::class)->organisationId();
+        if (! $organisationId) {
+            throw new HttpException(403, 'This account does not belong to an institution.');
+        }
+
+        return (string) $organisationId;
+    }
+
+    /** Refuses unless the signed-in user runs the platform itself. */
+    protected function requirePlatformAdmin(Request $request): void
+    {
+        if (! $request->user()?->is_platform_admin) {
+            throw new HttpException(403, 'Only a platform administrator can do this.');
+        }
     }
 
     /**

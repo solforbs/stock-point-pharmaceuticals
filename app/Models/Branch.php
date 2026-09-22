@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganisation;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
 
 class Branch extends Model
 {
-    use HasUuids;
+    use BelongsToOrganisation, HasUuids;
 
     // Roles that apply organisation-wide: holders are auto-assigned to every
     // branch, including new ones, because Spatie's "teams" pivot requires a
@@ -39,9 +40,14 @@ class Branch extends Model
         static::created(function (Branch $branch) {
             $pivotTable = config('permission.table_names.model_has_roles');
 
+            // Only this institution's roles, so a new branch never gains
+            // another institution's directors or administrators.
             $globalRoleIds = Role::withoutGlobalScopes()
+                ->where('organisation_id', $branch->organisation_id)
                 ->whereIn('name', self::GLOBAL_ROLES)
                 ->pluck('id', 'name');
+
+            app(TenantContext::class)->refresh();
 
             foreach ($globalRoleIds as $roleName => $roleId) {
                 $userIds = DB::table($pivotTable)

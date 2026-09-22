@@ -10,6 +10,7 @@ use App\Models\JournalEntryLine;
 use App\Services\Finance\JournalPoster;
 use App\Services\Finance\NoOpenPeriodException;
 use App\Services\Finance\UnbalancedJournalException;
+use App\Services\Tenancy\TenantRules;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -127,13 +128,13 @@ class FinanceController extends ApiController
         $validated = $request->validate([
             'entry_date' => ['required', 'date'],
             'narration' => ['required', 'string', 'max:255'],
-            'branch_id' => ['nullable', 'uuid', 'exists:branches,id'],
+            'branch_id' => ['nullable', 'uuid', TenantRules::exists('branches')],
             'lines' => ['required', 'array', 'min:2'],
-            'lines.*.account_id' => ['required', 'uuid', 'exists:chart_of_accounts,id'],
+            'lines.*.account_id' => ['required', 'uuid', TenantRules::exists('chart_of_accounts')],
             'lines.*.debit' => ['nullable', 'numeric', 'min:0'],
             'lines.*.credit' => ['nullable', 'numeric', 'min:0'],
             'lines.*.narration' => ['nullable', 'string', 'max:255'],
-            'lines.*.branch_id' => ['nullable', 'uuid', 'exists:branches,id'],
+            'lines.*.branch_id' => ['nullable', 'uuid', TenantRules::exists('branches')],
         ]);
 
         $organisationId = $this->organisationId($request);

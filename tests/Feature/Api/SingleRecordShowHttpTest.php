@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\Licence;
 use App\Models\Organisation;
 use App\Models\Supplier;
+use App\Services\Tenancy\TenantContext;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -42,11 +43,12 @@ class SingleRecordShowHttpTest extends TestCase
             'name' => 'Other Healthcare Group',
         ]);
 
-        $otherSupplier = Supplier::create([
+        // Planted as that institution: signed in here, the write would be refused.
+        $otherSupplier = app(TenantContext::class)->run($otherOrg->id, fn () => Supplier::create([
             'organisation_id' => $otherOrg->id,
             'code' => 'OTH-SUPP',
             'name' => 'Other Supplier',
-        ]);
+        ]));
 
         $this->getJson("/api/suppliers/{$otherSupplier->id}")->assertNotFound();
     }

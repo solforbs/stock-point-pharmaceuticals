@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Customer;
 use App\Models\Organisation;
+use App\Services\Tenancy\TenantContext;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -73,12 +74,13 @@ class CustomerManagementHttpTest extends TestCase
             'name' => 'Other Healthcare Group',
         ]);
 
-        $otherCustomer = Customer::create([
+        // Planted as that institution: signed in here, the write would be refused.
+        $otherCustomer = app(TenantContext::class)->run($otherOrg->id, fn () => Customer::create([
             'organisation_id' => $otherOrg->id,
             'code' => 'OTHER-001',
             'name' => 'Foreign Clinic',
             'customer_type' => 'CLINIC',
-        ]);
+        ]));
 
         $this->patchJson("/api/customers/{$otherCustomer->id}", [
             'name' => 'Attempted Cross-Tenant Update',

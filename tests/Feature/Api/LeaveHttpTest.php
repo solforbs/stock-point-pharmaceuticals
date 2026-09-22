@@ -5,10 +5,10 @@ namespace Tests\Feature\Api;
 use App\Models\AuditLog;
 use App\Models\Employee;
 use App\Models\LeaveType;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -159,7 +159,7 @@ class LeaveHttpTest extends TestCase
         foreach ($permissions as $name) {
             Permission::findOrCreate($name, 'web');
         }
-        $role = Role::firstOrCreate(['name' => $roleName ?? "Role {$username}", 'guard_name' => 'web', 'branch_id' => null]);
+        $role = Role::firstOrCreate(['organisation_id' => $this->org->id, 'name' => $roleName ?? "Role {$username}", 'guard_name' => 'web', 'branch_id' => null]);
         $role->syncPermissions($permissions);
         app(PermissionRegistrar::class)->setPermissionsTeamId($this->branch->id);
         $user->assignRole($role);

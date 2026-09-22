@@ -219,7 +219,7 @@ class ProductInsight
             return null;
         }
 
-        $last = (clone $base)->orderByDesc('s.posted_at')->first(['l.unit_price', 's.posted_at']);
+        $last = (clone $base)->orderByDesc('s.posted_at')->orderByDesc('s.doc_number')->first(['l.unit_price', 's.posted_at']);
 
         return [
             'unit_price' => (string) $mostFrequent->unit_price,

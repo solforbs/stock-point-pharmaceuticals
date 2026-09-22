@@ -7,10 +7,13 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Services\Inventory\ProductImportService;
 use App\Services\Inventory\ProductImportValidationException;
+use App\Services\Tenancy\TenantContext;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -46,9 +49,9 @@ class ProductCatalogueController extends ApiController
         $this->requirePermission($request, 'product.edit');
 
         $data = $request->validate([
-            'code' => ['required', 'string', 'max:50', 'unique:product_categories,code'],
+            'code' => ['required', 'string', 'max:50', $this->uniqueCategoryCode()],
             'name' => ['required', 'string', 'max:255'],
-            'parent_id' => ['nullable', 'uuid', 'exists:product_categories,id'],
+            'parent_id' => ['nullable', 'uuid', TenantRules::exists('product_categories')],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -65,9 +68,9 @@ class ProductCatalogueController extends ApiController
         $category = ProductCategory::findOrFail($category);
 
         $data = $request->validate([
-            'code' => ['sometimes', 'string', 'max:50', Rule::unique('product_categories', 'code')->ignore($category->id)],
+            'code' => ['sometimes', 'string', 'max:50', $this->uniqueCategoryCode()->ignore($category->id)],
             'name' => ['sometimes', 'string', 'max:255'],
-            'parent_id' => ['nullable', 'uuid', 'exists:product_categories,id'],
+            'parent_id' => ['nullable', 'uuid', TenantRules::exists('product_categories')],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
@@ -147,6 +150,15 @@ class ProductCatalogueController extends ApiController
                 });
             fclose($out);
         }, 'products-'.now()->format('Ymd').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** A category code may not repeat a shared category's code or one of the institution's own. */
+    private function uniqueCategoryCode(): Unique
+    {
+        $organisationId = app(TenantContext::class)->organisationId();
+
+        return Rule::unique('product_categories', 'code')
+            ->where(fn ($q) => $q->whereNull('organisation_id')->orWhere('organisation_id', $organisationId));
     }
 
     private function wouldCycle(ProductCategory $category, string $parentId): bool

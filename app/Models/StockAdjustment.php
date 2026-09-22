@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenantStore;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class StockAdjustment extends Model
 {
-    use HasUuids;
+    use BelongsToTenantStore, HasUuids;
 
     protected $fillable = [
         'doc_number', 'store_id', 'reason_code', 'approval_status',

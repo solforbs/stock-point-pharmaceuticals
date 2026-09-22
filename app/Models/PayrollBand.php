@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SharedAcrossOrganisations;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -13,7 +14,7 @@ use Illuminate\Support\Carbon;
  */
 class PayrollBand extends Model
 {
-    use HasUuids;
+    use HasUuids, SharedAcrossOrganisations;
 
     protected $fillable = [
         'organisation_id', 'band_type', 'sequence', 'effective_from', 'effective_to',

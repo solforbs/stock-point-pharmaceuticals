@@ -11,6 +11,7 @@ use App\Models\StorageCondition;
 use App\Models\Store;
 use App\Models\TaxCode;
 use App\Models\UnitOfMeasure;
+use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,7 +64,7 @@ class MasterDataController extends ApiController
             'code' => ['required', 'string', 'max:30', Rule::unique('customers', 'code')->where('organisation_id', $organisationId)],
             'name' => ['required', 'string', 'max:150'],
             'customer_type' => ['required', 'in:WALK_IN,RETAIL_PHARMACY,HOSPITAL,CLINIC,NGO,GOVERNMENT,TENDER,INSTITUTION'],
-            'tier_id' => ['nullable', 'uuid', 'exists:customer_tiers,id'],
+            'tier_id' => ['nullable', 'uuid', TenantRules::exists('customer_tiers')],
             'tax_status' => ['nullable', 'in:STANDARD,EXEMPT,ZERO_RATED,WITHHOLDING_AGENT'],
             'exemption_ref' => ['nullable', 'string', 'max:100'],
             'exemption_expiry' => ['nullable', 'date'],
@@ -99,7 +100,7 @@ class MasterDataController extends ApiController
             'code' => ['nullable', 'string', 'max:30', Rule::unique('customers', 'code')->where('organisation_id', $organisationId)->ignore($customer->id)],
             'name' => ['sometimes', 'required', 'string', 'max:150'],
             'customer_type' => ['sometimes', 'required', 'in:WALK_IN,RETAIL_PHARMACY,HOSPITAL,CLINIC,NGO,GOVERNMENT,TENDER,INSTITUTION'],
-            'tier_id' => ['nullable', 'uuid', 'exists:customer_tiers,id'],
+            'tier_id' => ['nullable', 'uuid', TenantRules::exists('customer_tiers')],
             'tax_status' => ['sometimes', 'required', 'in:STANDARD,EXEMPT,ZERO_RATED,WITHHOLDING_AGENT'],
             'exemption_ref' => ['nullable', 'string', 'max:100'],
             'exemption_expiry' => ['nullable', 'date'],
@@ -208,7 +209,8 @@ class MasterDataController extends ApiController
         $this->requirePermission($request, 'product.view');
 
         return response()->json(
-            StorageCondition::where('organisation_id', $this->organisationId($request))->orderBy('code')->get()
+            // The shared standard conditions plus this institution's own.
+            StorageCondition::orderBy('code')->get()
         );
     }
 
