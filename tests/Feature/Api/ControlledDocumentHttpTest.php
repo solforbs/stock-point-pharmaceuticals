@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\AuditLog;
+use App\Models\DocumentVersion;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -94,6 +95,39 @@ class ControlledDocumentHttpTest extends TestCase
         Sanctum::actingAs($cashier);
         $this->getJson('/api/documents')->assertOk()->assertJsonPath('total', 0);
         $this->getJson("/api/documents/{$id}")->assertNotFound();
+    }
+
+    public function test_an_sop_is_started_from_a_template_edited_and_revised_in_the_app(): void
+    {
+        $templates = $this->getJson('/api/documents/templates')->assertOk()->json('data');
+        $receiving = collect($templates)->firstWhere('key', 'receiving');
+        $this->assertStringContainsString($this->org->name, $receiving['sections']['purpose'], 'the template carries the institution name');
+
+        $sections = $receiving['sections'];
+        $sections['procedure'] .= "\nCount cartons in front of the driver before signing.";
+
+        $doc = $this->postJson('/api/documents/from-template', [
+            'template_key' => 'receiving', 'code' => 'sop-001', 'title' => $receiving['title'],
+            'effective_date' => now()->toDateString(), 'sections' => $sections,
+        ])->assertCreated()
+            ->assertJsonPath('code', 'SOP-001')
+            ->assertJsonPath('status', 'DRAFT')
+            ->assertJsonPath('current_version.version', '1.0')
+            ->json();
+
+        $version = DocumentVersion::findOrFail($doc['current_version']['id']);
+        $this->assertStringContainsString('Count cartons in front of the driver', $version->content_json['procedure']);
+        Storage::disk('local')->assertExists($version->file_path);
+        $this->assertStringStartsWith('%PDF', Storage::disk('local')->get($version->file_path));
+
+        $sections['scope'] = 'All deliveries to every branch.';
+        $this->postJson("/api/documents/{$doc['id']}/versions/from-text", [
+            'version' => '1.1', 'change_summary' => 'Scope widened', 'effective_date' => now()->toDateString(), 'sections' => $sections,
+        ])->assertCreated()->assertJsonPath('version', '1.1')->assertJsonPath('content_json.scope', 'All deliveries to every branch.');
+
+        $this->postJson('/api/documents/from-template', [
+            'template_key' => 'nope', 'code' => 'sop-x', 'title' => 'X', 'effective_date' => now()->toDateString(), 'sections' => $sections,
+        ])->assertStatus(422);
     }
 
     public function test_validation_and_permissions(): void

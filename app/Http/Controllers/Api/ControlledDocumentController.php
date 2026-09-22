@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
+use App\Models\Branch;
 use App\Models\ControlledDocument;
 use App\Models\DocumentAcknowledgement;
 use App\Models\DocumentVersion;
+use App\Models\Organisation;
 use App\Models\User;
+use App\Services\Quality\SopDocumentWriter;
+use App\Services\Quality\SopTemplates;
 use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -120,6 +124,100 @@ class ControlledDocumentController extends ApiController
         return response()->json($doc->fresh(['currentVersion', 'owner:id,name']));
     }
 
+    /**
+     * GET /api/documents/templates — the starter SOPs, already carrying this
+     * institution's name, ready to be edited and issued.
+     */
+    public function templates(Request $request, SopTemplates $templates): JsonResponse
+    {
+        $this->requirePermission($request, 'document.manage');
+        [$company, $branch] = $this->names($request);
+
+        return response()->json(['sections' => SopTemplates::SECTIONS, 'data' => $templates->all($company, $branch)]);
+    }
+
+    /**
+     * POST /api/documents/from-template — a new DRAFT document whose first
+     * version is written from the (edited) template text.
+     */
+    public function storeFromTemplate(Request $request, SopTemplates $templates, SopDocumentWriter $writer): JsonResponse
+    {
+        $this->requirePermission($request, 'document.manage');
+        $orgId = $this->organisationId($request);
+        $data = $request->validate([
+            'template_key' => ['required', 'string', 'max:50'],
+            'code' => ['required', 'string', 'max:50', 'unique:controlled_documents,code,NULL,id,organisation_id,'.$orgId],
+            'title' => ['required', 'string', 'max:255'],
+            'review_due_date' => ['nullable', 'date'],
+            'effective_date' => ['required', 'date'],
+        ] + $this->sectionRules());
+
+        [$company, $branch] = $this->names($request);
+        $template = $templates->find($data['template_key'], $company, $branch);
+        if ($template === null) {
+            return $this->error('INVALID_INPUT', 'There is no SOP template with that key.', 422, ['field' => 'template_key']);
+        }
+
+        $doc = DB::transaction(function () use ($data, $template, $orgId, $request, $writer) {
+            $doc = ControlledDocument::create([
+                'organisation_id' => $orgId,
+                'code' => strtoupper($data['code']),
+                'title' => $data['title'],
+                'category' => $template['category'],
+                'review_due_date' => $data['review_due_date'] ?? now()->addYear()->toDateString(),
+                'status' => 'DRAFT',
+                'owner_user_id' => $request->user()->id,
+                'created_by' => $request->user()->id,
+            ]);
+            $version = $writer->issue($doc, '1.0', $data['effective_date'], $data['sections'], 'Adopted from the '.$template['title'].' template.', $request->user()->id);
+            AuditLog::record('DOCUMENT_CREATED', 'controlled_document', $doc->id, [
+                'reference' => $doc->code,
+                'after_json' => ['title' => $doc->title, 'category' => $doc->category, 'version' => $version->version, 'template' => $template['key']],
+            ]);
+
+            return $doc;
+        });
+
+        return response()->json($doc->fresh(['currentVersion', 'owner:id,name']), 201);
+    }
+
+    /**
+     * POST /api/documents/{id}/versions/from-text — revises a document by
+     * editing its text in the app; the new version becomes current and
+     * acknowledgements start again.
+     */
+    public function storeVersionFromText(Request $request, string $document, SopDocumentWriter $writer): JsonResponse
+    {
+        $this->requirePermission($request, 'document.manage');
+        $doc = $this->findVisible($request, $document);
+        if ($doc->status === 'RETIRED') {
+            return $this->error('INVALID_STATE', 'A retired document cannot take a new version; reactivate it first.', 409);
+        }
+        $data = $request->validate([
+            'version' => ['required', 'string', 'max:20', 'regex:/^[0-9A-Za-z.\-]+$/'],
+            'change_summary' => ['required', 'string', 'max:2000'],
+            'effective_date' => ['required', 'date'],
+        ] + $this->sectionRules());
+        if ($doc->versions()->where('version', $data['version'])->exists()) {
+            return $this->error('INVALID_INPUT', "Version {$data['version']} already exists for {$doc->code}.", 422, ['field' => 'version']);
+        }
+
+        $version = DB::transaction(function () use ($doc, $data, $request, $writer) {
+            $previous = $doc->currentVersion?->version;
+            $version = $writer->issue($doc, $data['version'], $data['effective_date'], $data['sections'], $data['change_summary'], $request->user()->id);
+            AuditLog::record('DOCUMENT_VERSION_ISSUED', 'controlled_document', $doc->id, [
+                'reference' => $doc->code,
+                'reason' => $data['change_summary'],
+                'before_json' => ['version' => $previous],
+                'after_json' => ['version' => $version->version],
+            ]);
+
+            return $version;
+        });
+
+        return response()->json($version, 201);
+    }
+
     /** POST /api/documents/{id}/versions — the new file becomes current; acknowledgements start again. */
     public function storeVersion(Request $request, string $document): JsonResponse
     {
@@ -225,6 +323,32 @@ class ControlledDocumentController extends ApiController
             'acknowledged' => $acks->values(),
             'pending' => $pending,
         ]);
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private function sectionRules(): array
+    {
+        $rules = ['sections' => ['required', 'array'], 'sections.procedure' => ['required', 'string', 'min:10', 'max:20000']];
+        foreach (array_keys(SopTemplates::SECTIONS) as $key) {
+            $rules["sections.{$key}"] ??= ['nullable', 'string', 'max:20000'];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * The institution and branch names a template is filled in with.
+     *
+     * @return array{string, string}
+     */
+    private function names(Request $request): array
+    {
+        $organisation = Organisation::find($this->organisationId($request));
+        $branch = Branch::find($this->branchId($request));
+
+        return [(string) ($organisation?->name ?? config('app.name')), (string) ($branch?->name ?? 'the branch')];
     }
 
     /**

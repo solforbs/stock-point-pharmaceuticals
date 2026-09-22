@@ -26,6 +26,7 @@ type DocVersion = {
   controlled_document_id: string
   version: string
   file_name: string
+  content_json?: Record<string, string> | null
   change_summary: string | null
   effective_date: string
   created_at: string
@@ -47,6 +48,9 @@ type ControlledDoc = {
   acknowledgement_count?: number
   versions?: DocVersion[]
 }
+
+type SopTemplate = { key: string; code: string; title: string; category: Category; summary: string; sections: Record<string, string> }
+type TemplateLibrary = { sections: Record<string, string>; data: SopTemplate[] }
 
 type AckList = {
   version: DocVersion | null
@@ -70,6 +74,7 @@ export default function SopsPage() {
   const dq = useDebounced(q, 250)
   const [page, setPage] = useState(1)
   const [creating, setCreating] = useState(false)
+  const [fromTemplate, setFromTemplate] = useState(false)
   const [acking, setAcking] = useState<ControlledDoc | null>(null)
 
   const list = useQuery({
@@ -122,8 +127,9 @@ export default function SopsPage() {
         subtitle="Staff acknowledge each version of an SOP; a new version starts acknowledgement again. Every acknowledgement is recorded in the audit log (V6 Part 16.4)."
         actions={
           canManage ? (
-            <div id="tour-sops-new">
-              <Button variant="primary" onClick={() => setCreating(true)}>New document</Button>
+            <div id="tour-sops-new" className="flex gap-2">
+              <Button onClick={() => setFromTemplate(true)}>Start from a template</Button>
+              <Button variant="primary" onClick={() => setCreating(true)}>Upload a document</Button>
             </div>
           ) : null
         }
@@ -155,6 +161,9 @@ export default function SopsPage() {
         <Pagination page={list.data} onPage={setPage} />
       </div>
       {canManage && <ManageDrawer id={selectedId} onClose={() => setParams({})} />}
+      <Drawer open={fromTemplate} onClose={() => setFromTemplate(false)} title="Start an SOP from a template" subtitle="Ready-written for a Kenyan pharmacy and filled in with your details. Edit anything before issuing; the superintendent pharmacist approves it by activating it." width={820}>
+        {fromTemplate && <TemplateForm onDone={(d) => { setFromTemplate(false); setParams({ document: d.id }) }} onCancel={() => setFromTemplate(false)} />}
+      </Drawer>
       <Drawer open={creating} onClose={() => setCreating(false)} title="New controlled document" width={640}>
         {creating && <NewDocumentForm onDone={(d) => { setCreating(false); setParams({ document: d.id }) }} onCancel={() => setCreating(false)} />}
       </Drawer>
@@ -246,6 +255,7 @@ function NewDocumentForm({ onDone, onCancel }: { onDone: (d: ControlledDoc) => v
 function ManageDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
   const queryClient = useQueryClient()
   const [uploading, setUploading] = useState(false)
+  const [editingText, setEditingText] = useState(false)
   const [retiring, setRetiring] = useState(false)
   const detail = useQuery({ queryKey: ['documents', 'detail', id], queryFn: () => apiGet<ControlledDoc>(`/api/documents/${id}`), enabled: !!id })
   const acks = useQuery({ queryKey: ['documents', 'acks', id, detail.data?.current_version_id], queryFn: () => apiGet<AckList>(`/api/documents/${id}/acknowledgements`), enabled: !!id && !!detail.data?.current_version_id })
@@ -269,13 +279,15 @@ function ManageDrawer({ id, onClose }: { id: string | null; onClose: () => void 
           <div className="flex items-center justify-between gap-2">
             <StatusBadge status={d.status} />
             <div className="flex gap-2">
-              {d.status !== 'RETIRED' && <Button onClick={() => setUploading(!uploading)}>{uploading ? 'Cancel upload' : 'Upload new version'}</Button>}
+              {d.status !== 'RETIRED' && d.current_version?.content_json && <Button onClick={() => { setEditingText(!editingText); setUploading(false) }}>{editingText ? 'Cancel editing' : 'Edit text'}</Button>}
+              {d.status !== 'RETIRED' && <Button onClick={() => { setUploading(!uploading); setEditingText(false) }}>{uploading ? 'Cancel upload' : 'Upload new version'}</Button>}
               {d.status !== 'ACTIVE' && <Button variant="success" disabled={transition.isPending || !d.current_version_id} onClick={() => transition.mutate('activate')}>{d.status === 'RETIRED' ? 'Reactivate' : 'Activate'}</Button>}
               {d.status === 'ACTIVE' && <Button variant="danger" onClick={() => setRetiring(true)}>Retire</Button>}
             </div>
           </div>
           {transition.isError && <InlineError error={transition.error} />}
           {uploading && <NewVersionForm doc={d} onDone={() => setUploading(false)} />}
+          {editingText && d.current_version?.content_json && <TextVersionForm doc={d} content={d.current_version.content_json} onDone={() => setEditingText(false)} />}
           <DescriptionList
             items={[
               { label: 'Current version', value: d.current_version ? `v${d.current_version.version} · effective ${formatDate(d.current_version.effective_date)}` : '—' },
@@ -374,6 +386,111 @@ function NewVersionForm({ doc, onDone }: { doc: ControlledDoc; onDone: () => voi
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
       <div className="flex justify-end">
         <Button variant="primary" disabled={!form.version.trim() || !file || !!fileError || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Uploading…' : 'Issue version'}</Button>
+      </div>
+    </div>
+  )
+}
+
+function SectionsEditor({ labels, sections, onChange }: { labels: Record<string, string>; sections: Record<string, string>; onChange: (next: Record<string, string>) => void }) {
+  return (
+    <div className="space-y-3">
+      {Object.entries(labels).map(([key, label]) => (
+        <Field key={key} label={label} required={key === 'procedure'} hint={key === 'procedure' ? 'One step per line; steps are numbered when printed.' : key === 'purpose' || key === 'scope' ? undefined : 'One item per line.'}>
+          <Textarea rows={key === 'procedure' ? 10 : key === 'purpose' || key === 'scope' ? 2 : 4} value={sections[key] ?? ''} onChange={(e) => onChange({ ...sections, [key]: e.target.value })} />
+        </Field>
+      ))}
+    </div>
+  )
+}
+
+function TemplateForm({ onDone, onCancel }: { onDone: (d: ControlledDoc) => void; onCancel: () => void }) {
+  const queryClient = useQueryClient()
+  const library = useQuery({ queryKey: ['documents', 'templates'], queryFn: () => apiGet<TemplateLibrary>('/api/documents/templates') })
+  const [chosen, setChosen] = useState<SopTemplate | null>(null)
+  const [form, setForm] = useState({ code: '', title: '', effective_date: todayIso(), review_due_date: '' })
+  const [sections, setSections] = useState<Record<string, string>>({})
+
+  function choose(t: SopTemplate) {
+    setChosen(t)
+    setForm({ ...form, code: t.code, title: t.title })
+    setSections(t.sections)
+  }
+
+  const save = useMutation({
+    meta: { silent: true },
+    mutationFn: () => apiPost<ControlledDoc>('/api/documents/from-template', { template_key: chosen?.key, ...form, review_due_date: form.review_due_date || null, sections }),
+    onSuccess: (d) => {
+      toast.success(`${d.code} created as a draft`, 'Open it, check the PDF, then activate it when approved.')
+      queryClient.invalidateQueries({ queryKey: ['documents'] })
+      onDone(d)
+    },
+  })
+  const err = save.isError ? getApiError(save.error) : null
+
+  if (library.isLoading) return <LoadingSkeleton rows={6} />
+  if (library.error) return <InlineError error={library.error} />
+
+  if (!chosen) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        {(library.data?.data ?? []).map((t) => (
+          <button key={t.key} type="button" onClick={() => choose(t)} className="text-left rounded-xl border border-slate-200 px-3.5 py-3 hover:border-blue-300 hover:bg-blue-50/40 cursor-pointer">
+            <div className="text-xs font-mono text-slate-500">{t.code}</div>
+            <div className="font-semibold text-slate-900">{t.title}</div>
+            <div className="text-xs text-slate-500 mt-0.5">{t.summary}</div>
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <button type="button" onClick={() => setChosen(null)} className="text-xs font-semibold text-blue-600 hover:underline">← Choose another template</button>
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} /></Field>
+        <Field label="Title" required className="sm:col-span-3" error={err?.errors.title?.[0]}><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
+        <Field label="Effective date" required><Input type="date" value={form.effective_date} onChange={(e) => setForm({ ...form, effective_date: e.target.value })} /></Field>
+        <Field label="Review due" hint="Defaults to a year from now."><Input type="date" value={form.review_due_date} onChange={(e) => setForm({ ...form, review_due_date: e.target.value })} /></Field>
+      </div>
+      <SectionsEditor labels={library.data?.sections ?? {}} sections={sections} onChange={setSections} />
+      {err && <InlineError error={save.error} />}
+      <div className="flex justify-end gap-2">
+        <Button onClick={onCancel}>Cancel</Button>
+        <Button variant="primary" disabled={!form.code.trim() || !form.title.trim() || !(sections.procedure ?? '').trim() || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Issuing…' : 'Create draft SOP'}</Button>
+      </div>
+    </div>
+  )
+}
+
+function TextVersionForm({ doc, content, onDone }: { doc: ControlledDoc; content: Record<string, string>; onDone: () => void }) {
+  const queryClient = useQueryClient()
+  const library = useQuery({ queryKey: ['documents', 'templates'], queryFn: () => apiGet<TemplateLibrary>('/api/documents/templates') })
+  const [form, setForm] = useState({ version: suggestNextVersion(doc.current_version?.version), change_summary: '', effective_date: todayIso() })
+  const [sections, setSections] = useState<Record<string, string>>(content)
+
+  const save = useMutation({
+    meta: { silent: true },
+    mutationFn: () => apiPost<DocVersion>(`/api/documents/${doc.id}/versions/from-text`, { ...form, sections }),
+    onSuccess: (v) => {
+      toast.success(`v${v.version} is now current — acknowledgements start again`)
+      queryClient.invalidateQueries({ queryKey: ['documents'] })
+      onDone()
+    },
+  })
+  const err = save.isError ? getApiError(save.error) : null
+
+  return (
+    <div className="rounded-lg border border-slate-200 p-4 space-y-3 bg-slate-50">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Field label="New version" required error={err?.errors.version?.[0]}><Input value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })} /></Field>
+        <Field label="Effective date" required><Input type="date" value={form.effective_date} onChange={(e) => setForm({ ...form, effective_date: e.target.value })} /></Field>
+        <Field label="What changed" required error={err?.errors.change_summary?.[0]}><Input value={form.change_summary} onChange={(e) => setForm({ ...form, change_summary: e.target.value })} /></Field>
+      </div>
+      <SectionsEditor labels={library.data?.sections ?? {}} sections={sections} onChange={setSections} />
+      {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
+      <div className="flex justify-end">
+        <Button variant="primary" disabled={!form.version.trim() || !form.change_summary.trim() || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Issuing…' : 'Issue version'}</Button>
       </div>
     </div>
   )

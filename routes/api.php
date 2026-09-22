@@ -319,10 +319,13 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::match(['post', 'patch'], '/licences/{licence}', [LicenceController::class, 'update']);
     Route::get('/licences/{licence}/document', [LicenceController::class, 'document']);
     Route::get('/documents', [ControlledDocumentController::class, 'index']);
+    Route::get('/documents/templates', [ControlledDocumentController::class, 'templates']);
+    Route::post('/documents/from-template', [ControlledDocumentController::class, 'storeFromTemplate']);
     Route::post('/documents', [ControlledDocumentController::class, 'store']);
     Route::get('/documents/{document}', [ControlledDocumentController::class, 'show']);
     Route::patch('/documents/{document}', [ControlledDocumentController::class, 'update']);
     Route::post('/documents/{document}/versions', [ControlledDocumentController::class, 'storeVersion']);
+    Route::post('/documents/{document}/versions/from-text', [ControlledDocumentController::class, 'storeVersionFromText']);
     Route::get('/documents/{document}/versions/{version}/download', [ControlledDocumentController::class, 'download']);
     Route::post('/documents/{document}/activate', [ControlledDocumentController::class, 'activate']);
     Route::post('/documents/{document}/retire', [ControlledDocumentController::class, 'retire']);
