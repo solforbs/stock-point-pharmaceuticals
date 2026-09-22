@@ -55,8 +55,8 @@ export default function CustomerPricesTab({ canManage }: { canManage: boolean })
   })
 
   const columns: Column<CustomerPrice>[] = [
-    { key: 'customer', header: 'Customer', render: (c) => <>{c.customer?.name ?? '—'}<div className="text-[10.5px] text-[var(--text-muted)]">{c.customer?.code}</div></>, sortValue: (c) => c.customer?.name ?? '' },
-    { key: 'product', header: 'Product', render: (c) => <>{c.product?.name ?? '—'}<div className="text-[10.5px] text-[var(--text-muted)]">{c.product?.code} · per {c.uom?.code}</div></>, sortValue: (c) => c.product?.name ?? '' },
+    { key: 'customer', header: 'Customer', render: (c) => <>{c.customer?.name ?? '—'}<div className="text-xs text-slate-500 font-mono">{c.customer?.code}</div></>, sortValue: (c) => c.customer?.name ?? '' },
+    { key: 'product', header: 'Product', render: (c) => <>{c.product?.name ?? '—'}<div className="text-xs text-slate-500 font-mono">{c.product?.code} · per {c.uom?.code}</div></>, sortValue: (c) => c.product?.name ?? '' },
     { key: 'price', header: 'Contract price', align: 'right', render: (c) => <MoneyCell value={c.unit_price} className="font-semibold" />, sortValue: (c) => Number(c.unit_price) },
     { key: 'ref', header: 'Contract', render: (c) => <span className="tabular">{c.contract_ref}</span> },
     { key: 'dates', header: 'Valid', render: (c) => <span className="tabular">{formatDate(c.effective_from)} – {formatDate(c.effective_to)}</span>, sortValue: (c) => c.effective_from },

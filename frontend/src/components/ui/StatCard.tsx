@@ -25,32 +25,32 @@ export function StatCard({
   value,
   hint,
   to,
-  tone = '#2563eb',
+  tone,
   trend,
   className,
   isLoading = false,
 }: StatCardProps) {
   const content = (
-    <div className="flex flex-col justify-between h-full space-y-3.5">
+    <div className="flex flex-col justify-between h-full space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-[13px] font-bold text-slate-500">
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
           {label}
         </span>
         <div
-          className="w-10 h-10 rounded-2xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shrink-0"
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors"
           style={{
-            background: `color-mix(in srgb, ${tone} 10%, transparent)`,
-            color: tone,
+            background: tone ? `color-mix(in srgb, ${tone} 10%, transparent)` : '#f1f5f9',
+            color: tone || '#475569',
           }}
         >
-          <Icon size={19} />
+          <Icon size={16} />
         </div>
       </div>
 
       <div>
-        <div className="text-[28px] font-black tabular tracking-tight text-slate-900 leading-tight">
+        <div className="text-2xl sm:text-3xl font-bold tabular tracking-tight text-slate-900 leading-tight">
           {isLoading ? (
-            <span className="inline-block w-32 h-8 bg-slate-100/80 rounded-xl animate-pulse" />
+            <span className="inline-block w-32 h-8 bg-slate-100 rounded-md animate-pulse" />
           ) : (
             value
           )}
@@ -59,17 +59,17 @@ export function StatCard({
 
       <div className="flex items-center justify-between gap-2 pt-0.5">
         {hint && (
-          <div className="text-[12px] text-slate-400 font-medium truncate">
+          <div className="text-xs text-slate-500 font-normal truncate">
             {hint}
           </div>
         )}
         {trend && (
           <span
             className={cn(
-              'inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full tabular shrink-0 ml-auto',
+              'inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-md tabular shrink-0 ml-auto border',
               trend.isPositive
-                ? 'bg-emerald-50 text-emerald-700'
-                : 'bg-rose-50 text-rose-700'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200/70'
+                : 'bg-rose-50 text-rose-800 border-rose-200/70'
             )}
           >
             {trend.value}
@@ -80,13 +80,13 @@ export function StatCard({
   )
 
   const cardClasses = cn(
-    'bg-white rounded-[24px] p-6 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_10px_28px_-6px_rgba(15,23,42,0.03)] hover:shadow-[0_6px_24px_-4px_rgba(15,23,42,0.06),0_16px_36px_-6px_rgba(15,23,42,0.05)] transition-all duration-300 block group',
+    'bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all duration-200 block group',
     className
   )
 
   if (to) {
     return (
-      <motion.div whileHover={{ y: -3 }} whileTap={{ scale: 0.99 }}>
+      <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.99 }}>
         <Link to={to} className={cardClasses}>
           {content}
         </Link>

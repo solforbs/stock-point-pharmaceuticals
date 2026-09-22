@@ -29,3 +29,7 @@ Thumbs.db
 /frontend/node_modules
 /frontend/dist
 /storage/phpstan
+/*.md
+!/README.md
+!/AGENTS.md
+!/CLAUDE.md

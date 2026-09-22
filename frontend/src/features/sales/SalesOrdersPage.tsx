@@ -82,24 +82,28 @@ export default function SalesOrdersPage() {
         title="Sales Orders"
         subtitle="Confirmed wholesale & facility orders reserve inventory, trigger warehouse pick lists, and schedule dispatch"
         actions={
-          <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-            New sales order
-          </PrimaryAction>
+          <div id="tour-sales-orders-new">
+            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+              New sales order
+            </PrimaryAction>
+          </div>
         }
       />
-      <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All Statuses</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-sales-orders-filters">
+        <FilterBar>
+          <Field label="Status">
+            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All Statuses</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-sales-orders-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(o) => o.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(o) => setParams({ order: o.id })} selectedKey={selectedId} emptyTitle="No sales orders" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
@@ -227,7 +231,7 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
               </Button>
             )}
             {(o.status === 'CONFIRMED' || o.status === 'IN_PROGRESS' || o.status === 'PARTIALLY_FULFILLED') && (
-              <Link to={`/warehouse/pick-lists?order=${o.id}`} className="inline-flex items-center h-7 px-2.5 rounded-md border border-[var(--border-strong)] text-[11.5px] font-semibold">
+              <Link to={`/warehouse/pick-lists?order=${o.id}`} className="inline-flex items-center h-7 px-2.5 rounded-md border border-slate-300 text-xs font-semibold">
                 Pick
               </Link>
             )}
@@ -252,7 +256,7 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <StatusBadge status={o.status} />
-            {o.cancel_reason && <span className="text-[11.5px] text-[var(--status-red)]">Cancelled: {o.cancel_reason}</span>}
+            {o.cancel_reason && <span className="text-xs text-rose-700 font-semibold">Cancelled: {o.cancel_reason}</span>}
           </div>
           <CustomerTimeline updates={updates.data} />
           <DescriptionList
@@ -304,7 +308,7 @@ export function SalesOrderDrawer({ id, onClose }: { id: string | null; onClose: 
               </tbody>
             </table>
           </div>
-          <div className="ml-auto w-full sm:w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2 text-[13px] tabular">
+          <div className="ml-auto w-full sm:w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2 text-sm tabular">
             <div className="flex justify-between text-slate-500 font-medium"><span>Subtotal</span><MoneyCell value={o.subtotal} /></div>
             <div className="flex justify-between text-slate-500 font-medium"><span>Discount</span><MoneyCell value={`-${o.discount_total}`} /></div>
             <div className="flex justify-between text-slate-500 font-medium"><span>Tax</span><MoneyCell value={o.tax_total} /></div>
@@ -357,8 +361,8 @@ function CustomerTimeline({ updates }: { updates?: OrderUpdates }) {
   return (
     <div className="ui-card p-3">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-[12.5px] font-bold text-slate-800">Customer updates</h3>
-        <span className="text-[11px] text-slate-500">
+        <h3 className="text-xs font-bold text-slate-800">Customer updates</h3>
+        <span className="text-xs text-slate-500">
           {updates.customer_email ?? <span className="text-amber-700 font-semibold">no email on file</span>}
         </span>
       </div>
@@ -367,9 +371,9 @@ function CustomerTimeline({ updates }: { updates?: OrderUpdates }) {
           const update = sent.get(key as string)
           const failed = update && !update.sent_at
           return (
-            <li key={key} className="flex items-start gap-2 text-[12px]">
+            <li key={key} className="flex items-start gap-2 text-xs">
               <span
-                className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center text-[9px] font-bold ${
+                className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center text-[10px] font-bold ${
                   failed ? 'bg-rose-50 border-rose-300 text-rose-700'
                     : update ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
                     : 'bg-slate-50 border-slate-200 text-slate-300'
@@ -384,7 +388,7 @@ function CustomerTimeline({ updates }: { updates?: OrderUpdates }) {
                     {' '}· {update.sent_at ? `told ${formatDateTime(update.sent_at)}` : `not sent: ${update.failure_reason}`}
                   </span>
                 )}
-                {update?.note && <p className="text-[11px] text-slate-500">{update.note}</p>}
+                {update?.note && <p className="text-xs text-slate-500 mt-0.5">{update.note}</p>}
               </div>
             </li>
           )

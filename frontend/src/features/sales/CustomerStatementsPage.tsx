@@ -100,52 +100,57 @@ export default function CustomerStatementsPage() {
         title="Customer Statements"
         subtitle="Every invoice, receipt and credit note for a customer with a running balance, plus what is owed by age."
         actions={
-          <div className="flex items-center gap-2">
+          <div id="tour-statements-print" className="flex items-center gap-2">
             {s && <PdfDownloadButton size="md" url={`/api/customers/${s.customer.id}/statement/pdf?from=${from}&to=${to}`} filename={`STMT-${s.customer.code}-${s.to}`} label="Download PDF" />}
             <Button variant="primary" disabled={!s} onClick={() => window.print()}><Printer size={13} /> Print</Button>
           </div>
         }
       />
       <FilterBar>
-        <Field label="Customer" className="w-96"><CustomerPicker value={customer} onChange={setCustomer} /></Field>
-        <Field label="From" className="w-40"><Input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></Field>
-        <Field label="To" className="w-40"><Input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></Field>
+        <div id="tour-statements-customer">
+          <Field label="Customer" className="w-full sm:w-96"><CustomerPicker value={customer} onChange={setCustomer} /></Field>
+        </div>
+        <div id="tour-statements-date" className="flex items-end gap-3 flex-wrap">
+          <Field label="From" className="w-40"><Input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></Field>
+          <Field label="To" className="w-40"><Input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></Field>
+        </div>
       </FilterBar>
 
-      {!customer ? (
-        <div className="ui-card"><EmptyState title="Choose a customer" hint="Pick a customer and a date range to see their statement." /></div>
-      ) : statement.isLoading ? (
-        <div className="ui-card"><LoadingSkeleton rows={8} /></div>
-      ) : statement.error || !s ? (
-        <div className="ui-card"><ErrorState error={statement.error} onRetry={() => statement.refetch()} /></div>
-      ) : (
-        <div id="customer-statement-sheet" className="ui-card p-5 space-y-4">
-          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-3">
+      <div id="tour-statements-preview">
+        {!customer ? (
+          <div className="ui-card"><EmptyState title="Choose a customer" hint="Pick a customer and a date range to see their statement." /></div>
+        ) : statement.isLoading ? (
+          <div className="ui-card"><LoadingSkeleton rows={8} /></div>
+        ) : statement.error || !s ? (
+          <div className="ui-card"><ErrorState error={statement.error} onRetry={() => statement.refetch()} /></div>
+        ) : (
+          <div id="customer-statement-sheet" className="ui-card p-5 space-y-4">
+          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-3">
             <div>
-              <div className="text-[16px] font-bold">{s.organisation?.legal_name || s.organisation?.name || user?.active_branch?.name}</div>
-              <div className="text-[11.5px] text-[var(--text-secondary)]">{s.branch.name} ({s.branch.code}){s.branch.address ? ` · ${s.branch.address}` : ''}</div>
-              {s.organisation?.kra_pin && <div className="text-[11.5px] text-[var(--text-secondary)]">KRA PIN {s.organisation.kra_pin}</div>}
+              <div className="text-base font-bold text-slate-900">{s.organisation?.legal_name || s.organisation?.name || user?.active_branch?.name}</div>
+              <div className="text-xs text-slate-500">{s.branch.name} ({s.branch.code}){s.branch.address ? ` · ${s.branch.address}` : ''}</div>
+              {s.organisation?.kra_pin && <div className="text-xs text-slate-500">KRA PIN {s.organisation.kra_pin}</div>}
             </div>
             <div className="text-right">
-              <div className="text-[15px] font-bold uppercase tracking-wide">Statement of account</div>
-              <div className="text-[11.5px] text-[var(--text-secondary)] tabular">{formatDate(s.from)} – {formatDate(s.to)}</div>
-              <div className="text-[10.5px] text-[var(--text-muted)] print-only">Printed {formatDateTime(s.generated_at)}</div>
+              <div className="text-sm font-bold uppercase tracking-wider text-slate-800">Statement of account</div>
+              <div className="text-xs text-slate-500 tabular">{formatDate(s.from)} – {formatDate(s.to)}</div>
+              <div className="text-xs text-slate-400 print-only">Printed {formatDateTime(s.generated_at)}</div>
             </div>
           </header>
 
-          <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[12px]">
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <div className="text-[10.5px] uppercase tracking-wide text-[var(--text-muted)] font-semibold">Customer</div>
-              <div className="font-bold text-[13px]">{s.customer.name}</div>
-              <div className="tabular">{s.customer.code}</div>
-              {s.customer.address && <div>{s.customer.address}</div>}
-              {(s.customer.phone || s.customer.email) && <div>{[s.customer.phone, s.customer.email].filter(Boolean).join(' · ')}</div>}
+              <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Customer</div>
+              <div className="font-bold text-sm text-slate-900">{s.customer.name}</div>
+              <div className="tabular text-slate-600 font-mono">{s.customer.code}</div>
+              {s.customer.address && <div className="text-slate-600">{s.customer.address}</div>}
+              {(s.customer.phone || s.customer.email) && <div className="text-slate-500">{[s.customer.phone, s.customer.email].filter(Boolean).join(' · ')}</div>}
             </div>
-            <div className="text-right space-y-0.5">
-              <div>Payment terms: <span className="font-semibold">{s.customer.payment_terms_days ?? 0} days</span></div>
-              <div>Credit limit: <span className="font-semibold tabular">{formatKes(s.customer.credit_limit)}</span></div>
-              <div>Opening balance: <span className="font-semibold tabular">{formatKes(s.opening_balance)}</span></div>
-              <div className="text-[14px]">Balance due: <span className="font-bold tabular">{formatKes(s.closing_balance)}</span></div>
+            <div className="text-right space-y-1">
+              <div>Payment terms: <span className="font-semibold text-slate-800">{s.customer.payment_terms_days ?? 0} days</span></div>
+              <div>Credit limit: <span className="font-semibold tabular text-slate-800">{formatKes(s.customer.credit_limit)}</span></div>
+              <div>Opening balance: <span className="font-semibold tabular text-slate-800">{formatKes(s.opening_balance)}</span></div>
+              <div className="text-sm pt-1 border-t border-slate-100">Balance due: <span className="font-bold tabular text-slate-900">{formatKes(s.closing_balance)}</span></div>
             </div>
           </section>
 
@@ -163,38 +168,39 @@ export default function CustomerStatementsPage() {
               </tr>
             }
           />
-          {s.rows.length <= 1 && <p className="text-[11.5px] text-[var(--text-muted)]">No invoices, receipts or credit notes between these dates — only the balance brought forward.</p>}
+          {s.rows.length <= 1 && <p className="text-xs text-slate-500">No invoices, receipts or credit notes between these dates — only the balance brought forward.</p>}
 
           <section>
-            <div className="text-[10.5px] uppercase tracking-wide text-[var(--text-muted)] font-semibold mb-1">Ageing of the balance due (as of today)</div>
-            <table className="w-full text-[12px] border border-[var(--border)]">
+            <div className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1.5">Ageing of the balance due (as of today)</div>
+            <table className="w-full text-xs border border-slate-200 rounded-xl overflow-hidden">
               <thead>
-                <tr className="bg-[var(--surface-2)]">{AGEING_BUCKETS.map((b) => (<th key={b.key} className="px-3 py-1.5 text-right font-semibold">{b.label}</th>))}</tr>
+                <tr className="bg-slate-50">{AGEING_BUCKETS.map((b) => (<th key={b.key} className="px-3 py-2 text-right font-semibold text-slate-600 border-b border-slate-200">{b.label}</th>))}</tr>
               </thead>
               <tbody>
-                <tr>{AGEING_BUCKETS.map((b) => (<td key={b.key} className={`px-3 py-1.5 text-right tabular ${b.key === 'total' ? 'font-bold' : ''} ${b.key === 'd90_plus' && Number(s.ageing.d90_plus) > 0 ? 'text-[var(--status-red)]' : ''}`}>{formatKes(s.ageing[b.key], { symbol: false })}</td>))}</tr>
+                <tr>{AGEING_BUCKETS.map((b) => (<td key={b.key} className={`px-3 py-2 text-right tabular ${b.key === 'total' ? 'font-bold text-slate-900' : 'text-slate-700'} ${b.key === 'd90_plus' && Number(s.ageing.d90_plus) > 0 ? 'text-rose-700 font-bold' : ''}`}>{formatKes(s.ageing[b.key], { symbol: false })}</td>))}</tr>
               </tbody>
             </table>
           </section>
 
           {Number(s.ageing.d90_plus) > 0 || Number(s.ageing.d61_90) > 0 ? (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-[11.5px] space-y-1">
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs space-y-1">
               <div className="font-bold flex items-center gap-1.5">
                 <span>⚠️ OVERDUE PAYMENT NOTICE:</span>
                 <span>Immediate settlement required</span>
               </div>
-              <p className="text-[11px] leading-relaxed text-rose-800">
+              <p className="text-xs leading-relaxed text-rose-800">
                 Invoices exceeding the agreed {s.customer.payment_terms_days ?? 30}-day credit terms attract a contractual late payment penalty interest of 2% per month in accordance with the credit facility agreement. Please remit payment promptly to avoid temporary credit hold.
               </p>
             </div>
           ) : null}
 
-          <footer className="text-[10.5px] text-[var(--text-muted)] border-t border-[var(--border)] pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <span>Please quote your customer code <strong className="text-slate-700">{s.customer.code}</strong> with every payment.</span>
+          <footer className="text-xs text-slate-500 border-t border-slate-200 pt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <span>Please quote your customer code <strong className="text-slate-800">{s.customer.code}</strong> with every payment.</span>
             <span>Queries on this statement should be raised within 14 days of receipt.</span>
           </footer>
         </div>
       )}
+      </div>
     </Page>
   )
 }

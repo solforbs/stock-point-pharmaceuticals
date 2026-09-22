@@ -44,13 +44,13 @@ export default function PeriodsPage() {
         <div className="mb-3">
           <InlineError error={close.error} />
           {closeError.code === 'CLOSE_CHECKLIST_FAILED' && (
-            <div className="text-[11.5px] text-[var(--text-secondary)] mt-1 tabular">
+            <div className="text-xs text-slate-500 mt-1 tabular font-mono">
               Unbalanced journals: {String(closeError.details.unbalanced_journals ?? 0)} · stock balance drift rows: {String(closeError.details.stock_balance_drift_rows ?? 0)}. Run the period close checklist report for detail.
             </div>
           )}
         </div>
       )}
-      <div className="ui-card">
+      <div id="tour-periods-table" className="ui-card">
         <DataTable columns={columns} rows={periods.data} rowKey={(p) => p.id} isLoading={periods.isLoading} error={periods.error} onRetry={() => periods.refetch()} emptyTitle="No financial periods" />
       </div>
       <ConfirmDialog

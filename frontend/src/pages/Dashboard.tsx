@@ -9,11 +9,11 @@ import { LatestSalesSection } from '../features/dashboard/components/LatestSales
 import { QuickActionsSection } from '../features/dashboard/components/QuickActionsSection'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { apiGet } from '../lib/api'
-import { dCmp, dIsPos, dSum } from '../lib/decimal'
+import { dSum } from '../lib/decimal'
 import { todayIso } from '../lib/format'
 import { useDashboardSummary } from '../lib/hooks'
 import { usePermission } from '../lib/permissions'
-import type { ArAgeing, Paginated, ProductBatch, Sale, StockStateRow } from '../lib/types'
+import type { ArAgeing, Paginated, Sale } from '../lib/types'
 
 const containerVariants = {
   hidden: { opacity: 0, y: 8 },
@@ -32,33 +32,25 @@ export default function Dashboard() {
   const summary = useDashboardSummary()
   const sales = useQuery({
     queryKey: ['sales', 'today', today],
-    queryFn: () => apiGet<Paginated<Sale>>('/api/sales', { from: today, to: today, status: 'POSTED', per_page: 200 }),
+    queryFn: () => apiGet<Paginated<Sale>>('/api/sales', { from: today, to: today, status: 'POSTED', per_page: 50 }),
   })
   const ar = useQuery({
     queryKey: ['finance', 'ar-ageing'],
     queryFn: () => apiGet<ArAgeing>('/api/finance/ar-ageing'),
     enabled: canAr,
   })
-  const expiring = useQuery({
-    queryKey: ['batches', 'expiring', 90],
-    queryFn: () => apiGet<Paginated<ProductBatch>>('/api/batches', { expiring_within_days: 90, per_page: 200 }),
-  })
-  const stock = useQuery({
-    queryKey: ['inventory', 'stock', {}],
-    queryFn: () => apiGet<{ data: StockStateRow[] }>('/api/inventory/stock'),
-  })
-
-  const todayRows = sales.data?.data ?? []
-  const todayTotal = dSum(todayRows.map((s) => s.grand_total))
-  const stockRows = stock.data?.data ?? []
-  const pendingQc = dSum(stockRows.map((r) => r.pending_qc))
-  const lowStock = stockRows.filter((r) => dIsPos(r.reorder_point) && dCmp(r.free_to_sell, r.reorder_point) < 0).length
-  const expiringSoon = (expiring.data?.data ?? []).filter((b) => Number(b.qty_on_hand ?? 0) > 0)
-  const expiringQty = dSum(expiringSoon.map((b) => b.qty_on_hand ?? '0'))
 
   const s = summary.data
   const salesToday = s?.sales_today
   const periodClosed = !!s?.finance && !s.finance.period_open_for_today
+
+  const todayRows = sales.data?.data ?? []
+  const todayTotal = dSum(todayRows.map((s) => s.grand_total))
+
+  const pendingQc = s?.inventory?.pending_qc_qty ?? '0.0000'
+  const lowStock = s?.inventory?.low_stock_count ?? 0
+  const expiringCount = s?.inventory?.expiring_90d_batches ?? 0
+  const expiringQty = s?.inventory?.expiring_90d_qty ?? '0.0000'
 
   return (
     <motion.div
@@ -78,19 +70,19 @@ export default function Dashboard() {
       <DashboardKpis
         salesTotal={salesToday?.total ?? todayTotal}
         salesCount={salesToday?.count ?? todayRows.length}
-        salesLoading={sales.isLoading}
+        salesLoading={summary.isLoading}
         voidedCount={salesToday?.voided_today}
         canAr={canAr}
-        arTotal={ar.data?.totals.total ?? '0'}
-        arCustomersCount={ar.data?.data.length ?? 0}
-        arD90Plus={ar.data?.totals.d90_plus ?? '0'}
-        arLoading={ar.isLoading}
-        expiringCount={expiringSoon.length}
+        arTotal={ar.data?.totals.total ?? s?.ar?.total ?? '0.0000'}
+        arCustomersCount={ar.data?.data.length ?? s?.ar?.customers_count ?? 0}
+        arD90Plus={ar.data?.totals.d90_plus ?? s?.ar?.d90_plus ?? '0.0000'}
+        arLoading={summary.isLoading}
+        expiringCount={expiringCount}
         expiringQty={expiringQty}
-        expiringLoading={expiring.isLoading}
+        expiringLoading={summary.isLoading}
         pendingQcQty={pendingQc}
         lowStockCount={lowStock}
-        stockLoading={stock.isLoading}
+        stockLoading={summary.isLoading}
       />
 
       <div className="grid gap-6 lg:grid-cols-3">

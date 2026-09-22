@@ -75,13 +75,15 @@ export default function RequisitionsPage() {
         subtitle="Departmental medicine demands, approvals workflow, and conversion to supplier purchase orders."
         actions={
           perms.has('requisition.create') ? (
-            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-              New requisition
-            </PrimaryAction>
+            <div id="tour-requisitions-new">
+              <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+                New requisition
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
-      <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit mb-4">
+      <div id="tour-requisitions-tabs" className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit mb-4">
         {(['requisitions', 'reorder'] as const).map((t) => (
           <button
             key={t}
@@ -97,14 +99,16 @@ export default function RequisitionsPage() {
       {tab === 'requisitions' ? (
         <>
           <FilterBar>
-            <Field label="Status">
-              <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-                <option value="">All</option>
-                {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-              </Select>
-            </Field>
+            <div id="tour-requisitions-status" className="w-full sm:w-56">
+              <Field label="Status">
+                <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+                  <option value="">All</option>
+                  {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+                </Select>
+              </Field>
+            </div>
           </FilterBar>
-          <div className="ui-card">
+          <div id="tour-requisitions-table" className="ui-card">
             <DataTable columns={columns} rows={list.data?.data} rowKey={(r) => r.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(r) => setParams({ requisition: r.id })} selectedKey={selectedId} emptyTitle="No requisitions" />
             <Pagination page={list.data} onPage={setPage} />
           </div>
@@ -161,7 +165,7 @@ export default function RequisitionsPage() {
                     <tbody>
                       {lines.map((l) => (
                         <tr key={l.key}>
-                          <td><div className="font-semibold text-slate-900">{l.product.name}</div><div className="text-[10.5px] text-slate-400 font-medium">{l.product.code} · {l.product.base_uom?.code}</div></td>
+                          <td><div className="font-semibold text-slate-900">{l.product.name}</div><div className="text-xs text-slate-500 font-mono font-medium">{l.product.code} · {l.product.base_uom?.code}</div></td>
                           <td><input value={l.qty_base} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, qty_base: e.target.value.replace(/[^\d.]/g, '') } : x)))} className="ui-input h-7 w-24 tabular text-right font-bold" /></td>
                           <td><input value={l.notes} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, notes: e.target.value } : x)))} className="ui-input h-7" placeholder="Line notes..." /></td>
                           <td className="text-right"><Button size="sm" variant="ghost" onClick={() => setLines(lines.filter((x) => x.key !== l.key))} aria-label="Remove"><Trash2 size={13} /></Button></td>
@@ -199,18 +203,18 @@ function ReorderSuggestions({ canCreate, isCreating, onCreate }: { canCreate: bo
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3 text-[11.5px] text-[var(--text-muted)]">
+      <div className="flex items-center gap-3 text-xs text-slate-500">
         <span className="flex-1">{suggestions.data?.formula}</span>
         {canCreate && <Button variant="primary" size="sm" disabled={chosen.length === 0 || isCreating} onClick={() => onCreate(chosen)}>{isCreating ? 'Creating…' : `Create requisition from ${chosen.length} selected`}</Button>}
       </div>
       {suggestions.isLoading && <LoadingSkeleton />}
       {suggestions.isError && <InlineError error={suggestions.error} />}
-      {suggestions.data && rows.length === 0 && <div className="ui-card p-6 text-[12px] text-[var(--text-muted)]">Every product has enough cover. Nothing to reorder.</div>}
+      {suggestions.data && rows.length === 0 && <div className="ui-card p-6 text-sm text-slate-500">Every product has enough cover. Nothing to reorder.</div>}
       {[...groups.entries()].map(([supplier, list]) => (
         <div key={supplier} className="ui-card">
-          <header className="px-4 py-2 border-b border-[var(--border)] flex items-center gap-2 text-[12.5px] font-bold">
+          <header className="px-4 py-2 border-b border-slate-200 flex items-center gap-2 text-sm font-bold text-slate-900">
             <input type="checkbox" checked={list.every((r) => selected.has(r.product_id))} onChange={(e) => setSelected((prev) => { const next = new Set(prev); list.forEach((r) => (e.target.checked ? next.add(r.product_id) : next.delete(r.product_id))); return next })} />
-            {supplier} <span className="text-[var(--text-muted)] font-normal">· {list.length} product{list.length === 1 ? '' : 's'}</span>
+            {supplier} <span className="text-slate-500 font-normal">· {list.length} product{list.length === 1 ? '' : 's'}</span>
           </header>
           <table className="ui-table">
             <thead><tr><th /><th>Product</th><th className="text-right">Reorder point</th><th className="text-right">Free to sell</th><th className="text-right">On order</th><th className="text-right">Suggested</th><th>Required by</th><th>Nearest expiry</th></tr></thead>
@@ -218,9 +222,9 @@ function ReorderSuggestions({ canCreate, isCreating, onCreate }: { canCreate: bo
               {list.map((r) => (
                 <tr key={r.product_id} className="is-clickable" onClick={() => toggle(r.product_id)}>
                   <td><input type="checkbox" checked={selected.has(r.product_id)} onChange={() => toggle(r.product_id)} onClick={(e) => e.stopPropagation()} /></td>
-                  <td><div className="font-semibold">{r.product_name}</div><div className="text-[10.5px] text-[var(--text-muted)]">{r.product_code} · {r.base_uom ?? ''} · lead {r.lead_time_days} d</div></td>
+                  <td><div className="font-semibold">{r.product_name}</div><div className="text-xs text-slate-500 font-mono">{r.product_code} · {r.base_uom ?? ''} · lead {r.lead_time_days} d</div></td>
                   <td className="text-right"><QtyCell value={r.reorder_point} /></td>
-                  <td className="text-right"><QtyCell value={r.free_to_sell} className={Number(r.free_to_sell) < Number(r.reorder_point) ? 'text-[var(--status-red)] font-bold' : ''} /></td>
+                  <td className="text-right"><QtyCell value={r.free_to_sell} className={Number(r.free_to_sell) < Number(r.reorder_point) ? 'text-rose-600 font-bold' : ''} /></td>
                   <td className="text-right"><QtyCell value={r.on_order} /></td>
                   <td className="text-right font-bold tabular">{formatQty(r.suggested_qty_base)}</td>
                   <td className="tabular">{formatDate(r.required_by)}</td>
@@ -297,7 +301,7 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
       {req.isError && <InlineError error={req.error} />}
       {r && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={r.status} />{po && <Link to={`/buy/purchase-orders?po=${po.id}`} className="text-[11.5px] text-[var(--color-navy)] underline">Open PO {po.doc_number}</Link>}</div>
+          <div className="flex items-center gap-2"><StatusBadge status={r.status} />{po && <Link to={`/buy/purchase-orders?po=${po.id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open PO {po.doc_number}</Link>}</div>
           <DescriptionList items={[{ label: 'Notes', value: r.notes ?? '—' }, { label: 'Created', value: formatDateTime(r.created_at) }]} />
           <table className="ui-table">
             <thead><tr><th>Product</th><th className="text-right">Qty (base)</th><th>Notes</th></tr></thead>
@@ -346,7 +350,7 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
               ))}
             </tbody>
           </table>
-          <p className="text-[11px] text-[var(--text-muted)]">The UOM must be a purchase unit for the product; a selling-only unit is refused (INVALID_INPUT).</p>
+          <p className="text-xs text-slate-500">The UOM must be a purchase unit for the product; a selling-only unit is refused (INVALID_INPUT).</p>
           {convert.isError && <InlineError error={convert.error} />}
         </div>
       </Modal>

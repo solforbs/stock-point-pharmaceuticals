@@ -21,15 +21,15 @@ const TONES: Record<string, StatusTone> = {
 }
 
 const toneStyles: Record<StatusTone, { text: string; bg: string; dot: string; extra?: string }> = {
-  green: { text: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200/60', dot: 'bg-emerald-500' },
-  amber: { text: 'text-amber-700', bg: 'bg-amber-50 border-amber-200/60', dot: 'bg-amber-500' },
-  red: { text: 'text-rose-700', bg: 'bg-rose-50 border-rose-200/60', dot: 'bg-rose-500' },
-  blue: { text: 'text-blue-700', bg: 'bg-blue-50 border-blue-200/60', dot: 'bg-blue-500' },
-  purple: { text: 'text-purple-700', bg: 'bg-purple-50 border-purple-200/60', dot: 'bg-purple-500' },
-  cold: { text: 'text-cyan-700', bg: 'bg-cyan-50 border-cyan-200/60', dot: 'bg-cyan-500' },
-  slate: { text: 'text-slate-600', bg: 'bg-slate-100 border-slate-200/60', dot: 'bg-slate-400' },
-  teal: { text: 'text-teal-700', bg: 'bg-teal-50 border-teal-200/60', dot: 'bg-teal-500' },
-  void: { text: 'text-slate-500', bg: 'bg-slate-100 border-slate-200/60', dot: 'bg-rose-400', extra: 'line-through opacity-75' },
+  green: { text: 'text-emerald-800', bg: 'bg-emerald-50/80 border-emerald-200/70', dot: 'bg-emerald-500' },
+  amber: { text: 'text-amber-800', bg: 'bg-amber-50/80 border-amber-200/70', dot: 'bg-amber-500' },
+  red: { text: 'text-rose-800', bg: 'bg-rose-50/80 border-rose-200/70', dot: 'bg-rose-500' },
+  blue: { text: 'text-blue-800', bg: 'bg-blue-50/80 border-blue-200/70', dot: 'bg-blue-500' },
+  purple: { text: 'text-purple-800', bg: 'bg-purple-50/80 border-purple-200/70', dot: 'bg-purple-500' },
+  cold: { text: 'text-sky-800', bg: 'bg-sky-50/80 border-sky-200/70', dot: 'bg-sky-500' },
+  slate: { text: 'text-slate-700', bg: 'bg-slate-100 border-slate-200/80', dot: 'bg-slate-400' },
+  teal: { text: 'text-teal-800', bg: 'bg-teal-50/80 border-teal-200/70', dot: 'bg-teal-500' },
+  void: { text: 'text-slate-500', bg: 'bg-slate-100 border-slate-200/80', dot: 'bg-slate-400', extra: 'line-through opacity-75' },
 }
 
 export function toneFor(status: string | null | undefined): StatusTone {
@@ -53,9 +53,9 @@ export function StatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-bold tracking-normal border ${st.bg} ${st.text} ${st.extra ?? ''} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium tracking-normal border ${st.bg} ${st.text} ${st.extra ?? ''} ${className}`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${st.dot} shadow-xs`} aria-hidden />
+      <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} aria-hidden />
       {label ?? titleCase(status) ?? '—'}
     </span>
   )

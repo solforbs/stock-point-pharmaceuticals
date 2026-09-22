@@ -59,12 +59,12 @@ export function OrganisationCard() {
   return (
     <div className="ui-card p-4 space-y-3">
       <div>
-        <h2 className="text-[14px] font-bold text-slate-800">Business details</h2>
-        <p className="text-[11.5px] text-slate-500">Printed on every invoice and delivery note.</p>
+        <h2 className="text-sm font-bold text-slate-900">Business details</h2>
+        <p className="text-xs text-slate-500">Printed on every invoice and delivery note.</p>
       </div>
 
       {org.data?.kra_pin_is_placeholder && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
           <span className="font-bold">No real KRA PIN is set.</span> Invoices currently say "KRA PIN not set". For a limited company
           enter the <span className="font-bold">company's</span> PIN (starts with P); a sole proprietor enters their personal PIN (starts with A).
         </div>
@@ -84,7 +84,7 @@ export function OrganisationCard() {
           <Input value={form.vat_number} onChange={(e) => set({ vat_number: e.target.value })} />
         </Field>
       </div>
-      <label className="flex items-center gap-2 text-[12px]">
+      <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
         <input type="checkbox" checked={form.vat_registered} onChange={(e) => set({ vat_registered: e.target.checked })} />
         Registered for VAT
       </label>

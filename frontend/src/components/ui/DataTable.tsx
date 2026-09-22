@@ -122,7 +122,7 @@ export function DataTable<T>({
   const colSpan = columns.length + (renderExpanded ? 1 : 0)
 
   return (
-    <div className="overflow-auto rounded-[24px]" style={maxHeight ? { maxHeight } : undefined}>
+    <div className="overflow-auto rounded-2xl" style={maxHeight ? { maxHeight } : undefined}>
       <table className="ui-table">
         <thead>
           <tr>
@@ -136,7 +136,7 @@ export function DataTable<T>({
                 <th
                   key={column.key}
                   style={column.width ? { width: column.width } : undefined}
-                  className={`${alignClass[column.align ?? 'left']} ${isSortable ? 'cursor-pointer select-none hover:text-[var(--text)]' : ''}`}
+                  className={`${alignClass[column.align ?? 'left']} ${isSortable ? 'cursor-pointer select-none hover:text-slate-900' : ''}`}
                   onClick={() => toggleSort(column)}
                 >
                   <span className="inline-flex items-center gap-1">
@@ -172,7 +172,7 @@ export function DataTable<T>({
                       <button
                         type="button"
                         aria-label={isOpen ? 'Collapse' : 'Expand'}
-                        className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text)]"
+                        className="p-1 rounded text-slate-400 hover:text-slate-600"
                         onClick={(e) => {
                           e.stopPropagation()
                           toggleExpanded(key)
@@ -190,7 +190,7 @@ export function DataTable<T>({
                 </tr>
                 {renderExpanded && isOpen && (
                   <tr>
-                    <td colSpan={colSpan} className="bg-[var(--surface-2)] !p-0">
+                    <td colSpan={colSpan} className="bg-slate-50 !p-0">
                       {renderExpanded(row)}
                     </td>
                   </tr>

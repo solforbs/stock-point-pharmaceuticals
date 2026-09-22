@@ -70,16 +70,18 @@ export default function ChartOfAccountsPage() {
         <div className="ui-card"><NoAccess permission="report.financial.view" /></div>
       ) : (
         <>
-          <FilterBar>
-            <Field label="Type">
-              <Select value={type} onChange={(e) => setType(e.target.value)}>
-                <option value="">All</option>
-                {types.map((t) => (<option key={t} value={t}>{titleCase(t)}</option>))}
-              </Select>
-            </Field>
-            <Field label="Search" className="w-72"><Input placeholder="Code, name or system role" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
-          </FilterBar>
-          <div className="ui-card">
+          <div id="tour-coa-filters">
+            <FilterBar>
+              <Field label="Type">
+                <Select value={type} onChange={(e) => setType(e.target.value)}>
+                  <option value="">All</option>
+                  {types.map((t) => (<option key={t} value={t}>{titleCase(t)}</option>))}
+                </Select>
+              </Field>
+              <Field label="Search" className="w-72"><Input placeholder="Code, name or system role" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
+            </FilterBar>
+          </div>
+          <div id="tour-coa-table" className="ui-card">
             {accounts.isLoading && <LoadingSkeleton rows={8} />}
             {accounts.isError && <ErrorState error={accounts.error} onRetry={() => accounts.refetch()} />}
             {accounts.data && rows.length === 0 && <EmptyState title="No accounts match" />}
@@ -92,14 +94,14 @@ export default function ChartOfAccountsPage() {
                   <tbody>
                     {rows.map((a) => (
                       <tr key={a.id} className={!a.is_active ? 'opacity-60' : ''}>
-                        <td className="tabular font-semibold whitespace-nowrap">{a.code}</td>
+                        <td className="tabular font-semibold font-mono whitespace-nowrap">{a.code}</td>
                         <td>
                           <span style={{ paddingLeft: a.depth * 18 }} className={a.is_postable ? '' : 'font-bold'}>{a.name}</span>
                           {!a.is_active && <StatusBadge status="INACTIVE" className="ml-2" />}
                         </td>
                         <td><StatusBadge status={a.account_type} tone={TYPE_TONE[a.account_type] ?? 'slate'} /></td>
-                        <td className="text-[11px] text-[var(--text-secondary)] tabular">{a.system_role ?? '—'}</td>
-                        <td>{a.is_postable ? 'Yes' : <span className="text-[var(--text-muted)]">Header</span>}</td>
+                        <td className="text-xs text-slate-500 font-mono tabular">{a.system_role ?? '—'}</td>
+                        <td>{a.is_postable ? 'Yes' : <span className="text-slate-400">Header</span>}</td>
                         <td className="text-right tabular whitespace-nowrap">{formatBalance(a.balance)}</td>
                       </tr>
                     ))}

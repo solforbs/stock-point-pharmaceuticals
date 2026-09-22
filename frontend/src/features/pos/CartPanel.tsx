@@ -2,7 +2,7 @@ import { AlertTriangle, RefreshCw, ShoppingBag, User } from 'lucide-react'
 import { useState, type RefObject } from 'react'
 import { ApprovalBar } from '../../components/ApprovalBar'
 import { CustomerPicker } from '../../components/CustomerPicker'
-import { ConfirmDialog } from '../../components/ui/Modal'
+import { PosRemoveConfirmModal } from './PosRemoveConfirmModal'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { dSum } from '../../lib/decimal'
 import { formatMoney } from '../../lib/money'
@@ -24,6 +24,7 @@ export interface CartPanelProps {
   customerInputRef: RefObject<HTMLInputElement | null>
   onOpenPayment: () => void
   onHold: () => void
+  onPreviewCart?: () => void
   onApprove: () => void
   approvePending: boolean
 }
@@ -33,6 +34,7 @@ export function CartPanel({
   customerInputRef,
   onOpenPayment,
   onHold,
+  onPreviewCart,
   onApprove,
   approvePending,
 }: CartPanelProps) {
@@ -74,27 +76,27 @@ export function CartPanel({
   const paymentEnabled = isFresh && !disabled && lines.length > 0
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col bg-slate-50/50 border-l border-slate-200/80">
+    <div className="flex-1 min-w-0 min-h-0 h-full flex flex-col bg-slate-50/50 border-l border-slate-200/80 overflow-hidden">
       {/* Customer Header */}
-      <div className="px-3.5 py-2 bg-white border-b border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] shrink-0">
+      <div id="tour-pos-customer" className="px-3.5 py-2 bg-white border-b border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] shrink-0">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider">
               <User size={13} className="text-blue-600" />
               Customer
             </span>
-            <span className="hidden md:inline-flex px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-mono font-semibold">
+            <span className="hidden md:inline-flex px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-mono font-bold">
               F5
             </span>
             {saleMode === 'WHOLESALE' ? (
-              <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-semibold">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">
                 Required
               </span>
             ) : (
-              <span className="text-[11px] text-slate-400 font-normal">Walk-in default</span>
+              <span className="text-xs text-slate-500 font-normal">Walk-in default</span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold tabular">
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold tabular">
             <span>{lines.length}</span>
             <span className="text-slate-400 font-medium">{lines.length === 1 ? 'item' : 'items'}</span>
           </div>
@@ -110,14 +112,14 @@ export function CartPanel({
 
       {/* Notifications & Warnings */}
       {modeSwitchNote && quote && modeSwitchNote.beforeTotal !== null && (
-        <div className="mx-3 mt-2 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-xs text-blue-900 flex items-center gap-3">
+        <div className="mx-3 mt-2 px-3 py-2 rounded-2xl border border-blue-200/80 bg-blue-50 text-xs text-blue-900 flex items-center gap-3 shrink-0">
           <span className="flex-1 tabular">
             Re-quoted after mode switch ({modeSwitchNote.from} → {modeSwitchNote.to}): was <b>{formatMoney(modeSwitchNote.beforeTotal)}</b>, now <b>{formatMoney(quote.totals.grand_total)}</b>
           </span>
           <button
             type="button"
             onClick={dismissModeSwitchNote}
-            className="px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium text-xs cursor-pointer"
+            className="px-3 py-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold text-xs cursor-pointer shadow-2xs"
           >
             OK
           </button>
@@ -125,14 +127,14 @@ export function CartPanel({
       )}
 
       {expired && lines.length > 0 && (
-        <div className="mx-3 mt-2 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2.5">
+        <div className="mx-3 mt-2 px-3.5 py-2.5 rounded-2xl border border-amber-200 bg-amber-50 text-xs text-amber-900 flex items-center gap-2.5 shrink-0">
           <AlertTriangle size={15} className="text-amber-600 shrink-0" />
           <span className="flex-1">Quote expired. Prices must be re-confirmed before checkout.</span>
           <button
             type="button"
             onClick={requote}
             disabled={isQuoting}
-            className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs flex items-center gap-1 cursor-pointer"
+            className="px-3 py-1 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer shadow-2xs"
           >
             <RefreshCw size={11} className={isQuoting ? 'animate-spin' : ''} /> Re-quote
           </button>
@@ -140,7 +142,7 @@ export function CartPanel({
       )}
 
       {quoteError && (
-        <div className="mx-3 mt-2 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-xs text-rose-900 flex items-center gap-2.5">
+        <div className="mx-3 mt-2 px-3.5 py-2.5 rounded-2xl border border-rose-200 bg-rose-50 text-xs text-rose-900 flex items-center gap-2.5 shrink-0">
           <span className="flex-1">
             <b className="mr-1">{quoteError.code}:</b>
             {quoteError.message}
@@ -149,7 +151,7 @@ export function CartPanel({
             <button
               type="button"
               onClick={() => setSaleMode(fallbackMode)}
-              className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs cursor-pointer"
+              className="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer shadow-2xs"
             >
               Switch to {fallbackMode}
             </button>
@@ -158,7 +160,7 @@ export function CartPanel({
               type="button"
               onClick={requote}
               disabled={isQuoting}
-              className="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-800 font-medium text-xs cursor-pointer"
+              className="px-3 py-1 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs cursor-pointer"
             >
               Retry
             </button>
@@ -167,7 +169,7 @@ export function CartPanel({
       )}
 
       {(flaggedCount > 0 || status === 'AWAITING_APPROVAL') && !disabled && (
-        <div className="mx-3 mt-2">
+        <div className="mx-3 mt-2 shrink-0">
           <ApprovalBar
             title={status === 'AWAITING_APPROVAL' ? 'Approval required before sale can post' : `${flaggedCount} line(s) need manager approval`}
             message={
@@ -184,7 +186,7 @@ export function CartPanel({
       )}
 
       {/* Cart Lines Scroll Area */}
-      <div className="flex-1 min-h-0 overflow-y-auto pos-scroll p-3 space-y-2">
+      <div id="tour-pos-cart-lines" className="flex-1 min-h-0 overflow-y-auto pos-scroll p-3 space-y-2">
         {lines.length === 0 ? (
           <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center p-6 bg-white/70 border border-dashed border-slate-200 rounded-2xl">
             <div className="w-13 h-13 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 shadow-inner ring-4 ring-blue-50/50">
@@ -192,7 +194,7 @@ export function CartPanel({
             </div>
             <h4 className="text-sm font-bold text-slate-800 mb-1">Your cart is empty</h4>
             <p className="text-xs text-slate-500 max-w-[240px] mb-3">
-              Scan a barcode, press <kbd className="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-[11px] text-slate-700">F2</kbd> to search, or tap any fast-moving medicine.
+              Scan a barcode, press <kbd className="px-2 py-0.5 rounded-lg bg-slate-100 font-mono text-xs font-bold text-slate-700">F2</kbd> to search, or tap any fast-moving medicine.
             </p>
           </div>
         ) : (
@@ -231,16 +233,14 @@ export function CartPanel({
         onSetHeaderDiscount={setHeaderDiscount}
         onOpenPayment={onOpenPayment}
         onHold={onHold}
+        onPreviewCart={onPreviewCart}
         onFocusCustomer={() => customerInputRef.current?.focus()}
         onSwitchToRetail={() => setSaleMode('RETAIL')}
       />
 
-      <ConfirmDialog
+      <PosRemoveConfirmModal
         open={removing !== null}
-        title="Remove item from cart?"
-        message={removing ? lines.find((l) => l.lineRef === removing)?.productName : undefined}
-        confirmLabel="Remove"
-        danger
+        line={removing ? lines.find((l) => l.lineRef === removing) ?? null : null}
         onCancel={() => setRemoving(null)}
         onConfirm={() => {
           if (removing) removeLine(removing)

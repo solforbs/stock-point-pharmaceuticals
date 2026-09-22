@@ -24,17 +24,17 @@ export function DashboardHeader({
     <header className="mb-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-[22px] font-black tracking-tight text-[var(--text)]">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
             {greeting}, {userName ?? 'Pharmacist'}
           </h1>
-          <div className="flex items-center gap-3 text-[12px] text-[var(--text-muted)] mt-1 font-medium">
+          <div className="flex items-center gap-2.5 text-xs text-slate-500 mt-1 font-normal">
             {branchCode && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold text-[11.5px]">
-                <Building2 size={12} className="text-blue-600" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium">
+                <Building2 size={13} className="text-slate-500" />
                 {branchCode} · {branchName}
               </span>
             )}
-            <span className="inline-flex items-center gap-1.5 tabular text-[12px] text-slate-500 font-medium">
+            <span className="inline-flex items-center gap-1.5 tabular text-slate-500">
               <Calendar size={13} className="text-slate-400" />
               {formatDate(dateIso)}
             </span>
@@ -43,16 +43,16 @@ export function DashboardHeader({
       </div>
 
       {periodClosed && (
-        <div className="mt-4 p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 flex items-center justify-between text-[12px] text-rose-700">
+        <div className="mt-4 p-3 rounded-lg border border-rose-200 bg-rose-50 text-xs text-rose-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="shrink-0" />
+            <AlertTriangle size={15} className="shrink-0 text-rose-600" />
             <span>
-              <strong>No financial period is open for today.</strong> Nothing can post until a period is opened.
+              <strong>No financial period is open for today.</strong> Transactions cannot post until an accounting period is activated.
             </span>
           </div>
           <Link
             to="/finance/periods"
-            className="font-bold underline hover:opacity-80 shrink-0 ml-2"
+            className="font-semibold underline hover:text-rose-900 shrink-0 ml-2"
           >
             Open Periods →
           </Link>

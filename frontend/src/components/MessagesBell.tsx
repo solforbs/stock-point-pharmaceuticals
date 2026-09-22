@@ -109,7 +109,7 @@ export function MessagesBell() {
       >
         <MessageSquare size={17} />
         {count > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full text-[9.5px] font-bold text-white bg-blue-600 flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-xs font-bold text-white bg-blue-600 flex items-center justify-center">
             {count > 99 ? '99+' : count}
           </span>
         )}
@@ -119,12 +119,12 @@ export function MessagesBell() {
         <div className="absolute right-0 mt-2 w-[420px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-slate-200 shadow-xl z-50 overflow-hidden">
           <header className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h3 className="text-[13px] font-bold text-slate-800">Messages</h3>
-              <p className="text-[11px] text-slate-500">Delivered the moment they are sent</p>
+              <h3 className="text-sm font-bold text-slate-900">Messages</h3>
+              <p className="text-xs text-slate-500">Delivered the moment they are sent</p>
             </div>
             <div className="flex items-center gap-2">
               {count > 0 && (
-                <button type="button" onClick={() => markAll.mutate()} className="text-[11.5px] font-bold text-blue-600 hover:underline cursor-pointer">
+                <button type="button" onClick={() => markAll.mutate()} className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer">
                   Mark all read
                 </button>
               )}
@@ -135,30 +135,30 @@ export function MessagesBell() {
           </header>
 
           <div className="max-h-[420px] overflow-y-auto">
-            {list.isLoading && <p className="px-4 py-6 text-[12px] text-slate-500">Loading…</p>}
+            {list.isLoading && <p className="px-4 py-6 text-sm text-slate-500">Loading…</p>}
             {!list.isLoading && (list.data?.data.length ?? 0) === 0 && (
-              <p className="px-4 py-6 text-[12px] text-slate-500">No messages yet.</p>
+              <p className="px-4 py-6 text-sm text-slate-500">No messages yet.</p>
             )}
             {list.data?.data.map((m) => (
               <div key={m.id} className={`px-4 py-3 border-b border-slate-50 last:border-0 ${m.read_at ? '' : 'bg-blue-50/40'}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-[12.5px] font-bold text-slate-800">{m.subject}</p>
-                    <p className="text-[11.5px] text-slate-600 mt-0.5 whitespace-pre-wrap">{m.body}</p>
-                    <p className="text-[10.5px] text-slate-500 mt-1">
+                    <p className="text-sm font-bold text-slate-900">{m.subject}</p>
+                    <p className="text-xs text-slate-600 mt-0.5 whitespace-pre-wrap">{m.body}</p>
+                    <p className="text-xs text-slate-500 mt-1">
                       {m.sender?.name ?? 'System'} · {formatDateTime(m.created_at)}
                       {m.recipient_id === null && <span className="ml-1 font-semibold">· to everyone in the branch</span>}
                     </p>
                     {m.link && (
-                      <Link to={m.link} onClick={() => setOpen(false)} className="text-[11.5px] font-bold text-blue-600 hover:underline">
+                      <Link to={m.link} onClick={() => setOpen(false)} className="text-xs font-semibold text-blue-600 hover:underline">
                         Open
                       </Link>
                     )}
                   </div>
-                  <span className={`shrink-0 px-1.5 py-0.5 rounded-lg border text-[10px] font-bold ${priorityStyle[m.priority]}`}>{m.priority}</span>
+                  <span className={`shrink-0 px-1.5 py-0.5 rounded-lg border text-xs font-semibold ${priorityStyle[m.priority]}`}>{m.priority}</span>
                 </div>
                 {!m.read_at && (
-                  <button type="button" onClick={() => markRead.mutate(m.id)} className="text-[10.5px] font-bold text-slate-500 hover:text-slate-800 hover:underline mt-1 cursor-pointer">
+                  <button type="button" onClick={() => markRead.mutate(m.id)} className="text-xs font-semibold text-slate-500 hover:text-slate-800 hover:underline mt-1 cursor-pointer">
                     Mark read
                   </button>
                 )}

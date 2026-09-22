@@ -107,7 +107,7 @@ const emptyLine = (): LineDraft => ({ product_id: '', uom_id: '', promo_price: '
 
 function PromotionEditor({ id, canManage, onDone }: { id: string | null; canManage: boolean; onDone: () => void }) {
   const existing = useQuery({ queryKey: ['pricing-rules', 'promotions', id], queryFn: () => apiGet<Promotion>(`/api/pricing-rules/promotions/${id}`), enabled: !!id })
-  if (id && existing.isLoading) return <div className="text-[12px] text-[var(--text-muted)]">Loading…</div>
+  if (id && existing.isLoading) return <div className="text-xs text-slate-500">Loading…</div>
   if (id && existing.isError) return <InlineError error={existing.error} />
   return <PromotionForm promotion={existing.data ?? null} canManage={canManage} onDone={onDone} />
 }
@@ -211,13 +211,13 @@ function PromotionForm({ promotion, canManage, onDone }: { promotion: Promotion 
 
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <h3 className="text-[12.5px] font-bold">Products</h3>
+          <h3 className="text-xs font-bold text-slate-900">Products</h3>
           {!readOnly && <Button size="sm" onClick={() => setLines([...lines, emptyLine()])}><Plus size={12} /> Add product</Button>}
         </div>
-        {err?.errors.lines?.[0] && <p className="text-[11px] text-[var(--status-red)] mb-1">{err.errors.lines[0]}</p>}
+        {err?.errors.lines?.[0] && <p className="text-xs text-rose-600 mb-1 font-medium">{err.errors.lines[0]}</p>}
         <div className="space-y-2">
           {lines.map((l, i) => (
-            <div key={i} className="rounded-md border border-[var(--border)] p-2.5">
+            <div key={i} className="rounded-md border border-slate-200 p-2.5">
               <div className="grid grid-cols-[1fr_120px_auto] gap-2 items-end">
                 <Field label="Product">
                   <ProductField productId={l.product_id} fallbackName={l.product_name} disabled={readOnly} onChange={(p) => setLine(i, { product_id: p?.id ?? '', product_name: p?.name, uom_id: defaultUomId(p) })} />
@@ -233,20 +233,20 @@ function PromotionForm({ promotion, canManage, onDone }: { promotion: Promotion 
                     <Field label="Buy qty"><Input inputMode="decimal" className="tabular" value={l.buy_qty} onChange={(e) => setLine(i, { buy_qty: decimalInput(e.target.value) })} /></Field>
                     <Field label="Free qty"><Input inputMode="decimal" className="tabular" value={l.free_qty} onChange={(e) => setLine(i, { free_qty: decimalInput(e.target.value) })} /></Field>
                     <Field label="Max free / order"><Input inputMode="decimal" className="tabular" value={l.max_free_per_order} onChange={(e) => setLine(i, { max_free_per_order: decimalInput(e.target.value) })} /></Field>
-                    <label className="flex items-center gap-2 text-[12px] pt-5"><input type="checkbox" checked={l.repeat} onChange={(e) => setLine(i, { repeat: e.target.checked })} /> Repeats</label>
+                    <label className="flex items-center gap-2 text-xs text-slate-600 pt-5 cursor-pointer"><input type="checkbox" checked={l.repeat} onChange={(e) => setLine(i, { repeat: e.target.checked })} /> Repeats</label>
                     <Field label="Free product (if different)" className="col-span-4">
                       <ProductField productId={l.bonus_product_id} fallbackName={l.bonus_name} disabled={readOnly} onChange={(p) => setLine(i, { bonus_product_id: p?.id ?? '', bonus_name: p?.name })} />
                     </Field>
                   </>
                 )}
               </div>
-              {lineErr(i) && <p className="text-[11px] text-[var(--status-red)] mt-1">{lineErr(i)}</p>}
+              {lineErr(i) && <p className="text-xs text-rose-600 mt-1 font-medium">{lineErr(i)}</p>}
             </div>
           ))}
         </div>
       </div>
 
-      {!promotion && <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active from the start date</label>}
+      {!promotion && <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active from the start date</label>}
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
       {canManage && (
         <div className="flex justify-end gap-2">

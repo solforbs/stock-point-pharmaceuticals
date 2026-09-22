@@ -22,19 +22,19 @@ export function CreditLimitResolver({ error, pending, onResolve }: { error: unkn
 
   const details = err.details as { limit?: string; exposure?: string; shortfall?: string }
   return (
-    <div className="rounded-lg border border-[var(--status-amber)] bg-[color-mix(in_srgb,var(--status-amber)_8%,transparent)] p-3 space-y-2.5 text-[12px]">
+    <div className="rounded-xl border border-amber-300 bg-amber-50/60 p-3.5 space-y-2.5 text-xs text-amber-950">
       <div className="font-semibold">{err.message}</div>
-      <div className="tabular text-[11.5px] text-[var(--text-secondary)]">
+      <div className="tabular text-xs text-amber-800">
         Limit {formatKes(details.limit ?? '0')} · already owed or on order {formatKes(details.exposure ?? '0')} · over by {formatKes(details.shortfall ?? '0')}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="primary" disabled={pending} onClick={() => onResolve({ payment_terms: 'CASH_ON_DELIVERY' })}>
           Continue as cash on delivery
         </Button>
-        <Link to="/customers/credit-control" className="text-[11.5px] underline">Set a credit limit</Link>
+        <Link to="/customers/credit-control" className="text-xs text-blue-700 hover:text-blue-800 hover:underline font-semibold">Set a credit limit</Link>
       </div>
       {canOverride && (
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[var(--border)]">
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200">
           <Input className="flex-1 min-w-[220px]" placeholder="Reason for overriding the limit (recorded)" value={reason} onChange={(e) => setReason(e.target.value)} />
           <Button size="sm" variant="danger" disabled={pending || reason.trim().length < 5} onClick={() => onResolve({ credit_override_reason: reason.trim() })}>
             Override limit

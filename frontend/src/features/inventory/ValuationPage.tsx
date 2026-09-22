@@ -51,27 +51,29 @@ export default function ValuationPage() {
         <div className="ui-card"><NoAccess permission={canReport ? 'product.cost.view' : 'report.view'} /></div>
       ) : (
         <>
-          <FilterBar>
-            <Field label="Store">
-              <Select value={storeId} onChange={(e) => setStoreId(e.target.value)}>
-                <option value="">All stores in branch</option>
-                {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
-              </Select>
-            </Field>
-          </FilterBar>
-          <div className="grid gap-3 sm:grid-cols-2 mb-4 max-w-2xl">
+          <div id="tour-valuation-filter">
+            <FilterBar>
+              <Field label="Store">
+                <Select value={storeId} onChange={(e) => setStoreId(e.target.value)}>
+                  <option value="">All stores in branch</option>
+                  {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+                </Select>
+              </Field>
+            </FilterBar>
+          </div>
+          <div id="tour-valuation-totals" className="grid gap-3 sm:grid-cols-2 mb-4 max-w-2xl">
             <div className="ui-card p-4">
-              <div className="ui-label !mb-0.5">Total at cost (WAC)</div>
-              <div className="text-[22px] font-extrabold tabular leading-tight">{result.isLoading ? '…' : formatKes(totalCost === undefined ? null : String(totalCost))}</div>
+              <div className="ui-label !mb-1 text-slate-500 font-semibold">Total at cost (WAC)</div>
+              <div className="text-2xl font-bold tracking-tight text-slate-900 tabular leading-tight">{result.isLoading ? '…' : formatKes(totalCost === undefined ? null : String(totalCost))}</div>
             </div>
             <div className="ui-card p-4">
-              <div className="ui-label !mb-0.5">Total at retail</div>
-              <div className="text-[22px] font-extrabold tabular leading-tight">{result.isLoading ? '…' : formatKes(totalRetail === undefined ? null : String(totalRetail))}</div>
+              <div className="ui-label !mb-1 text-slate-500 font-semibold">Total at retail</div>
+              <div className="text-2xl font-bold tracking-tight text-slate-900 tabular leading-tight">{result.isLoading ? '…' : formatKes(totalRetail === undefined ? null : String(totalRetail))}</div>
             </div>
           </div>
-          <div className="ui-card">
+          <div id="tour-valuation-table" className="ui-card">
             {r && (
-              <div className="px-3 py-2 text-[11px] text-[var(--text-muted)] border-b border-[var(--border)] tabular">
+              <div className="px-4 py-2.5 text-xs text-slate-500 border-b border-slate-200 tabular font-medium">
                 {r.rows.length} rows · generated {formatDateTime(r.generated_at)}
               </div>
             )}
@@ -86,7 +88,7 @@ export default function ValuationPage() {
               maxHeight="65vh"
               footer={
                 r && Object.keys(totals).length > 0 ? (
-                  <tr className="font-bold bg-[var(--surface-2)]">
+                  <tr className="font-bold bg-slate-50">
                     {r.columns.map((c, i) => (
                       <td key={c.key} className={isNumericType(c.type) ? 'text-right' : ''}>
                         {c.key in totals ? formatCell(totals[c.key], c) : i === 0 ? 'Totals' : ''}

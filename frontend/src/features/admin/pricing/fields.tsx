@@ -12,7 +12,7 @@ export function ProductField({ productId, fallbackName, onChange, disabled }: { 
     <div className="ui-input flex items-center gap-2">
       <span className="flex-1 truncate">{product.data ? `${product.data.code} · ${product.data.name}` : fallbackName ?? 'Loading…'}</span>
       {!disabled && (
-        <button type="button" aria-label="Clear product" onClick={() => onChange(null)} className="text-[var(--text-muted)] hover:text-[var(--text)]"><X size={12} /></button>
+        <button type="button" aria-label="Clear product" onClick={() => onChange(null)} className="text-slate-400 hover:text-slate-600"><X size={12} /></button>
       )}
     </div>
   )

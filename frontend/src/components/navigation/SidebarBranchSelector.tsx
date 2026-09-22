@@ -22,7 +22,7 @@ export function SidebarBranchSelector({ user }: SidebarBranchSelectorProps) {
   if (branches.length > 1) {
     return (
       <div id="tour-branch-selector" className="space-y-1.5">
-        <label className="text-[11.5px] uppercase tracking-wider text-slate-500 font-bold block px-1">
+        <label className="text-xs uppercase tracking-wider text-slate-500 font-bold block px-1">
           Branch Location
         </label>
         <div className="relative">
@@ -33,7 +33,7 @@ export function SidebarBranchSelector({ user }: SidebarBranchSelectorProps) {
           <select
             value={activeBranch?.id ?? ''}
             onChange={(e) => switchBranch(e.target.value)}
-            className="w-full h-9 pl-8 pr-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-900 text-[13px] font-bold border border-slate-200 focus:border-blue-500 transition-colors outline-none cursor-pointer"
+            className="w-full h-9 pl-8 pr-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-900 text-sm font-semibold border border-slate-200 focus:border-blue-500 transition-colors outline-none cursor-pointer"
             aria-label="Active branch"
           >
             {branches.map((b) => (
@@ -49,7 +49,7 @@ export function SidebarBranchSelector({ user }: SidebarBranchSelectorProps) {
 
   if (activeBranch) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[11.5px] text-slate-700">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
         <Building2 size={13} className="shrink-0 text-blue-600" />
         <span className="truncate font-bold">
           {activeBranch.code} · {activeBranch.name}

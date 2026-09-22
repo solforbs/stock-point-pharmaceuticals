@@ -60,7 +60,7 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
             {['SENT', 'APPROVED', 'PARTIALLY_RECEIVED'].includes(p.status) && (
               <Link
                 to={`/buy/goods-receipts?po=${p.id}`}
-                className="inline-flex items-center h-7 px-2.5 rounded-md border border-[var(--border-strong)] text-[11.5px] font-semibold hover:bg-[var(--surface-2)]"
+                className="inline-flex items-center h-8 px-3 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors"
               >
                 Receive Goods
               </Link>
@@ -76,7 +76,7 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
           <div className="flex items-center gap-2">
             <StatusBadge status={p.status} />
             {p.supplier?.licence_expiry && (
-              <span className="text-[11.5px] text-[var(--text-muted)] flex items-center gap-1.5">
+              <span className="text-xs text-slate-500 flex items-center gap-1.5">
                 Supplier licence <ExpiryBadge date={p.supplier.licence_expiry} />
               </span>
             )}
@@ -102,8 +102,8 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
               {(p.lines ?? []).map((l) => (
                 <tr key={l.id}>
                   <td>
-                    <div className="font-semibold text-[var(--text)]">{l.product?.name ?? l.product_id.slice(0, 8)}</div>
-                    <div className="text-[10.5px] text-[var(--text-muted)]">{l.product?.code}</div>
+                    <div className="font-semibold text-slate-900">{l.product?.name ?? l.product_id.slice(0, 8)}</div>
+                    <div className="text-xs text-slate-500 font-mono">{l.product?.code}</div>
                   </td>
                   <td>{l.uom?.code ?? l.uom_id.slice(0, 8)}</td>
                   <td className="text-right"><QtyCell value={l.qty_ordered} /></td>
@@ -116,14 +116,14 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
           {(p.goods_receipts ?? []).length > 0 && (
             <div>
               <div className="ui-label">Goods receipts</div>
-              <ul className="text-[12px] space-y-1">
+              <ul className="text-xs space-y-1.5">
                 {p.goods_receipts!.map((g) => (
                   <li key={g.id} className="flex items-center gap-2">
-                    <Link to={`/buy/goods-receipts?receipt=${g.id}`} className="tabular font-semibold text-[var(--color-navy)] underline">
+                    <Link to={`/buy/goods-receipts?receipt=${g.id}`} className="tabular font-semibold font-mono text-blue-600 hover:text-blue-700 hover:underline">
                       {g.doc_number}
                     </Link>
                     <StatusBadge status={g.status} />
-                    <span className="text-[var(--text-muted)]">{formatDateTime(g.received_at)}</span>
+                    <span className="text-slate-500">{formatDateTime(g.received_at)}</span>
                   </li>
                 ))}
               </ul>

@@ -33,9 +33,9 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
 
   return (
     <Modal open onClose={onNewSale} title={<span className="flex items-center gap-2">Receipt {sale.doc_number} {offline ? <StatusBadge status="PENDING_SYNC" tone="amber" label="Waiting to sync" /> : <StatusBadge status={sale.status} />}</span>} width={520}>
-      <div className="font-mono text-[12px] tabular" id="pos-receipt">
+      <div className="font-mono text-xs tabular" id="pos-receipt">
         <div className="text-center mb-3">
-          <div className="font-bold text-[14px]">STOCKPOINT PHARMA</div>
+          <div className="font-bold text-sm">STOCKPOINT PHARMA</div>
           <div>{sale.sale_mode} · Terminal {terminalId}</div>
           <div>{formatDateTime(sale.posted_at)}</div>
           {customer && <div>Customer: {customer.name}</div>}
@@ -50,7 +50,7 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
                   <td className="py-0.5 pr-2">
                     {cart?.productName ?? quoted?.product_name ?? line.product?.name ?? line.product_id.slice(0, 8)}
                     {line.is_bonus && <span className="ml-1 font-bold">FREE</span>}
-                    <div className="text-[var(--text-muted)]">
+                    <div className="text-slate-500">
                       {formatQty(line.qty)} {cart?.uomCode ?? quoted?.uom_code ?? ''} @ {formatMoney(line.unit_price)}
                     </div>
                   </td>
@@ -60,7 +60,7 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
             })}
           </tbody>
         </table>
-        <div className="border-t border-dashed border-[var(--border-strong)] my-2" />
+        <div className="border-t border-dashed border-slate-300 my-2" />
         <div className="grid grid-cols-[1fr_auto] gap-y-0.5">
           <span>Subtotal</span>
           <span>{formatMoney(sale.subtotal)}</span>
@@ -72,8 +72,8 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
           )}
           <span>VAT</span>
           <span>{formatMoney(sale.tax_total)}</span>
-          <span className="font-bold text-[14px]">TOTAL</span>
-          <span className="font-bold text-[14px]">{formatMoney(sale.grand_total)}</span>
+          <span className="font-bold text-sm">TOTAL</span>
+          <span className="font-bold text-sm">{formatMoney(sale.grand_total)}</span>
           {payments.map((p, i) => (
             <span key={i} className="contents">
               <span>
@@ -110,7 +110,7 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
             <div className="font-normal">The eTIMS invoice is issued when this sale reaches the server.</div>
           </div>
         )}
-        <div className="text-center mt-3 text-[var(--text-muted)]">Thank you. Goods sold in good condition; keep this receipt.</div>
+        <div className="text-center mt-3 text-slate-500">Thank you. Goods sold in good condition; keep this receipt.</div>
       </div>
       <div className="flex items-center gap-2 mt-4">
         <Button variant="primary" size="lg" className="flex-1" onClick={onNewSale} autoFocus>
@@ -121,7 +121,7 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
         </Button>
         {!offline && <PdfDownloadButton size="md" url={`/api/sales/${sale.id}/pdf`} filename={sale.doc_number} label={payments.length > 0 && dCmp(paid, sale.grand_total) >= 0 ? 'Cash sale invoice' : 'Invoice PDF'} />}
         {!offline && (
-          <Link to="/sell/invoices" className="text-[11.5px] text-[var(--color-navy)] underline ml-2">
+          <Link to="/sell/invoices" className="text-xs text-blue-700 underline ml-2">
             Open in Invoices
           </Link>
         )}

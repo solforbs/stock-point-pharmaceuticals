@@ -80,7 +80,7 @@ export default function BackupPage() {
         title="Backup"
         subtitle={l ? `${l.schedule} Backups older than ${l.retention_days} days are deleted automatically.` : 'Compressed MySQL dumps of the whole database.'}
         actions={
-          <div className="flex items-center gap-2">
+          <div id="tour-backup-run" className="flex items-center gap-2">
             <Button disabled={create.isPending || l?.mysqldump_available === false} onClick={() => create.mutate('database')}>
               <DatabaseBackup size={13} /> {create.isPending && create.variables === 'database' ? 'Backing up…' : 'Database only'}
             </Button>
@@ -92,10 +92,10 @@ export default function BackupPage() {
       />
 
       <div className="space-y-4">
-        <div className="ui-card p-4 border-l-4 flex gap-3" style={{ borderLeftColor: 'var(--status-amber)' }}>
-          <AlertTriangle size={18} className="shrink-0 text-[var(--status-amber)]" />
-          <div className="text-[12px] text-[var(--text-secondary)] space-y-1">
-            <div className="font-bold text-[var(--text)]">Off-site copy: backups on this server do not survive losing the server</div>
+        <div className="ui-card p-4 border-l-4 border-l-amber-500 bg-amber-50/20 flex gap-3">
+          <AlertTriangle size={18} className="shrink-0 text-amber-600" />
+          <div className="text-xs text-slate-600 space-y-1">
+            <div className="font-semibold text-slate-900">Off-site copy: backups on this server do not survive losing the server</div>
             <p>
               Every file listed here sits on the same disk as the live database. A failed disk, a lost or hacked VPS, ransomware or an
               accidental deletion takes the backups with it. At least once a week, download the latest database backup and keep it somewhere
@@ -106,7 +106,7 @@ export default function BackupPage() {
         </div>
 
         {l?.mysqldump_available === false && (
-          <div className="ui-card p-4 text-[12px] border-l-4" style={{ borderLeftColor: 'var(--status-red)' }}>
+          <div className="ui-card p-4 text-xs border-l-4 border-l-rose-500 bg-rose-50/20 text-slate-700">
             <span className="font-bold">mysqldump was not found on this server.</span> Install the MySQL client tools, or set <code>MYSQLDUMP_PATH</code> in
             <code> .env</code> to the mysqldump binary, then reload this page. Existing backups can still be downloaded.
           </div>
@@ -114,15 +114,32 @@ export default function BackupPage() {
         {create.isError && <InlineError error={create.error} />}
 
         {l && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Card><div className="p-4"><div className="text-[11px] text-[var(--text-muted)]">Latest database backup</div><div className="text-[14px] font-bold tabular mt-0.5">{latest ? formatDateTime(latest.created_at) : 'None yet'}</div>
-              {latestAgeHours != null && <div className={`text-[11px] mt-0.5 ${latestAgeHours > 26 ? 'text-[var(--status-red)]' : 'text-[var(--text-muted)]'}`}>{latestAgeHours < 1 ? 'within the hour' : `${Math.floor(latestAgeHours)} hour(s) ago`}</div>}</div></Card>
-            <Card><div className="p-4"><div className="text-[11px] text-[var(--text-muted)]">Backups kept</div><div className="text-[14px] font-bold tabular mt-0.5">{l.data.length}</div><div className="text-[11px] text-[var(--text-muted)] mt-0.5">{formatBytes(l.data.reduce((s, f) => s + f.size, 0))} in total</div></div></Card>
-            <Card><div className="p-4"><div className="text-[11px] text-[var(--text-muted)]">Retention</div><div className="text-[14px] font-bold tabular mt-0.5">{l.retention_days} days</div><div className="text-[11px] text-[var(--text-muted)] mt-0.5">Set BACKUP_RETENTION_DAYS in .env to change it.</div></div></Card>
+          <div id="tour-backup-stats" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Card>
+              <div className="p-4">
+                <div className="text-xs text-slate-500">Latest database backup</div>
+                <div className="text-sm font-bold text-slate-900 tabular mt-0.5">{latest ? formatDateTime(latest.created_at) : 'None yet'}</div>
+                {latestAgeHours != null && <div className={`text-xs mt-0.5 ${latestAgeHours > 26 ? 'text-rose-600 font-semibold' : 'text-slate-500'}`}>{latestAgeHours < 1 ? 'within the hour' : `${Math.floor(latestAgeHours)} hour(s) ago`}</div>}
+              </div>
+            </Card>
+            <Card>
+              <div className="p-4">
+                <div className="text-xs text-slate-500">Backups kept</div>
+                <div className="text-sm font-bold text-slate-900 tabular mt-0.5">{l.data.length}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{formatBytes(l.data.reduce((s, f) => s + f.size, 0))} in total</div>
+              </div>
+            </Card>
+            <Card>
+              <div className="p-4">
+                <div className="text-xs text-slate-500">Retention</div>
+                <div className="text-sm font-bold text-slate-900 tabular mt-0.5">{l.retention_days} days</div>
+                <div className="text-xs text-slate-500 mt-0.5">Set BACKUP_RETENTION_DAYS in .env to change it.</div>
+              </div>
+            </Card>
           </div>
         )}
 
-        <div className="ui-card">
+        <div id="tour-backup-table" className="ui-card">
           <DataTable
             columns={columns}
             rows={l?.data}

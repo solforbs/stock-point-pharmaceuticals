@@ -33,13 +33,13 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
   }
 
   return (
-    <div className="h-11 px-3 sm:px-4 flex items-center justify-between gap-2 bg-white border-b border-slate-200/80 shrink-0 select-none overflow-hidden">
+    <div id="tour-pos-mode-banner" className="h-11 px-3 sm:px-4 flex items-center justify-between gap-2 bg-white border-b border-slate-200/80 shrink-0 select-none overflow-hidden">
       {/* Left: Mode Toggle Pills */}
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider hidden xl:inline">
+        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden xl:inline">
           Sale Mode:
         </span>
-        <div className="flex items-center gap-0.5 p-0.5 bg-slate-100/90 rounded-xl border border-slate-200/80">
+        <div id="tour-pos-mode-toggle" className="flex items-center gap-1 p-1 bg-slate-100 rounded-full">
           {modes.map((mode) => {
             const isActive = mode === saleMode
             return (
@@ -48,13 +48,13 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
                 type="button"
                 onClick={() => requestSwitch(mode)}
                 disabled={!switchable && !isActive}
-                className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
                 }`}
               >
-                {mode === 'RETAIL' ? '🛒 Retail' : mode === 'WHOLESALE' ? '🏢 Wholesale' : '💊 Dispensing'}
+                {mode === 'RETAIL' ? 'Retail' : mode === 'WHOLESALE' ? 'Wholesale' : 'Dispensing'}
               </button>
             )
           })}
@@ -63,20 +63,21 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
 
       {/* Right: Store, Terminal, Cashier & Live Status */}
       <div className="flex items-center gap-2 shrink-0 text-xs">
-        {/* Store Selector */}
-        <div className="flex items-center gap-1.5 text-slate-600">
+        {/* Stock Room Location Selector */}
+        <div id="tour-pos-stock-room" className="flex items-center gap-1.5 text-slate-600">
           <StoreIcon size={14} className="text-blue-600 shrink-0" />
-          <span className="text-[11.5px] font-bold text-slate-500 hidden 2xl:inline">Store:</span>
+          <span className="font-bold text-slate-500 text-xs inline">Stock Room:</span>
           <select
             value={storeId ?? ''}
             onChange={(e) => setStore(e.target.value)}
-            aria-label="Inventory store"
-            className="h-7 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[12px] font-bold px-2 outline-none hover:bg-slate-100 transition-colors cursor-pointer max-w-[130px] sm:max-w-none"
+            aria-label="Stock Room Location"
+            title="Physical room or dispensary shelf where medicine stock is deducted from"
+            className="h-7 rounded-xl bg-slate-100/90 hover:bg-slate-200/70 border border-slate-200/60 text-slate-800 text-xs font-bold px-2.5 outline-none transition-colors cursor-pointer shadow-2xs"
           >
             {/* Only stores the till may sell from: the server refuses the rest. */}
             {stores.filter((store) => store.is_sellable).map((store) => (
               <option key={store.id} value={store.id}>
-                {store.code}
+                {store.code}{store.name && store.name.toLowerCase() !== store.code.toLowerCase() ? ` · ${store.name}` : ''}
               </option>
             ))}
           </select>
@@ -85,8 +86,8 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
         <div className="h-3.5 w-px bg-slate-200" />
 
         {/* Terminal Indicator */}
-        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-slate-50 border border-slate-200/80 text-[11.5px] text-slate-600 font-semibold">
-          <Monitor size={11} className="text-slate-400" />
+        <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200/50 text-xs text-slate-600 font-medium">
+          <Monitor size={12} className="text-slate-400" />
           <input
             value={terminalId}
             onChange={(e) => setTerminal(e.target.value.slice(0, 20))}
@@ -96,7 +97,7 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
         </div>
 
         {/* Cashier Name - only on wider viewports to prevent overflow */}
-        <span className="hidden xl:inline text-[11.5px] text-slate-500">
+        <span className="hidden xl:inline text-slate-500 text-xs font-normal">
           Cashier: <strong className="text-slate-800 font-bold">{user?.name ? user.name.split(' ')[0] : '—'}</strong>
         </span>
 

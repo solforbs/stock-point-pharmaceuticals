@@ -57,11 +57,11 @@ function SidebarInner({
 
   return (
     <>
-      <header className="h-16 flex items-center justify-between px-4 shrink-0 border-b border-slate-100">
+      <header className="h-14 flex items-center justify-between px-4 shrink-0 border-b border-slate-100">
         {!collapsed && (
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-              <Pill size={18} />
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
+              <Pill size={16} />
             </div>
             <span className="font-display font-extrabold tracking-tight text-[15px] text-slate-900 truncate">
               PharmaPoint
@@ -93,7 +93,7 @@ function SidebarInner({
         {SECTIONS.map((sec, idx) => (
           <div key={sec.title ?? idx} className="space-y-0.5">
             {!collapsed && sec.title && (
-              <div className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+              <div className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
                 {sec.title}
               </div>
             )}
@@ -117,7 +117,7 @@ function SidebarInner({
             id="tour-sync-status"
             type="button"
             onClick={() => setShowStatusPopup((prev) => !prev)}
-            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white hover:bg-blue-50/70 border border-slate-200/80 transition-all text-left text-[11.5px] cursor-pointer shadow-2xs group"
+            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 transition-all text-left text-xs cursor-pointer shadow-2xs group"
             title="Click to view branch & sync status"
           >
             <div className="flex items-center gap-2 min-w-0">
@@ -125,7 +125,7 @@ function SidebarInner({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="font-bold text-slate-700 truncate group-hover:text-blue-700">
+              <span className="font-semibold text-slate-700 truncate group-hover:text-blue-700">
                 {user?.active_branch?.code ?? 'LDW'} · Operational
               </span>
             </div>
@@ -160,7 +160,7 @@ function SidebarInner({
               className="absolute bottom-20 left-3 right-3 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-900/10 z-50 space-y-2.5"
             >
               <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-slate-800">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                   <Activity size={13} className="text-emerald-500" />
                   Branch & Sync Status
                 </div>
@@ -174,14 +174,14 @@ function SidebarInner({
                 </button>
               </div>
 
-              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-sm">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-blue-100">
+              <div className="p-3 rounded-xl bg-blue-600 text-white shadow-xs">
+                <div className="text-xs font-semibold uppercase tracking-wider text-blue-100">
                   Branch Operational
                 </div>
-                <div className="text-[12.5px] font-extrabold mt-0.5">
+                <div className="text-sm font-bold mt-0.5">
                   {user?.active_branch?.name ?? 'Lodwar Main Branch'}
                 </div>
-                <div className="mt-2 pt-2 border-t border-white/15 flex items-center justify-between text-[10.5px]">
+                <div className="mt-2 pt-2 border-t border-white/20 flex items-center justify-between text-xs">
                   <span className="text-blue-100">PPB Verified</span>
                   <SyncStatusChip invert />
                 </div>

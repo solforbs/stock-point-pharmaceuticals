@@ -75,8 +75,8 @@ export default function LocationsPage() {
 
   const columns: Column<WarehouseLocation>[] = [
     { key: 'code', header: 'Code', render: (l) => <span className="font-semibold tabular">{l.code}</span>, sortValue: (l) => l.code },
-    { key: 'name', header: 'Name', render: (l) => l.name ?? <span className="text-[var(--text-muted)]">—</span>, sortValue: (l) => l.name ?? '' },
-    { key: 'slot', header: 'Aisle › rack › bin', render: (l) => <span className="text-[var(--text-secondary)]">{slotPath(l)}</span>, sortValue: (l) => `${l.aisle ?? ''}|${l.rack ?? ''}|${l.bin ?? ''}` },
+    { key: 'name', header: 'Name', render: (l) => l.name ?? <span className="text-slate-400">—</span>, sortValue: (l) => l.name ?? '' },
+    { key: 'slot', header: 'Aisle › rack › bin', render: (l) => <span className="text-slate-500">{slotPath(l)}</span>, sortValue: (l) => `${l.aisle ?? ''}|${l.rack ?? ''}|${l.bin ?? ''}` },
     { key: 'type', header: 'Type', render: (l) => <StatusBadge status={l.location_type} tone={l.location_type === 'COLD_SHELF' ? 'cold' : 'slate'} label={titleCase(l.location_type)} /> },
     { key: 'capacity', header: 'Capacity', align: 'right', render: (l) => <span className="tabular">{l.capacity ?? '—'}</span>, sortValue: (l) => l.capacity ?? 0 },
     { key: 'on_hand', header: 'On hand (base)', align: 'right', render: (l) => <QtyCell value={l.on_hand_base ?? '0'} />, sortValue: (l) => Number(l.on_hand_base ?? 0) },
@@ -89,18 +89,28 @@ export default function LocationsPage() {
         parent="Warehouse"
         title="Locations"
         subtitle="Aisles, racks and bins inside each store. Stock is attributed to a location when it is put away on receipt."
-        actions={canManage ? <Button variant="primary" disabled={!effectiveStoreId} onClick={() => setCreating(true)}>New location</Button> : null}
+        actions={
+          canManage ? (
+            <div id="tour-locations-new">
+              <Button variant="primary" disabled={!effectiveStoreId} onClick={() => setCreating(true)}>
+                New location
+              </Button>
+            </div>
+          ) : null
+        }
       />
       <FilterBar>
-        <Field label="Store" className="w-64">
-          <Select value={effectiveStoreId} onChange={(e) => { setStoreId(e.target.value); setSelectedId(null) }}>
-            {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
-          </Select>
-        </Field>
-        <label className="flex items-center gap-2 text-[12px] pb-2"><input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Show deactivated</label>
-        {list.data && <div className="text-[11.5px] text-[var(--text-muted)] pb-2">{list.data.length} locations across {aisleCount} aisle{aisleCount === 1 ? '' : 's'}</div>}
+        <div id="tour-locations-store" className="w-full sm:w-64">
+          <Field label="Store">
+            <Select value={effectiveStoreId} onChange={(e) => { setStoreId(e.target.value); setSelectedId(null) }}>
+              {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
+            </Select>
+          </Field>
+        </div>
+        <label className="flex items-center gap-2 text-xs font-medium text-slate-700 pb-2"><input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Show deactivated</label>
+        {list.data && <div className="text-xs text-slate-500 pb-2">{list.data.length} locations across {aisleCount} aisle{aisleCount === 1 ? '' : 's'}</div>}
       </FilterBar>
-      <div className="ui-card">
+      <div id="tour-locations-table" className="ui-card">
         {stores.isSuccess && !stores.data.length ? (
           <EmptyState title="No stores in this branch" hint="Add a store under Administration › Branches first." />
         ) : (
@@ -150,7 +160,7 @@ function LocationDetail({ location, canManage, onEdit }: { location: WarehouseLo
   })
 
   const stockColumns: Column<LocationStockRow>[] = [
-    { key: 'product', header: 'Product', render: (r) => <><span className="font-semibold">{r.product_name}</span><div className="text-[10.5px] text-[var(--text-muted)] tabular">{r.product_code}</div></>, sortValue: (r) => r.product_name },
+    { key: 'product', header: 'Product', render: (r) => <><span className="font-semibold">{r.product_name}</span><div className="text-xs text-slate-500 font-mono tabular">{r.product_code}</div></>, sortValue: (r) => r.product_name },
     { key: 'batch', header: 'Batch', render: (r) => <span className="tabular">{r.batch_number}</span>, sortValue: (r) => r.batch_number },
     { key: 'expiry', header: 'Expiry', render: (r) => <ExpiryBadge date={r.expiry_date} />, sortValue: (r) => r.expiry_date ?? '' },
     { key: 'status', header: 'Batch status', render: (r) => <StatusBadge status={r.batch_status} /> },
@@ -180,7 +190,7 @@ function LocationDetail({ location, canManage, onEdit }: { location: WarehouseLo
         ]}
       />
       <div>
-        <div className="text-[12px] font-bold mb-2">Stock at this location</div>
+        <div className="text-sm font-bold text-slate-900 mb-2">Stock at this location</div>
         <div className="ui-card">
           <DataTable
             columns={stockColumns}
@@ -205,7 +215,7 @@ function LocationDetail({ location, canManage, onEdit }: { location: WarehouseLo
         onCancel={() => setConfirming(false)}
       />
       {location.on_hand_base && Number(location.on_hand_base) !== 0 && location.is_active && (
-        <p className="text-[11px] text-[var(--status-amber)]">This location still holds stock ({location.on_hand_base} base units). Move it before deactivating.</p>
+        <p className="text-xs text-amber-700 font-medium">This location still holds stock ({location.on_hand_base} base units). Move it before deactivating.</p>
       )}
     </div>
   )

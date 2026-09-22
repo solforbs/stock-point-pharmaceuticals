@@ -34,7 +34,8 @@ export function ProductTour() {
     }
 
     function updateRect() {
-      const el = document.getElementById(currentStep.targetId)
+      const cleanId = currentStep.targetId.replace(/^#/, '')
+      const el = document.getElementById(cleanId) || document.querySelector(currentStep.targetId)
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
         const rect = el.getBoundingClientRect()
@@ -45,13 +46,12 @@ export function ProductTour() {
           height: rect.height,
         })
       } else {
-        // Fallback if target element is hidden (e.g. on different screen sizes)
         setTargetRect(null)
       }
     }
 
     // Measure after layout stabilizes
-    const timer = setTimeout(updateRect, 150)
+    const timer = setTimeout(updateRect, 120)
     window.addEventListener('resize', updateRect)
     window.addEventListener('scroll', updateRect, true)
 
@@ -69,7 +69,7 @@ export function ProductTour() {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         endTour()
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
         nextStep()
       } else if (e.key === 'ArrowLeft') {
         prevStep()
@@ -84,31 +84,33 @@ export function ProductTour() {
 
   const isFirst = currentStepIndex === 0
   const isLast = currentStepIndex === steps.length - 1
-  const padding = 6
+  const padding = 8
+  const cardWidth = 380
+  const cardHeight = 220
 
   // Calculate tooltip placement
   let cardTop = 100
-  let cardLeft = window.innerWidth / 2 - 180
+  let cardLeft = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, window.innerWidth / 2 - cardWidth / 2))
 
   if (targetRect) {
     const isMobile = window.innerWidth < 640
     if (isMobile) {
       cardLeft = 16
-      cardTop = Math.min(Math.max(16, targetRect.top + targetRect.height + 16), window.innerHeight - 240)
+      cardTop = Math.min(Math.max(16, targetRect.top + targetRect.height + 16), window.innerHeight - cardHeight - 20)
     } else {
       const placement = currentStep.placement ?? 'bottom'
       if (placement === 'bottom') {
-        cardTop = targetRect.top + targetRect.height + 14
-        cardLeft = Math.max(16, Math.min(window.innerWidth - 380, targetRect.left + targetRect.width / 2 - 180))
+        cardTop = Math.min(window.innerHeight - cardHeight - 20, targetRect.top + targetRect.height + 14)
+        cardLeft = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, targetRect.left + targetRect.width / 2 - cardWidth / 2))
       } else if (placement === 'top') {
-        cardTop = Math.max(16, targetRect.top - 210)
-        cardLeft = Math.max(16, Math.min(window.innerWidth - 380, targetRect.left + targetRect.width / 2 - 180))
+        cardTop = Math.max(16, targetRect.top - cardHeight - 16)
+        cardLeft = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, targetRect.left + targetRect.width / 2 - cardWidth / 2))
       } else if (placement === 'right') {
-        cardTop = Math.max(16, targetRect.top + targetRect.height / 2 - 90)
-        cardLeft = targetRect.left + targetRect.width + 16
+        cardTop = Math.max(16, Math.min(window.innerHeight - cardHeight - 20, targetRect.top + targetRect.height / 2 - cardHeight / 2))
+        cardLeft = Math.min(window.innerWidth - cardWidth - 16, targetRect.left + targetRect.width + 16)
       } else {
-        cardTop = Math.max(16, targetRect.top + targetRect.height / 2 - 90)
-        cardLeft = Math.max(16, targetRect.left - 380)
+        cardTop = Math.max(16, Math.min(window.innerHeight - cardHeight - 20, targetRect.top + targetRect.height / 2 - cardHeight / 2))
+        cardLeft = Math.max(16, targetRect.left - cardWidth - 16)
       }
     }
   }
@@ -116,30 +118,52 @@ export function ProductTour() {
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 pointer-events-auto overflow-hidden">
-        {/* Semi-transparent dark overlay */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-[2px] transition-opacity"
-          onClick={endTour}
-        />
+        {/* SVG Mask: Punches a 100% transparent hole directly over targetRect so target is crystal clear */}
+        <svg className="fixed inset-0 w-full h-full pointer-events-none z-40">
+          <defs>
+            <mask id="tour-spotlight-mask">
+              {/* White = overlay is visible */}
+              <rect x="0" y="0" width="100%" height="100%" fill="white" />
+              {/* Black cutout = hole is 100% transparent and reveals the underlying page with zero darkness or blur */}
+              {targetRect && (
+                <rect
+                  x={targetRect.left - padding}
+                  y={targetRect.top - padding}
+                  width={targetRect.width + padding * 2}
+                  height={targetRect.height + padding * 2}
+                  rx="14"
+                  ry="14"
+                  fill="black"
+                />
+              )}
+            </mask>
+          </defs>
+          {/* Dimmed backdrop covering everything EXCEPT the cutout hole */}
+          <rect
+            x="0"
+            y="0"
+            width="100%"
+            height="100%"
+            fill="rgba(15, 23, 42, 0.65)"
+            mask="url(#tour-spotlight-mask)"
+            className="pointer-events-auto cursor-pointer"
+            onClick={endTour}
+          />
+        </svg>
 
-        {/* Spotlight cutout / glow box */}
+        {/* Crisp Spotlight Ring with subtle blue high-tech glow */}
         {targetRect && (
           <motion.div
-            layoutId="tour-spotlight"
-            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-            className="fixed z-50 rounded-xl pointer-events-none ring-4 ring-blue-500 ring-offset-2 ring-offset-transparent shadow-[0_0_0_9999px_rgba(15,23,42,0.65)]"
+            layoutId="tour-spotlight-ring"
+            transition={{ type: 'spring', damping: 30, stiffness: 350 }}
+            className="fixed z-45 rounded-2xl pointer-events-none border-2 border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.3),0_0_28px_rgba(59,130,246,0.3)]"
             style={{
               top: targetRect.top - padding,
               left: targetRect.left - padding,
               width: targetRect.width + padding * 2,
               height: targetRect.height + padding * 2,
             }}
-          >
-            <div className="absolute inset-0 rounded-xl animate-pulse bg-blue-400/10 pointer-events-none" />
-          </motion.div>
+          />
         )}
 
         {/* Guided Step Card */}
@@ -157,7 +181,7 @@ export function ProductTour() {
               <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-blue-50 text-blue-600">
                 <Compass size={16} />
               </span>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                 Step {currentStepIndex + 1} of {steps.length}
               </span>
             </div>
@@ -171,10 +195,10 @@ export function ProductTour() {
           </div>
 
           {/* Title & Body */}
-          <h3 className="text-[15px] font-bold text-slate-900 leading-snug mb-1.5 flex items-center gap-1.5">
+          <h3 className="text-base font-bold text-slate-900 leading-snug mb-1.5 flex items-center gap-1.5">
             {currentStep.title}
           </h3>
-          <p className="text-[12.5px] text-slate-600 leading-relaxed mb-5">
+          <p className="text-xs text-slate-600 leading-relaxed mb-5">
             {currentStep.description}
           </p>
 
@@ -200,7 +224,7 @@ export function ProductTour() {
               {!isFirst && (
                 <button
                   onClick={prevStep}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-[12px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   <ArrowLeft size={13} /> Back
                 </button>
@@ -208,7 +232,7 @@ export function ProductTour() {
 
               <button
                 onClick={nextStep}
-                className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-bold inline-flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all"
+                className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all"
               >
                 {isLast ? (
                   <>

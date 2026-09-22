@@ -1,85 +1,113 @@
 import { create } from 'zustand'
+import {
+  DEFAULT_TOUR_STEPS,
+  REGISTERED_TOURS,
+  getTourForRoute,
+  type TourDefinition,
+  type TourStep,
+} from './tourRegistry'
 
-export interface TourStep {
-  targetId: string
-  title: string
-  description: string
-  placement?: 'bottom' | 'top' | 'left' | 'right'
-  route?: string
-}
-
-export const DEFAULT_TOUR_STEPS: TourStep[] = [
-  {
-    targetId: 'tour-search',
-    title: 'Universal Medicine & Action Search',
-    description: 'Press Ctrl+K anytime to quickly look up medicines, batch stock, customers, or jump directly to any page across the entire system.',
-    placement: 'bottom',
-    route: '/dashboard',
-  },
-  {
-    targetId: 'tour-pos-button',
-    title: 'One-Tap Live POS Terminal',
-    description: 'Launch the high-speed retail checkout counter with automated price-tiering, eTIMS compliance, and batch barcode scanning.',
-    placement: 'bottom',
-    route: '/dashboard',
-  },
-  {
-    targetId: 'tour-branch-selector',
-    title: 'Active Branch & Dispensary',
-    description: 'Switch between retail stores and main warehouses. All inventory checks and sales transactions immediately bind to the selected active branch.',
-    placement: 'right',
-    route: '/dashboard',
-  },
-  {
-    targetId: 'tour-sync-status',
-    title: 'System Health & eTIMS Sync',
-    description: 'Real-time status of your local database synchronization, background job queue, and Kenya Revenue Authority (eTIMS) transmissions.',
-    placement: 'top',
-    route: '/dashboard',
-  },
-  {
-    targetId: 'tour-approvals-queue',
-    title: 'Operational Approvals Hub',
-    description: 'Review pending stock adjustments, supplier purchase orders, clinical quarantine releases, and customer credit over-limit approvals.',
-    placement: 'top',
-    route: '/dashboard',
-  },
-]
-
-const STORAGE_KEY = 'pharmapoint_tour_completed'
+export type { TourDefinition, TourStep }
+export { getTourForRoute, REGISTERED_TOURS }
 
 interface TourState {
   isOpen: boolean
   currentStepIndex: number
   steps: TourStep[]
+  activeTourId: string | null
+  // In-memory dismissal set: resets on page refresh!
+  dismissedInSession: Record<string, boolean>
+  hasCompletedTour: (tourId: string) => boolean
+  startTourById: (tourId: string) => void
+  startTourForRoute: (pathname: string) => void
   startTour: () => void
+  startPosTour: () => void
   endTour: () => void
   nextStep: () => void
   prevStep: () => void
   goToStep: (index: number) => void
-  hasSeenTour: boolean
+  dismissTourPrompt: (tourId: string) => void
+  isPromptDismissed: (tourId: string) => boolean
 }
 
 export const useTourStore = create<TourState>((set, get) => ({
   isOpen: false,
   currentStepIndex: 0,
   steps: DEFAULT_TOUR_STEPS,
-  hasSeenTour: (() => {
+  activeTourId: 'dashboard',
+  dismissedInSession: {},
+
+  hasCompletedTour: (tourId: string) => {
     try {
-      return localStorage.getItem(STORAGE_KEY) === 'true'
+      return localStorage.getItem(`pharmapoint_tour_completed_${tourId}`) === 'true'
     } catch {
       return false
     }
-  })(),
+  },
+
+  isPromptDismissed: (tourId: string) => {
+    return Boolean(get().dismissedInSession[tourId]) || get().hasCompletedTour(tourId)
+  },
+
+  dismissTourPrompt: (tourId: string) => {
+    set((state) => ({
+      dismissedInSession: {
+        ...state.dismissedInSession,
+        [tourId]: true,
+      },
+    }))
+  },
+
+  startTourById: (tourId: string) => {
+    const tour = REGISTERED_TOURS.find((t) => t.id === tourId)
+    if (!tour) return
+    set({
+      isOpen: true,
+      currentStepIndex: 0,
+      steps: tour.steps,
+      activeTourId: tour.id,
+    })
+  },
+
+  startTourForRoute: (pathname: string) => {
+    const tour = getTourForRoute(pathname)
+    if (tour) {
+      set({
+        isOpen: true,
+        currentStepIndex: 0,
+        steps: tour.steps,
+        activeTourId: tour.id,
+      })
+    } else {
+      set({
+        isOpen: true,
+        currentStepIndex: 0,
+        steps: DEFAULT_TOUR_STEPS,
+        activeTourId: 'dashboard',
+      })
+    }
+  },
+
   startTour: () => {
-    set({ isOpen: true, currentStepIndex: 0 })
+    get().startTourById('dashboard')
   },
+
+  startPosTour: () => {
+    get().startTourById('pos')
+  },
+
   endTour: () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, 'true')
-    } catch {}
-    set({ isOpen: false, hasSeenTour: true })
+    const { activeTourId } = get()
+    if (activeTourId) {
+      try {
+        localStorage.setItem(`pharmapoint_tour_completed_${activeTourId}`, 'true')
+      } catch {}
+    }
+    set({
+      isOpen: false,
+    })
   },
+
   nextStep: () => {
     const { currentStepIndex, steps } = get()
     if (currentStepIndex < steps.length - 1) {
@@ -88,12 +116,14 @@ export const useTourStore = create<TourState>((set, get) => ({
       get().endTour()
     }
   },
+
   prevStep: () => {
     const { currentStepIndex } = get()
     if (currentStepIndex > 0) {
       set({ currentStepIndex: currentStepIndex - 1 })
     }
   },
+
   goToStep: (index: number) => {
     const { steps } = get()
     if (index >= 0 && index < steps.length) {

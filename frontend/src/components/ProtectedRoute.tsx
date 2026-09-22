@@ -9,7 +9,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { data: user, isLoading, isError } = useCurrentUser()
 
   if (isLoading) {
-    return <div className="min-h-svh flex items-center justify-center text-[var(--text-muted)] text-sm">Loading…</div>
+    return <div className="min-h-svh flex items-center justify-center text-slate-400 text-sm">Loading…</div>
   }
 
   if (isError || !user) {

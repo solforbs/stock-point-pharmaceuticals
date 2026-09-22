@@ -15,7 +15,7 @@ export function MoneyCell({
   const negative = isNegative(value)
   return (
     <span
-      className={`tabular whitespace-nowrap ${negative ? 'text-[var(--status-red)]' : muted ? 'text-[var(--text-muted)]' : ''} ${className}`}
+      className={`tabular whitespace-nowrap ${negative ? 'text-rose-600' : muted ? 'text-slate-400' : ''} ${className}`}
     >
       {symbol ? formatKes(value) : formatMoney(value)}
     </span>
@@ -25,9 +25,9 @@ export function MoneyCell({
 export function QtyCell({ value, unit, className = '' }: { value: string | number | null | undefined; unit?: string; className?: string }) {
   const negative = isNegative(value)
   return (
-    <span className={`tabular whitespace-nowrap ${negative ? 'text-[var(--status-red)]' : ''} ${className}`}>
+    <span className={`tabular whitespace-nowrap ${negative ? 'text-rose-600' : ''} ${className}`}>
       {formatQty(value)}
-      {unit ? <span className="text-[var(--text-muted)] ml-1 text-[10.5px]">{unit}</span> : null}
+      {unit ? <span className="text-slate-400 ml-1 text-xs">{unit}</span> : null}
     </span>
   )
 }

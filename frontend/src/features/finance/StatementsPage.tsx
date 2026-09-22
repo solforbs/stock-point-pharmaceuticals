@@ -16,8 +16,8 @@ export default function StatementsPage() {
   const tb = useQuery({ queryKey: ['finance', 'trial-balance', asOf], queryFn: () => apiGet<TrialBalance>('/api/finance/trial-balance', { as_of: asOf }), placeholderData: (prev) => prev })
 
   const columns: Column<Row>[] = [
-    { key: 'code', header: 'Account', render: (r) => <span className="font-semibold tabular">{r.code}</span>, sortValue: (r) => r.code },
-    { key: 'name', header: 'Name', render: (r) => <>{r.name}{r.system_role && <span className="ml-1 text-[10px] text-[var(--text-muted)]">{r.system_role}</span>}</>, sortValue: (r) => r.name },
+    { key: 'code', header: 'Account', render: (r) => <span className="font-semibold tabular font-mono">{r.code}</span>, sortValue: (r) => r.code },
+    { key: 'name', header: 'Name', render: (r) => <>{r.name}{r.system_role && <span className="ml-1.5 text-xs text-slate-400 font-mono">({r.system_role})</span>}</>, sortValue: (r) => r.name },
     { key: 'type', header: 'Type', render: (r) => r.account_type, sortValue: (r) => r.account_type },
     { key: 'debit', header: 'Debit', align: 'right', render: (r) => <MoneyCell value={r.debit} />, sortValue: (r) => Number(r.debit) },
     { key: 'credit', header: 'Credit', align: 'right', render: (r) => <MoneyCell value={r.credit} />, sortValue: (r) => Number(r.credit) },
@@ -27,10 +27,12 @@ export default function StatementsPage() {
   return (
     <Page>
       <PageHeader parent="Finance" title="Financial Statements" subtitle="Trial balance derived from posted journals only. Profit & loss and balance sheet are in Reports." actions={tb.data ? <StatusBadge status={tb.data.balanced ? 'OK' : 'FAILED'} label={tb.data.balanced ? 'Balanced' : 'Out of balance'} /> : null} />
-      <FilterBar>
-        <Field label="As of"><Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} /></Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-statements-filter">
+        <FilterBar>
+          <Field label="As of"><Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} /></Field>
+        </FilterBar>
+      </div>
+      <div id="tour-statements-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={tb.data?.accounts.filter((a) => Number(a.debit) !== 0 || Number(a.credit) !== 0)}

@@ -122,7 +122,7 @@ export default function ColdChainPage() {
       ) : summary.error ? (
         <InlineError error={summary.error} className="mb-4" />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+        <div id="tour-coldchain-stores" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
           {summary.data?.map((s) => (
             <StoreCard key={s.store.id} summary={s} active={s.store.id === activeStoreId} onClick={() => setStoreId(s.store.id)} />
           ))}
@@ -130,9 +130,9 @@ export default function ColdChainPage() {
         </div>
       )}
 
-      <div className="flex gap-1 mb-3">
+      <div id="tour-coldchain-tabs" className="flex gap-2 mb-3">
         {(['readings', 'excursions'] as Tab[]).map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)} className={`h-8 px-3.5 rounded-md text-[12.5px] font-semibold ${tab === t ? 'bg-[var(--color-navy)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)]'}`}>
+          <button key={t} type="button" onClick={() => setTab(t)} className={`h-8 px-3.5 rounded-lg text-xs font-semibold transition-colors ${tab === t ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
             {t === 'readings' ? 'Readings' : 'Excursions'}
           </button>
         ))}
@@ -140,11 +140,19 @@ export default function ColdChainPage() {
 
       {tab === 'readings' ? (
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-4">
-          <ReadingsPanel stores={summary.data ?? []} storeId={activeStoreId} onStore={setStoreId} />
-          {canRecord ? <RecordReadingCard stores={summary.data ?? []} defaultStoreId={activeStoreId} /> : null}
+          <div id="tour-coldchain-table">
+            <ReadingsPanel stores={summary.data ?? []} storeId={activeStoreId} onStore={setStoreId} />
+          </div>
+          {canRecord ? (
+            <div id="tour-coldchain-record">
+              <RecordReadingCard stores={summary.data ?? []} defaultStoreId={activeStoreId} />
+            </div>
+          ) : null}
         </div>
       ) : (
-        <ExcursionsPanel stores={summary.data ?? []} onOpen={(id) => setParams({ tab: 'excursions', excursion: id })} selectedId={selectedExcursion} />
+        <div id="tour-coldchain-table">
+          <ExcursionsPanel stores={summary.data ?? []} onOpen={(id) => setParams({ tab: 'excursions', excursion: id })} selectedId={selectedExcursion} />
+        </div>
       )}
 
       <ExcursionDrawer id={selectedExcursion} onClose={() => setParams(tab === 'readings' ? {} : { tab })} />
@@ -159,23 +167,23 @@ function StoreCard({ summary, active, onClick }: { summary: StoreSummary; active
     <button
       type="button"
       onClick={onClick}
-      className={`ui-card text-left p-3.5 transition-shadow ${active ? 'ring-2 ring-[var(--color-navy)]' : 'hover:shadow-md'}`}
+      className={`ui-card text-left p-3.5 transition-all ${active ? 'ring-2 ring-blue-600 border-blue-600' : 'hover:border-slate-300'}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="text-[12.5px] font-bold text-[var(--text)] truncate">{summary.store.name}</div>
-          <div className="text-[10.5px] text-[var(--text-muted)]">{summary.store.code} · {titleCase(summary.store.store_type)}</div>
+          <div className="text-sm font-semibold text-slate-900 truncate">{summary.store.name}</div>
+          <div className="text-xs text-slate-500 font-mono">{summary.store.code} · {titleCase(summary.store.store_type)}</div>
         </div>
         {summary.open_excursions > 0 ? <StatusBadge status="EXCURSION" tone="red" label={`${summary.open_excursions} open`} /> : <StatusBadge status="OK" />}
       </div>
-      <div className={`mt-2 text-[24px] font-extrabold tabular leading-none ${out ? 'text-[var(--status-red)]' : last ? 'text-[var(--status-green)]' : 'text-[var(--text-muted)]'}`}>
+      <div className={`mt-2 text-2xl font-bold tabular leading-none ${out ? 'text-rose-600' : last ? 'text-emerald-600' : 'text-slate-400'}`}>
         {last ? temp(last.temperature_c) : 'No reading'}
       </div>
-      <div className="mt-1.5 text-[11px] text-[var(--text-muted)] flex justify-between gap-2">
-        <span className="tabular">Window {temp(summary.range.min)} – {temp(summary.range.max)}</span>
+      <div className="mt-1.5 text-xs text-slate-500 flex justify-between gap-2">
+        <span className="tabular font-mono">Window {temp(summary.range.min)} – {temp(summary.range.max)}</span>
         <span>{last ? formatDateTime(last.recorded_at) : '—'}</span>
       </div>
-      {out && <div className="mt-1 text-[11px] font-semibold text-[var(--status-red)]">Out of range</div>}
+      {out && <div className="mt-1 text-xs font-semibold text-rose-600">Out of range</div>}
     </button>
   )
 }
@@ -219,13 +227,13 @@ function RecordReadingCard({ stores, defaultStoreId }: { stores: StoreSummary[];
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Temperature °C" required error={err?.errors.temperature_c?.[0]} hint={range ? `Window ${range.min} – ${range.max}` : undefined}>
-            <Input inputMode="decimal" className={`tabular ${willBeOut ? 'border-[var(--status-red)]' : ''}`} value={form.temperature_c} onChange={(e) => set({ temperature_c: e.target.value.replace(/[^0-9.-]/g, '') })} />
+            <Input inputMode="decimal" className={`tabular font-mono ${willBeOut ? 'border-rose-400 focus:border-rose-500' : ''}`} value={form.temperature_c} onChange={(e) => set({ temperature_c: e.target.value.replace(/[^0-9.-]/g, '') })} />
           </Field>
           <Field label="Humidity %" error={err?.errors.humidity_pct?.[0]}>
-            <Input inputMode="decimal" className="tabular" value={form.humidity_pct} onChange={(e) => set({ humidity_pct: e.target.value.replace(/[^0-9.]/g, '') })} />
+            <Input inputMode="decimal" className="tabular font-mono" value={form.humidity_pct} onChange={(e) => set({ humidity_pct: e.target.value.replace(/[^0-9.]/g, '') })} />
           </Field>
         </div>
-        {willBeOut && <div className="text-[11.5px] font-semibold text-[var(--status-red)]">This reading is outside the window and will open an excursion.</div>}
+        {willBeOut && <div className="text-xs font-semibold text-rose-600">This reading is outside the window and will open an excursion.</div>}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Source">
             <Select value={form.source} onChange={(e) => set({ source: e.target.value })}>
@@ -266,13 +274,13 @@ function ReadingsPanel({ stores, storeId, onStore }: { stores: StoreSummary[]; s
   })
 
   const columns: Column<Reading>[] = [
-    { key: 'at', header: 'Taken at', render: (r) => <span className="tabular">{formatDateTime(r.recorded_at)}</span>, sortValue: (r) => r.recorded_at },
-    { key: 'temp', header: 'Temperature', align: 'right', render: (r) => <span className={`tabular font-semibold ${r.is_excursion ? 'text-[var(--status-red)]' : ''}`}>{temp(r.temperature_c)}</span>, sortValue: (r) => Number(r.temperature_c) },
-    { key: 'hum', header: 'Humidity', align: 'right', render: (r) => <span className="tabular">{r.humidity_pct !== null ? `${Number(r.humidity_pct).toFixed(0)} %` : '—'}</span> },
+    { key: 'at', header: 'Taken at', render: (r) => <span className="tabular font-mono text-xs">{formatDateTime(r.recorded_at)}</span>, sortValue: (r) => r.recorded_at },
+    { key: 'temp', header: 'Temperature', align: 'right', render: (r) => <span className={`tabular font-mono font-semibold ${r.is_excursion ? 'text-rose-600' : 'text-slate-900'}`}>{temp(r.temperature_c)}</span>, sortValue: (r) => Number(r.temperature_c) },
+    { key: 'hum', header: 'Humidity', align: 'right', render: (r) => <span className="tabular font-mono">{r.humidity_pct !== null ? `${Number(r.humidity_pct).toFixed(0)} %` : '—'}</span> },
     { key: 'state', header: 'State', render: (r) => (r.is_excursion ? <StatusBadge status="EXCURSION" tone="red" label="Out of range" /> : <StatusBadge status="OK" label="In range" />) },
     { key: 'source', header: 'Source', render: (r) => titleCase(r.source) },
     { key: 'by', header: 'Recorded by', render: (r) => r.recorder?.name ?? '—' },
-    { key: 'note', header: 'Note', render: (r) => <span className="text-[var(--text-secondary)]">{r.note ?? ''}</span> },
+    { key: 'note', header: 'Note', render: (r) => <span className="text-slate-600">{r.note ?? ''}</span> },
   ]
 
   return (
@@ -348,11 +356,11 @@ function ExcursionsPanel({ stores, onOpen, selectedId }: { stores: StoreSummary[
 
   const columns: Column<Excursion>[] = [
     { key: 'store', header: 'Store', render: (e) => e.store?.name ?? '—', sortValue: (e) => e.store?.name ?? '' },
-    { key: 'start', header: 'Started', render: (e) => <span className="tabular">{formatDateTime(e.started_at)}</span>, sortValue: (e) => e.started_at },
-    { key: 'end', header: 'Back in range', render: (e) => (e.ended_at ? <span className="tabular">{formatDateTime(e.ended_at)}</span> : <StatusBadge status="EXCURSION" tone="red" label="Still out" />) },
-    { key: 'dur', header: 'Duration', align: 'right', render: (e) => <span className="tabular">{formatDuration(e.duration_minutes)}</span>, sortValue: (e) => e.duration_minutes },
-    { key: 'minmax', header: 'Min / max', align: 'right', render: (e) => <span className="tabular text-[var(--status-red)]">{temp(e.min_temp)} / {temp(e.max_temp)}</span> },
-    { key: 'window', header: 'Window', render: (e) => <span className="tabular text-[var(--text-muted)]">{temp(e.range_min)} – {temp(e.range_max)}</span> },
+    { key: 'start', header: 'Started', render: (e) => <span className="tabular font-mono text-xs">{formatDateTime(e.started_at)}</span>, sortValue: (e) => e.started_at },
+    { key: 'end', header: 'Back in range', render: (e) => (e.ended_at ? <span className="tabular font-mono text-xs">{formatDateTime(e.ended_at)}</span> : <StatusBadge status="EXCURSION" tone="red" label="Still out" />) },
+    { key: 'dur', header: 'Duration', align: 'right', render: (e) => <span className="tabular font-mono">{formatDuration(e.duration_minutes)}</span>, sortValue: (e) => e.duration_minutes },
+    { key: 'minmax', header: 'Min / max', align: 'right', render: (e) => <span className="tabular font-mono font-semibold text-rose-600">{temp(e.min_temp)} / {temp(e.max_temp)}</span> },
+    { key: 'window', header: 'Window', render: (e) => <span className="tabular font-mono text-slate-500">{temp(e.range_min)} – {temp(e.range_max)}</span> },
     { key: 'status', header: 'Status', render: (e) => <StatusBadge status={e.status} tone={e.status === 'OPEN' ? 'red' : e.status === 'UNDER_REVIEW' ? 'amber' : undefined} /> },
     { key: 'action', header: 'Decision', render: (e) => (e.action_taken ? titleCase(e.action_taken) : '—') },
   ]
@@ -429,7 +437,7 @@ function ExcursionDrawer({ id, onClose }: { id: string | null; onClose: () => vo
           <DescriptionList
             items={[
               { label: 'Window', value: `${temp(e.range_min)} – ${temp(e.range_max)}` },
-              { label: 'Recorded min / max', value: <span className="text-[var(--status-red)] font-semibold tabular">{temp(e.min_temp)} / {temp(e.max_temp)}</span> },
+              { label: 'Recorded min / max', value: <span className="text-rose-600 font-semibold tabular font-mono">{temp(e.min_temp)} / {temp(e.max_temp)}</span> },
               { label: 'Back in range', value: e.ended_at ? formatDateTime(e.ended_at) : 'Not yet — the store is still out of range' },
               { label: 'Duration', value: formatDuration(e.duration_minutes) },
               { label: 'Under review', value: e.review_started_at ? `${e.reviewer?.name ?? '—'} · ${formatDateTime(e.review_started_at)}` : '—' },
@@ -444,20 +452,20 @@ function ExcursionDrawer({ id, onClose }: { id: string | null; onClose: () => vo
             ]}
           />
           <div>
-            <div className="text-[12px] font-bold mb-1.5">Readings during the excursion ({e.readings?.length ?? 0})</div>
-            <div className="border border-[var(--border)] rounded-md divide-y divide-[var(--border)] max-h-56 overflow-y-auto">
+            <div className="text-xs font-semibold text-slate-900 mb-1.5">Readings during the excursion ({e.readings?.length ?? 0})</div>
+            <div className="border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-56 overflow-y-auto">
               {(e.readings ?? []).map((r) => (
-                <div key={r.id} className="flex justify-between px-3 py-1.5 text-[12px]">
-                  <span className="tabular">{formatDateTime(r.recorded_at)}</span>
-                  <span className="tabular font-semibold text-[var(--status-red)]">{temp(r.temperature_c)}</span>
-                  <span className="text-[var(--text-muted)]">{r.recorder?.name ?? titleCase(r.source)}</span>
+                <div key={r.id} className="flex justify-between px-3 py-2 text-xs">
+                  <span className="tabular font-mono text-slate-600">{formatDateTime(r.recorded_at)}</span>
+                  <span className="tabular font-mono font-semibold text-rose-600">{temp(r.temperature_c)}</span>
+                  <span className="text-slate-500">{r.recorder?.name ?? titleCase(r.source)}</span>
                 </div>
               ))}
             </div>
           </div>
           {e.status !== 'CLOSED' && canReview && (
-            <div className="border-t border-[var(--border)] pt-4 space-y-3">
-              <div className="text-[13px] font-bold">Close with a decision</div>
+            <div className="border-t border-slate-200 pt-4 space-y-3">
+              <div className="text-sm font-semibold text-slate-900">Close with a decision</div>
               <Field label="Impact assessment" required hint="What was exposed, for how long, and why the decision is safe. Recorded in the audit log." error={closeErr?.errors.impact_assessment?.[0]}>
                 <Textarea rows={4} value={impact} onChange={(ev) => setImpact(ev.target.value)} />
               </Field>

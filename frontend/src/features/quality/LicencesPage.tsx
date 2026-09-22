@@ -109,11 +109,11 @@ export default function LicencesPage() {
   }
 
   const columns: Column<Licence>[] = [
-    { key: 'type', header: 'Licence', render: (l) => <><div className="font-semibold">{typeLabel(l.licence_type)}</div><div className="text-[10.5px] text-[var(--text-muted)] tabular">{l.licence_number ?? 'No number recorded'}</div></>, sortValue: (l) => l.licence_type },
-    { key: 'holder', header: 'Holder', render: (l) => <>{l.holder_name ?? '—'}<div className="text-[10.5px] text-[var(--text-muted)]">{titleCase(l.holder_type)}{l.source === 'supplier' ? ' · from supplier master' : ''}</div></>, sortValue: (l) => l.holder_name ?? '' },
+    { key: 'type', header: 'Licence', render: (l) => <><div className="font-semibold text-slate-900">{typeLabel(l.licence_type)}</div><div className="text-xs text-slate-500 font-mono tabular">{l.licence_number ?? 'No number recorded'}</div></>, sortValue: (l) => l.licence_type },
+    { key: 'holder', header: 'Holder', render: (l) => <>{l.holder_name ?? '—'}<div className="text-xs text-slate-500">{titleCase(l.holder_type)}{l.source === 'supplier' ? ' · from supplier master' : ''}</div></>, sortValue: (l) => l.holder_name ?? '' },
     { key: 'issuer', header: 'Issued by', render: (l) => l.issued_by ?? '—' },
     { key: 'expiry', header: 'Expiry', render: (l) => <LicenceExpiry licence={l} />, sortValue: (l) => l.expiry_date ?? '' },
-    { key: 'doc', header: 'Document', render: (l) => (l.has_document ? <button type="button" className="text-[var(--color-navy)] underline text-[12px]" onClick={(e) => { e.stopPropagation(); void downloadFile(`/api/licences/${l.id}/document`, `${l.licence_number ?? 'licence'}.pdf`) }}>Download</button> : <span className="text-[var(--text-muted)]">—</span>) },
+    { key: 'doc', header: 'Document', render: (l) => (l.has_document ? <button type="button" className="text-blue-600 font-medium hover:underline text-xs" onClick={(e) => { e.stopPropagation(); void downloadFile(`/api/licences/${l.id}/document`, `${l.licence_number ?? 'licence'}.pdf`) }}>Download</button> : <span className="text-slate-400">—</span>) },
     { key: 'state', header: '', render: (l) => (!l.is_active ? <StatusBadge status="ARCHIVED" /> : l.read_only ? <StatusBadge status="INFO" tone="slate" label="Read only" /> : null) },
   ]
 
@@ -125,35 +125,43 @@ export default function LicencesPage() {
         parent="Quality & Compliance"
         title="Licences & Certificates"
         subtitle="Premises, practising, permit and tax certificates in one register. Supplier licences come from the supplier master; a PO to a supplier with an expired licence is refused."
-        actions={canManage ? <Button variant="primary" onClick={() => setCreating(true)}>Add licence</Button> : null}
+        actions={
+          canManage ? (
+            <div id="tour-licences-new">
+              <Button variant="primary" onClick={() => setCreating(true)}>Add licence</Button>
+            </div>
+          ) : null
+        }
       />
-      <div className="grid grid-cols-3 gap-3 mb-4 max-w-2xl">
+      <div id="tour-licences-kpis" className="grid grid-cols-3 gap-3 mb-4 max-w-2xl">
         {([['EXPIRED', 'Expired', summary?.expired], ['EXPIRING', 'Expiring ≤ 60 days', summary?.expiring], ['VALID', 'Valid', summary?.valid]] as const).map(([key, label, count]) => (
-          <button key={key} type="button" onClick={() => setStatus(status === key ? '' : key)} className={`ui-card p-3 text-left ${status === key ? 'ring-2 ring-[var(--color-navy)]' : ''}`}>
-            <div className="text-[11px] text-[var(--text-muted)]">{label}</div>
-            <div className="text-[22px] font-extrabold tabular" style={{ color: `var(--status-${STATUS_TONE[key]})` }}>{count ?? '…'}</div>
+          <button key={key} type="button" onClick={() => setStatus(status === key ? '' : key)} className={`ui-card p-3.5 text-left transition-all ${status === key ? 'ring-2 ring-blue-600 border-blue-600' : 'hover:border-slate-300'}`}>
+            <div className="text-xs text-slate-500 font-medium">{label}</div>
+            <div className="text-2xl font-bold tabular mt-1" style={{ color: `var(--status-${STATUS_TONE[key]})` }}>{count ?? '…'}</div>
           </button>
         ))}
       </div>
-      <FilterBar>
-        <Field label="Search" className="w-64"><Input placeholder="Number, holder or issuer" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
-        <Field label="Holder" className="w-44">
-          <Select value={holderType} onChange={(e) => setHolderType(e.target.value)}>
-            <option value="">All holders</option>
-            {HOLDER_TYPES.map((h) => (<option key={h} value={h}>{titleCase(h)}</option>))}
-          </Select>
-        </Field>
-        <Field label="Status" className="w-40">
-          <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All</option>
-            <option value="EXPIRED">Expired</option>
-            <option value="EXPIRING">Expiring</option>
-            <option value="VALID">Valid</option>
-          </Select>
-        </Field>
-        <label className="flex items-center gap-2 text-[12px] pb-2"><input type="checkbox" checked={archived} onChange={(e) => setArchived(e.target.checked)} /> Include archived</label>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-licences-filters">
+        <FilterBar>
+          <Field label="Search" className="w-64"><Input placeholder="Number, holder or issuer" value={q} onChange={(e) => setQ(e.target.value)} /></Field>
+          <Field label="Holder" className="w-44">
+            <Select value={holderType} onChange={(e) => setHolderType(e.target.value)}>
+              <option value="">All holders</option>
+              {HOLDER_TYPES.map((h) => (<option key={h} value={h}>{titleCase(h)}</option>))}
+            </Select>
+          </Field>
+          <Field label="Status" className="w-40">
+            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All</option>
+              <option value="EXPIRED">Expired</option>
+              <option value="EXPIRING">Expiring</option>
+              <option value="VALID">Valid</option>
+            </Select>
+          </Field>
+          <label className="flex items-center gap-2 text-xs text-slate-600 pb-2 cursor-pointer"><input type="checkbox" checked={archived} onChange={(e) => setArchived(e.target.checked)} /> Include archived</label>
+        </FilterBar>
+      </div>
+      <div id="tour-licences-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(l) => l.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(l) => setParams({ licence: l.id })} selectedKey={selectedId} emptyTitle="No licences recorded" emptyHint={canManage ? 'Add the premises licence, practising licences and permits so expiry is never a surprise.' : undefined} />
       </div>
       <LicenceDrawer id={selectedId} licence={selected} onClose={() => setParams({})} />
@@ -198,18 +206,18 @@ function LicenceDrawer({ id, licence, onClose }: { id: string | null; licence: L
             )}
           </div>
           {l.read_only && (
-            <div className="text-[11.5px] text-[var(--text-secondary)] rounded-md px-3 py-2 bg-[var(--surface-2)]">
-              This licence is maintained on the supplier master (<span className="tabular font-semibold">{l.holder_name}</span>) and reflects regulatory credentials recorded there.
+            <div className="text-xs text-slate-600 rounded-lg px-3.5 py-2.5 bg-slate-50 border border-slate-200">
+              This licence is maintained on the supplier master (<span className="tabular font-semibold font-mono">{l.holder_name}</span>) and reflects regulatory credentials recorded there.
             </div>
           )}
           <DescriptionList
             items={[
               { label: 'Holder', value: `${l.holder_name ?? '—'} (${titleCase(l.holder_type)})` },
-              { label: 'Number', value: <span className="tabular font-semibold">{l.licence_number ?? '—'}</span> },
+              { label: 'Number', value: <span className="tabular font-semibold font-mono">{l.licence_number ?? '—'}</span> },
               { label: 'Issuer', value: l.issued_by ?? '—' },
               { label: 'Issue date', value: formatDate(l.issue_date) },
               { label: 'Expiry date', value: formatDate(l.expiry_date) },
-              { label: 'Document', value: l.has_document ? <button type="button" className="text-[var(--color-navy)] underline" onClick={() => void downloadFile(`/api/licences/${l.id}/document`, `${l.licence_number ?? 'licence'}.pdf`)}>Download attached PDF</button> : <span className="text-[var(--text-muted)]">None attached</span> },
+              { label: 'Document', value: l.has_document ? <button type="button" className="text-blue-600 font-medium hover:underline" onClick={() => void downloadFile(`/api/licences/${l.id}/document`, `${l.licence_number ?? 'licence'}.pdf`)}>Download attached PDF</button> : <span className="text-slate-400">None attached</span> },
               { label: 'Notes', value: l.notes ?? '—' },
               { label: 'Last updated', value: formatDateTime(l.updated_at) },
             ]}
@@ -343,7 +351,7 @@ function LicenceForm({ licence, onDone, onCancel }: { licence?: Licence; onDone:
           <input
             type="file"
             accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-            className="block text-[12px]"
+            className="block text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
             onChange={(e) => {
               const f = e.target.files?.[0] ?? null
               setFile(f)

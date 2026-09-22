@@ -111,7 +111,7 @@ export function SearchPanel({
   return (
     <div className="w-[330px] lg:w-[370px] shrink-0 border-r border-slate-200/80 bg-white flex flex-col min-h-0">
       {/* Search & Barcode Scan Bar */}
-      <div className="p-3 border-b border-slate-100 bg-white">
+      <div id="tour-pos-search-box" className="p-3 border-b border-slate-100 bg-white">
         <div className="relative">
           <ScanBarcode
             size={16}
@@ -129,23 +129,23 @@ export function SearchPanel({
             }}
             onKeyDown={onKeyDown}
             placeholder="Scan barcode or type name…"
-            className="w-full h-9 pl-9 pr-9 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 transition-all font-medium"
+            className="w-full h-9 pl-9 pr-10 rounded-2xl bg-slate-50/80 border border-slate-200/70 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 transition-all font-medium shadow-2xs"
             autoComplete="off"
             autoFocus
           />
-          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.2 rounded bg-white border border-slate-200 text-[10px] font-bold text-slate-400 pointer-events-none tabular">
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-full bg-slate-200/60 text-[10px] font-mono font-bold text-slate-600 pointer-events-none tabular">
             F2
           </span>
         </div>
         {scanError && (
-          <div role="alert" className="text-[11px] font-bold text-rose-600 mt-1.5 px-1">
+          <div role="alert" className="text-xs font-semibold text-rose-700 mt-1.5 px-1">
             {scanError}
           </div>
         )}
       </div>
 
       {/* Results or Fast-Moving OTC Grid */}
-      <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex-1 overflow-y-auto pos-scroll">
         {query.trim() ? (
           results.length === 0 ? (
             <div className="px-4 py-8 text-center text-xs text-slate-400">
@@ -162,14 +162,14 @@ export function SearchPanel({
                   onClick={() => add(product)}
                   onHover={() => setHighlight(i)}
                   extra={
-                    <span className="tabular shrink-0 text-[11.5px]">
+                    <span className="tabular shrink-0 text-xs">
                       {row ? (
                         <>
                           <span
                             className={
                               Number(row.free_to_sell) > 0
-                                ? 'text-emerald-600 font-bold'
-                                : 'text-rose-600 font-bold'
+                                ? 'text-emerald-700 font-semibold'
+                                : 'text-rose-700 font-semibold'
                             }
                           >
                             {formatQty(row.free_to_sell)} free
@@ -181,7 +181,7 @@ export function SearchPanel({
                       ) : stock.isFetching ? (
                         '…'
                       ) : (
-                        <span className="text-rose-600 font-bold">0 free</span>
+                        <span className="text-rose-700 font-semibold">0 free</span>
                       )}
                     </span>
                   }
@@ -194,16 +194,16 @@ export function SearchPanel({
             {/* Recently added chips */}
             {recent.length > 0 && (
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
                   Recently Added
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {recent.map((product) => (
                     <button
                       key={product.id}
                       type="button"
                       onClick={() => add(product)}
-                      className="px-2 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/60 text-[10.5px] font-bold transition-colors cursor-pointer"
+                      className="px-2.5 py-1 rounded-full bg-blue-50/80 hover:bg-blue-100 text-blue-700 border border-blue-200/50 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
                     >
                       + {product.name}
                     </button>
@@ -214,22 +214,22 @@ export function SearchPanel({
 
             {/* Fast-moving category tabs & cards */}
             <div>
-              <div className="flex items-center justify-between text-[10.5px] font-bold uppercase tracking-wider text-slate-400 mb-2 px-0.5">
-                <span className="flex items-center gap-1.5 text-slate-700 font-bold">
-                  <Sparkles size={12} className="text-amber-500" /> Fast-Moving Catalog
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 px-0.5">
+                <span className="flex items-center gap-1.5 text-slate-800 font-bold">
+                  <Sparkles size={13} className="text-amber-500" /> Fast-Moving Catalog
                 </span>
-                <span className="text-[10px] text-slate-400 font-normal">1-tap add</span>
+                <span className="text-xs text-slate-400 font-normal">1-tap add</span>
               </div>
 
               {/* Category Filter Chips */}
               {categories.length > 0 && (
-                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1.5 mb-1.5">
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1.5 mb-1.5">
                   <button
                     type="button"
                     onClick={() => setCatFilter('ALL')}
-                    className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-bold transition-colors cursor-pointer shrink-0 ${
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer shrink-0 ${
                       catFilter === 'ALL'
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-blue-600 text-white shadow-xs'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
@@ -240,9 +240,9 @@ export function SearchPanel({
                       key={cat}
                       type="button"
                       onClick={() => setCatFilter(cat)}
-                      className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-bold transition-colors cursor-pointer shrink-0 ${
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer shrink-0 ${
                         catFilter === cat
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-blue-600 text-white shadow-xs'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
@@ -253,36 +253,36 @@ export function SearchPanel({
               )}
 
               {/* Fast-moving medicine cards */}
-              <div className="grid grid-cols-1 gap-1.5">
+              <div className="grid grid-cols-1 gap-2">
                 {displayedPopular.map((prod) => (
                   <button
                     key={prod.id}
                     type="button"
                     onClick={() => add(prod)}
-                    className="p-2.5 rounded-xl border border-slate-200/90 bg-white hover:border-blue-500 hover:bg-blue-50/40 text-left transition-all group flex items-center justify-between gap-2 cursor-pointer shadow-2xs"
+                    className="p-3 rounded-2xl border border-slate-200/60 bg-white hover:bg-blue-50/30 hover:border-blue-300 text-left transition-all group flex items-center justify-between gap-2.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.99]"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="font-extrabold text-[13.5px] text-slate-900 group-hover:text-blue-700 line-clamp-2 leading-snug">
+                      <div className="font-bold text-sm text-slate-900 group-hover:text-blue-700 line-clamp-2 leading-snug">
                         {prod.name}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs">
+                      <div className="flex items-center gap-2 mt-1 text-xs">
                         {prod.default_price && (
-                          <span className="font-black text-blue-700 tabular">
+                          <span className="font-bold text-blue-700 tabular">
                             KES {formatMoney(prod.default_price)}
                           </span>
                         )}
                         {prod.strength && (
-                          <span className="text-slate-600 font-semibold truncate">
+                          <span className="text-slate-600 font-medium truncate">
                             {prod.strength}
                           </span>
                         )}
-                        <span className="text-slate-500 font-mono text-[11px] font-medium">
+                        <span className="text-slate-500 font-mono text-xs font-medium">
                           #{prod.code}
                         </span>
                       </div>
                     </div>
 
-                    <span className="h-7 px-2.5 rounded-lg bg-blue-50 group-hover:bg-blue-600 group-hover:text-white text-blue-700 flex items-center gap-1 text-xs font-bold transition-all shrink-0">
+                    <span className="h-7 px-3 rounded-full bg-blue-50 group-hover:bg-blue-600 group-hover:text-white text-blue-700 flex items-center gap-1 text-xs font-bold transition-all shrink-0 shadow-2xs">
                       <Plus size={12} /> Add
                     </span>
                   </button>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { Search, ShoppingCart } from 'lucide-react'
 import { KeyboardHintBar } from '../../components/KeyboardHintBar'
-import { ConfirmDialog } from '../../components/ui/Modal'
+import { PosRemoveConfirmModal } from './PosRemoveConfirmModal'
 import { EmptyState, LoadingSkeleton } from '../../components/ui/States'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { useStores } from '../../lib/hooks'
@@ -11,12 +12,14 @@ import { CartPanel } from './CartPanel'
 import { ModeBanner } from './ModeBanner'
 import { PaymentPanel } from './PaymentPanel'
 import { PosOfflineStrip } from './PosOfflineStrip'
+import { PosCartPreviewModal } from './PosCartPreviewModal'
 import { PosHeldCartsDrawer } from './PosHeldCartsDrawer'
 import { PosHoldCartModal } from './PosHoldCartModal'
 import { PosPriceChangeModal } from './PosPriceChangeModal'
 import { POS_SHORTCUTS, PosShortcutsModal } from './PosShortcutsModal'
 import { ReceiptView } from './ReceiptView'
 import { SearchPanel } from './SearchPanel'
+import { dSum } from '../../lib/decimal'
 import { useCartStore } from './cartStore'
 import { useCheckout } from './useCheckout'
 import { useQuote } from './useQuote'
@@ -67,6 +70,7 @@ export default function PosPage() {
   const [holdOpen, setHoldOpen] = useState(false)
   const [holdName, setHoldName] = useState('')
   const [resumeOpen, setResumeOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [removeRef, setRemoveRef] = useState<string | null>(null)
 
   // The till only ever works in a sellable store; a remembered store that has
@@ -188,39 +192,45 @@ export default function PosPage() {
   if (enabledModes.length === 0 && user) return <EmptyState title="Commerce is disabled for this branch" hint="Neither retail nor wholesale mode is enabled." />
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
       <ModeBanner stores={stores.data ?? (pack ? [{ ...pack.store, branch_id: pack.branchId, store_type: '', is_sellable: true }] : [])} />
       <PosOfflineStrip offline={offline} pack={pack} />
 
-      {/* Mobile Tab Bar (only visible on mobile/small tablets) */}
-      <div className="md:hidden flex border-b border-slate-200 bg-white shrink-0">
-        <button
-          type="button"
-          onClick={() => setMobileTab('catalog')}
-          className={`flex-1 py-2.5 text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
-            mobileTab === 'catalog'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-              : 'border-transparent text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <span>🔍 Catalog & Search</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobileTab('cart')}
-          className={`flex-1 py-2.5 text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
-            mobileTab === 'cart'
-              ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-              : 'border-transparent text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <span>🛒 Cart</span>
-          {lines.length > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full bg-blue-600 text-white text-[11px] tabular font-black">
-              {lines.length}
-            </span>
-          )}
-        </button>
+      {/* Mobile Segmented Pill Bar (only visible on mobile/small tablets) */}
+      <div className="md:hidden p-2 bg-white border-b border-slate-200/80 shrink-0">
+        <div className="flex p-1 bg-slate-100 rounded-full gap-1">
+          <button
+            type="button"
+            onClick={() => setMobileTab('catalog')}
+            className={`flex-1 py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              mobileTab === 'catalog'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Search size={14} />
+            <span>Catalog & Search</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('cart')}
+            className={`flex-1 py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              mobileTab === 'cart'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ShoppingCart size={14} />
+            <span>Cart</span>
+            {lines.length > 0 && (
+              <span className={`px-2 py-0.5 rounded-full text-xs tabular font-bold ${
+                mobileTab === 'cart' ? 'bg-white/20 text-white' : 'bg-blue-600 text-white'
+              }`}>
+                {lines.length}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Main Work Area: 2-column on desktop, tabbed on mobile */}
@@ -237,12 +247,13 @@ export default function PosPage() {
             }}
           />
         </div>
-        <div className={`${mobileTab === 'cart' ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 flex-col min-h-0`}>
+        <div className={`${mobileTab === 'cart' ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 flex-col min-h-0 h-full overflow-hidden`}>
           <CartPanel
             quoteState={quoteState}
             customerInputRef={customerRef}
             onOpenPayment={openPayment}
             onHold={() => setHoldOpen(true)}
+            onPreviewCart={() => setPreviewOpen(true)}
             onApprove={openPayment}
             approvePending={checkout.isPending}
           />
@@ -306,12 +317,20 @@ export default function PosPage() {
         canDiscount={canDiscount}
       />
 
-      <ConfirmDialog
+      <PosCartPreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        customer={useCartStore.getState().customer}
+        lines={lines}
+        quote={useCartStore.getState().quote}
+        estimateTotal={dSum(lines.map((l) => l.localEstimate))}
+        saleMode={saleMode}
+        branchName={user?.active_branch?.name ?? user?.active_branch?.code ?? undefined}
+      />
+
+      <PosRemoveConfirmModal
         open={removeRef !== null}
-        title="Remove item from cart?"
-        message={removeRef ? lines.find((l) => l.lineRef === removeRef)?.productName : undefined}
-        confirmLabel="Remove"
-        danger
+        line={removeRef ? lines.find((l) => l.lineRef === removeRef) ?? null : null}
         onCancel={() => setRemoveRef(null)}
         onConfirm={() => {
           if (removeRef) removeLine(removeRef)

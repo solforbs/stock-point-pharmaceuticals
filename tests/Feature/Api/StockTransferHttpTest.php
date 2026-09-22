@@ -7,7 +7,10 @@ use App\Models\ProductBatch;
 use App\Models\StockAdjustment;
 use App\Models\StockLedger;
 use App\Models\Store;
+use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
 
@@ -21,6 +24,8 @@ class StockTransferHttpTest extends TestCase
 
     private Store $cold;
 
+    private User $approver;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -32,6 +37,11 @@ class StockTransferHttpTest extends TestCase
             'stock.adjust', 'stock.adjust.approve', 'product.cost.view',
         ]);
         Sanctum::actingAs($this->user);
+
+        $this->approver = User::create(['name' => 'Transfer Approver', 'username' => 'approver2', 'email' => 'approver2@example.test', 'password' => 'password-long-enough']);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->branch->id);
+        $this->approver->assignRole(Role::where('name', 'Test role')->firstOrFail());
+        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
     }
 
     public function test_a_transfer_moves_stock_through_in_transit_without_a_journal(): void
@@ -41,7 +51,15 @@ class StockTransferHttpTest extends TestCase
             ->assertCreated()->assertJsonPath('status', 'DRAFT')->assertJsonCount(1, 'lines')->json();
 
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/dispatch")->assertStatus(409)->assertJsonPath('error.code', 'INVALID_STATE');
+
+        // Anti-self-approval blocks creator
+        $this->postJson("/api/inventory/transfers/{$transfer['id']}/approve")->assertStatus(422)->assertJsonPath('error.code', 'INVALID_INPUT');
+
+        // Distinct approver succeeds
+        Sanctum::actingAs($this->approver);
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/approve")->assertOk()->assertJsonPath('status', 'APPROVED');
+        Sanctum::actingAs($this->user);
+
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/dispatch")->assertOk()->assertJsonPath('status', 'DISPATCHED');
 
         $stock = $this->getJson('/api/inventory/stock?product_id='.$this->amox->id)->assertOk()->json('data');
@@ -67,7 +85,11 @@ class StockTransferHttpTest extends TestCase
     {
         $batch = $this->batchId('T1');
         $transfer = $this->postJson('/api/inventory/transfers', $this->payload($batch, '400'))->assertCreated()->json();
+
+        Sanctum::actingAs($this->approver);
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/approve")->assertOk();
+        Sanctum::actingAs($this->user);
+
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/dispatch")->assertOk();
 
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/receive", ['lines' => [['id' => $transfer['lines'][0]['id'], 'qty_received' => '380']]])
@@ -93,7 +115,11 @@ class StockTransferHttpTest extends TestCase
     public function test_more_than_the_unreserved_quantity_cannot_be_dispatched(): void
     {
         $transfer = $this->postJson('/api/inventory/transfers', $this->payload($this->batchId('T1'), '5000'))->assertCreated()->json();
+
+        Sanctum::actingAs($this->approver);
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/approve")->assertOk();
+        Sanctum::actingAs($this->user);
+
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/dispatch")->assertStatus(409)->assertJsonPath('error.code', 'INSUFFICIENT_STOCK');
         $this->assertSame(0, StockLedger::where('txn_type', 'TRANSFER_OUT')->count());
     }

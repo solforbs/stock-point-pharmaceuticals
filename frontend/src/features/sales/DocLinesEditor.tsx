@@ -52,7 +52,7 @@ export function DocLinesEditor({
       {lines.length === 0 ? (
         <div className="p-6 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 my-2">
           <p className="text-xs font-bold text-slate-600">No items added to quotation yet</p>
-          <p className="text-[11.5px] text-slate-400 mt-0.5">Use the search bar above to select medicines by name, SKU, or barcode.</p>
+          <p className="text-xs text-slate-400 mt-0.5">Use the search bar above to select medicines by name, SKU, or barcode.</p>
         </div>
       ) : (
         <>
@@ -75,8 +75,8 @@ export function DocLinesEditor({
                   return (
                     <tr key={line.key}>
                       <td>
-                        <div className="font-extrabold text-[13.5px] text-slate-900">{line.product.name}</div>
-                        <div className="text-[11.5px] text-slate-500 font-mono mt-0.5">
+                        <div className="font-bold text-sm text-slate-900">{line.product.name}</div>
+                        <div className="text-xs text-slate-500 font-mono mt-0.5">
                           #{line.product.code} {line.product.strength ? `· ${line.product.strength}` : ''}
                         </div>
                       </td>
@@ -151,8 +151,8 @@ export function DocLinesEditor({
                 <div key={line.key} className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-2xs space-y-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="font-extrabold text-[13.5px] text-slate-900">{line.product.name}</div>
-                      <div className="text-[11.5px] text-slate-500 font-mono mt-0.5">
+                      <div className="font-bold text-sm text-slate-900">{line.product.name}</div>
+                      <div className="text-xs text-slate-500 font-mono mt-0.5">
                         #{line.product.code} {line.product.strength ? `· ${line.product.strength}` : ''}
                       </div>
                     </div>
@@ -168,7 +168,7 @@ export function DocLinesEditor({
 
                   <div className="flex items-center justify-between gap-3 pt-1 border-t border-slate-100">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[11.5px] text-slate-500 font-bold">UOM:</span>
+                      <span className="text-xs text-slate-500 font-semibold">UOM:</span>
                       <select
                         value={line.uom_id}
                         disabled={disabled}
@@ -184,7 +184,7 @@ export function DocLinesEditor({
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[11.5px] text-slate-500 font-bold">Qty:</span>
+                      <span className="text-xs text-slate-500 font-semibold">Qty:</span>
                       <QuantityInput
                         value={line.quantity}
                         onChange={(quantity) => update(line.key, { quantity })}

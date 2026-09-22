@@ -47,13 +47,13 @@ export default function DiscountPoliciesTab({ canManage }: { canManage: boolean 
   })
 
   const columns: Column<DiscountPolicy>[] = [
-    { key: 'product', header: 'Product', render: (p) => <>{p.product?.name ?? '—'}<div className="text-[10.5px] text-[var(--text-muted)]">{p.product?.code}</div></>, sortValue: (p) => p.product?.name ?? '' },
+    { key: 'product', header: 'Product', render: (p) => <>{p.product?.name ?? '—'}<div className="text-xs text-slate-500 font-mono">{p.product?.code}</div></>, sortValue: (p) => p.product?.name ?? '' },
     { key: 'allowed', header: 'Discounts', render: (p) => <StatusBadge status={p.discount_allowed ? 'OK' : 'BLOCKED'} label={p.discount_allowed ? 'Allowed' : 'Not allowed'} /> },
-    { key: 'max', header: 'Max discount', align: 'right', render: (p) => <span className="tabular">{formatPct(p.max_discount_pct)}{p.max_discount_amount && <div className="text-[10.5px] text-[var(--text-muted)]">≤ <MoneyCell value={p.max_discount_amount} />/unit</div>}</span>, sortValue: (p) => Number(p.max_discount_pct) },
+    { key: 'max', header: 'Max discount', align: 'right', render: (p) => <span className="tabular">{formatPct(p.max_discount_pct)}{p.max_discount_amount && <div className="text-xs text-slate-500">≤ <MoneyCell value={p.max_discount_amount} />/unit</div>}</span>, sortValue: (p) => Number(p.max_discount_pct) },
     { key: 'approval', header: 'Approval above', align: 'right', render: (p) => <span className="tabular">{p.discount_approval_pct !== null ? formatPct(p.discount_approval_pct) : '—'}</span> },
     { key: 'margin', header: 'Min margin', align: 'right', render: (p) => <span className="tabular">{formatPct(p.min_margin_pct)}</span>, sortValue: (p) => Number(p.min_margin_pct) },
     { key: 'round', header: 'Rounding', render: (p) => ROUND_LABEL[p.round_to] ?? p.round_to },
-    { key: 'bonus', header: 'Bonus / stack', render: (p) => <span className="text-[11px]">{p.bonus_allowed ? 'Bonus ok' : 'No bonus'} · {p.promo_stackable ? 'stacks' : 'no stacking'}</span> },
+    { key: 'bonus', header: 'Bonus / stack', render: (p) => <span className="text-xs text-slate-600">{p.bonus_allowed ? 'Bonus ok' : 'No bonus'} · {p.promo_stackable ? 'stacks' : 'no stacking'}</span> },
     { key: 'actions', header: '', align: 'right', render: (p) => (canManage ? <div onClick={(e) => e.stopPropagation()}><Button size="sm" variant="ghost" onClick={() => setDeleting(p)}>Remove</Button></div> : null) },
   ]
 
@@ -125,7 +125,7 @@ function PolicyForm({ policy, onDone }: { policy: DiscountPolicy | null; onDone:
       <Field label="Product" required error={err?.errors.product_id?.[0]}>
         <ProductField productId={form.product_id} fallbackName={policy?.product?.name} disabled={!!policy} onChange={(p) => set({ product_id: p?.id ?? '' })} />
       </Field>
-      <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={form.discount_allowed} onChange={(e) => set({ discount_allowed: e.target.checked })} /> Manual discounts allowed on this product</label>
+      <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={form.discount_allowed} onChange={(e) => set({ discount_allowed: e.target.checked })} /> Manual discounts allowed on this product</label>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Max discount %" required error={err?.errors.max_discount_pct?.[0]} hint="Ceiling for any cashier or rep."><Input inputMode="decimal" className="tabular" value={form.max_discount_pct} onChange={(e) => set({ max_discount_pct: decimalInput(e.target.value) })} disabled={!form.discount_allowed} /></Field>
         <Field label="Max discount (KES / unit)" error={err?.errors.max_discount_amount?.[0]} hint="Optional absolute cap."><Input inputMode="decimal" className="tabular" value={form.max_discount_amount} onChange={(e) => set({ max_discount_amount: decimalInput(e.target.value) })} disabled={!form.discount_allowed} /></Field>
@@ -137,8 +137,8 @@ function PolicyForm({ policy, onDone }: { policy: DiscountPolicy | null; onDone:
           </Select>
         </Field>
       </div>
-      <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={form.bonus_allowed} onChange={(e) => set({ bonus_allowed: e.target.checked })} /> Bonus (free goods) schemes may apply</label>
-      <label className="flex items-center gap-2 text-[12px]"><input type="checkbox" checked={form.promo_stackable} onChange={(e) => set({ promo_stackable: e.target.checked })} /> A manual discount may stack on a promotion</label>
+      <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={form.bonus_allowed} onChange={(e) => set({ bonus_allowed: e.target.checked })} /> Bonus (free goods) schemes may apply</label>
+      <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer"><input type="checkbox" checked={form.promo_stackable} onChange={(e) => set({ promo_stackable: e.target.checked })} /> A manual discount may stack on a promotion</label>
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
       <div className="flex justify-end gap-2">
         <Button onClick={onDone}>Cancel</Button>

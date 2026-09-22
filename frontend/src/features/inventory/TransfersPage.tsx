@@ -13,6 +13,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, DrawerFooter, Field, FormSection, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
 import { apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { useStores } from '../../lib/hooks'
 import { usePermissions } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
@@ -72,21 +73,25 @@ export default function TransfersPage() {
         subtitle="Move inventory securely between facility branches and quarantine warehouses with custody tracking"
         actions={
           perms.has('stock.transfer.create') ? (
-            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-              New transfer
-            </PrimaryAction>
+            <div id="tour-transfers-new">
+              <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+                New transfer
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
-      <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All Statuses</option>
-            {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-          </Select>
-        </Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-transfers-filters">
+        <FilterBar>
+          <Field label="Status">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All Statuses</option>
+              {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+            </Select>
+          </Field>
+        </FilterBar>
+      </div>
+      <div id="tour-transfers-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(t) => t.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(t) => setParams({ transfer: t.id })} selectedKey={selectedId} emptyTitle="No transfers" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
@@ -176,7 +181,10 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
     onSuccess: (t) => { setResolving(false); done(t, 'discrepancy resolved') },
   })
 
+  const { data: currentUser } = useCurrentUser()
   const t = transfer.data
+  const isCreator = !!currentUser && !!t && t.requested_by === currentUser.id
+
   return (
     <Drawer
       open={!!id}
@@ -187,7 +195,17 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
       actions={
         t ? (
           <div className="flex gap-2">
-            {t.status === 'DRAFT' && perms.has('stock.transfer.approve') && <Button size="sm" variant="success" disabled={approve.isPending} onClick={() => approve.mutate()}>Approve</Button>}
+            {t.status === 'DRAFT' && perms.has('stock.transfer.approve') && (
+              <Button
+                size="sm"
+                variant="success"
+                disabled={approve.isPending || isCreator}
+                onClick={() => approve.mutate()}
+                title={isCreator ? 'You requested this transfer. Another authorized user must approve it (Segregation of Duties).' : undefined}
+              >
+                Approve
+              </Button>
+            )}
             {t.status === 'APPROVED' && perms.has('stock.transfer.dispatch') && <Button size="sm" variant="primary" disabled={dispatch.isPending} onClick={() => dispatch.mutate()}>Dispatch</Button>}
             {t.status === 'DISPATCHED' && perms.has('stock.transfer.receive') && <Button size="sm" variant="success" disabled={receive.isPending} onClick={() => receive.mutate()}>Receive</Button>}
             {t.status === 'DISCREPANCY' && perms.has('stock.transfer.approve') && <Button size="sm" variant="danger" onClick={() => setResolving(true)}>Resolve discrepancy</Button>}
@@ -201,6 +219,11 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
       {t && (
         <div className="space-y-4">
           <div className="flex items-center gap-2"><StatusBadge status={t.status} /></div>
+          {t.status === 'DRAFT' && isCreator && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <span className="font-semibold">Segregation of Duties:</span> You created this transfer request. Another user with transfer approval permission must review and approve it.
+            </div>
+          )}
           <DescriptionList items={[{ label: 'Created', value: formatDateTime(t.created_at) }, { label: 'Dispatched', value: formatDateTime(t.dispatched_at) }, { label: 'Received', value: formatDateTime(t.received_at) }]} />
           <table className="ui-table">
             <thead><tr><th>Product</th><th>Batch</th><th className="text-right">Dispatched</th><th className="text-right">Received</th></tr></thead>
@@ -208,20 +231,20 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
               {(t.lines ?? []).map((l) => (
                 <tr key={l.id}>
                   <td>{l.product?.name ?? l.product_id.slice(0, 8)}</td>
-                  <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-[10.5px] text-[var(--text-muted)]">exp {formatDate(l.batch.expiry_date)}</div>}</td>
+                  <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-500 tabular">exp {formatDate(l.batch.expiry_date)}</div>}</td>
                   <td className="text-right"><QtyCell value={l.qty_dispatched} /></td>
                   <td className="text-right">
                     {t.status === 'DISPATCHED' && perms.has('stock.transfer.receive') ? (
-                      <input value={received[l.id] ?? ''} placeholder={String(Number(l.qty_dispatched))} onChange={(e) => setReceived({ ...received, [l.id]: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-24 tabular text-right" />
+                      <input value={received[l.id] ?? ''} placeholder={String(Number(l.qty_dispatched))} onChange={(e) => setReceived({ ...received, [l.id]: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-24 tabular text-right text-sm" />
                     ) : (
-                      <QtyCell value={l.qty_received} className={l.qty_received !== null && Number(l.qty_received) < Number(l.qty_dispatched) ? 'text-[var(--status-red)] font-bold' : ''} />
+                      <QtyCell value={l.qty_received} className={l.qty_received !== null && Number(l.qty_received) < Number(l.qty_dispatched) ? 'text-rose-600 font-bold' : ''} />
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {t.status === 'DISPATCHED' && <p className="text-[11px] text-[var(--text-muted)]">Leave a quantity blank to receive the full dispatched amount. A short receipt raises a discrepancy; the shortfall stays in transit until resolved.</p>}
+          {t.status === 'DISPATCHED' && <p className="text-xs text-slate-500">Leave a quantity blank to receive the full dispatched amount. A short receipt raises a discrepancy; the shortfall stays in transit until resolved.</p>}
         </div>
       )}
       <Modal

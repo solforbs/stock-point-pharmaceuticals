@@ -101,10 +101,10 @@ export function PaymentPanel({
               <ArrowLeft size={18} />
             </button>
             <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">
                 Checkout & Tender
               </span>
-              <div className="text-[24px] font-black tracking-tight text-slate-900 tabular leading-none mt-0.5">
+              <div className="text-2xl font-bold tracking-tight text-slate-900 tabular leading-none mt-0.5">
                 KES {formatMoney(total)}
               </div>
             </div>
@@ -120,33 +120,35 @@ export function PaymentPanel({
         </header>
 
       {/* Tender Mode Selection Tabs */}
-      <div className="flex gap-1.5 p-3 border-b border-slate-100 bg-white">
-        {(['cash', 'split', 'credit'] as const).map((m) => {
-          const disabledTab = m === 'credit' && (saleMode !== 'WHOLESALE' || offline)
-          const isActive = mode === m
-          return (
-            <button
-              key={m}
-              type="button"
-              disabled={disabledTab}
-              onClick={() => setMode(m)}
-              className={`flex-1 h-9 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                isActive
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80'
-              } disabled:opacity-30 disabled:cursor-not-allowed`}
-              title={disabledTab ? (offline ? 'Credit needs the server' : 'Credit terms require wholesale mode') : undefined}
-            >
-              {m === 'cash' ? <DollarSign size={13} /> : m === 'split' ? <Split size={13} /> : <CreditCard size={13} />}
-              <span>{m === 'cash' ? 'Cash' : m === 'split' ? 'Split / M-Pesa' : 'On Credit'}</span>
-            </button>
-          )
-        })}
+      <div className="p-3 border-b border-slate-100 bg-white">
+        <div className="flex gap-1 p-1 bg-slate-100 rounded-full">
+          {(['cash', 'split', 'credit'] as const).map((m) => {
+            const disabledTab = m === 'credit' && (saleMode !== 'WHOLESALE' || offline)
+            const isActive = mode === m
+            return (
+              <button
+                key={m}
+                type="button"
+                disabled={disabledTab}
+                onClick={() => setMode(m)}
+                className={`flex-1 h-9 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                } disabled:opacity-30 disabled:cursor-not-allowed`}
+                title={disabledTab ? (offline ? 'Credit needs the server' : 'Credit terms require wholesale mode') : undefined}
+              >
+                {m === 'cash' ? <DollarSign size={13} /> : m === 'split' ? <Split size={13} /> : <CreditCard size={13} />}
+                <span>{m === 'cash' ? 'Cash' : m === 'split' ? 'Split / M-Pesa' : 'On Credit'}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {!quoteFresh && (
-          <div className="text-xs font-semibold rounded-xl px-3.5 py-2.5 border border-amber-200 bg-amber-50 text-amber-900">
+          <div className="text-xs font-bold rounded-2xl px-3.5 py-2.5 border border-amber-200 bg-amber-50 text-amber-900">
             Waiting for a fresh quote — payment unlocks once server verifies stock and prices.
           </div>
         )}
@@ -171,7 +173,7 @@ export function PaymentPanel({
                     post()
                   }
                 }}
-                className="w-full h-12 px-3 rounded-xl bg-slate-50 border border-slate-300 text-2xl tabular text-right font-black text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 shadow-inner"
+                className="w-full h-12 px-3.5 rounded-2xl bg-slate-50/80 border border-slate-200 text-2xl tabular text-right font-black text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 shadow-inner"
                 placeholder={formatMoney(total)}
               />
             </div>
@@ -181,7 +183,7 @@ export function PaymentPanel({
               <button
                 type="button"
                 onClick={() => setCashTendered(total.replace(/\.?0+$/, ''))}
-                className="h-8 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-800 text-xs font-extrabold border border-slate-200 transition-colors cursor-pointer flex items-center justify-center"
+                className="h-9 rounded-2xl bg-slate-100/90 hover:bg-blue-50 hover:text-blue-700 text-slate-800 text-xs font-bold border border-slate-200/50 transition-all cursor-pointer flex items-center justify-center shadow-2xs active:scale-[0.98]"
               >
                 Exact Cash
               </button>
@@ -190,7 +192,7 @@ export function PaymentPanel({
                   key={n}
                   type="button"
                   onClick={() => setCashTendered(String(n))}
-                  className="h-8 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-800 text-xs font-bold border border-slate-200 transition-colors cursor-pointer tabular flex items-center justify-center"
+                  className="h-9 rounded-2xl bg-slate-100/90 hover:bg-blue-50 hover:text-blue-700 text-slate-800 text-xs font-bold border border-slate-200/50 transition-all cursor-pointer tabular flex items-center justify-center shadow-2xs active:scale-[0.98]"
                 >
                   +{n.toLocaleString()}
                 </button>
@@ -215,7 +217,7 @@ export function PaymentPanel({
                 />
               </div>
               {!cashOk && dIsPos(tendered) && (
-                <div className="text-[11.5px] font-bold text-rose-600 pt-1 border-t border-rose-100">
+                <div className="text-xs font-bold text-rose-600 pt-1 border-t border-rose-100">
                   Short by KES {formatMoney(dSub(total, tendered))}
                 </div>
               )}
@@ -274,12 +276,12 @@ export function PaymentPanel({
                   { method: 'MPESA', amount: dIsPos(remaining) ? remaining.replace(/\.?0+$/, '') : '', reference: '' },
                 ])
               }
-              className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              className="px-4 py-2 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
             >
               <Plus size={13} /> Add Payment Method
             </button>
 
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs tabular">
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs tabular">
               <div className="flex justify-between text-slate-600">
                 <span>Total Due</span>
                 <MoneyCell value={total} className="font-bold text-slate-800" />
@@ -292,11 +294,11 @@ export function PaymentPanel({
                 <span>Remaining</span>
                 <MoneyCell
                   value={remaining}
-                  className={dEq(remaining, '0') ? 'text-emerald-600' : 'text-rose-600'}
+                  className={dEq(remaining, '0') ? 'text-emerald-700' : 'text-rose-700'}
                 />
               </div>
               {!dEq(remaining, '0') && (
-                <p className="text-[11px] font-semibold text-rose-600 pt-1">
+                <p className="text-xs font-semibold text-rose-700 pt-1">
                   Payments must sum exactly to the total.
                 </p>
               )}
@@ -306,7 +308,7 @@ export function PaymentPanel({
 
         {/* WHOLESALE CREDIT VIEW */}
         {mode === 'credit' && (
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2">
             {customer ? (
               <>
                 <p className="text-slate-700">
@@ -323,21 +325,21 @@ export function PaymentPanel({
                   </div>
                 </div>
                 {customer.credit?.on_hold && (
-                  <p className="text-rose-600 font-bold pt-1">
-                    ⚠️ Account is on credit hold: {customer.credit.hold_reason ?? 'Administrative hold'}.
+                  <p className="text-rose-700 font-bold pt-1">
+                    Account is on credit hold: {customer.credit.hold_reason ?? 'Administrative hold'}.
                   </p>
                 )}
               </>
             ) : (
-              <p className="text-rose-600 font-bold">
-                ⚠️ Please select a customer account first (F5).
+              <p className="text-rose-700 font-bold">
+                Please select a customer account first (F5).
               </p>
             )}
           </div>
         )}
 
         {needsApproval && (
-          <label className={`flex items-start gap-2.5 text-xs p-3 rounded-xl border ${canApprove ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+          <label className={`flex items-start gap-2.5 text-xs p-3.5 rounded-2xl border ${canApprove ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
             <input
               type="checkbox"
               checked={approve && canApprove}
@@ -354,8 +356,8 @@ export function PaymentPanel({
         )}
 
         {checkoutError && (
-          <div role="alert" className="text-xs rounded-xl p-3 border border-rose-200 bg-rose-50 text-rose-900 space-y-1">
-            <div className="font-extrabold">{checkoutError.code}</div>
+          <div role="alert" className="text-xs rounded-2xl p-3.5 border border-rose-200 bg-rose-50 text-rose-900 space-y-1">
+            <div className="font-bold">{checkoutError.code}</div>
             <div>{checkoutError.message}</div>
           </div>
         )}
@@ -367,17 +369,17 @@ export function PaymentPanel({
           type="button"
           disabled={!canPost}
           onClick={post}
-          className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-sm shadow-md shadow-emerald-600/20 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 cursor-pointer transition-all"
+          className="w-full h-12 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-emerald-600/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none flex items-center justify-center gap-2.5 cursor-pointer transition-all"
         >
-          <CheckCircle2 size={16} />
+          <CheckCircle2 size={17} />
           <span>
             {isPosting ? 'POSTING SALE…' : mode === 'credit' ? 'POST INVOICE ON CREDIT' : `COMPLETE SALE (KES ${formatMoney(total)})`}
           </span>
-          <span className="px-1.5 py-0.5 rounded bg-white/20 text-white text-[11px] font-mono font-bold tracking-wider">
+          <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-xs font-mono font-bold">
             Enter
           </span>
         </button>
-        <p className="text-[12px] text-slate-500 text-center mt-2 font-medium">
+        <p className="text-xs text-slate-500 text-center mt-2 font-medium">
           {offline
             ? 'Offline: the sale is saved on this till and sent to the server when the connection returns.'
             : 'Receipt prints automatically and inventory is updated immediately.'}

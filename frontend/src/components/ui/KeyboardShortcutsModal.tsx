@@ -97,10 +97,10 @@ export function KeyboardShortcutsModal({ open, onClose }: KeyboardShortcutsModal
                 <Keyboard size={18} />
               </div>
               <div>
-                <h2 className="text-[15px] font-extrabold text-slate-900">
+                <h2 className="text-base font-extrabold text-slate-900">
                   Keyboard Shortcuts Cheat Sheet
                 </h2>
-                <p className="text-[11.5px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Accelerate daily pharmacy operations with instant hotkeys
                 </p>
               </div>
@@ -120,7 +120,7 @@ export function KeyboardShortcutsModal({ open, onClose }: KeyboardShortcutsModal
               const Icon = sec.icon
               return (
                 <div key={sec.title} className="space-y-2.5">
-                  <div className="flex items-center gap-2 text-[12px] font-bold text-slate-800 uppercase tracking-wider">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
                     <Icon size={14} className="text-blue-600" />
                     <span>{sec.title}</span>
                   </div>
@@ -130,14 +130,14 @@ export function KeyboardShortcutsModal({ open, onClose }: KeyboardShortcutsModal
                         key={idx}
                         className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50/80 border border-slate-150 hover:bg-white hover:border-slate-300 hover:shadow-2xs transition-all"
                       >
-                        <span className="text-[12.5px] font-medium text-slate-700">
+                        <span className="text-xs font-medium text-slate-700">
                           {item.label}
                         </span>
                         <div className="flex items-center gap-1 shrink-0">
                           {item.keys.map((k, ki) => (
                             <kbd
                               key={ki}
-                              className="px-2 py-1 rounded-lg bg-white border border-slate-200 text-slate-800 text-[11px] font-bold font-mono shadow-2xs"
+                              className="px-2 py-1 rounded-lg bg-white border border-slate-200 text-slate-800 text-xs font-bold font-mono shadow-2xs"
                             >
                               {k}
                             </kbd>
@@ -152,11 +152,11 @@ export function KeyboardShortcutsModal({ open, onClose }: KeyboardShortcutsModal
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-[11.5px] text-slate-500">
+          <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs text-slate-500">
             <span>Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-mono font-bold">?</kbd> anywhere in PharmaPoint to view this window</span>
             <button
               onClick={onClose}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white font-bold text-[12px] hover:bg-slate-800 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors cursor-pointer"
             >
               Got it
             </button>

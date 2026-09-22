@@ -146,22 +146,24 @@ export default function AnalyticsPage() {
   return (
     <Page>
       <PageHeader parent="Reports" title="Analytics" subtitle="Posted transactions only, for the active branch. Hover any chart for exact figures; switch a card to its table for the numbers." />
-      <FilterBar>
-        <Field label="From"><Input type="date" value={draft.from} max={draft.to} onChange={(e) => setDraft({ ...draft, from: e.target.value })} /></Field>
-        <Field label="To"><Input type="date" value={draft.to} min={draft.from} onChange={(e) => setDraft({ ...draft, to: e.target.value })} /></Field>
-        <Button variant="primary" disabled={!draft.from || !draft.to || draft.from > draft.to} onClick={() => setRange(draft)}>Apply</Button>
-        <div className="flex gap-1 pb-0.5">
-          {PRESETS.map((p) => {
-            const preset = { from: addDaysIso(-(p.days - 1)), to: todayIso() }
-            const on = range.from === preset.from && range.to === preset.to
-            return (
-              <Button key={p.days} size="sm" variant={on ? 'primary' : 'ghost'} onClick={() => { setDraft(preset); setRange(preset) }}>{p.label}</Button>
-            )
-          })}
-        </div>
-      </FilterBar>
+      <div id="tour-analytics-filters">
+        <FilterBar>
+          <Field label="From"><Input type="date" value={draft.from} max={draft.to} onChange={(e) => setDraft({ ...draft, from: e.target.value })} /></Field>
+          <Field label="To"><Input type="date" value={draft.to} min={draft.from} onChange={(e) => setDraft({ ...draft, to: e.target.value })} /></Field>
+          <Button variant="primary" disabled={!draft.from || !draft.to || draft.from > draft.to} onClick={() => setRange(draft)}>Apply</Button>
+          <div className="flex gap-1 pb-0.5">
+            {PRESETS.map((p) => {
+              const preset = { from: addDaysIso(-(p.days - 1)), to: todayIso() }
+              const on = range.from === preset.from && range.to === preset.to
+              return (
+                <Button key={p.days} size="sm" variant={on ? 'primary' : 'ghost'} onClick={() => { setDraft(preset); setRange(preset) }}>{p.label}</Button>
+              )
+            })}
+          </div>
+        </FilterBar>
+      </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div id="tour-analytics-charts" className="grid gap-4 xl:grid-cols-2">
         <ChartCard
           title="Net sales and gross profit"
           subtitle={`${formatDate(range.from)} – ${formatDate(range.to)} · net ${kes(num(totals.net_sales))} · profit ${kes(num(totals.gross_profit))}`}
@@ -285,13 +287,13 @@ function ChartCard({
     <section className="ui-card min-w-0">
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2">
         <div className="min-w-0">
-          <h2 className="text-[13px] font-bold text-[var(--text)]">{title}</h2>
-          {subtitle && <div className="text-[11px] text-[var(--text-muted)] mt-0.5">{subtitle}</div>}
+          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+          {subtitle && <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>}
         </div>
         <button
           type="button"
           onClick={() => setAsTable(!asTable)}
-          className="shrink-0 inline-flex items-center gap-1 text-[11px] text-[var(--text-secondary)] hover:text-[var(--text)] px-1.5 py-1 rounded hover:bg-[var(--surface-2)]"
+          className="shrink-0 inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 px-2 py-1 rounded-md hover:bg-slate-100 transition-colors"
           aria-pressed={asTable}
         >
           {asTable ? <BarChart3 size={12} /> : <Table2 size={12} />} {asTable ? 'Chart' : 'Table'}

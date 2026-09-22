@@ -68,18 +68,22 @@ export default function CustomersPage() {
         subtitle="Manage wholesale hospital clients, retail pharmacies, pricing tiers, and credit facilities"
         actions={
           canManage ? (
-            <PrimaryAction onClick={() => setCreating(true)}>
-              New Customer
-            </PrimaryAction>
+            <div id="tour-customers-new">
+              <PrimaryAction onClick={() => setCreating(true)}>
+                New Customer
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
       <FilterBar>
-        <Field label="Search Customers" className="w-full sm:w-80">
-          <Input placeholder="Search by name, account code, or phone…" value={q} onChange={(e) => setQ(e.target.value)} />
-        </Field>
+        <div id="tour-customers-search" className="w-full sm:w-80">
+          <Field label="Search Customers">
+            <Input placeholder="Search by name, account code, or phone…" value={q} onChange={(e) => setQ(e.target.value)} />
+          </Field>
+        </div>
       </FilterBar>
-      <div className="ui-card">
+      <div id="tour-customers-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data?.data}

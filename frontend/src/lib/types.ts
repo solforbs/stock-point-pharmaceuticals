@@ -799,6 +799,8 @@ export type StockTransfer = {
   from_store_id: string
   to_store_id: string
   status: 'DRAFT' | 'APPROVED' | 'DISPATCHED' | 'RECEIVED' | 'DISCREPANCY'
+  requested_by?: number | null
+  approved_by?: number | null
   dispatched_at: string | null
   received_at: string | null
   created_at?: string
@@ -1151,12 +1153,22 @@ export type DashboardSummary = {
   as_of: string
   sales_today: null | { count: number; total: Decimal; by_mode: Partial<Record<SaleMode, { count: number; total: Decimal }>>; voided_today: number }
   approvals: null | Partial<Record<ApprovalQueueKey, number>>
-  inventory: null | { pending_qc_batches: number; quarantined_batches: number; expiring_90d_batches: number; expired_batches_on_hand: number; transfers_in_transit: number }
+  inventory: null | {
+    pending_qc_batches: number
+    pending_qc_qty?: Decimal
+    quarantined_batches: number
+    expiring_90d_batches: number
+    expiring_90d_qty?: Decimal
+    expired_batches_on_hand: number
+    low_stock_count?: number
+    transfers_in_transit: number
+  }
   procurement: null | { open_purchase_orders: number; suppliers_licence_expired: number; suppliers_licence_expiring_30d: number }
   compliance: null | { etims_failed: number; etims_pending: number }
   quality: null | Partial<{ cold_chain_open_excursions: number; adr_draft_reports: number; licences_expired: number; licences_expiring_60d: number; documents_to_acknowledge: number }>
   people: null | Partial<{ leave_pending: number }>
   finance: null | { open_period: null | Pick<FinancialPeriod, 'id' | 'fiscal_year' | 'period_no' | 'start_date' | 'end_date'>; period_open_for_today: boolean }
+  ar?: null | { total: Decimal; customers_count: number; d90_plus: Decimal }
 }
 
 export type UserAssignment = { branch_id: string; branch_code: string | null; role: string }

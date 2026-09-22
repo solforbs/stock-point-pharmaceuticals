@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Key, UserCheck } from 'lucide-react'
+import { Eye, EyeOff, Key, UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DeleteRecordButton } from '../../components/DeleteRecordButton'
@@ -49,9 +49,9 @@ export default function UsersRolesPage() {
         <div className="ui-card"><NoAccess permission="admin.users" /></div>
       ) : (
         <>
-          <div className="flex gap-1 mb-4">
+          <div id="tour-users-tabs" className="flex gap-1 mb-4">
             {(['users', 'roles'] as Tab[]).map((t) => (
-              <button key={t} type="button" onClick={() => setParams({ tab: t })} className={`h-8 px-3.5 rounded-md text-[12.5px] font-semibold ${tab === t ? 'bg-[var(--color-navy)] text-white' : 'bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)]'}`}>
+              <button key={t} type="button" onClick={() => setParams({ tab: t })} className={`h-8 px-4 rounded-md text-xs font-semibold transition-colors ${tab === t ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
                 {titleCase(t)}
               </button>
             ))}
@@ -83,16 +83,16 @@ function UsersTab() {
   const selected = userQuery.data ?? list.data?.data.find((u) => u.id === selectedId) ?? null
 
   const columns: Column<AdminUser>[] = [
-    { key: 'name', header: 'Name', render: (u) => <><div className="font-semibold">{u.name}</div><div className="text-[10.5px] text-[var(--text-muted)] tabular">{u.username ?? '—'}</div></>, sortValue: (u) => u.name },
+    { key: 'name', header: 'Name', render: (u) => <><div className="font-semibold">{u.name}</div><div className="text-xs text-slate-500 font-mono tabular">{u.username ?? '—'}</div></>, sortValue: (u) => u.name },
     { key: 'email', header: 'Email', render: (u) => u.email, sortValue: (u) => u.email },
     {
       key: 'assignments', header: 'Roles by branch',
       render: (u) => (
         <div className="flex flex-wrap gap-1">
           {assignmentsByBranch(u).map((b) => (
-            <span key={b.branch_id} className="inline-flex items-center gap-1 px-1.5 py-[1px] rounded text-[10.5px] bg-[var(--surface-2)] border border-[var(--border)]"><b className="tabular">{b.branch_code}:</b> {b.roles.join(', ')}</span>
+            <span key={b.branch_id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs bg-slate-100 border border-slate-200 font-mono"><b className="tabular">{b.branch_code}:</b> {b.roles.join(', ')}</span>
           ))}
-          {u.assignments.length === 0 && <span className="text-[var(--text-muted)]">No roles</span>}
+          {u.assignments.length === 0 && <span className="text-slate-400">No roles</span>}
         </div>
       ),
     },
@@ -113,18 +113,20 @@ function UsersTab() {
 
   return (
     <>
-      <FilterBar>
-        <Field label="Search" className="w-72"><Input placeholder="Name, username or email" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} /></Field>
-        <Field label="Status">
-          <Select value={active} onChange={(e) => { setActive(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            <option value="1">Active</option>
-            <option value="0">Inactive</option>
-          </Select>
-        </Field>
-        <div className="ml-auto"><Button variant="primary" onClick={() => setCreating(true)}>New user</Button></div>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-users-filters">
+        <FilterBar>
+          <Field label="Search" className="w-72"><Input placeholder="Name, username or email" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} /></Field>
+          <Field label="Status">
+            <Select value={active} onChange={(e) => { setActive(e.target.value); setPage(1) }}>
+              <option value="">All</option>
+              <option value="1">Active</option>
+              <option value="0">Inactive</option>
+            </Select>
+          </Field>
+          <div id="tour-users-new" className="ml-auto"><Button variant="primary" onClick={() => setCreating(true)}>New user</Button></div>
+        </FilterBar>
+      </div>
+      <div id="tour-users-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(u) => String(u.id)} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(u) => { setEditing(false); setSelectedId(u.id) }} selectedKey={selectedId === null ? null : String(selectedId)} emptyTitle="No users match" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
@@ -176,7 +178,7 @@ function UserDetail({ user, onEdit }: { user: AdminUser; onEdit: () => void }) {
       />
       <Card title="Role assignments">
         {user.assignments.length === 0 ? (
-          <div className="p-4 text-[12px] text-[var(--text-muted)]">This person holds no roles and cannot sign in to any branch.</div>
+          <div className="p-4 text-xs text-slate-500">This person holds no roles and cannot sign in to any branch.</div>
         ) : (
           <table className="ui-table">
             <thead><tr><th>Branch</th><th>Roles</th></tr></thead>
@@ -219,6 +221,7 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
       assignments,
     }
   })
+  const [showPassword, setShowPassword] = useState(false)
   const set = (patch: Partial<UserFormState>) => setForm({ ...form, ...patch })
 
   function toggleRole(branchId: string, role: string, on: boolean) {
@@ -279,7 +282,25 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
           <Field label="Email" required error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
           <Field label="Phone" error={err?.errors.phone?.[0]}><Input value={form.phone} onChange={(e) => set({ phone: e.target.value })} /></Field>
           <Field label={user ? 'New password' : 'Temporary password'} required={!user} hint="At least 12 characters." error={err?.errors.password?.[0] ?? (form.password && !passwordOk ? 'At least 12 characters.' : null)} className="col-span-1 sm:col-span-2">
-            <Input type="password" autoComplete="new-password" value={form.password} placeholder={user ? 'Leave blank to keep current password' : ''} onChange={(e) => set({ password: e.target.value })} />
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={form.password}
+                placeholder={user ? 'Leave blank to keep current password' : ''}
+                onChange={(e) => set({ password: e.target.value })}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </Field>
         </div>
       </FormSection>
@@ -289,7 +310,7 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
         description="Password expiration, account accessibility, and multi-factor flags"
         icon={Key}
       >
-        <div className="flex flex-col gap-2.5 text-[12px]">
+        <div className="flex flex-col gap-2.5 text-xs">
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.must_change_password} onChange={(e) => set({ must_change_password: e.target.checked })} /> Must change password at next sign-in</label>
           {user && <label className="flex items-center gap-2 cursor-pointer border-t border-slate-100 pt-2"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active user (can authenticate and sign in)</label>}
           {user && <label className="flex items-center gap-2 cursor-pointer border-t border-slate-100 pt-2"><input type="checkbox" checked={form.reset_mfa} onChange={(e) => set({ reset_mfa: e.target.checked })} /> Reset multi-factor authentication (requires re-enrolment)</label>}
@@ -303,7 +324,7 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
           <AssignmentEditor branches={branches.data} roles={roles.data} value={form.assignments} onToggle={toggleRole} />
         )}
       </Card>
-      {err?.errors.assignments?.[0] && <div className="text-[11px] text-[var(--status-red)]">{err.errors.assignments[0]}</div>}
+      {err?.errors.assignments?.[0] && <div className="text-xs text-rose-600 font-semibold">{err.errors.assignments[0]}</div>}
 
       {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
 
@@ -327,11 +348,11 @@ function AssignmentEditor({ branches, roles, value, onToggle }: { branches: Admi
       <tbody>
         {branches.map((b) => (
           <tr key={b.id}>
-            <td className="align-top whitespace-nowrap"><b className="tabular">{b.code}</b><div className="text-[10.5px] text-[var(--text-muted)]">{b.name}{!b.is_active && ' · inactive'}</div></td>
+            <td className="align-top whitespace-nowrap"><b className="tabular font-semibold">{b.code}</b><div className="text-xs text-slate-500 font-mono">{b.name}{!b.is_active && ' · inactive'}</div></td>
             <td>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 {roles.map((r) => (
-                  <label key={r.id} className="flex items-center gap-1.5 text-[12px] whitespace-nowrap">
+                  <label key={r.id} className="flex items-center gap-1.5 text-xs whitespace-nowrap cursor-pointer">
                     <input type="checkbox" checked={(value[b.id] ?? []).includes(r.name)} onChange={(e) => onToggle(b.id, r.name, e.target.checked)} /> {r.name}
                   </label>
                 ))}
@@ -363,8 +384,8 @@ function RolesTab() {
           {roles.isError && <div className="p-3"><InlineError error={roles.error} /></div>}
           {(roles.data ?? []).map((r) => (
             <button key={r.id} type="button" onClick={() => { setSelectedId(r.id); setCreating(false) }} className={`w-full text-left px-3 py-2 border-b border-[var(--border)] last:border-b-0 ${selected?.id === r.id && !creating ? 'bg-[color-mix(in_srgb,var(--color-navy)_10%,var(--card))]' : 'hover:bg-[var(--surface-2)]'}`}>
-              <div className="text-[12.5px] font-semibold">{r.name}</div>
-              <div className="text-[10.5px] text-[var(--text-muted)] tabular">{r.permissions.length} permissions · {r.users_count} user{r.users_count === 1 ? '' : 's'}</div>
+              <div className="text-sm font-semibold text-slate-900">{r.name}</div>
+              <div className="text-xs text-slate-500 font-mono tabular">{r.permissions.length} permissions · {r.users_count} user{r.users_count === 1 ? '' : 's'}</div>
             </button>
           ))}
         </div>
@@ -427,7 +448,7 @@ function RoleEditor({ role, groups, onDone, onCancel }: { role?: AdminRole; grou
     <div className="space-y-3">
       <div className="flex items-end gap-3">
         {role ? (
-          <div><h2 className="text-[15px] font-bold">{role.name}</h2><p className="text-[11.5px] text-[var(--text-muted)] tabular">{role.users_count} user{role.users_count === 1 ? '' : 's'} hold this role · {chosen.size} permissions</p></div>
+          <div><h2 className="text-sm font-bold text-slate-900">{role.name}</h2><p className="text-xs text-slate-500 font-mono tabular">{role.users_count} user{role.users_count === 1 ? '' : 's'} hold this role · {chosen.size} permissions</p></div>
         ) : (
           <Field label="Role name" required className="w-72" error={err?.errors.name?.[0]}><Input value={name} onChange={(e) => setName(e.target.value)} autoFocus /></Field>
         )}
@@ -443,14 +464,14 @@ function RoleEditor({ role, groups, onDone, onCancel }: { role?: AdminRole; grou
           const some = !all && g.permissions.some((p) => chosen.has(p))
           return (
             <div key={g.group} className="px-4 py-3">
-              <label className="flex items-center gap-2 text-[12.5px] font-bold mb-2">
+              <label className="flex items-center gap-2 text-xs font-bold mb-2 cursor-pointer">
                 <input type="checkbox" checked={all} ref={(el) => { if (el) el.indeterminate = some }} onChange={(e) => toggleGroup(g, e.target.checked)} />
                 {titleCase(g.group)}
-                <span className="text-[10.5px] font-normal text-[var(--text-muted)] tabular">{g.permissions.filter((p) => chosen.has(p)).length}/{g.permissions.length}</span>
+                <span className="text-xs font-normal text-slate-400 tabular font-mono">{g.permissions.filter((p) => chosen.has(p)).length}/{g.permissions.length}</span>
               </label>
               <div className="grid gap-x-4 gap-y-1 sm:grid-cols-2 xl:grid-cols-3">
                 {g.permissions.map((p) => (
-                  <label key={p} className="flex items-center gap-1.5 text-[12px] tabular">
+                  <label key={p} className="flex items-center gap-1.5 text-xs tabular cursor-pointer">
                     <input type="checkbox" checked={chosen.has(p)} onChange={(e) => toggle(p, e.target.checked)} /> {p}
                   </label>
                 ))}

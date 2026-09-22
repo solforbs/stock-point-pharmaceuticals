@@ -100,7 +100,7 @@ export default function SimulatorTab() {
               <Field label="Discount %" hint="As requested at the till."><Input inputMode="decimal" className="tabular" value={form.requested_discount_pct} onChange={(e) => set({ requested_discount_pct: decimalInput(e.target.value) })} /></Field>
               <Field label="Price as at"><Input type="date" value={form.quote_date} onChange={(e) => set({ quote_date: e.target.value })} /></Field>
             </div>
-            <p className="text-[10.5px] text-[var(--text-muted)]">Discount limits use your own roles’ authority, as they would at your till.</p>
+            <p className="text-xs text-slate-500">Discount limits use your own roles' authority, as they would at your till.</p>
             <Button variant="primary" className="w-full" disabled={!form.product_id || !form.uom_id || !storeId || !Number(form.quantity) || run.isPending} onClick={() => run.mutate()}>
               <Play size={12} /> {run.isPending ? 'Pricing…' : 'Run the engine'}
             </Button>
@@ -114,8 +114,8 @@ export default function SimulatorTab() {
           ) : (
             <div className="p-4 space-y-4">
               <div className="flex flex-wrap items-center gap-3">
-                <div className="text-[22px] font-extrabold tabular"><MoneyCell value={line.unit_price} symbol /></div>
-                <span className="text-[12px] text-[var(--text-muted)]">per {line.uom_code} · {formatQty(line.quantity)} {line.uom_code} for <MoneyCell value={line.line_total} symbol className="font-semibold text-[var(--text)]" /> incl. tax</span>
+                <div className="text-2xl font-extrabold tabular font-mono"><MoneyCell value={line.unit_price} symbol /></div>
+                <span className="text-xs text-slate-500">per {line.uom_code} · {formatQty(line.quantity)} {line.uom_code} for <MoneyCell value={line.line_total} symbol className="font-semibold text-slate-900" /> incl. tax</span>
                 <StatusBadge status={line.price_source} tone="blue" label={titleCase(line.price_source)} />
                 {Number(line.bonus_qty) > 0 && <StatusBadge status="BONUS" tone="teal" label={`+${formatQty(line.bonus_qty)} free`} />}
                 {line.floor_breached && <StatusBadge status="FAILED" label="Below margin floor" />}
@@ -136,9 +136,9 @@ export default function SimulatorTab() {
                 ]}
               />
               <div>
-                <h3 className="text-[12px] font-bold mb-1.5">How the engine got there</h3>
-                <ol className="space-y-1 text-[12px] list-decimal pl-5">
-                  {line.explain.map((e, i) => <li key={i} className="text-[var(--text-secondary)]">{e}</li>)}
+                <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wide mb-1.5">How the engine got there</h3>
+                <ol className="space-y-1 text-xs list-decimal pl-5">
+                  {line.explain.map((e, i) => <li key={i} className="text-slate-600">{e}</li>)}
                 </ol>
               </div>
             </div>
@@ -162,7 +162,7 @@ function WhatIfCalculator() {
   const n = (k: string) => (r?.[k] === null || r?.[k] === undefined ? null : String(r[k]))
 
   return (
-    <Card title="What-if calculator" actions={<span className="text-[11px] text-[var(--text-muted)]">Arithmetic only; no rules are read</span>}>
+    <Card title="What-if calculator" actions={<span className="text-xs text-slate-400">Arithmetic only; no rules are read</span>}>
       <div className="p-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
         <div className="grid grid-cols-3 gap-3 content-start">
           {([

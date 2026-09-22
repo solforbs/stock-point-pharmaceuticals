@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Box, ChevronRight, FlaskConical, PackageCheck, Plus, Settings2, Trash2 } from 'lucide-react'
+import { Box, FlaskConical, PackageCheck, Plus, Settings2, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DeleteRecordButton } from '../../components/DeleteRecordButton'
@@ -70,7 +70,7 @@ export default function ProductsPage() {
             render: (p) => {
               const free = Number(p.stock?.free_to_sell ?? 0)
               const low = Number(p.reorder_point) > 0 && free < Number(p.reorder_point)
-              return <span className={low ? 'text-[var(--status-red)] font-semibold' : ''} title={low ? `Below reorder point ${p.reorder_point}` : undefined}><QtyCell value={p.stock?.free_to_sell ?? '0'} /></span>
+              return <span className={low ? 'text-rose-700 font-semibold' : ''} title={low ? `Below reorder point ${p.reorder_point}` : undefined}><QtyCell value={p.stock?.free_to_sell ?? '0'} /></span>
             },
           },
           {
@@ -131,27 +131,38 @@ export default function ProductsPage() {
         parent="Inventory & Formulations"
         title="Medication & Product Catalogue"
         subtitle="The master list and the shelf in one place: every product with its pack size, stock by store, nearest expiry and last buying price. Use Export CSV for a spreadsheet copy."
-        actions={<><ProductCatalogueActions />{canCreate ? <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New product</PrimaryAction> : null}</>}
+        actions={
+          <>
+            <ProductCatalogueActions />
+            {canCreate ? (
+              <div id="tour-products-new">
+                <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New product</PrimaryAction>
+              </div>
+            ) : null}
+          </>
+        }
       />
-      <FilterBar>
-        <Field label="Search" className="w-72">
-          <Input placeholder="Name, code, SKU or generic" value={q} onChange={(e) => setQ(e.target.value)} />
-        </Field>
-        <Field label="Barcode (exact)" className="w-52">
-          <Input placeholder="Scan…" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
-        </Field>
-        {canSeeStock && (
-          <Field label="Stock" className="w-48">
-            <Select value={stockFilter} onChange={(e) => { setStockFilter(e.target.value); setPage(1) }}>
-              <option value="">All products</option>
-              <option value="in_stock">In stock</option>
-              <option value="out_of_stock">Out of stock</option>
-              <option value="below_reorder">Below reorder point</option>
-            </Select>
+      <div id="tour-products-filters">
+        <FilterBar>
+          <Field label="Search" className="w-full sm:w-72">
+            <Input placeholder="Name, code, SKU or generic" value={q} onChange={(e) => setQ(e.target.value)} />
           </Field>
-        )}
-      </FilterBar>
-      <div className="ui-card">
+          <Field label="Barcode (exact)" className="w-full sm:w-52">
+            <Input placeholder="Scan…" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+          </Field>
+          {canSeeStock && (
+            <Field label="Stock" className="w-full sm:w-48">
+              <Select value={stockFilter} onChange={(e) => { setStockFilter(e.target.value); setPage(1) }}>
+                <option value="">All products</option>
+                <option value="in_stock">In stock</option>
+                <option value="out_of_stock">Out of stock</option>
+                <option value="below_reorder">Below reorder point</option>
+              </Select>
+            </Field>
+          )}
+        </FilterBar>
+      </div>
+      <div id="tour-products-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data?.data}
@@ -268,7 +279,7 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
           <Field label="Safety stock"><Input inputMode="decimal" className="tabular" value={form.safety_stock} onChange={(e) => set({ safety_stock: e.target.value.replace(/[^\d.]/g, '') })} /></Field>
           <Field label="Lead time (days)"><Input inputMode="numeric" className="tabular" value={form.lead_time_days} onChange={(e) => set({ lead_time_days: e.target.value.replace(/\D/g, '') })} /></Field>
         </div>
-        <div className="flex flex-col gap-2 pt-2 text-[12px] border-t border-slate-100 mt-2">
+        <div className="flex flex-col gap-2 pt-2 text-xs border-t border-slate-100 mt-2">
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.pack_integrity} onChange={(e) => set({ pack_integrity: e.target.checked })} /> Pack integrity (never split a sealed pack)</label>
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.is_active} onChange={(e) => set({ is_active: e.target.checked })} /> Active in catalogue</label>
         </div>
@@ -341,7 +352,7 @@ function ProductDrawer({ id, onClose }: { id: string | null; onClose: () => void
               <tbody>
                 {(p.uoms ?? []).map((u) => (
                   <tr key={u.id}>
-                    <td className="font-semibold">{u.uom?.code} {u.is_base && <span className="text-[10px] text-[var(--text-muted)]">base</span>}</td>
+                    <td className="font-semibold">{u.uom?.code} {u.is_base && <span className="text-xs text-slate-400">base</span>}</td>
                     <td className="text-right tabular">{u.factor_to_base}</td>
                     <td>{u.is_sales ? 'Yes' : '—'}</td>
                     <td>{u.is_purchase ? 'Yes' : '—'}</td>
@@ -354,7 +365,7 @@ function ProductDrawer({ id, onClose }: { id: string | null; onClose: () => void
           </Card>
           <Card title="Prices">
             {(p.prices ?? []).length === 0 ? (
-              <div className="p-4 text-[12px] text-[var(--text-muted)]">No price-list rows; the default price applies.</div>
+              <div className="p-4 text-xs text-slate-500">No price-list rows; the default price applies.</div>
             ) : (
               <table className="ui-table">
                 <thead>
@@ -414,8 +425,8 @@ function ToggleSwitch({
       className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer text-left group"
     >
       <div className="flex-1 min-w-0">
-        <div className="text-[13px] font-semibold text-slate-800">{label}</div>
-        {hint && <div className="text-[11px] text-slate-500 font-medium mt-0.5">{hint}</div>}
+        <div className="text-sm font-semibold text-slate-800">{label}</div>
+        {hint && <div className="text-xs text-slate-500 font-medium mt-0.5">{hint}</div>}
       </div>
       <div
         className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ${
@@ -438,7 +449,7 @@ function FormCard({ icon, title, children }: { icon: React.ReactNode; title: str
     <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-100 bg-slate-50/60">
         <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600">{icon}</div>
-        <span className="text-[13px] font-bold text-slate-800 tracking-tight">{title}</span>
+        <span className="text-sm font-bold text-slate-800 tracking-tight">{title}</span>
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -491,18 +502,20 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
       subtitle="Register a new medicine or supply item in the catalogue"
       width={820}
       footer={
-        <div className="flex items-center justify-between gap-3 w-full">
-          <div className="flex-1">
+        <div className="flex items-center justify-between gap-2.5 w-full flex-wrap sm:flex-nowrap">
+          <div className="flex-1 min-w-full sm:min-w-0">
             {err && !Object.keys(err.errors).length && <InlineError error={create.error} />}
           </div>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button
-            variant="primary"
-            disabled={!canSubmit}
-            onClick={() => create.mutate()}
-          >
-            {create.isPending ? 'Saving…' : 'Create Product →'}
-          </Button>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button onClick={onClose}>Cancel</Button>
+            <Button
+              variant="primary"
+              disabled={!canSubmit}
+              onClick={() => create.mutate()}
+            >
+              {create.isPending ? 'Saving…' : 'Create Product →'}
+            </Button>
+          </div>
         </div>
       }
     >
@@ -525,7 +538,7 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
             </Field>
             <Field label="Default Price (per base unit)">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-slate-400 pointer-events-none">KES</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">KES</span>
                 <Input
                   inputMode="decimal"
                   className="tabular pl-11"
@@ -535,65 +548,65 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
                 />
               </div>
             </Field>
-          </div>
-        </FormCard>
-
-        {/* ── Card 2: Classification & Regulatory ──────────────── */}
-        <FormCard icon={<ChevronRight size={14} />} title="Classification & Regulatory">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Category">
-              <Select value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}>
-                <option value="">None</option>
-                {(categories.data ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>{c.code} · {c.name}</option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Dosage form">
-              <Select value={form.dosage_form_id} onChange={(e) => set({ dosage_form_id: e.target.value })}>
-                <option value="">None</option>
-                {(dosageForms.data ?? []).map((d) => (
-                  <option key={d.id} value={d.id}>{d.code} · {d.name}</option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Storage condition" hint="What cold-chain monitoring holds this product to.">
-              <Select value={form.storage_condition_id} onChange={(e) => set({ storage_condition_id: e.target.value })}>
-                <option value="">None</option>
-                {(storageConditions.data ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Tax Code" hint="VAT treatment; 'None' means 0% (untaxed).">
-              <Select value={form.tax_code_id} onChange={(e) => set({ tax_code_id: e.target.value })}>
-                <option value="">None (untaxed)</option>
-                {(taxCodes.data ?? []).map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.code} · {t.name}{t.rate_pct != null ? ` · ${Number(t.rate_pct)}%` : ''}
+            <Field label="Base Unit of Measure" required hint="Smallest non-splittable unit (tablet, mL, vial)" error={err?.errors.base_uom_id?.[0]}>
+              <Select
+                value={form.base_uom_id}
+                onChange={(e) => set({ base_uom_id: e.target.value })}
+              >
+                <option value="">Select base unit…</option>
+                {(uoms.data ?? []).map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.code} · {u.name}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="SKU" error={err?.errors.sku?.[0]}>
-              <Input value={form.sku} onChange={(e) => set({ sku: e.target.value })} placeholder="Internal stock-keeping unit" />
+          </div>
+        </FormCard>
+
+        {/* ── Card 2: Classification & Storage ─────────────────── */}
+        <FormCard icon={<Settings2 size={14} />} title="Classification & Storage">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Category">
+              <Select value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}>
+                <option value="">Select category…</option>
+                {(categories.data ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </Select>
             </Field>
-            <Field label="GTIN / Barcode">
-              <Input value={form.gtin} onChange={(e) => set({ gtin: e.target.value })} placeholder="Global Trade Item Number" />
+            <Field label="Dosage Form">
+              <Select value={form.dosage_form_id} onChange={(e) => set({ dosage_form_id: e.target.value })}>
+                <option value="">Select dosage form…</option>
+                {(dosageForms.data ?? []).map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Storage Condition">
+              <Select value={form.storage_condition_id} onChange={(e) => set({ storage_condition_id: e.target.value })}>
+                <option value="">Select condition…</option>
+                {(storageConditions.data ?? []).map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Tax Code">
+              <Select value={form.tax_code_id} onChange={(e) => set({ tax_code_id: e.target.value })}>
+                <option value="">Select tax…</option>
+                {(taxCodes.data ?? []).map((t) => (
+                  <option key={t.id} value={t.id}>{t.name ?? t.code}</option>
+                ))}
+              </Select>
             </Field>
           </div>
         </FormCard>
 
-        {/* ── Card 3: Inventory Controls ───────────────────────── */}
-        <FormCard icon={<Settings2 size={14} />} title="Inventory Controls">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            <Field label="Base UOM" required hint="Immutable once stock moves." error={err?.errors.base_uom_id?.[0]}>
-              <Select value={form.base_uom_id} onChange={(e) => set({ base_uom_id: e.target.value })}>
-                <option value="">Choose base unit…</option>
-                {(uoms.data ?? []).map((u) => (
-                  <option key={u.id} value={u.id}>{u.code} · {u.name}</option>
-                ))}
-              </Select>
+        {/* ── Card 3: Inventory Control & Safety Levels ───────────── */}
+        <FormCard icon={<PackageCheck size={14} />} title="Inventory Control & Safety Levels">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <Field label="SKU / Barcode">
+              <Input value={form.sku} onChange={(e) => set({ sku: e.target.value })} placeholder="SKU code" />
             </Field>
             <Field label="Reorder Point">
               <Input inputMode="decimal" className="tabular" value={form.reorder_point} onChange={(e) => set({ reorder_point: e.target.value })} />
@@ -607,7 +620,7 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
           </div>
 
           {/* Toggle switches replacing native checkboxes */}
-          <div className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Product Flags</div>
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Product Flags</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <ToggleSwitch
               checked={form.is_discrete}
@@ -635,23 +648,23 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
 
         {/* ── Card 4: Additional UOMs ──────────────────────────── */}
         <FormCard icon={<Box size={14} />} title="Additional Units of Measure">
-          <p className="text-[12px] text-slate-500 font-medium mb-3">
+          <p className="text-xs text-slate-500 font-medium mb-3">
             The base UOM row is created automatically with factor 1. Add extra units (e.g. strips, boxes).
           </p>
 
           {rows.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-5 text-center mb-3">
               <PackageCheck size={22} className="text-slate-300 mx-auto mb-1.5" />
-              <p className="text-[12.5px] text-slate-500 font-medium">No additional UOMs added yet.</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Click below to add a strip, box, or carton.</p>
+              <p className="text-xs text-slate-600 font-semibold">No additional UOMs added yet.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Click below to add a strip, box, or carton.</p>
             </div>
           ) : (
             <div className="space-y-2 mb-3">
               {/* Column headers */}
               <div className="grid grid-cols-[1fr_100px_1fr_auto] gap-2 px-1">
-                <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">Unit</span>
-                <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">× Base</span>
-                <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">Barcode</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Unit</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">× Base</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Barcode</span>
                 <span className="w-7" />
               </div>
 
@@ -708,7 +721,7 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
                             setRows(rows.map((x, j) => (j === i ? { ...x, [key]: !x[key] } : x)))
                           }
                         }}
-                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${
                           r[key]
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-white text-slate-500 border-slate-200 hover:border-blue-400 hover:text-blue-600'

@@ -36,31 +36,31 @@ export default function TaxCentrePage() {
     { key: 'total', header: 'Total', align: 'right', render: (r) => <MoneyCell value={r.grand_total} />, sortValue: (r) => Number(r.grand_total) },
     { key: 'posted', header: 'Posted', render: (r) => formatDateTime(r.posted_at), sortValue: (r) => r.posted_at ?? '' },
     { key: 'status', header: 'eTIMS', render: (r) => <StatusBadge status={r.etims_status} tone={r.etims_status === 'SUBMITTED' ? 'green' : r.etims_status === 'FAILED' ? 'red' : r.etims_status === 'PENDING' ? 'amber' : 'slate'} /> },
-    { key: 'control', header: 'Control code / invoice no.', render: (r) => <span className="tabular text-[11.5px]">{r.etims_control_code ?? '—'}{r.etims_invoice_number ? ` · ${r.etims_invoice_number}` : ''}</span> },
+    { key: 'control', header: 'Control code / invoice no.', render: (r) => <span className="tabular font-mono text-xs text-slate-700">{r.etims_control_code ?? '—'}{r.etims_invoice_number ? ` · ${r.etims_invoice_number}` : ''}</span> },
     { key: 'submitted', header: 'Submitted', render: (r) => formatDateTime(r.etims_submitted_at) },
-    { key: 'error', header: 'Error', render: (r) => <span className="text-[11px] text-[var(--status-red)] break-words">{r.etims_error ?? ''}</span> },
+    { key: 'error', header: 'Error', render: (r) => <span className="text-xs text-rose-600 break-words">{r.etims_error ?? ''}</span> },
     { key: 'act', header: '', align: 'right', render: (r) => (r.etims_status !== 'SUBMITTED' ? <Button size="sm" disabled={retry.isPending} onClick={() => retry.mutate(r)}><RefreshCw size={12} /> Retry</Button> : null) },
   ]
 
   return (
     <Page>
       <PageHeader parent="Finance" title="Tax Centre" subtitle={s ? `eTIMS ${s.enabled ? `enabled (${s.driver} driver)` : 'not enabled on this server'}. Sales post whether or not KRA answers; this queue is what is still outstanding.` : 'eTIMS queue'} actions={<Button size="sm" onClick={() => queue.refetch()}><RefreshCw size={12} /> Refresh</Button>} />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div id="tour-tax-status-cards" className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {STATUSES.map((st) => {
           const n = s ? s[st.toLowerCase() as 'failed' | 'pending' | 'submitted' | 'not_configured'] : null
           const color = st === 'FAILED' ? 'var(--status-red)' : st === 'PENDING' ? 'var(--status-amber)' : st === 'SUBMITTED' ? 'var(--status-green)' : 'var(--status-slate)'
           return (
-            <button key={st} type="button" onClick={() => setStatus(st)} className={`ui-card p-3 text-left border-l-4 ${status === st ? 'ring-2 ring-[var(--color-navy)]' : ''}`} style={{ borderLeftColor: color }}>
+            <button key={st} type="button" onClick={() => setStatus(st)} className={`ui-card p-3 text-left border-l-4 ${status === st ? 'ring-2 ring-blue-600' : ''}`} style={{ borderLeftColor: color }}>
               <div className="ui-label !mb-0.5">{titleCase(st)}</div>
-              <div className="text-[22px] font-extrabold tabular">{n ?? '…'}</div>
+              <div className="text-2xl font-bold tabular text-slate-900">{n ?? '…'}</div>
             </button>
           )
         })}
       </div>
-      <div className="ui-card">
+      <div id="tour-tax-queue-table" className="ui-card">
         <DataTable columns={columns} rows={queue.data?.data} rowKey={(r) => `${r.type}-${r.id}`} isLoading={queue.isLoading} error={queue.error} onRetry={() => queue.refetch()} emptyTitle={`Nothing ${titleCase(status).toLowerCase()}`} />
       </div>
-      <p className="text-[11px] text-[var(--text-muted)] mt-2">Tax codes, effective-dated rates and VAT return preparation live in Reports (VAT return) until their admin endpoints exist.</p>
+      <p className="text-xs text-slate-500 mt-3">Tax codes, effective-dated rates and VAT return preparation live in Reports (VAT return) until their admin endpoints exist.</p>
     </Page>
   )
 }

@@ -69,20 +69,20 @@ export function QuantityInput({
           onKeyDown={onKeyDown}
           onFocus={(e) => e.target.select()}
           aria-invalid={!valid || integerViolation || overMax}
-          className={`ui-input tabular text-right ${compact ? 'h-7 text-[12px]' : ''} ${!valid || integerViolation ? '!border-[var(--status-red)]' : overMax ? '!border-[var(--status-amber)]' : ''}`}
+          className={`ui-input tabular text-right ${compact ? 'h-7 text-xs' : ''} ${!valid || integerViolation ? '!border-rose-500' : overMax ? '!border-amber-500' : ''}`}
           style={{ width: compact ? 64 : undefined }}
         />
-        <span className="text-[11px] text-[var(--text-muted)] shrink-0">{uomCode}</span>
+        <span className="text-xs text-slate-500 shrink-0">{uomCode}</span>
       </div>
-      <div className="text-[10.5px] mt-0.5 leading-tight min-h-[13px]">
+      <div className="text-xs mt-0.5 leading-tight min-h-[16px]">
         {integerViolation ? (
-          <span className="text-[var(--status-red)]">Whole units only</span>
+          <span className="text-rose-600 font-medium">Whole units only</span>
         ) : overMax ? (
-          <span className="text-[#b45309]">
+          <span className="text-amber-700 font-medium">
             Only {formatQty(max)} {baseUomCode} free to sell
           </span>
         ) : showConversion ? (
-          <span className="text-[var(--text-muted)] tabular">
+          <span className="text-slate-500 tabular">
             {formatQty(value)} {uomCode} = {formatQty(qtyBase)} {baseUomCode}
           </span>
         ) : null}

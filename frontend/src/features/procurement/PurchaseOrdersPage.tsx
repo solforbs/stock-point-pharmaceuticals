@@ -60,7 +60,7 @@ export default function PurchaseOrdersPage() {
   })
 
   const columns: Column<PurchaseOrder>[] = [
-    { key: 'doc', header: 'Document', render: (po) => <span className="font-semibold tabular text-[var(--color-navy)]">{po.doc_number}</span>, sortValue: (po) => po.doc_number },
+    { key: 'doc', header: 'Document', render: (po) => <span className="font-semibold tabular text-blue-600 font-mono">{po.doc_number}</span>, sortValue: (po) => po.doc_number },
     { key: 'supplier', header: 'Supplier', render: (po) => po.supplier?.name ?? '—', sortValue: (po) => po.supplier?.name ?? '' },
     { key: 'status', header: 'Status', render: (po) => <StatusBadge status={po.status} /> },
     { key: 'lines', header: 'Lines', align: 'right', render: (po) => <span className="tabular">{po.lines_count ?? '—'}</span> },
@@ -86,23 +86,27 @@ export default function PurchaseOrdersPage() {
         subtitle="DRAFT → APPROVED → SENT. Goods receipting completes procurement."
         actions={
           canCreate ? (
-            <PrimaryAction onClick={() => setCreating(true)}>
-              New Purchase Order
-            </PrimaryAction>
+            <div id="tour-po-new">
+              <PrimaryAction onClick={() => setCreating(true)}>
+                New Purchase Order
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
       <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </Select>
-        </Field>
+        <div id="tour-po-status" className="w-full sm:w-60">
+          <Field label="Status">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </Select>
+          </Field>
+        </div>
       </FilterBar>
-      <div className="ui-card">
+      <div id="tour-po-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={list.data?.data}

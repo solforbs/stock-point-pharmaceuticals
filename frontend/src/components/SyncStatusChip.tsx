@@ -39,7 +39,7 @@ export function SyncStatusChip({
   if (invert) {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/20 text-white border border-white/30 backdrop-blur-xs ${className}`}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/20 text-white border border-white/30 backdrop-blur-xs ${className}`}
         title={title}
       >
         <span
@@ -54,7 +54,7 @@ export function SyncStatusChip({
   const color = offline ? 'var(--status-red)' : pending > 0 ? 'var(--status-amber)' : 'var(--status-green)'
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${className}`}
       style={{ color, borderColor: color, background: `color-mix(in srgb, ${color} 10%, transparent)` }}
       title={title}
     >

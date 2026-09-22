@@ -55,22 +55,35 @@ export default function RecallsPage() {
   })
 
   const columns: Column<Recall>[] = [
-    { key: 'doc', header: 'Recall', render: (r) => <span className="font-semibold tabular">{r.doc_number}</span>, sortValue: (r) => r.doc_number },
-    { key: 'source', header: 'Source', render: (r) => <>{titleCase(r.source)}{r.external_reference && <div className="text-[10.5px] text-[var(--text-muted)] tabular">{r.external_reference}</div>}</> },
+    { key: 'doc', header: 'Recall', render: (r) => <span className="font-semibold font-mono tabular">{r.doc_number}</span>, sortValue: (r) => r.doc_number },
+    { key: 'source', header: 'Source', render: (r) => <>{titleCase(r.source)}{r.external_reference && <div className="text-xs text-slate-500 font-mono tabular">{r.external_reference}</div>}</> },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} tone={r.status === 'CLOSED' ? 'slate' : 'purple'} /> },
-    { key: 'batches', header: 'Batches', align: 'right', render: (r) => <span className="tabular">{r.batches_count ?? '—'}</span> },
-    { key: 'customers', header: 'Customers', align: 'right', render: (r) => <span className="tabular">{r.customers_count ?? '—'}</span> },
-    { key: 'eff', header: 'Effectiveness', align: 'right', render: (r) => <span className="tabular">{r.effectiveness_pct ? formatPct(r.effectiveness_pct) : '—'}</span> },
+    { key: 'batches', header: 'Batches', align: 'right', render: (r) => <span className="tabular font-mono">{r.batches_count ?? '—'}</span> },
+    { key: 'customers', header: 'Customers', align: 'right', render: (r) => <span className="tabular font-mono">{r.customers_count ?? '—'}</span> },
+    { key: 'eff', header: 'Effectiveness', align: 'right', render: (r) => <span className="tabular font-mono">{r.effectiveness_pct ? formatPct(r.effectiveness_pct) : '—'}</span> },
     { key: 'initiated', header: 'Initiated', render: (r) => formatDateTime(r.initiated_at), sortValue: (r) => r.initiated_at ?? '' },
   ]
 
   return (
     <Page>
-      <PageHeader parent="Quality & Compliance" title="Recalls" subtitle="Initiate, scope, block, notify, recover, reconcile, disposition and close — every step from posted data." actions={canInitiate ? <Button variant="danger" onClick={() => setCreating(true)}>Initiate recall</Button> : null} />
-      <FilterBar>
-        <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option>{STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}</Select></Field>
-      </FilterBar>
-      <div className="ui-card">
+      <PageHeader
+        parent="Quality & Compliance"
+        title="Recalls"
+        subtitle="Initiate, scope, block, notify, recover, reconcile, disposition and close — every step from posted data."
+        actions={
+          canInitiate ? (
+            <div id="tour-recalls-initiate">
+              <Button variant="danger" onClick={() => setCreating(true)}>Initiate recall</Button>
+            </div>
+          ) : null
+        }
+      />
+      <div id="tour-recalls-filter">
+        <FilterBar>
+          <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option>{STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}</Select></Field>
+        </FilterBar>
+      </div>
+      <div id="tour-recalls-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(r) => r.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(r) => setParams({ recall: r.id })} selectedKey={selectedId} emptyTitle="No recalls" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
@@ -88,18 +101,18 @@ export default function RecallsPage() {
               {matches.map((b) => {
                 const chosen = batches.some((x) => x.id === b.id)
                 return (
-                  <label key={b.id} className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] last:border-b-0 text-[12px] cursor-pointer hover:bg-[var(--surface-2)]">
+                  <label key={b.id} className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-100 last:border-b-0 text-xs cursor-pointer hover:bg-slate-50">
                     <input type="checkbox" checked={chosen} onChange={() => setBatches(chosen ? batches.filter((x) => x.id !== b.id) : [...batches, b])} />
-                    <span className="tabular font-semibold">{b.batch_number}</span>
-                    <span className="flex-1 truncate">{b.product?.name}</span>
-                    <span className="text-[var(--text-muted)]">exp {formatDate(b.expiry_date)}</span>
+                    <span className="tabular font-semibold font-mono">{b.batch_number}</span>
+                    <span className="flex-1 truncate text-slate-800">{b.product?.name}</span>
+                    <span className="text-slate-500">exp {formatDate(b.expiry_date)}</span>
                     <StatusBadge status={b.status} />
                   </label>
                 )
               })}
-              {matches.length === 0 && <div className="px-3 py-2 text-[11.5px] text-[var(--text-muted)]">{batchSearch.isLoading ? 'Loading…' : 'No batches match.'}</div>}
+              {matches.length === 0 && <div className="px-3 py-2 text-xs text-slate-500">{batchSearch.isLoading ? 'Loading…' : 'No batches match.'}</div>}
             </div>
-            <div className="text-[11px] text-[var(--text-muted)] mt-1">{batches.length} selected: {batches.map((b) => b.batch_number).join(', ')}</div>
+            <div className="text-xs text-slate-500 mt-1">{batches.length} selected: {batches.map((b) => b.batch_number).join(', ')}</div>
           </Field>
           {create.isError && <InlineError error={create.error} />}
           <div className="flex justify-end gap-2">
@@ -154,7 +167,7 @@ function RecallDrawer({ id, onClose }: { id: string | null; onClose: () => void 
         <div className="space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
             <StatusBadge status={r.status} tone={r.status === 'CLOSED' ? 'slate' : 'purple'} />
-            <span className="text-[12.5px]">{r.reason}</span>
+            <span className="text-sm text-slate-700">{r.reason}</span>
           </div>
           <div className="grid grid-cols-4 gap-3 text-center">
             {[
@@ -163,18 +176,18 @@ function RecallDrawer({ id, onClose }: { id: string | null; onClose: () => void 
               ['Disposed', formatQty(t.disposed_qty)],
               ['Effectiveness', t.effectiveness_pct ? formatPct(t.effectiveness_pct) : '—'],
             ].map(([label, value]) => (
-              <div key={label} className="ui-card p-3"><div className="ui-label !mb-0.5">{label}</div><div className="text-[18px] font-extrabold tabular">{value}</div></div>
+              <div key={label} className="ui-card p-3"><div className="ui-label !mb-0.5">{label}</div><div className="text-xl font-bold tabular text-slate-900">{value}</div></div>
             ))}
           </div>
 
           {canAct && next && (
             <Card title="Next step">
               <div className="p-4 flex flex-wrap items-end gap-3">
-                {next === 'block' && <><p className="flex-1 text-[12px]">Block every batch in scope: status becomes RECALLED everywhere and the POS cannot touch it.</p><Button variant="danger" disabled={act.isPending} onClick={() => act.mutate({ step: 'block' })}>Block batches</Button></>}
+                {next === 'block' && <><p className="flex-1 text-sm text-slate-600">Block every batch in scope: status becomes RECALLED everywhere and the POS cannot touch it.</p><Button variant="danger" disabled={act.isPending} onClick={() => act.mutate({ step: 'block' })}>Block batches</Button></>}
                 {next === 'notify' && <><Field label="Notification reference" className="flex-1"><Input value={notifyRef} onChange={(e) => setNotifyRef(e.target.value)} placeholder="LETTERS-2026-09-17" /></Field><Button variant="primary" disabled={act.isPending} onClick={() => act.mutate({ step: 'notify', body: { notification_reference: notifyRef || null } })}>Mark customers notified</Button></>}
-                {next === 'reconcile' && <><p className="flex-1 text-[12px]">Customer returns citing this recall count as recovered. Reconcile when recoveries are complete to fix the effectiveness percentage.</p><Button variant="primary" disabled={act.isPending} onClick={() => act.mutate({ step: 'reconcile' })}>Reconcile</Button></>}
+                {next === 'reconcile' && <><p className="flex-1 text-sm text-slate-600">Customer returns citing this recall count as recovered. Reconcile when recoveries are complete to fix the effectiveness percentage.</p><Button variant="primary" disabled={act.isPending} onClick={() => act.mutate({ step: 'reconcile' })}>Reconcile</Button></>}
                 {next === 'disposition' && <><Field label="Disposition" className="flex-1"><Select value={dispositionChoice} onChange={(e) => setDispositionChoice(e.target.value)}><option value="DESTROY">Destroy (witnessed waste disposal)</option><option value="RETURN_TO_SUPPLIER">Return to supplier</option></Select></Field><Button variant="primary" disabled={act.isPending} onClick={() => act.mutate({ step: 'disposition', body: { disposition: dispositionChoice } })}>Set disposition</Button></>}
-                {next === 'close' && <><p className="flex-1 text-[12px]">Dispose of the recovered and on-hand stock first ({r.disposition === 'DESTROY' ? <Link to={`/quality/waste?recall=${r.id}`} className="text-[var(--color-navy)] underline">create the waste disposal</Link> : <Link to="/sell/returns?tab=supplier" className="text-[var(--color-navy)] underline">raise the supplier return</Link>}), then close.</p><Button variant="primary" disabled={act.isPending} onClick={() => act.mutate({ step: 'close' })}>Close recall</Button></>}
+                {next === 'close' && <><p className="flex-1 text-sm text-slate-600">Dispose of the recovered and on-hand stock first ({r.disposition === 'DESTROY' ? <Link to={`/quality/waste?recall=${r.id}`} className="text-blue-600 font-medium hover:underline">create the waste disposal</Link> : <Link to="/sell/returns?tab=supplier" className="text-blue-600 font-medium hover:underline">raise the supplier return</Link>}), then close.</p><Button variant="primary" disabled={act.isPending} onClick={() => act.mutate({ step: 'close' })}>Close recall</Button></>}
               </div>
             </Card>
           )}
@@ -185,16 +198,16 @@ function RecallDrawer({ id, onClose }: { id: string | null; onClose: () => void 
               <tbody>
                 {t.batches.map((b) => (
                   <tr key={b.id}>
-                    <td className="tabular font-semibold">{b.batch?.batch_number ?? b.batch_id.slice(0, 8)}{b.batch && <div className="text-[10.5px] text-[var(--text-muted)]"><StatusBadge status={b.batch.status} /></div>}</td>
+                    <td className="tabular font-semibold font-mono">{b.batch?.batch_number ?? b.batch_id.slice(0, 8)}{b.batch && <div className="text-xs text-slate-500"><StatusBadge status={b.batch.status} /></div>}</td>
                     <td>{b.product?.name ?? '—'}</td>
                     <td>{titleCase(b.status_before) || '—'}</td>
                     <td className="text-right"><QtyCell value={b.on_hand_at_scope} /></td>
                     <td className="text-right"><QtyCell value={b.on_hand_now} /></td>
                     <td className="text-right"><QtyCell value={b.distributed_qty} /></td>
                     <td className="text-right"><QtyCell value={b.recovered_qty} /></td>
-                    <td className="text-right"><QtyCell value={b.outstanding_qty} className={Number(b.outstanding_qty) > 0 ? 'text-[var(--status-red)] font-bold' : ''} /></td>
+                    <td className="text-right"><QtyCell value={b.outstanding_qty} className={Number(b.outstanding_qty) > 0 ? 'text-rose-600 font-bold' : ''} /></td>
                     <td className="text-right"><QtyCell value={b.disposed_qty} /></td>
-                    <td className="tabular text-[11px]">{b.stock_by_store.map((s) => `${s.store_code ?? s.store_id.slice(0, 6)} ${formatQty(s.on_hand)}`).join(', ') || '—'}</td>
+                    <td className="tabular font-mono text-xs text-slate-600">{b.stock_by_store.map((s) => `${s.store_code ?? s.store_id.slice(0, 6)} ${formatQty(s.on_hand)}`).join(', ') || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -207,10 +220,10 @@ function RecallDrawer({ id, onClose }: { id: string | null; onClose: () => void 
               <tbody>
                 {t.customers.map((c) => (
                   <tr key={c.id}>
-                    <td className="font-semibold">{c.customer_name_snapshot}{c.customer_id && <Link to={`/customers/list?customer=${c.customer_id}`} className="ml-1 text-[10.5px] text-[var(--color-navy)] underline">open</Link>}</td>
-                    <td className="text-[11.5px]">{c.contact_snapshot ?? '—'}</td>
+                    <td className="font-semibold">{c.customer_name_snapshot}{c.customer_id && <Link to={`/customers/list?customer=${c.customer_id}`} className="ml-1.5 text-xs text-blue-600 font-medium hover:underline">open</Link>}</td>
+                    <td className="text-xs text-slate-600">{c.contact_snapshot ?? '—'}</td>
                     <td className="text-right"><QtyCell value={c.qty_distributed} /></td>
-                    <td className="text-right"><QtyCell value={c.qty_recovered} className={Number(c.qty_recovered) >= Number(c.qty_distributed) ? 'text-[var(--status-green)] font-bold' : ''} /></td>
+                    <td className="text-right"><QtyCell value={c.qty_recovered} className={Number(c.qty_recovered) >= Number(c.qty_distributed) ? 'text-emerald-600 font-bold' : ''} /></td>
                     <td>{c.notified_at ? <span className="tabular">{formatDateTime(c.notified_at)}{c.notification_reference ? ` · ${c.notification_reference}` : ''}</span> : <StatusBadge status="PENDING" label="Not yet" />}</td>
                   </tr>
                 ))}
@@ -225,17 +238,17 @@ function RecallDrawer({ id, onClose }: { id: string | null; onClose: () => void 
         {t && r && (
           <div className="space-y-6" id="recall-letters">
             {t.customers.map((c) => (
-              <div key={c.id} className="border-b border-dashed border-[var(--border-strong)] pb-5 text-[12.5px]">
-                <div className="font-bold">To: {c.customer_name_snapshot}</div>
-                <div className="text-[var(--text-muted)]">{c.contact_snapshot ?? 'contact on file'}</div>
+              <div key={c.id} className="border-b border-dashed border-slate-300 pb-5 text-sm">
+                <div className="font-bold text-slate-900">To: {c.customer_name_snapshot}</div>
+                <div className="text-slate-500">{c.contact_snapshot ?? 'contact on file'}</div>
                 <p className="mt-2"><b>URGENT PRODUCT RECALL — {r.doc_number}{r.external_reference ? ` (${r.external_reference})` : ''}</b></p>
                 <p className="mt-1">Reason: {r.reason}</p>
                 <p className="mt-1">Our records show you received <b>{formatQty(c.qty_distributed)}</b> base units of the affected batch(es): {t.batches.map((b) => `${b.batch?.batch_number ?? b.batch_id.slice(0, 8)} (${b.product?.name ?? ''})`).join(', ')}.</p>
                 <p className="mt-1">Please quarantine any remaining stock immediately, stop dispensing or selling it, and return it to Stockpoint Pharma quoting this recall number. A credit note will be issued on receipt.</p>
-                <p className="mt-1 text-[var(--text-muted)]">Issued {formatDate(new Date().toISOString())} · Stockpoint Pharma Quality Assurance</p>
+                <p className="mt-1 text-slate-500">Issued {formatDate(new Date().toISOString())} · Stockpoint Pharma Quality Assurance</p>
               </div>
             ))}
-            {t.customers.length === 0 && <p className="text-[var(--text-muted)]">No customers received this stock.</p>}
+            {t.customers.length === 0 && <p className="text-slate-500">No customers received this stock.</p>}
           </div>
         )}
       </Modal>

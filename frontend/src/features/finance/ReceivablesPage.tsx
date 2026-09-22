@@ -23,14 +23,14 @@ export default function ReceivablesPage() {
   const ageing = useQuery({ queryKey: ['finance', 'ar-ageing'], queryFn: () => apiGet<ArAgeing>('/api/finance/ar-ageing') })
 
   const columns: Column<ArAgeingRow>[] = [
-    { key: 'name', header: 'Customer', render: (r) => <><div className="font-semibold">{r.name}</div><div className="text-[10.5px] text-[var(--text-muted)]">{r.code} · terms {r.payment_terms_days ?? 0} d</div></>, sortValue: (r) => r.name },
+    { key: 'name', header: 'Customer', render: (r) => <><div className="font-semibold text-slate-900">{r.name}</div><div className="text-xs text-slate-500 font-mono">{r.code} · terms {r.payment_terms_days ?? 0} d</div></>, sortValue: (r) => r.name },
     { key: 'current', header: 'Current', align: 'right', render: (r) => <MoneyCell value={r.current} />, sortValue: (r) => Number(r.current) },
     { key: 'd1', header: '1–30', align: 'right', render: (r) => <MoneyCell value={r.d1_30} />, sortValue: (r) => Number(r.d1_30) },
-    { key: 'd31', header: '31–60', align: 'right', render: (r) => <MoneyCell value={r.d31_60} className={Number(r.d31_60) > 0 ? 'text-[#b45309]' : ''} />, sortValue: (r) => Number(r.d31_60) },
-    { key: 'd61', header: '61–90', align: 'right', render: (r) => <MoneyCell value={r.d61_90} className={Number(r.d61_90) > 0 ? 'text-[#b45309]' : ''} />, sortValue: (r) => Number(r.d61_90) },
-    { key: 'd90', header: '90+', align: 'right', render: (r) => <MoneyCell value={r.d90_plus} className={Number(r.d90_plus) > 0 ? 'text-[var(--status-red)] font-bold' : ''} />, sortValue: (r) => Number(r.d90_plus) },
+    { key: 'd31', header: '31–60', align: 'right', render: (r) => <MoneyCell value={r.d31_60} className={Number(r.d31_60) > 0 ? 'text-amber-700 font-semibold' : ''} />, sortValue: (r) => Number(r.d31_60) },
+    { key: 'd61', header: '61–90', align: 'right', render: (r) => <MoneyCell value={r.d61_90} className={Number(r.d61_90) > 0 ? 'text-amber-700 font-semibold' : ''} />, sortValue: (r) => Number(r.d61_90) },
+    { key: 'd90', header: '90+', align: 'right', render: (r) => <MoneyCell value={r.d90_plus} className={Number(r.d90_plus) > 0 ? 'text-rose-600 font-bold' : ''} />, sortValue: (r) => Number(r.d90_plus) },
     { key: 'total', header: 'Total', align: 'right', render: (r) => <MoneyCell value={r.total} className="font-bold" />, sortValue: (r) => Number(r.total) },
-    { key: 'limit', header: 'Limit / exposure', align: 'right', render: (r) => <span className="tabular text-[11.5px]">{formatMoney(r.credit_limit)} / {formatMoney(r.exposure)}</span> },
+    { key: 'limit', header: 'Limit / exposure', align: 'right', render: (r) => <span className="tabular text-xs text-slate-600">{formatMoney(r.credit_limit)} / {formatMoney(r.exposure)}</span> },
     { key: 'hold', header: '', render: (r) => (r.on_hold ? <StatusBadge status="ON_HOLD" label="Hold" /> : null) },
     { key: 'act', header: '', align: 'right', render: (r) => (canRecord ? <Button size="sm" onClick={() => setPaying(r)}>Receive</Button> : null) },
   ]
@@ -38,8 +38,8 @@ export default function ReceivablesPage() {
 
   return (
     <Page>
-      <PageHeader parent="Finance" title="Receivables" subtitle={ageing.data ? `AR ageing as of ${formatDate(ageing.data.as_of)}` : 'AR ageing'} actions={canRecord ? <Button variant="primary" onClick={() => setPaying({} as ArAgeingRow)}>Record customer payment</Button> : null} />
-      <div className="ui-card">
+      <PageHeader parent="Finance" title="Receivables" subtitle={ageing.data ? `AR ageing as of ${formatDate(ageing.data.as_of)}` : 'AR ageing'} actions={canRecord ? <Button id="tour-receivables-record" variant="primary" onClick={() => setPaying({} as ArAgeingRow)}>Record customer payment</Button> : null} />
+      <div id="tour-receivables-table" className="ui-card">
         <DataTable
           columns={columns}
           rows={ageing.data?.data}
@@ -126,7 +126,7 @@ function ReceiptModal({ row, onClose, onDone }: { row: ArAgeingRow | null; onClo
     >
       <div className="space-y-3">
         {!row?.customer_id && <Field label="Customer" required><CustomerPicker value={customer} onChange={setCustomer} /></Field>}
-        {row?.total && <div className="text-[12px] tabular">Outstanding: <b>{formatMoney(row.total)}</b></div>}
+        {row?.total && <div className="text-xs tabular text-slate-700">Outstanding: <b>{formatMoney(row.total)}</b></div>}
         <Field label="Method" required>
           <Select value={method} onChange={(e) => setMethod(e.target.value)}>{PAYMENT_METHODS.map((m) => (<option key={m} value={m}>{m}</option>))}</Select>
         </Field>
@@ -139,7 +139,7 @@ function ReceiptModal({ row, onClose, onDone }: { row: ArAgeingRow | null; onClo
             {row?.total && <Button size="sm" onClick={() => setAmount(String(Number(row.total)))}>Full</Button>}
           </div>
         </Field>
-        <label className="flex items-center gap-2 text-[12px]">
+        <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
           <input type="checkbox" checked={allocate} disabled={!customerId} onChange={(e) => setAllocate(e.target.checked)} /> Allocate to specific invoices (otherwise oldest first)
         </label>
         {allocate && customerId && (
@@ -147,23 +147,23 @@ function ReceiptModal({ row, onClose, onDone }: { row: ArAgeingRow | null; onClo
             {invoices.isLoading ? (
               <LoadingSkeleton rows={3} />
             ) : (invoices.data?.data ?? []).length === 0 ? (
-              <div className="p-3 text-[11.5px] text-[var(--text-muted)]">No posted invoices for this customer.</div>
+              <div className="p-3 text-xs text-slate-500">No posted invoices for this customer.</div>
             ) : (
               <table className="ui-table">
                 <thead><tr><th>Invoice</th><th>Posted</th><th className="text-right">Invoice total</th><th className="text-right">Allocate</th></tr></thead>
                 <tbody>
                   {(invoices.data?.data ?? []).map((s) => (
                     <tr key={s.id}>
-                      <td className="tabular font-semibold">{s.doc_number}</td>
+                      <td className="tabular font-mono font-semibold">{s.doc_number}</td>
                       <td className="tabular">{formatDate(s.posted_at)}</td>
                       <td className="text-right"><MoneyCell value={s.grand_total} /></td>
-                      <td className="text-right"><input value={allocations[s.id] ?? ''} onChange={(e) => setAllocations({ ...allocations, [s.id]: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-28 tabular text-right" /></td>
+                      <td className="text-right"><input value={allocations[s.id] ?? ''} onChange={(e) => setAllocations({ ...allocations, [s.id]: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-28 tabular text-right text-sm" /></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-            <div className={`px-3 py-1.5 text-[11.5px] tabular border-t border-[var(--border)] ${allocationOk ? 'text-[var(--text-muted)]' : 'text-[var(--status-red)]'}`}>
+            <div className={`px-3 py-1.5 text-xs tabular border-t border-slate-200 ${allocationOk ? 'text-slate-500' : 'text-rose-600 font-medium'}`}>
               Allocated {formatMoney(allocatedTotal)} of {formatMoney(amount || '0')}{allocationOk ? '' : ' — allocations must equal the receipt amount'}. The server refuses an allocation above what an invoice still owes.
             </div>
           </div>

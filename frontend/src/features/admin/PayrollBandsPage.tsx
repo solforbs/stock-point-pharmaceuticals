@@ -121,23 +121,27 @@ export default function PayrollBandsPage() {
         parent="Admin"
         title="Payroll Bands"
         subtitle="The statutory rates payroll is calculated from. For a change on a date, end the old band the day before and add the new one."
-        actions={<Button variant="primary" onClick={openNew}><Plus size={13} /> Add band</Button>}
+        actions={
+          <div id="tour-payroll-bands-add">
+            <Button variant="primary" onClick={openNew}><Plus size={13} /> Add band</Button>
+          </div>
+        }
       />
 
       {listing.error && <InlineError error={listing.error} />}
 
-      <div className="space-y-4">
+      <div id="tour-payroll-bands-list" className="space-y-4">
         {grouped.map(({ type, bands }) => (
           <div key={type} className="ui-card overflow-hidden">
             <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-[13px] font-bold text-slate-800">{TYPE_LABEL[type] ?? type}</h3>
-              <span className="text-[11px] text-slate-500">{bands.length} band(s)</span>
+              <h3 className="text-sm font-semibold text-slate-900">{TYPE_LABEL[type] ?? type}</h3>
+              <span className="text-xs text-slate-500 font-mono">{bands.length} band(s)</span>
             </div>
             {bands.length === 0 ? (
-              <p className="px-4 py-3 text-[12px] text-amber-700">No bands — payroll will not deduct {TYPE_LABEL[type] ?? type}.</p>
+              <p className="px-4 py-3 text-xs text-amber-700">No bands — payroll will not deduct {TYPE_LABEL[type] ?? type}.</p>
             ) : (
-              <table className="w-full text-[12.5px]">
-                <thead className="bg-slate-50 text-[10.5px] uppercase text-slate-500">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-xs uppercase text-slate-500 tracking-wide">
                   <tr>
                     <th className="text-left px-4 py-1.5">#</th>
                     <th className="text-right px-4 py-1.5">From (KES)</th>
@@ -157,7 +161,7 @@ export default function PayrollBandsPage() {
                       <td className="px-4 py-2 text-right tabular">{b.rate_pct === null ? '—' : `${Number(b.rate_pct)}%`}</td>
                       <td className="px-4 py-2 text-right tabular">{amount(b.fixed_amount)}</td>
                       <td className="px-4 py-2 whitespace-nowrap">{formatDate(b.effective_from)} – {b.effective_to ? formatDate(b.effective_to) : 'open'}</td>
-                      <td className="px-4 py-2 text-[11px] text-slate-500">{b.source}</td>
+                      <td className="px-4 py-2 text-xs text-slate-500 font-mono">{b.source}</td>
                     </tr>
                   ))}
                 </tbody>

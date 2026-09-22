@@ -50,16 +50,31 @@ export default function SupplierInvoicesPage() {
 
   return (
     <Page>
-      <PageHeader parent="Buy" title="Supplier Invoices" subtitle="Record the invoice as received, then match it against the PO and GRN. A match creates the payable; an exception does not." actions={canMatch ? <Button variant="primary" onClick={() => setCreating(true)}>Record supplier invoice</Button> : null} />
+      <PageHeader
+        parent="Buy"
+        title="Supplier Invoices"
+        subtitle="Record the invoice as received, then match it against the PO and GRN. A match creates the payable; an exception does not."
+        actions={
+          canMatch ? (
+            <div id="tour-invoices-record">
+              <Button variant="primary" onClick={() => setCreating(true)}>
+                Record supplier invoice
+              </Button>
+            </div>
+          ) : null
+        }
+      />
       <FilterBar>
-        <div className="flex gap-1">
+        <div id="tour-invoices-match-filter" className="flex flex-wrap gap-1">
           {[['', 'All'], ['UNMATCHED', 'Unmatched'], ['EXCEPTION', 'Exceptions'], ['MATCHED', 'Matched']].map(([v, label]) => (
             <Button key={v} size="sm" variant={matchStatus === v ? 'primary' : 'secondary'} onClick={() => { setMatchStatus(v); setPage(1) }}>{label}</Button>
           ))}
         </div>
-        <Field label="Supplier"><Select value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setPage(1) }}><option value="">All</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select></Field>
+        <div className="w-full sm:w-60">
+          <Field label="Supplier"><Select value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setPage(1) }}><option value="">All</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select></Field>
+        </div>
       </FilterBar>
-      <div className="ui-card">
+      <div id="tour-invoices-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(i) => i.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(i) => setParams({ invoice: i.id })} selectedKey={selectedId} emptyTitle="No supplier invoices" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
@@ -139,11 +154,11 @@ function NewInvoiceDrawer({ open, onClose, onCreated }: { open: boolean; onClose
             <tbody>
               {lines.map((l) => (
                 <tr key={l.key}>
-                  <td className="text-[11.5px]">{l.label}</td>
+                  <td className="text-xs font-medium">{l.label}</td>
                   <td className="text-right"><QtyCell value={l.po_qty} /></td>
                   <td className="text-right"><MoneyCell value={l.po_price} muted /></td>
                   <td><input value={l.qty} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, qty: e.target.value.replace(/[^\d.]/g, '') } : x)))} className="ui-input h-7 w-20 tabular text-right" /></td>
-                  <td><input value={l.unit_price} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, unit_price: e.target.value.replace(/[^\d.]/g, '') } : x)))} className={`ui-input h-7 w-24 tabular text-right ${l.unit_price && Number(l.unit_price) !== Number(l.po_price) ? '!border-[var(--status-amber)]' : ''}`} /></td>
+                  <td><input value={l.unit_price} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, unit_price: e.target.value.replace(/[^\d.]/g, '') } : x)))} className={`ui-input h-7 w-24 tabular text-right ${l.unit_price && Number(l.unit_price) !== Number(l.po_price) ? '!border-amber-400' : ''}`} /></td>
                   <td className="text-right"><MoneyCell value={(Number(l.qty || 0) * Number(l.unit_price || 0)).toFixed(4)} muted /></td>
                   <td className="text-right"><Button size="sm" variant="ghost" onClick={() => setLines(lines.filter((x) => x.key !== l.key))} aria-label="Remove"><Trash2 size={13} /></Button></td>
                 </tr>
@@ -151,7 +166,7 @@ function NewInvoiceDrawer({ open, onClose, onCreated }: { open: boolean; onClose
             </tbody>
           </table>
         ) : (
-          <p className="text-[11.5px] text-[var(--text-muted)]">Choose the purchase order; its lines load here for you to enter the invoiced quantity and price.</p>
+          <p className="text-xs text-slate-500">Choose the purchase order; its lines load here for you to enter the invoiced quantity and price.</p>
         )}
         {create.isError && <InlineError error={create.error} />}
         <div className="flex justify-end gap-2">
@@ -189,9 +204,9 @@ function InvoiceDrawer({ id, onClose }: { id: string | null; onClose: () => void
       {invoice.isError && <InlineError error={invoice.error} />}
       {i && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={i.match_status} />{i.matched_at && <span className="text-[11.5px] text-[var(--text-muted)]">matched {formatDateTime(i.matched_at)}</span>}</div>
+          <div className="flex items-center gap-2"><StatusBadge status={i.match_status} />{i.matched_at && <span className="text-xs text-slate-500">matched {formatDateTime(i.matched_at)}</span>}</div>
           {match && (
-            <div className={`rounded-md px-3 py-2 border text-[12px] ${match.matched ? 'border-[var(--status-green)]' : 'border-[var(--status-amber)]'}`}>
+            <div className={`rounded-xl px-3.5 py-2.5 border text-xs ${match.matched ? 'border-emerald-300 bg-emerald-50/50 text-emerald-800' : 'border-amber-300 bg-amber-50/50 text-amber-800'}`}>
               <div className="font-bold">{match.matched ? 'Matched — payable created' : 'Exception — no payable'}</div>
               {match.failures.length > 0 && <ul className="list-disc pl-4 mt-1 space-y-0.5">{match.failures.map((f, idx) => (<li key={idx}>{typeof f === 'string' ? f : JSON.stringify(f)}</li>))}</ul>}
             </div>
@@ -216,9 +231,9 @@ function InvoiceDrawer({ id, onClose }: { id: string | null; onClose: () => void
               })}
             </tbody>
           </table>
-          <div className="ml-auto w-72 grid grid-cols-[1fr_auto] gap-y-1 text-[12.5px] tabular">
-            <span className="text-[var(--text-muted)]">Subtotal</span><MoneyCell value={i.subtotal} />
-            <span className="text-[var(--text-muted)]">Tax</span><MoneyCell value={i.tax_total} />
+          <div className="ml-auto w-72 grid grid-cols-[1fr_auto] gap-y-1 text-sm tabular">
+            <span className="text-slate-500">Subtotal</span><MoneyCell value={i.subtotal} />
+            <span className="text-slate-500">Tax</span><MoneyCell value={i.tax_total} />
             <span className="font-bold">Grand total</span><MoneyCell value={i.grand_total} className="font-bold" />
           </div>
         </div>

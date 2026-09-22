@@ -86,28 +86,32 @@ export default function AdjustmentsPage() {
         subtitle="Mandatory reason codes for write-offs, damages, and variances with secondary dual-control approval queues"
         actions={
           canAdjust ? (
-            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-              New adjustment
-            </PrimaryAction>
+            <div id="tour-adjustments-new">
+              <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+                New adjustment
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
-      <FilterBar>
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit">
-          {[['PENDING', 'Approval queue'], ['', 'All'], ['APPROVED', 'Approved'], ['REJECTED', 'Rejected']].map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => { setStatus(v); setPage(1) }}
-              className={`h-7 px-3 rounded-lg text-xs font-bold transition-all ${status === v ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </FilterBar>
-      <div className="ui-card">
-        <DataTable columns={columns} rows={list.data?.data} rowKey={(a) => a.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(a) => setParams({ adjustment: a.id })} selectedKey={selectedId} emptyTitle={status === 'PENDING' ? 'Nothing awaiting approval' : 'No adjustments'} />
+      <div id="tour-adjustments-filters">
+        <FilterBar>
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit">
+            {[['PENDING', 'Approval queue'], ['', 'All'], ['APPROVED', 'Approved'], ['REJECTED', 'Rejected']].map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => { setStatus(v); setPage(1) }}
+                className={`h-8 px-3 rounded-lg text-xs font-bold transition-all ${status === v ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </FilterBar>
+      </div>
+      <div id="tour-adjustments-table" className="ui-card">
+        <DataTable columns={columns} rows={list.data?.data} rowKey={(a) => a.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(a) => setParams({ adjustment: a.id })} selectedKey={selectedId} emptyTitle="No adjustments" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
 
@@ -199,7 +203,7 @@ function AdjustmentDrawer({ id, onClose }: { id: string | null; onClose: () => v
       {adjustment.isError && <InlineError error={adjustment.error} />}
       {a && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={a.approval_status} />{a.total_value !== undefined && <span className="tabular text-[12.5px]">Value <MoneyCell value={a.total_value} symbol className="font-bold" /></span>}</div>
+          <div className="flex items-center gap-2"><StatusBadge status={a.approval_status} />{a.total_value !== undefined && <span className="tabular text-sm">Value <MoneyCell value={a.total_value} symbol className="font-bold" /></span>}</div>
           {a.approval_status === 'PENDING' && (
             <ApprovalBar
               title="Awaiting approval"
@@ -217,7 +221,7 @@ function AdjustmentDrawer({ id, onClose }: { id: string | null; onClose: () => v
               {(a.lines ?? []).map((l) => (
                 <tr key={l.id}>
                   <td>{l.product?.name ?? l.product_id.slice(0, 8)}</td>
-                  <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-[10.5px] text-[var(--text-muted)]">exp {formatDate(l.batch.expiry_date)}</div>}</td>
+                  <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-500 tabular">exp {formatDate(l.batch.expiry_date)}</div>}</td>
                   <td className="text-right"><QtyCell value={l.qty_base} className="font-semibold" /></td>
                   {showCost && <td className="text-right"><MoneyCell value={l.unit_cost} /></td>}
                   {showCost && <td className="text-right"><MoneyCell value={l.line_value} /></td>}

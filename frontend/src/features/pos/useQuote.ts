@@ -34,7 +34,7 @@ function useNow(intervalMs: number): number {
  */
 export function useQuote({ offline, pack, stock }: OfflineContext) {
   const signature = useCartStore(cartSignature)
-  const debounced = useDebounced(signature, 350)
+  const debounced = useDebounced(signature, 100)
   const quote = useCartStore((s) => s.quote)
   const quoteSignature = useCartStore((s) => s.quoteSignature)
   const errorSignature = useCartStore((s) => s.quoteErrorSignature)

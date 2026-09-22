@@ -38,24 +38,26 @@ export default function PricingRulesPage() {
         title="Pricing Rules"
         subtitle={canManage ? 'Contract price, promotion, tier list, mode list, branch list, default: the cheapest valid rule wins. Every change is audited.' : 'Read-only: changing rules needs the price.manage permission.'}
       />
-      <div className="flex flex-wrap gap-1 mb-4 border-b border-[var(--border)]">
+      <div id="tour-pricing-tabs" className="flex flex-wrap gap-1 mb-4 border-b border-slate-200">
         {TABS.filter((t) => t.key !== 'simulator' || canSimulate).map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setParams({ tab: t.key })}
-            className={`px-3 py-2 text-[12.5px] font-semibold border-b-2 -mb-px ${tab === t.key ? 'border-[var(--color-navy)] text-[var(--text)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text)]'}`}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors ${tab === t.key ? 'border-blue-600 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
           >
             {t.label}
           </button>
         ))}
       </div>
-      {tab === 'promotions' && <PromotionsTab canManage={canManage} />}
-      {tab === 'breaks' && <PriceBreaksTab canManage={canManage} />}
-      {tab === 'policies' && <DiscountPoliciesTab canManage={canManage} />}
-      {tab === 'authority' && <DiscountAuthorityTab canManage={canManage} />}
-      {tab === 'contracts' && <CustomerPricesTab canManage={canManage} />}
-      {tab === 'simulator' && <SimulatorTab />}
+      <div id="tour-pricing-content">
+        {tab === 'promotions' && <PromotionsTab canManage={canManage} />}
+        {tab === 'breaks' && <PriceBreaksTab canManage={canManage} />}
+        {tab === 'policies' && <DiscountPoliciesTab canManage={canManage} />}
+        {tab === 'authority' && <DiscountAuthorityTab canManage={canManage} />}
+        {tab === 'contracts' && <CustomerPricesTab canManage={canManage} />}
+        {tab === 'simulator' && <SimulatorTab />}
+      </div>
     </Page>
   )
 }

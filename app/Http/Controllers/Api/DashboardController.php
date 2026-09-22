@@ -64,11 +64,35 @@ class DashboardController extends ApiController
         if ($user->can('stock.view')) {
             $batchesInBranch = ProductBatch::query()->whereExists(fn ($q) => $q->select(DB::raw(1))->from('stock_balances')
                 ->whereColumn('stock_balances.batch_id', 'product_batches.id')->whereIn('stock_balances.store_id', $storeIds)->where('stock_balances.qty_on_hand', '>', 0));
+
+            $pendingQcQty = DB::table('stock_balances as b')
+                ->join('product_batches as pb', 'pb.id', '=', 'b.batch_id')
+                ->whereIn('b.store_id', $storeIds)
+                ->where('pb.status', 'PENDING_QC')
+                ->sum('b.qty_on_hand');
+
+            $expiring90dQty = DB::table('stock_balances as b')
+                ->join('product_batches as pb', 'pb.id', '=', 'b.batch_id')
+                ->whereIn('b.store_id', $storeIds)
+                ->where('pb.status', 'RELEASED')
+                ->whereDate('pb.expiry_date', '<=', now()->addDays(90)->toDateString())
+                ->sum('b.qty_on_hand');
+
+            $lowStockCount = DB::table('products as p')
+                ->where('p.organisation_id', $organisationId)
+                ->where('p.is_active', true)
+                ->where('p.reorder_point', '>', 0)
+                ->whereRaw('(SELECT COALESCE(SUM(b.qty_on_hand - b.qty_reserved), 0) FROM stock_balances b WHERE b.product_id = p.id AND b.store_id IN (SELECT id FROM stores WHERE branch_id = ?)) < p.reorder_point', [$branchId])
+                ->count();
+
             $inventory = [
                 'pending_qc_batches' => (clone $batchesInBranch)->where('status', 'PENDING_QC')->count(),
+                'pending_qc_qty' => number_format((float) $pendingQcQty, 4, '.', ''),
                 'quarantined_batches' => (clone $batchesInBranch)->where('status', 'QUARANTINED')->count(),
                 'expiring_90d_batches' => (clone $batchesInBranch)->where('status', 'RELEASED')->whereDate('expiry_date', '<=', now()->addDays(90)->toDateString())->count(),
+                'expiring_90d_qty' => number_format((float) $expiring90dQty, 4, '.', ''),
                 'expired_batches_on_hand' => (clone $batchesInBranch)->where('status', 'EXPIRED')->count(),
+                'low_stock_count' => $lowStockCount,
                 'transfers_in_transit' => StockTransfer::whereIn('status', ['DISPATCHED', 'DISCREPANCY'])
                     ->where(fn ($q) => $q->whereIn('from_store_id', $storeIds)->orWhereIn('to_store_id', $storeIds))->count(),
             ];
@@ -130,6 +154,19 @@ class DashboardController extends ApiController
             ];
         }
 
+        $arSummary = null;
+        if ($user->can('finance.ar.view')) {
+            $customerIds = DB::table('customers')->where('organisation_id', $organisationId)->pluck('id');
+            $arTotal = DB::table('customer_credits')->whereIn('customer_id', $customerIds)->sum('current_balance');
+            $arCustomersCount = DB::table('customer_credits')->whereIn('customer_id', $customerIds)->where('current_balance', '>', 0)->count();
+
+            $arSummary = [
+                'total' => number_format((float) $arTotal, 4, '.', ''),
+                'customers_count' => $arCustomersCount,
+                'd90_plus' => '0.0000',
+            ];
+        }
+
         return response()->json([
             'as_of' => now()->toIso8601String(),
             'sales_today' => $sales,
@@ -140,6 +177,7 @@ class DashboardController extends ApiController
             'quality' => $quality,
             'people' => $people === [] ? null : $people,
             'finance' => $finance,
+            'ar' => $arSummary,
         ]);
     }
 }

@@ -9,9 +9,9 @@ export interface HeroSalesChartCardProps {
 }
 
 const CHANNEL_CONFIG: Record<SaleMode, { label: string; color: string; border: string; bg: string }> = {
-  WHOLESALE: { label: 'Wholesale B2B', color: '#2563eb', border: 'border-t-blue-600', bg: 'bg-blue-600' },
-  RETAIL: { label: 'Retail Walk-in', color: '#10b981', border: 'border-t-emerald-500', bg: 'bg-emerald-500' },
-  DISPENSING: { label: 'Prescriptions', color: '#8b5cf6', border: 'border-t-purple-500', bg: 'bg-purple-500' },
+  WHOLESALE: { label: 'Wholesale B2B', color: '#2563eb', border: 'border-blue-600', bg: 'bg-blue-600' },
+  RETAIL: { label: 'Retail Walk-in', color: '#059669', border: 'border-emerald-600', bg: 'bg-emerald-600' },
+  DISPENSING: { label: 'Prescriptions', color: '#7c3aed', border: 'border-purple-600', bg: 'bg-purple-600' },
 }
 
 function buildCumulativeSalesPoints(sales: Sale[]): { time: string; amount: number }[] {
@@ -49,69 +49,69 @@ export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCard
   const channels: SaleMode[] = ['WHOLESALE', 'RETAIL', 'DISPENSING']
 
   return (
-    <section className="bg-white rounded-[26px] p-6 md:p-7 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.03),0_10px_28px_-6px_rgba(15,23,42,0.03)] border-0 flex flex-col justify-between">
+    <section className="bg-white rounded-xl p-5 sm:p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2">
           <div>
-            <span className="text-[12px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Total Revenue Today
             </span>
-            <div className="flex items-baseline gap-3 mt-1">
-              <span className="text-[32px] font-black tabular tracking-tight text-slate-900">
+            <div className="flex items-baseline gap-2.5 mt-1">
+              <span className="text-2xl sm:text-3xl font-bold tabular tracking-tight text-slate-900">
                 {formatKes(salesToday?.total ?? '0')}
               </span>
-              <span className="text-[12px] font-semibold text-slate-400 tabular">
+              <span className="text-xs text-slate-500 font-normal tabular">
                 {salesToday?.count ?? salesList.length} transaction{(salesToday?.count ?? salesList.length) === 1 ? '' : 's'} posted
               </span>
             </div>
           </div>
           {salesToday?.voided_today ? (
-            <div className="text-[12px] text-rose-600 font-semibold px-3 py-1 rounded-full bg-rose-50 w-fit">
+            <div className="text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200/70 px-2.5 py-1 rounded-md w-fit">
               {salesToday.voided_today} sale{salesToday.voided_today === 1 ? '' : 's'} voided today
             </div>
           ) : null}
         </div>
 
         {hasSales ? (
-          <div className="h-44 w-full my-2">
+          <div className="h-52 sm:h-56 w-full my-2">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2} />
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
                     <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="time" stroke="#cbd5e1" fontSize={11} tickLine={false} axisLine={false} />
+                <XAxis dataKey="time" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip
                   formatter={(val: any) => [formatKes(String(val ?? 0)), 'Cumulative Revenue']}
                   contentStyle={{
                     backgroundColor: '#ffffff',
-                    borderRadius: '16px',
-                    border: 'none',
-                    boxShadow: '0 8px 24px -4px rgba(0,0,0,0.08)',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
                     fontSize: '12px',
-                    fontWeight: 700,
+                    fontWeight: 600,
                   }}
                 />
-                <Area type="monotone" dataKey="amount" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#salesGrad)" />
+                <Area type="monotone" dataKey="amount" stroke="#2563eb" strokeWidth={2.5} fillOpacity={1} fill="url(#salesGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-44 w-full my-2 flex flex-col items-center justify-center rounded-2xl bg-slate-50/50 p-6 text-center">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 shadow-2xs">
-              <TrendingUp size={18} />
+          <div className="h-52 sm:h-56 w-full my-2 flex flex-col items-center justify-center rounded-lg bg-slate-50 border border-slate-100 p-6 text-center">
+            <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-2">
+              <TrendingUp size={16} />
             </div>
-            <span className="text-[13px] font-bold text-slate-700">No Sales Posted Today</span>
-            <p className="text-[11.5px] text-slate-400 mt-0.5 max-w-sm">
+            <span className="text-sm font-semibold text-slate-700">No Sales Posted Today</span>
+            <p className="text-xs text-slate-500 mt-0.5 max-w-sm">
               Real-time revenue curve will plot automatically as transactions are posted at counter desks and wholesale.
             </p>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-5 mt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4 mt-2 border-t border-slate-100">
         {channels.map((mode) => {
           const cfg = CHANNEL_CONFIG[mode]
           const data = salesToday?.by_mode[mode]
@@ -121,16 +121,16 @@ export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCard
           return (
             <div
               key={mode}
-              className="p-4 rounded-2xl bg-slate-50/70 hover:bg-slate-50 transition-colors flex flex-col justify-between"
+              className="p-3 rounded-lg bg-slate-50 border border-slate-200/60 flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between text-[11.5px] font-bold text-slate-500 mb-1.5">
-                <span className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${cfg.bg}`} />
+              <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span className={`w-1.5 h-1.5 rounded-full ${cfg.bg}`} />
                   {cfg.label}
                 </span>
-                <span className="tabular font-medium text-slate-400">{count} sales</span>
+                <span className="tabular text-slate-400">{count} sales</span>
               </div>
-              <div className="text-[17px] font-black text-slate-900 tabular tracking-tight">
+              <div className="text-base font-bold text-slate-900 tabular tracking-tight">
                 {formatKes(total)}
               </div>
             </div>

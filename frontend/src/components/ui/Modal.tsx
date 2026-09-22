@@ -33,11 +33,11 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div role="dialog" aria-modal="true" className="relative ui-card shadow-2xl w-full flex flex-col max-h-[92vh]" style={{ maxWidth: width }}>
-        <header className="px-5 py-3 border-b border-[var(--border)]">
-          <h2 className="text-[14px] font-bold">{title}</h2>
+        <header className="px-5 py-3 border-b border-slate-100">
+          <h2 className="text-sm font-bold text-slate-900">{title}</h2>
         </header>
-        <div className="px-5 py-4 overflow-y-auto text-[12.5px]">{children}</div>
-        {footer && <footer className="px-5 py-3 border-t border-[var(--border)] flex justify-end gap-2">{footer}</footer>}
+        <div className="px-5 py-4 overflow-y-auto text-xs">{children}</div>
+        {footer && <footer className="px-5 py-3 border-t border-slate-100 flex justify-end gap-2">{footer}</footer>}
       </div>
     </div>
   )
@@ -94,7 +94,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      {message && <p className="text-[var(--text-secondary)] mb-3">{message}</p>}
+      {message && <p className="text-slate-600 mb-3">{message}</p>}
       {requireReason && (
         <Field label={requireReason} required hint={`At least ${reasonMinLength} characters. This is recorded in the audit log.`}>
           <Textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />

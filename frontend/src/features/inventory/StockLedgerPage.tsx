@@ -64,52 +64,54 @@ export default function StockLedgerPage() {
           { key: 'total_cost', header: 'Total cost', align: 'right' as const, render: (r: LedgerRow) => <MoneyCell value={r.total_cost} /> },
         ]
       : []),
-    { key: 'source', header: 'Source', render: (r) => <span className="text-[var(--text-muted)] tabular">{r.source_doc_type ? `${titleCase(r.source_doc_type)} ${r.source_doc_id?.slice(0, 8) ?? ''}` : '—'}</span> },
+    { key: 'source', header: 'Source', render: (r) => <span className="text-slate-500 tabular">{r.source_doc_type ? `${titleCase(r.source_doc_type)} ${r.source_doc_id?.slice(0, 8) ?? ''}` : '—'}</span> },
   ]
 
   return (
     <Page>
       <PageHeader parent="Inventory" title="Stock Ledger" subtitle="Every movement, append-only. Choose a batch and a store to see the running balance." />
-      <FilterBar>
-        <Field label="Product" className="w-80">
-          {product ? (
-            <div className="ui-input flex items-center gap-2">
-              <span className="flex-1 truncate">{product.name} · {product.code}</span>
-              <button type="button" aria-label="Clear product" onClick={() => { setProduct(null); setBatchId('') }}><X size={13} /></button>
-            </div>
-          ) : (
-            <ProductSearch onSelect={(p) => { setProduct(p); setBatchId(''); setPage(1) }} placeholder="Search product…" />
-          )}
-        </Field>
-        <Field label="Batch">
-          <Select value={batchId} disabled={!product} onChange={(e) => { setBatchId(e.target.value); setPage(1) }}>
-            <option value="">All batches</option>
-            {(batches.data?.data ?? []).map((b) => (
-              <option key={b.id} value={b.id}>{b.batch_number} · exp {b.expiry_date}</option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Store">
-          <Select value={storeId} onChange={(e) => { setStoreId(e.target.value); setPage(1) }}>
-            <option value="">All stores</option>
-            {(stores.data ?? []).map((s) => (
-              <option key={s.id} value={s.id}>{s.code}</option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Movement">
-          <Select value={txnType} onChange={(e) => { setTxnType(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            {TXN_TYPES.map((t) => (
-              <option key={t} value={t}>{titleCase(t)}</option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="From"><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
-        <Field label="To"><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
-      </FilterBar>
-      {running && <p className="text-[11px] text-[var(--text-muted)] mb-2">Running balance mode: every movement of this batch in this store, oldest first, unpaginated.</p>}
-      <div className="ui-card">
+      <div id="tour-ledger-filters">
+        <FilterBar>
+          <Field label="Product" className="w-80">
+            {product ? (
+              <div className="ui-input flex items-center gap-2">
+                <span className="flex-1 truncate">{product.name} · {product.code}</span>
+                <button type="button" aria-label="Clear product" onClick={() => { setProduct(null); setBatchId('') }}><X size={13} /></button>
+              </div>
+            ) : (
+              <ProductSearch onSelect={(p) => { setProduct(p); setBatchId(''); setPage(1) }} placeholder="Search product…" />
+            )}
+          </Field>
+          <Field label="Batch">
+            <Select value={batchId} disabled={!product} onChange={(e) => { setBatchId(e.target.value); setPage(1) }}>
+              <option value="">All batches</option>
+              {(batches.data?.data ?? []).map((b) => (
+                <option key={b.id} value={b.id}>{b.batch_number} · exp {b.expiry_date}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Store">
+            <Select value={storeId} onChange={(e) => { setStoreId(e.target.value); setPage(1) }}>
+              <option value="">All stores</option>
+              {(stores.data ?? []).map((s) => (
+                <option key={s.id} value={s.id}>{s.code}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Movement">
+            <Select value={txnType} onChange={(e) => { setTxnType(e.target.value); setPage(1) }}>
+              <option value="">All</option>
+              {TXN_TYPES.map((t) => (
+                <option key={t} value={t}>{titleCase(t)}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="From"><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
+          <Field label="To"><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
+        </FilterBar>
+      </div>
+      {running && <p className="text-xs text-slate-500 mb-2">Running balance mode: every movement of this batch in this store, oldest first, unpaginated.</p>}
+      <div id="tour-ledger-table" className="ui-card">
         <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} isLoading={ledger.isLoading} error={ledger.error} onRetry={() => ledger.refetch()} emptyTitle="No movements match" />
         <Pagination page={paginated} onPage={setPage} />
       </div>

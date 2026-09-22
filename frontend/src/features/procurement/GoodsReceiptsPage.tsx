@@ -79,17 +79,21 @@ export default function GoodsReceiptsPage() {
         subtitle="Mandatory batch & expiry verification, cold chain temperature logging, and PENDING QC quarantine creation"
         actions={
           canCreate ? (
-            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
-              New goods receipt
-            </PrimaryAction>
+            <div id="tour-grn-new">
+              <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>
+                New goods receipt
+              </PrimaryAction>
+            </div>
           ) : null
         }
       />
-      <FilterBar>
-        <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All Statuses</option><option value="DRAFT">Draft</option><option value="POSTED">Posted</option></Select></Field>
-        <Field label="Supplier"><Select value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setPage(1) }}><option value="">All Suppliers</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select></Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-grn-filters">
+        <FilterBar>
+          <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All Statuses</option><option value="DRAFT">Draft</option><option value="POSTED">Posted</option></Select></Field>
+          <Field label="Supplier"><Select value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setPage(1) }}><option value="">All Suppliers</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select></Field>
+        </FilterBar>
+      </div>
+      <div id="tour-grn-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(g) => g.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(g) => setParams({ receipt: g.id })} selectedKey={selectedId} emptyTitle="No goods receipts" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
@@ -260,12 +264,12 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
                 <tbody>
                   {lines.map((l) => (
                     <tr key={l.key}>
-                      <td className="text-[11.5px] font-semibold text-slate-900">{l.product_label}</td>
+                      <td className="text-xs font-semibold text-slate-900">{l.product_label}</td>
                       <td>
                         {l.uom_options.length > 1 ? (
-                          <select value={l.uom_id} onChange={(e) => update(l.key, { uom_id: e.target.value })} className="ui-input h-7 w-auto">{l.uom_options.map((u) => (<option key={u.id} value={u.id}>{u.code}</option>))}</select>
+                          <select value={l.uom_id} onChange={(e) => update(l.key, { uom_id: e.target.value })} className="ui-input h-7 w-auto text-xs">{l.uom_options.map((u) => (<option key={u.id} value={u.id}>{u.code}</option>))}</select>
                         ) : (
-                          <span className="tabular text-[11.5px] font-bold text-slate-600">{l.uom_options[0]?.code ?? l.uom_id.slice(0, 8)}</span>
+                          <span className="tabular text-xs font-bold text-slate-600">{l.uom_options[0]?.code ?? l.uom_id.slice(0, 8)}</span>
                         )}
                       </td>
                       <td className="text-right"><QtyCell value={l.qty_ordered || null} /></td>
@@ -307,20 +311,20 @@ function ReceiptDrawer({ id, onClose }: { id: string | null; onClose: () => void
       {receipt.isError && <InlineError error={receipt.error} />}
       {g && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={g.status} />{g.is_emergency && <StatusBadge status="EMERGENCY" tone="amber" label="Emergency" />}{g.purchase_order && <Link to={`/buy/purchase-orders?po=${g.purchase_order.id}`} className="text-[11.5px] text-[var(--color-navy)] underline">Open purchase order</Link>}<span className="ml-auto"><PdfDownloadButton url={`/api/goods-receipts/${g.id}/pdf`} filename={g.doc_number} label="Download GRN" /></span></div>
+          <div className="flex items-center gap-2"><StatusBadge status={g.status} />{g.is_emergency && <StatusBadge status="EMERGENCY" tone="amber" label="Emergency" />}{g.purchase_order && <Link to={`/buy/purchase-orders?po=${g.purchase_order.id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open purchase order</Link>}<span className="ml-auto"><PdfDownloadButton url={`/api/goods-receipts/${g.id}/pdf`} filename={g.doc_number} label="Download GRN" /></span></div>
           <DescriptionList items={[{ label: 'Supplier', value: g.supplier?.name ?? g.supplier_id.slice(0, 8) }, { label: 'Store', value: g.store?.code ?? g.store_id.slice(0, 8) }]} />
           <table className="ui-table">
             <thead><tr><th>Batch</th><th>Expiry</th><th>Batch status</th><th className="text-right">Ordered</th><th className="text-right">Delivered</th><th className="text-right">Accepted</th><th className="text-right">Rejected</th><th className="text-right">Unit cost</th><th className="text-right">Landed cost</th></tr></thead>
             <tbody>
               {g.lines.map((l) => (
                 <tr key={l.id}>
-                  <td className="tabular font-semibold">{l.batch_number}{l.batch && <Link to={`/inventory/batches?batch=${l.batch.id}`} className="ml-1 text-[10.5px] text-[var(--color-navy)] underline">open</Link>}</td>
+                  <td className="tabular font-mono font-semibold">{l.batch_number}{l.batch && <Link to={`/inventory/batches?batch=${l.batch.id}`} className="ml-1.5 text-xs text-blue-600 hover:text-blue-700 hover:underline font-medium">open</Link>}</td>
                   <td className="tabular">{formatDate(l.expiry_date)}</td>
                   <td>{l.batch ? <StatusBadge status={l.batch.status} /> : '—'}</td>
                   <td className="text-right"><QtyCell value={l.qty_ordered} /></td>
                   <td className="text-right"><QtyCell value={l.qty_delivered} /></td>
                   <td className="text-right"><QtyCell value={l.qty_accepted} /></td>
-                  <td className="text-right"><QtyCell value={l.qty_rejected} />{l.rejection_reason && <div className="text-[10.5px] text-[var(--text-muted)]">{l.rejection_reason}</div>}</td>
+                  <td className="text-right"><QtyCell value={l.qty_rejected} />{l.rejection_reason && <div className="text-xs text-slate-500">{l.rejection_reason}</div>}</td>
                   <td className="text-right"><MoneyCell value={l.unit_cost} /></td>
                   <td className="text-right"><MoneyCell value={l.batch?.landed_unit_cost ?? l.landed_unit_cost} /></td>
                 </tr>

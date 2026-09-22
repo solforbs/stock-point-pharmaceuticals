@@ -96,18 +96,24 @@ export default function QuotationsPage() {
         parent="Commerce & Stock"
         title="Wholesale Quotations"
         subtitle="Price offers Stock Point sends out to its customers (clinics, pharmacies, hospitals) when they ask what an order would cost. An accepted quotation becomes a sales order. Quotes you receive from suppliers belong under Buy."
-        actions={<PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New Quotation</PrimaryAction>}
+        actions={
+          <div id="tour-quotations-new">
+            <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New Quotation</PrimaryAction>
+          </div>
+        }
       />
-      <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All Statuses</option>
-            {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-          </Select>
-        </Field>
-        <Field label="Filter by Customer" className="w-full sm:w-80"><CustomerPicker value={filterCustomer} onChange={(c) => { setFilterCustomer(c); setPage(1) }} placeholder="Search customer…" /></Field>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-quotations-filters">
+        <FilterBar>
+          <Field label="Status">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All Statuses</option>
+              {STATUSES.map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+            </Select>
+          </Field>
+          <Field label="Filter by Customer" className="w-full sm:w-80"><CustomerPicker value={filterCustomer} onChange={(c) => { setFilterCustomer(c); setPage(1) }} placeholder="Search customer…" /></Field>
+        </FilterBar>
+      </div>
+      <div id="tour-quotations-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(q) => q.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(q) => setParams({ quotation: q.id })} selectedKey={selectedId} emptyTitle="No quotations" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
@@ -265,7 +271,7 @@ function QuotationDrawer({ id, onClose, onAccepted }: { id: string | null; onClo
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <StatusBadge status={q.status} />
-            {q.converted_sales_order_id && <span className="text-[11.5px] text-[var(--text-muted)]">Converted to order {q.converted_sales_order_id.slice(0, 8)}</span>}
+            {q.converted_sales_order_id && <span className="text-xs text-slate-500 font-medium">Converted to order {q.converted_sales_order_id.slice(0, 8)}</span>}
           </div>
           <DescriptionList items={[{ label: 'Notes', value: q.notes ?? '—' }, { label: 'Created', value: formatDateTime(q.created_at) }]} />
           <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
@@ -286,7 +292,7 @@ function QuotationDrawer({ id, onClose, onAccepted }: { id: string | null; onClo
               </tbody>
             </table>
           </div>
-          <div className="ml-auto w-full sm:w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2 text-[13px] tabular">
+          <div className="ml-auto w-full sm:w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2 text-sm tabular">
             <div className="flex justify-between text-slate-500 font-medium"><span>Subtotal</span><MoneyCell value={q.subtotal} /></div>
             <div className="flex justify-between text-slate-500 font-medium"><span>Discount</span><MoneyCell value={`-${q.discount_total}`} /></div>
             <div className="flex justify-between text-slate-500 font-medium"><span>Tax</span><MoneyCell value={q.tax_total} /></div>

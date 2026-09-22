@@ -8,7 +8,7 @@ export function Drawer({
   title,
   subtitle,
   children,
-  width = 560,
+  width = 680,
   actions,
   footer,
 }: {
@@ -33,37 +33,37 @@ export function Drawer({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-hidden">
+          {/* Backdrop with modern blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
             onClick={onClose}
             aria-hidden
           />
 
-          {/* Slide-over Aside Panel */}
-          <motion.aside
+          {/* Modern Floating Centered Dialog Modal */}
+          <motion.div
             role="dialog"
             aria-modal="true"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="relative h-full w-full bg-[#f8fafc] border-l border-slate-200/90 shadow-2xl flex flex-col z-10 overflow-hidden"
-            style={{ maxWidth: `min(100vw, ${width}px)` }}
+            initial={{ opacity: 0, scale: 0.96, y: 14 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+            className="relative w-full max-h-[94vh] sm:max-h-[90vh] bg-[#f8fafc] rounded-2xl border border-slate-200 shadow-2xl flex flex-col z-10 overflow-hidden"
+            style={{ maxWidth: `min(calc(100vw - 24px), ${width}px)` }}
           >
             {/* Header */}
-            <header className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-slate-200/90 bg-white/95 backdrop-blur-md shrink-0 shadow-2xs z-10">
+            <header className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-slate-200/90 bg-white shrink-0 shadow-2xs z-10">
               <div className="flex-1 min-w-0">
-                <h2 className="text-[17px] sm:text-[18px] font-black text-slate-900 tracking-tight truncate leading-tight">
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight truncate leading-tight">
                   {title}
                 </h2>
                 {subtitle && (
-                  <div className="text-[12px] sm:text-[12.5px] text-slate-500 font-medium mt-0.5 truncate">
+                  <div className="text-xs text-slate-500 font-medium mt-0.5 truncate">
                     {subtitle}
                   </div>
                 )}
@@ -73,7 +73,7 @@ export function Drawer({
                 <button
                   type="button"
                   onClick={onClose}
-                  aria-label="Close drawer"
+                  aria-label="Close dialog"
                   className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
                 >
                   <X size={18} />
@@ -88,11 +88,11 @@ export function Drawer({
 
             {/* Optional Footer */}
             {footer && (
-              <footer className="shrink-0 px-5 sm:px-6 py-3.5 border-t border-slate-200/90 bg-white/95 backdrop-blur-md flex items-center justify-between gap-3 shadow-2xs z-10">
+              <footer className="shrink-0 px-5 sm:px-6 py-3.5 border-t border-slate-200/90 bg-white flex items-center justify-between gap-3 shadow-2xs z-10">
                 {footer}
               </footer>
             )}
-          </motion.aside>
+          </motion.div>
         </div>
       )}
     </AnimatePresence>

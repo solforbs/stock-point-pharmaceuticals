@@ -74,12 +74,25 @@ export default function WastePage() {
 
   return (
     <Page>
-      <PageHeader parent="Quality & Compliance" title="Waste & Disposal" subtitle="Disposal batches by reason, with method, contractor, certificate and two-signatory approval. Posting writes the stock off to the dedicated account." actions={perms.has('stock.adjust') ? <Button variant="primary" onClick={() => setCreating(true)}>New disposal</Button> : null} />
-      <FilterBar>
-        <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option><option value="DRAFT">Draft</option><option value="POSTED">Posted</option></Select></Field>
-        <Field label="Reason"><Select value={reasonFilter} onChange={(e) => { setReasonFilter(e.target.value); setPage(1) }}><option value="">All</option>{REASONS.map((r) => (<option key={r} value={r}>{titleCase(r)}</option>))}</Select></Field>
-      </FilterBar>
-      <div className="ui-card">
+      <PageHeader
+        parent="Quality & Compliance"
+        title="Waste & Disposal"
+        subtitle="Disposal batches by reason, with method, contractor, certificate and two-signatory approval. Posting writes the stock off to the dedicated account."
+        actions={
+          perms.has('stock.adjust') ? (
+            <div id="tour-waste-create">
+              <Button variant="primary" onClick={() => setCreating(true)}>New disposal</Button>
+            </div>
+          ) : null
+        }
+      />
+      <div id="tour-waste-filters">
+        <FilterBar>
+          <Field label="Status"><Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}><option value="">All</option><option value="DRAFT">Draft</option><option value="POSTED">Posted</option></Select></Field>
+          <Field label="Reason"><Select value={reasonFilter} onChange={(e) => { setReasonFilter(e.target.value); setPage(1) }}><option value="">All</option>{REASONS.map((r) => (<option key={r} value={r}>{titleCase(r)}</option>))}</Select></Field>
+        </FilterBar>
+      </div>
+      <div id="tour-waste-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(d) => d.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(d) => setParams({ disposal: d.id })} selectedKey={selectedId} emptyTitle="No disposals" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
@@ -155,12 +168,12 @@ function DisposalDrawer({ id, onClose }: { id: string | null; onClose: () => voi
       {disposal.isError && <InlineError error={disposal.error} />}
       {d && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={d.status} /><span className="tabular text-[12.5px]">Value <MoneyCell value={d.total_value} symbol className="font-bold" /></span></div>
+          <div className="flex items-center gap-2"><StatusBadge status={d.status} /><span className="tabular text-sm font-medium text-slate-700">Value: <MoneyCell value={d.total_value} symbol className="font-bold text-slate-900" /></span></div>
           <table className="ui-table">
             <thead><tr><th>Product</th><th>Batch</th><th className="text-right">Qty (base)</th><th className="text-right">Unit cost</th><th className="text-right">Value</th></tr></thead>
             <tbody>
               {(d.lines ?? []).map((l) => (
-                <tr key={l.id}><td>{l.product?.name ?? l.product_id.slice(0, 8)}</td><td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-[10.5px] text-[var(--text-muted)]">exp {formatDate(l.batch.expiry_date)} · {titleCase(l.batch.status)}</div>}</td><td className="text-right"><QtyCell value={l.qty_base} /></td><td className="text-right"><MoneyCell value={l.unit_cost} /></td><td className="text-right"><MoneyCell value={l.line_value} /></td></tr>
+                <tr key={l.id}><td>{l.product?.name ?? l.product_id.slice(0, 8)}</td><td className="tabular font-mono">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-500 font-sans">exp {formatDate(l.batch.expiry_date)} · {titleCase(l.batch.status)}</div>}</td><td className="text-right"><QtyCell value={l.qty_base} /></td><td className="text-right"><MoneyCell value={l.unit_cost} /></td><td className="text-right"><MoneyCell value={l.line_value} /></td></tr>
               ))}
             </tbody>
           </table>

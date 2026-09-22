@@ -35,7 +35,7 @@ export default function ReturnsPage() {
         title="Returns & Reverse Logistics"
         subtitle="Customer returns inspected line by line before restocking; supplier returns reverse receipts and generate debit notes."
       />
-      <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit mb-4">
+      <div id="tour-returns-tabs" className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-fit mb-4">
         {(['customer', 'supplier'] as const).map((t) => (
           <button
             key={t}
@@ -79,16 +79,18 @@ function CustomerReturns() {
 
   return (
     <>
-      <FilterBar>
-        <Field label="Status">
-          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">All</option>
-            {['DRAFT', 'POSTED', 'REJECTED'].map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
-          </Select>
-        </Field>
-        <div className="ml-auto text-[11.5px] text-[var(--text-muted)] self-center">Start a return from the sale: Invoices → open the sale → <b>Return items</b>.</div>
-      </FilterBar>
-      <div className="ui-card">
+      <div id="tour-returns-filter">
+        <FilterBar>
+          <Field label="Status">
+            <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+              <option value="">All</option>
+              {['DRAFT', 'POSTED', 'REJECTED'].map((s) => (<option key={s} value={s}>{titleCase(s)}</option>))}
+            </Select>
+          </Field>
+          <div className="ml-auto text-xs text-slate-500 self-center">Start a return from the sale: Invoices → open the sale → <strong className="font-semibold text-slate-700">Return items</strong>.</div>
+        </FilterBar>
+      </div>
+      <div id="tour-returns-table" className="ui-card">
         <DataTable columns={columns} rows={list.data?.data} rowKey={(r) => r.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(r) => setParams({ return: r.id })} selectedKey={selectedId} emptyTitle="No customer returns" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
@@ -210,7 +212,7 @@ function NewReturnDrawer({ saleId, canCreate, onClose, onCreated }: { saleId: st
                 <tbody>
                   {lines.map((l, i) => (
                     <tr key={`${l.sale_line_id}-${l.batch_id}`}>
-                      <td className="tabular text-[12px] font-medium">{l.label}</td>
+                      <td className="tabular text-xs font-medium text-slate-800">{l.label}</td>
                       <td className="text-right"><QtyCell value={l.issued} /></td>
                       <td><input value={l.qty_base} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, qty_base: e.target.value.replace(/[^\d.]/g, '') } : x)))} className={`ui-input h-7 w-24 tabular text-right ${Number(l.qty_base) > Number(l.issued) ? '!border-rose-500' : ''}`} /></td>
                       <td>
@@ -277,9 +279,9 @@ function ReturnDrawer({ id, onClose }: { id: string | null; onClose: () => void 
         <div className="space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
             <StatusBadge status={r.status} />
-            {r.credit_note_number && <span className="text-[11.5px] tabular">Credit note {r.credit_note_number}</span>}
+            {r.credit_note_number && <span className="text-xs text-slate-600 tabular font-medium">Credit note {r.credit_note_number}</span>}
             {r.etims_status && <StatusBadge status={r.etims_status} label={`eTIMS ${titleCase(r.etims_status)}`} />}
-            {r.recall_id && <Link to={`/quality/recalls?recall=${r.recall_id}`} className="text-[11.5px] text-[var(--color-navy)] underline">Linked recall</Link>}
+            {r.recall_id && <Link to={`/quality/recalls?recall=${r.recall_id}`} className="text-xs text-blue-600 hover:text-blue-700 underline font-medium">Linked recall</Link>}
           </div>
           <DescriptionList items={[{ label: 'Reason', value: r.reason }, { label: 'Refund', value: `${titleCase(r.refund_method) || '—'}${r.refund_reference ? ` · ${r.refund_reference}` : ''}` }, { label: 'Posted', value: formatDateTime(r.posted_at) }]} />
           <table className="ui-table">
@@ -290,7 +292,7 @@ function ReturnDrawer({ id, onClose }: { id: string | null; onClose: () => void 
                 return (
                   <tr key={l.id}>
                     <td>{l.product?.name ?? l.product_id.slice(0, 8)}</td>
-                    <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-[10.5px] text-[var(--text-muted)]">exp {formatDate(l.batch.expiry_date)}</div>}</td>
+                    <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-400">exp {formatDate(l.batch.expiry_date)}</div>}</td>
                     <td className="text-right"><QtyCell value={l.qty_base} /></td>
                     <td className="text-right"><MoneyCell value={l.unit_price} /></td>
                     <td className="text-right"><MoneyCell value={l.line_total} /></td>
@@ -311,17 +313,17 @@ function ReturnDrawer({ id, onClose }: { id: string | null; onClose: () => void 
               })}
             </tbody>
           </table>
-          <div className="ml-auto w-72 grid grid-cols-[1fr_auto] gap-y-1 text-[12.5px] tabular">
-            <span className="text-[var(--text-muted)]">Subtotal</span><MoneyCell value={r.subtotal} />
-            <span className="text-[var(--text-muted)]">Tax</span><MoneyCell value={r.tax_total} />
-            <span className="font-bold">Credit total</span><MoneyCell value={r.grand_total} className="font-bold" />
+          <div className="ml-auto w-72 grid grid-cols-[1fr_auto] gap-y-1 text-sm tabular">
+            <span className="text-slate-500 font-medium">Subtotal</span><MoneyCell value={r.subtotal} />
+            <span className="text-slate-500 font-medium">Tax</span><MoneyCell value={r.tax_total} />
+            <span className="font-bold text-slate-900 pt-1 border-t border-slate-200">Grand Total</span><MoneyCell value={r.grand_total} className="font-bold text-slate-900 pt-1 border-t border-slate-200" />
           </div>
           {draft && anyDestroy && (
             <Field label="Witness to destruction (required when any line is DESTROY)" required hint="Must be a different user from you." className="max-w-md">
               <UserPicker value={witness ? Number(witness) : null} onChange={(id) => setWitness(id ? String(id) : '')} exclude={[user?.id]} />
             </Field>
           )}
-          {draft && <p className="text-[11px] text-[var(--text-muted)]">Save each line's disposition before posting. Quarantined lines go to a quarantined batch state; resaleable lines return to free stock; destroyed lines are written off through a witnessed waste disposal.</p>}
+          {draft && <p className="text-xs text-slate-500">Save each line's disposition before posting. Quarantined lines go to a quarantined batch state; resaleable lines return to free stock; destroyed lines are written off through a witnessed waste disposal.</p>}
         </div>
       )}
       <ConfirmDialog open={rejecting} title="Reject return" confirmLabel="Reject" danger requireReason="Reason" isPending={reject.isPending} onCancel={() => setRejecting(false)} onConfirm={(reason) => reject.mutate(reason)} />
@@ -448,7 +450,7 @@ function SupplierReturns() {
         {detail.isError && <InlineError error={detail.error} />}
         {d && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2"><StatusBadge status={d.status} /><span className="text-[12px]">{d.reason}</span></div>
+            <div className="flex items-center gap-2"><StatusBadge status={d.status} /><span className="text-xs text-slate-600 font-medium">{d.reason}</span></div>
             <table className="ui-table">
               <thead><tr><th>Product</th><th>Batch</th><th className="text-right">Qty (base)</th><th className="text-right">Unit cost</th></tr></thead>
               <tbody>

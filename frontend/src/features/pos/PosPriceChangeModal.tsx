@@ -34,13 +34,13 @@ export function PosPriceChangeModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 tabular">
           <div className="ui-card p-3">
             <span className="ui-label">Previous Total</span>
-            <div className="text-[18px] font-bold line-through text-[var(--text-muted)]">
+            <div className="text-lg font-bold line-through text-slate-400">
               {formatMoney(priceChange.old_total)}
             </div>
           </div>
           <div className="ui-card p-3">
             <span className="ui-label">Updated Total</span>
-            <div className="text-[18px] font-extrabold text-[var(--text)]">
+            <div className="text-lg font-bold text-slate-800">
               {formatMoney(priceChange.new_total)}
             </div>
           </div>
@@ -68,7 +68,7 @@ export function PosPriceChangeModal({
             </tbody>
           </table>
         )}
-        <p className="text-[12px] text-[var(--text-secondary)]">
+        <p className="text-xs text-slate-500">
           Accepting updates the counter cart with active catalog pricing.
         </p>
       </div>
