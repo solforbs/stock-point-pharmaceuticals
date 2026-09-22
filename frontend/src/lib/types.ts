@@ -40,6 +40,8 @@ export type CurrentUser = {
   organisation?: { id: string; name: string; legal_name: string | null } | null
   /** Runs the platform itself: backups, deployment, system health. */
   is_platform_admin?: boolean
+  /** Drives the trial / lapsed banner; null for a platform-only account. */
+  subscription?: SubscriptionSummary | null
   active_branch_id: string | null
   active_branch: Branch | null
   branches: Branch[]
@@ -1320,4 +1322,126 @@ export type ChartAccount = {
   currency: string | null
   is_active: boolean
   balance: Decimal
+}
+
+// ---------------------------------------------------------------- Platform, onboarding and billing
+
+export type AccessState = 'ACTIVE' | 'TRIAL' | 'LAPSED' | 'SUSPENDED'
+
+export type SubscriptionSummary = {
+  access_state: AccessState
+  trial_ends_at: string | null
+  plan: { id: string; code: string; name: string } | null
+  current_period_end: string | null
+  is_complimentary: boolean
+}
+
+export type Plan = {
+  id: string
+  code: string
+  name: string
+  description: string | null
+  currency: string
+  price_monthly: Decimal
+  price_yearly: Decimal | null
+  max_branches: number | null
+  max_users: number | null
+  features: string[] | null
+  is_active?: boolean
+  sort_order?: number
+  paystack_plan_monthly?: string | null
+  paystack_plan_yearly?: string | null
+}
+
+export type BillingInterval = 'MONTHLY' | 'YEARLY'
+
+export type SubscriptionPaymentRow = {
+  id: string
+  reference: string
+  amount: Decimal
+  currency: string
+  status: 'PENDING' | 'SUCCESS' | 'FAILED'
+  channel: string | null
+  billing_interval: BillingInterval | null
+  paid_at: string | null
+  created_at: string
+  plan?: { id: string; name: string } | null
+  organisation?: { id: string; name: string } | null
+}
+
+export type BillingOverview = {
+  institution: { id: string; name: string; contact_email: string | null }
+  access_state: AccessState
+  is_complimentary: boolean
+  trial_ends_at: string | null
+  suspension_reason: string | null
+  subscription: { plan: { id: string; code: string; name: string } | null; billing_interval: BillingInterval; current_period_end: string | null; renews_automatically: boolean } | null
+  plans: Plan[]
+  payments: SubscriptionPaymentRow[]
+  online_payment_available: boolean
+}
+
+export type TenantRequestRow = {
+  id: string
+  institution_name: string
+  contact_name: string
+  email: string
+  phone: string | null
+  town: string | null
+  branches_count: number | null
+  users_count: number | null
+  message: string | null
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'REGISTERED'
+  rejection_reason: string | null
+  created_at: string
+  plan?: { id: string; code: string; name: string } | null
+  organisation?: { id: string; name: string } | null
+}
+
+export type InvitationRow = {
+  id: string
+  purpose: 'REGISTER' | 'ACTIVATE'
+  email: string
+  state: 'SENT' | 'OPENED' | 'USED' | 'REVOKED' | 'EXPIRED'
+  expires_at: string
+  opened_at: string | null
+  used_at: string | null
+}
+
+export type TenantRow = {
+  id: string
+  name: string
+  legal_name: string | null
+  kra_pin: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  is_complimentary: boolean
+  access_state: AccessState
+  trial_ends_at: string | null
+  suspended_at: string | null
+  suspension_reason: string | null
+  branches_count: number
+  users_count: number
+  plan: { id: string; code: string; name: string } | null
+  current_period_end: string | null
+  created_at: string
+}
+
+export type TenantDetail = TenantRow & {
+  subscriptions: { id: string; billing_interval: BillingInterval; status: string; current_period_end: string | null; plan?: { name: string } | null }[]
+  payments: SubscriptionPaymentRow[]
+  invitations: InvitationRow[]
+  admins: { id: number; name: string; email: string; is_active: boolean; last_login_at: string | null }[]
+}
+
+/** What opening a one-time link returns. */
+export type OpenedInvitation = {
+  purpose: 'REGISTER' | 'ACTIVATE'
+  email: string
+  session_token: string
+  session_expires_at: string
+  institution_name: string | null
+  contact_name: string | null
+  contact_phone: string | null
+  town: string | null
 }

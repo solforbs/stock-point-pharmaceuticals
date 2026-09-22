@@ -25,6 +25,15 @@ class TenantContext
     /** @var list<string>|null */
     private ?array $storeIds = null;
 
+    private bool $platform = false;
+
+    /** For platform-console requests: no tenant unless one is entered with run(). */
+    public function enterPlatform(): void
+    {
+        $this->platform = true;
+        $this->set(null);
+    }
+
     public function set(?string $organisationId): void
     {
         $this->organisationId = $organisationId;
@@ -36,6 +45,12 @@ class TenantContext
     {
         if ($this->organisationId !== null) {
             return $this->organisationId;
+        }
+
+        // Platform screens act across institutions: a platform administrator
+        // who also belongs to one must not be narrowed to it there.
+        if ($this->platform) {
+            return null;
         }
 
         $user = Auth::hasUser() ? Auth::user() : null;

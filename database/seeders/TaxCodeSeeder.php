@@ -33,18 +33,23 @@ class TaxCodeSeeder extends Seeder
 
     public function run(): void
     {
-        foreach (Organisation::all() as $organisation) {
-            foreach (self::CODES as [$code, $name, $rate, $recoverable]) {
-                $taxCode = TaxCode::firstOrCreate(
-                    ['organisation_id' => $organisation->id, 'code' => $code],
-                    ['name' => $name, 'tax_type' => 'VAT', 'is_recoverable' => $recoverable, 'is_active' => true],
-                );
+        foreach (Organisation::pluck('id') as $organisationId) {
+            self::provision((string) $organisationId);
+        }
+    }
 
-                TaxRate::firstOrCreate(
-                    ['tax_code_id' => $taxCode->id, 'effective_from' => self::RATES_EFFECTIVE_FROM],
-                    ['rate_pct' => $rate, 'effective_to' => null],
-                );
-            }
+    public static function provision(string $organisationId): void
+    {
+        foreach (self::CODES as [$code, $name, $rate, $recoverable]) {
+            $taxCode = TaxCode::withoutGlobalScopes()->firstOrCreate(
+                ['organisation_id' => $organisationId, 'code' => $code],
+                ['name' => $name, 'tax_type' => 'VAT', 'is_recoverable' => $recoverable, 'is_active' => true],
+            );
+
+            TaxRate::firstOrCreate(
+                ['tax_code_id' => $taxCode->id, 'effective_from' => self::RATES_EFFECTIVE_FROM],
+                ['rate_pct' => $rate, 'effective_to' => null],
+            );
         }
     }
 }

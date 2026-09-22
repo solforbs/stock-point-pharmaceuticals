@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdrReportController;
 use App\Http\Controllers\Api\AlertController;
+use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\Api\ColdChainController;
 use App\Http\Controllers\Api\ControlledDocumentController;
 use App\Http\Controllers\Api\CustomerContactController;
@@ -27,12 +28,14 @@ use App\Http\Controllers\Api\PackingController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PayrollBandController;
 use App\Http\Controllers\Api\PayrollController;
+use App\Http\Controllers\Api\PlatformController;
 use App\Http\Controllers\Api\PriceListController;
 use App\Http\Controllers\Api\PricingController;
 use App\Http\Controllers\Api\PricingRuleController;
 use App\Http\Controllers\Api\ProcurementController;
 use App\Http\Controllers\Api\ProductCatalogueController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\PublicOnboardingController;
 use App\Http\Controllers\Api\QualityController;
 use App\Http\Controllers\Api\ReconciliationController;
 use App\Http\Controllers\Api\RecordDeletionController;
@@ -49,7 +52,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', 'branch.context'])->get('/user', function (Request $request) {
+Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->get('/user', function (Request $request) {
     $user = $request->user()->load('roles');
     $activeBranchId = $request->attributes->get('active_branch_id');
 
@@ -71,6 +74,18 @@ Route::middleware(['auth:sanctum', 'branch.context'])->get('/user', function (Re
         // normally empty since every permission here comes through a role.
         'permissions' => $user->getAllPermissions()->pluck('name'),
         'organisation' => $user->organisation?->only(['id', 'name', 'legal_name']),
+        // Drives the trial / lapsed banner and read-only mode in the web app.
+        'subscription' => $user->organisation ? (function ($organisation) {
+            $current = $organisation->currentSubscription();
+
+            return [
+                'access_state' => $organisation->accessState(),
+                'trial_ends_at' => $organisation->trial_ends_at?->toIso8601String(),
+                'plan' => $current?->plan?->only(['id', 'code', 'name']),
+                'current_period_end' => $current?->current_period_end?->toIso8601String(),
+                'is_complimentary' => $organisation->is_complimentary,
+            ];
+        })($user->organisation) : null,
         'active_branch_id' => $activeBranchId,
         'active_branch' => $active,
         'branches' => $branches->values(),
@@ -81,7 +96,7 @@ Route::middleware(['auth:sanctum', 'branch.context'])->get('/user', function (Re
 
 // Part 21 — the API catalogue. Every route is authenticated, branch-scoped
 // (Part 18.2) and permission-checked inside its controller.
-Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
+Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(function () {
     // 21.3 Products and master data
     Route::get('/products', [ProductController::class, 'index']);
     Route::post('/products', [ProductController::class, 'store']);
@@ -427,4 +442,41 @@ Route::middleware(['auth:sanctum', 'branch.context'])->group(function () {
     Route::get('/etims/queue', [EtimsController::class, 'queue']);
     Route::post('/etims/sales/{sale}/retry', [EtimsController::class, 'retrySale']);
     Route::post('/etims/credit-notes/{return}/retry', [EtimsController::class, 'retryCreditNote']);
+});
+
+// An institution's own plan and Paystack checkout. tenant.access leaves these
+// open even when the institution has lapsed, so it can always pay.
+Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(function () {
+    Route::get('/billing', [BillingController::class, 'show']);
+    Route::post('/billing/checkout', [BillingController::class, 'checkout']);
+    Route::post('/billing/verify', [BillingController::class, 'verify']);
+});
+
+// The public edge: plans, quote requests, the one-time links, Paystack's webhook.
+Route::prefix('public')->group(function () {
+    Route::get('/plans', [PublicOnboardingController::class, 'plans'])->middleware('throttle:60,1');
+    Route::post('/quote-requests', [PublicOnboardingController::class, 'requestQuote'])->middleware('throttle:5,1');
+    Route::post('/invitations/open', [PublicOnboardingController::class, 'openInvitation'])->middleware('throttle:10,1');
+    Route::post('/register', [PublicOnboardingController::class, 'register'])->middleware('throttle:10,1');
+    Route::post('/activate', [PublicOnboardingController::class, 'activate'])->middleware('throttle:10,1');
+    Route::post('/paystack/webhook', [PublicOnboardingController::class, 'paystackWebhook']);
+});
+
+// The platform console: institutions, quote requests, plans and payments.
+Route::middleware(['auth:sanctum', 'platform'])->prefix('platform')->group(function () {
+    Route::get('/quote-requests', [PlatformController::class, 'quoteRequests']);
+    Route::post('/quote-requests/{tenantRequest}/approve', [PlatformController::class, 'approveRequest']);
+    Route::post('/quote-requests/{tenantRequest}/reject', [PlatformController::class, 'rejectRequest']);
+    Route::get('/tenants', [PlatformController::class, 'tenants']);
+    Route::post('/tenants', [PlatformController::class, 'storeTenant']);
+    Route::get('/tenants/{organisation}', [PlatformController::class, 'tenant']);
+    Route::post('/tenants/{organisation}/suspend', [PlatformController::class, 'suspend']);
+    Route::post('/tenants/{organisation}/reactivate', [PlatformController::class, 'reactivate']);
+    Route::post('/tenants/{organisation}/extend-trial', [PlatformController::class, 'extendTrial']);
+    Route::post('/tenants/{organisation}/complimentary', [PlatformController::class, 'setComplimentary']);
+    Route::post('/invitations/{invitation}/resend', [PlatformController::class, 'resendInvitation']);
+    Route::get('/plans', [PlatformController::class, 'plans']);
+    Route::post('/plans', [PlatformController::class, 'storePlan']);
+    Route::patch('/plans/{plan}', [PlatformController::class, 'updatePlan']);
+    Route::get('/payments', [PlatformController::class, 'payments']);
 });

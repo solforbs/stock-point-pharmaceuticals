@@ -43,6 +43,11 @@ api.interceptors.response.use(
     if (axios.isAxiosError(error) && error.response?.status === 401 && !String(error.config?.url).startsWith('/auth/')) {
       queryClient.setQueryData(['auth', 'user'], null)
     }
+    // The subscription lapsed or the institution was suspended mid-session:
+    // refresh the profile so the banner and read-only mode appear at once.
+    if (axios.isAxiosError(error) && (error.response?.status === 402 || (error.response?.status === 403 && error.response.data?.error?.code === 'INSTITUTION_SUSPENDED'))) {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'user'] })
+    }
     return Promise.reject(error)
   },
 )

@@ -135,6 +135,7 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'permissions', label: 'Permissions', path: '/admin/permissions' },
       { key: 'branches', label: 'Branches & Stores', path: '/admin/branches' },
       { key: 'settings', label: 'Settings', path: '/admin/settings' },
+      { key: 'billing', label: 'Plan & Billing', path: '/admin/billing' },
       { key: 'security', label: 'Security (MFA)', path: '/admin/security' },
       { key: 'pricing-rules', label: 'Pricing Rules', path: '/admin/pricing-rules' },
       { key: 'payroll-bands', label: 'Payroll Bands', path: '/admin/payroll-bands' },
@@ -145,6 +146,7 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'sync-centre', label: 'Sync Centre', path: '/admin/sync-centre' },
       { key: 'system-health', label: 'System Health', path: '/admin/system-health', platformOnly: true },
       { key: 'backup', label: 'Backup', path: '/admin/backup', platformOnly: true },
+      { key: 'platform', label: 'Platform console', path: '/platform', platformOnly: true },
     ],
   },
 ]

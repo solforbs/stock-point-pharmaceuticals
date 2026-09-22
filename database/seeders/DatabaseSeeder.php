@@ -16,9 +16,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Roles belong to an institution, so they are seeded after it (RoleSeeder below).
         $this->call([
             PermissionSeeder::class,
-            RoleSeeder::class,
+            PlanSeeder::class,
         ]);
 
         // A known-password account must never exist in production; there the
@@ -32,6 +33,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             OrganisationSeeder::class,
+            RoleSeeder::class,
             ChartOfAccountsSeeder::class,
             DiscountAuthoritySeeder::class,
             PayrollBandsSeeder::class,

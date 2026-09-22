@@ -7,6 +7,11 @@ import { Toaster } from './components/ui/Toaster'
 
 // Lazy-loaded route components for high-performance code splitting
 const Login = lazy(() => import('./pages/Login'))
+const RequestQuotePage = lazy(() => import('./features/onboarding/RequestQuotePage'))
+const InvitationPage = lazy(() => import('./features/onboarding/InvitationPage'))
+const PlatformPage = lazy(() => import('./features/platform/PlatformPage'))
+const BillingPage = lazy(() => import('./features/billing/BillingPage'))
+const BillingCallbackPage = lazy(() => import('./features/billing/BillingCallbackPage'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Placeholder = lazy(() => import('./pages/Placeholder'))
 
@@ -100,6 +105,13 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />
+          {/* Reached without signing in: asking for a quote and the one-time emailed links. */}
+          <Route path="/request-quote" element={<RequestQuotePage />} />
+          <Route path="/register" element={<InvitationPage />} />
+          <Route path="/activate" element={<InvitationPage />} />
+
+          {/* The platform console has its own light frame: no institution chrome. */}
+          <Route path="/platform" element={<ProtectedRoute><PlatformPage /></ProtectedRoute>} />
 
           <Route
             element={
@@ -185,6 +197,8 @@ function App() {
             <Route path="/reports/analytics" element={<AnalyticsPage />} />
             <Route path="/reports/scheduled" element={<ScheduledReportsPage />} />
             <Route path="/admin/pricing-rules" element={<PricingRulesPage />} />
+            <Route path="/admin/billing" element={<BillingPage />} />
+            <Route path="/billing/callback" element={<BillingCallbackPage />} />
 
             {/* A module header (/sell, /inventory …) opens its first section. */}
             {NAV_ITEMS.filter((m) => m.children?.length).map((m) => (

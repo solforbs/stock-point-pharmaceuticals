@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Eye, EyeOff, ArrowLeft, ShieldCheck, Cpu } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api, apiGet, ensureCsrfCookie, getApiError } from '../lib/api'
 import { formatDateTime, todayIso } from '../lib/format'
 import type { CurrentUser, DashboardSummary, Paginated, Sale } from '../lib/types'
@@ -54,7 +54,7 @@ export default function Login() {
 
     const { data } = await api.get<CurrentUser>('/api/user')
     queryClient.setQueryData(['auth', 'user'], data)
-    navigate('/dashboard')
+    navigate(!data.organisation && data.is_platform_admin ? '/platform' : '/dashboard')
   }
 
   const login = useMutation({
@@ -336,8 +336,14 @@ export default function Login() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-6 text-center"
+            className="mt-6 text-center space-y-2"
           >
+            <p className="text-sm text-slate-600">
+              New institution?{' '}
+              <Link to="/request-quote" className="font-semibold text-blue-600 hover:underline">
+                Request a quote
+              </Link>
+            </p>
             <p className="text-xs text-slate-400">
               Stockpoint by <span className="font-semibold text-slate-600">Solforbs</span> • Authorized Pharmacy Personnel Only
             </p>

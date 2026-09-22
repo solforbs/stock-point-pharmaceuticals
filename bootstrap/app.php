@@ -2,6 +2,8 @@
 
 use App\Exceptions\ApiErrorMap;
 use App\Http\Middleware\AttachRequestId;
+use App\Http\Middleware\EnforceInstitutionAccess;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\ResolveActiveBranch;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -32,6 +34,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(AttachRequestId::class);
         $middleware->alias([
             'branch.context' => ResolveActiveBranch::class,
+            'tenant.access' => EnforceInstitutionAccess::class,
+            'platform' => EnsurePlatformAdmin::class,
         ]);
 
         // This backend has no server-rendered login page — the SPA owns

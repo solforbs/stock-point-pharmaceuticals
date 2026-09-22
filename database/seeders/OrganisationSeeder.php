@@ -25,6 +25,8 @@ class OrganisationSeeder extends Seeder
                 'fiscal_year_start' => 1,
             ]
         );
+        // The platform owner's own institution is never billed.
+        $org->forceFill(['is_complimentary' => true, 'subscription_status' => 'ACTIVE'])->save();
 
         $branch = Branch::firstOrCreate(
             ['code' => $settings['branch_code']],
@@ -58,6 +60,8 @@ class OrganisationSeeder extends Seeder
         // Give the seeded test user full access to this branch for local dev.
         $testUser = User::where('email', 'test@example.com')->first();
         if ($testUser) {
+            RoleSeeder::provision($org->id);
+            $testUser->forceFill(['organisation_id' => $org->id])->save();
             app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
             $testUser->assignRole('Director', 'System Administrator');
         }

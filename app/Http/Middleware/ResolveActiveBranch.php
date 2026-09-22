@@ -33,6 +33,14 @@ class ResolveActiveBranch
 
         if ($user) {
             if (! $user->organisation_id) {
+                // A platform-only account may still load its own profile, so
+                // the web app can send it to the platform console.
+                if ($user->is_platform_admin && $request->is('api/user')) {
+                    $this->tenant->enterPlatform();
+
+                    return $next($request);
+                }
+
                 return response()->json(['error' => [
                     'code' => 'NO_INSTITUTION',
                     'message' => 'This account does not belong to an institution, so it cannot open institution data.',

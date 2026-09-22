@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Organisation;
 use App\Models\Role;
 use App\Models\RoleDiscountAuthority;
 use Illuminate\Database\Seeder;
@@ -24,8 +25,16 @@ class DiscountAuthoritySeeder extends Seeder
 
     public function run(): void
     {
+        foreach (Organisation::pluck('id') as $organisationId) {
+            self::provision((string) $organisationId);
+        }
+    }
+
+    /** One institution's starting matrix, on its own roles. */
+    public static function provision(string $organisationId): void
+    {
         foreach (self::AUTHORITY as $roleName => [$line, $header, $override]) {
-            $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web', 'branch_id' => null]);
+            $role = Role::withoutGlobalScopes()->firstOrCreate(['organisation_id' => $organisationId, 'name' => $roleName, 'guard_name' => 'web', 'branch_id' => null]);
 
             RoleDiscountAuthority::updateOrCreate(['role_id' => $role->id], [
                 'max_line_discount_pct' => $line,

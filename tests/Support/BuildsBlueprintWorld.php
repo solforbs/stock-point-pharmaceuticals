@@ -77,6 +77,8 @@ trait BuildsBlueprintWorld
             'base_currency' => 'KES',
             'fiscal_year_start' => 1,
         ]);
+        // Billing is not what these tests are about: the test institution is never lapsed.
+        $this->org->forceFill(['is_complimentary' => true])->save();
         $this->user->forceFill(['organisation_id' => $this->org->id])->save();
 
         $this->branch = Branch::create([

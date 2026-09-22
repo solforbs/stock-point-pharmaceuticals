@@ -14,6 +14,7 @@ import { useTourStore } from './tour/useTourStore'
 import { CommandPalette } from './ui/CommandPalette'
 import { KeyboardShortcutsModal } from './ui/KeyboardShortcutsModal'
 import { OfflineBanner } from './ui/OfflineBanner'
+import { SubscriptionBanner } from './SubscriptionBanner'
 
 export default function AppLayout() {
   const location = useLocation()
@@ -172,6 +173,9 @@ export default function AppLayout() {
             )}
           </div>
         </header>
+
+        {/* Trial days left, read-only after lapsing, or suspended */}
+        <SubscriptionBanner />
 
         {/* Dynamic Guided Tour Prompt Banner (shows if not dismissed in this session) */}
         <TourPromptBanner />
