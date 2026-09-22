@@ -14,7 +14,7 @@ import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, Prima
 import { UserPicker } from '../../components/UserPicker'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { apiGet, apiPost } from '../../lib/api'
-import { formatDate, formatDateTime, titleCase } from '../../lib/format'
+import { formatDateTime, titleCase } from '../../lib/format'
 import { useStores, useSuppliers } from '../../lib/hooks'
 import { dMul } from '../../lib/decimal'
 import { formatQty } from '../../lib/money'
@@ -550,4 +550,12 @@ function SupplierReturns() {
                     <td className="text-right"><MoneyCell value={l.unit_cost} /></td>
                     <td className="text-right"><MoneyCell value={dMul(l.qty_base, l.unit_cost)} /></td>
                   </tr>
-    
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Drawer>
+    </>
+  )
+}
