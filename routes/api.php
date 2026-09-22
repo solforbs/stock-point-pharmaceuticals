@@ -104,6 +104,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::patch('/products/{product}', [ProductController::class, 'update']);
     Route::get('/products/{product}/stock', [ProductController::class, 'stock']);
     Route::get('/products/{product}/insight', [ProductController::class, 'insight']);
+    Route::get('/products/{product}/selling-prices', [ProductController::class, 'sellingPrices']);
     Route::get('/uoms', [MasterDataController::class, 'uoms']);
     Route::get('/tax-codes', [MasterDataController::class, 'taxCodes']);
     Route::get('/dosage-forms', [MasterDataController::class, 'dosageForms']);

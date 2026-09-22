@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\ProductPrice;
 use App\Models\ProductUom;
 use App\Services\Inventory\InventoryReport;
+use App\Services\Pricing\TaxResolver;
 use App\Services\Sales\ProductInsight;
 use App\Services\Tenancy\TenantRules;
 use Illuminate\Database\Query\Builder;
@@ -127,7 +130,7 @@ class ProductController extends ApiController
             FROM stock_balances sb JOIN product_batches pb ON pb.id = sb.batch_id JOIN stores st ON st.id = sb.store_id WHERE st.branch_id = ?";
     }
 
-    public function show(Request $request, string $product): JsonResponse
+    public function show(Request $request, string $product, ProductInsight $insight): JsonResponse
     {
         $this->requirePermission($request, 'product.view');
         $organisationId = $this->organisationId($request);
@@ -136,7 +139,14 @@ class ProductController extends ApiController
             ->where('organisation_id', $organisationId)
             ->findOrFail($product);
 
-        return response()->json($product);
+        // The supplier's last trade price, discount and net cost — cost is need-to-know.
+        if (! $request->user()->can('product.cost.view')) {
+            return response()->json($product);
+        }
+
+        return response()->json($product->toArray() + [
+            'last_purchase' => $insight->lastPurchases([$product->id], $this->branchId($request))[$product->id] ?? null,
+        ]);
     }
 
     /** GET /api/products/{id}/stock — eight quantity states across all stores (Part 21.3). */
@@ -184,6 +194,53 @@ class ProductController extends ApiController
             'customer_id' => $data['customer_id'] ?? null,
             'user_id' => $request->user()->id,
         ], $request->user()->can('product.cost.view')));
+    }
+
+    /**
+     * GET /api/products/{id}/selling-prices?uom_id= — the product's current
+     * row on every active price list in one unit, for the goods receipt's
+     * "Selling prices" panel. Price setting is need-to-know, so this is
+     * behind the same permission as the price-list screen.
+     */
+    public function sellingPrices(Request $request, string $product, TaxResolver $tax): JsonResponse
+    {
+        $this->requirePermission($request, 'price.manage');
+        $organisationId = $this->organisationId($request);
+
+        $data = $request->validate([
+            'uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
+        ]);
+
+        $product = Product::where('organisation_id', $organisationId)->findOrFail($product);
+        $today = now()->toDateString();
+
+        $lists = PriceList::where('organisation_id', $organisationId)
+            ->where('is_active', true)
+            ->whereDate('effective_from', '<=', $today)
+            ->where(fn ($q) => $q->whereNull('effective_to')->orWhereDate('effective_to', '>=', $today))
+            ->with(['tier:id,code,name', 'branch:id,code,name'])
+            ->orderByDesc('priority')->orderBy('code')
+            ->get();
+
+        $current = ProductPrice::whereIn('price_list_id', $lists->modelKeys())
+            ->where('product_id', $product->id)
+            ->where('uom_id', $data['uom_id'])
+            ->whereDate('effective_from', '<=', $today)
+            ->where(fn ($q) => $q->whereNull('effective_to')->orWhereDate('effective_to', '>=', $today))
+            ->orderByDesc('effective_from')
+            ->get()
+            ->unique('price_list_id')
+            ->keyBy('price_list_id');
+
+        return response()->json([
+            'product_id' => $product->id,
+            'uom_id' => $data['uom_id'],
+            'tax_rate_pct' => $tax->resolve($product, null)['rate_pct'],
+            'lists' => $lists->map(fn (PriceList $list) => [
+                'price_list' => $list->only(['id', 'code', 'name', 'sale_mode', 'prices_include_tax', 'tier', 'branch']),
+                'current' => $current->get($list->id)?->only(['id', 'factor_type', 'unit_price', 'factor_value', 'effective_from']),
+            ])->values(),
+        ]);
     }
 
     public function store(Request $request): JsonResponse

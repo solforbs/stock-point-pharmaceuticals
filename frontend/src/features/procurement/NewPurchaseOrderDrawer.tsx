@@ -4,6 +4,7 @@ import { Drawer } from '../../components/ui/Drawer'
 import { InlineError } from '../../components/ui/States'
 import { Button, DrawerFooter, Field, FormSection, Input, Select } from '../../components/ui/primitives'
 import type { Product, Supplier } from '../../lib/types'
+import { decimalInput, netFromTrade } from './tradeTerms'
 
 export interface PoLine {
   key: string
@@ -11,6 +12,9 @@ export interface PoLine {
   uom_id: string
   qty_ordered: string
   unit_price: string
+  /** The supplier's gross price and discount; together they fill the unit price. */
+  trade_price: string
+  discount_pct: string
 }
 
 export interface NewPurchaseOrderDrawerProps {
@@ -44,7 +48,7 @@ export function NewPurchaseOrderDrawer({
 }: NewPurchaseOrderDrawerProps) {
   const validLines =
     lines.length > 0 &&
-    lines.every((l) => l.uom_id && Number(l.qty_ordered) > 0 && /^\d+(\.\d+)?$/.test(l.unit_price))
+    lines.every((l) => l.uom_id && Number(l.qty_ordered) > 0 && /^\d+(\.\d+)?$/.test(l.unit_price) && Number(l.discount_pct || 0) <= 100)
 
   return (
     <Drawer
@@ -93,19 +97,21 @@ export function NewPurchaseOrderDrawer({
                 const uom = uoms.find((u) => u.is_purchase && !u.is_base) ?? uoms[0]
                 setLines([
                   ...lines,
-                  { key: `${p.id}-${Date.now()}`, product: p, uom_id: uom?.uom_id ?? '', qty_ordered: '1', unit_price: '' },
+                  { key: `${p.id}-${Date.now()}`, product: p, uom_id: uom?.uom_id ?? '', qty_ordered: '1', unit_price: '', trade_price: '', discount_pct: '' },
                 ])
               }}
             />
 
             {lines.length > 0 ? (
               <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
-                <table className="ui-table min-w-[540px]">
+                <table className="ui-table min-w-[720px]">
                   <thead>
                     <tr>
                       <th>Product</th>
                       <th>UOM</th>
                       <th className="text-right">Qty</th>
+                      <th className="text-right">Trade price</th>
+                      <th className="text-right">Discount %</th>
                       <th className="text-right">Unit Price (KES)</th>
                       <th />
                     </tr>
@@ -149,7 +155,34 @@ export function NewPurchaseOrderDrawer({
                           <input
                             type="text"
                             inputMode="decimal"
+                            placeholder="Optional"
+                            value={l.trade_price}
+                            onChange={(e) => {
+                              const trade_price = decimalInput(e.target.value)
+                              setLines(lines.map((x) => (x.key === l.key ? { ...x, trade_price, unit_price: netFromTrade(trade_price, x.discount_pct) || x.unit_price } : x)))
+                            }}
+                            className="ui-input h-8 w-24 tabular text-right text-sm"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={l.discount_pct}
+                            onChange={(e) => {
+                              const discount_pct = decimalInput(e.target.value)
+                              setLines(lines.map((x) => (x.key === l.key ? { ...x, discount_pct, unit_price: netFromTrade(x.trade_price, discount_pct) || x.unit_price } : x)))
+                            }}
+                            className="ui-input h-8 w-16 tabular text-right text-sm"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            inputMode="decimal"
                             placeholder="0.00"
+                            title={l.trade_price ? 'Filled from trade price less discount. Change it to match the invoice.' : undefined}
                             value={l.unit_price}
                             onChange={(e) =>
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, unit_price: e.target.value.replace(/[^\d.]/g, '') } : x)))

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PackageCheck, Plus, Trash2, Truck } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { ProductSearch } from '../../components/ProductSearch'
@@ -18,6 +18,8 @@ import { usePurchaseOrder, useStores, useSuppliers } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { GoodsReceipt, Paginated, Product, PurchaseOrder } from '../../lib/types'
+import { SellingPricesPanel } from './SellingPricesPanel'
+import { decimalInput, netFromTrade, tradeTermsLabel } from './tradeTerms'
 
 type GrnLine = {
   key: string
@@ -35,12 +37,16 @@ type GrnLine = {
   expiry_date: string
   manufacture_date: string
   unit_cost: string
+  trade_price: string
+  discount_pct: string
   temperature_on_arrival: string
   coa_received: boolean
+  /** New selling price per price list id, in the received unit; blank means leave as is. */
+  selling_prices: Record<string, string>
 }
 
 function blankLine(): Omit<GrnLine, 'key' | 'product_id' | 'product_label' | 'uom_id' | 'uom_options'> {
-  return { purchase_order_line_id: null, qty_ordered: '', qty_delivered: '', qty_accepted: '', qty_rejected: '', rejection_reason: '', batch_number: '', expiry_date: '', manufacture_date: '', unit_cost: '', temperature_on_arrival: '', coa_received: false }
+  return { purchase_order_line_id: null, qty_ordered: '', qty_delivered: '', qty_accepted: '', qty_rejected: '', rejection_reason: '', batch_number: '', expiry_date: '', manufacture_date: '', unit_cost: '', trade_price: '', discount_pct: '', temperature_on_arrival: '', coa_received: false, selling_prices: {} }
 }
 
 /** Part 9.2 — PO-backed receipt; batch + expiry mandatory; creates the batch as PENDING_QC. */
@@ -107,6 +113,8 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
   const queryClient = useQueryClient()
   const stores = useStores()
   const suppliers = useSuppliers()
+  const canSetPrices = usePermission('price.manage')
+  const [pricesOpen, setPricesOpen] = useState<string | null>(null)
   const [poId, setPoId] = useState(initialPo ?? '')
   const [supplierId, setSupplierId] = useState('')
   const [storeId, setStoreId] = useState('')
@@ -136,6 +144,8 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
         qty_delivered: String(Number(l.qty_ordered)),
         qty_accepted: String(Number(l.qty_ordered)),
         unit_cost: String(Number(l.unit_price)),
+        trade_price: l.trade_price != null ? String(Number(l.trade_price)) : '',
+        discount_pct: l.discount_pct != null ? String(Number(l.discount_pct)) : '',
       })),
     )
   }, [po.data])
@@ -160,8 +170,11 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
           expiry_date: l.expiry_date,
           manufacture_date: l.manufacture_date || null,
           unit_cost: l.unit_cost,
+          trade_price: l.trade_price || null,
+          discount_pct: l.trade_price ? l.discount_pct || '0' : null,
           temperature_on_arrival: l.temperature_on_arrival || null,
           coa_received: l.coa_received,
+          ...(canSetPrices ? { selling_prices: sellingPriceEntries(l) } : {}),
         })),
       }),
     onSuccess: (grn) => {
@@ -170,6 +183,8 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
       queryClient.invalidateQueries({ queryKey: ['inventory'] })
       queryClient.invalidateQueries({ queryKey: ['batches'] })
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['selling-prices'] })
+      queryClient.invalidateQueries({ queryKey: ['price-lists'] })
       toast.success(`Goods receipt ${grn.doc_number} posted`, 'Batches created as PENDING QC; release them in Batches & Expiry.')
       setLines([])
       setPoId('')
@@ -185,10 +200,15 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
   function update(key: string, patch: Partial<GrnLine>) {
     setLines(lines.map((l) => (l.key === key ? { ...l, ...patch } : l)))
   }
+  /** Trade price or discount changed: the unit cost follows; the receiver can still key their own. */
+  function updateTerms(line: GrnLine, patch: Pick<Partial<GrnLine>, 'trade_price' | 'discount_pct'>) {
+    const next = { ...line, ...patch }
+    update(line.key, { ...patch, unit_cost: netFromTrade(next.trade_price, next.discount_pct) || line.unit_cost })
+  }
 
   const valid =
     !!supplierId && !!effectiveStore && lines.length > 0 && (emergency || !!poId) &&
-    lines.every((l) => l.product_id && l.uom_id && l.batch_number && l.expiry_date && /^\d+(\.\d+)?$/.test(l.qty_delivered) && /^\d+(\.\d+)?$/.test(l.qty_accepted) && /^\d+(\.\d+)?$/.test(l.unit_cost) && (emergency || l.purchase_order_line_id))
+    lines.every((l) => l.product_id && l.uom_id && l.batch_number && l.expiry_date && /^\d+(\.\d+)?$/.test(l.qty_delivered) && /^\d+(\.\d+)?$/.test(l.qty_accepted) && /^\d+(\.\d+)?$/.test(l.unit_cost) && Number(l.discount_pct || 0) <= 100 && (emergency || l.purchase_order_line_id) && Object.values(l.selling_prices).every((v) => v === '' || /^\d+(\.\d+)?$/.test(v)))
 
   return (
     <Drawer
@@ -259,12 +279,20 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
         >
           {lines.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="ui-table min-w-[1100px]">
-                <thead><tr><th>Product</th><th>UOM</th><th className="text-right">Ordered</th><th>Delivered</th><th>Accepted</th><th>Rejected</th><th>Batch no.</th><th>Expiry</th><th>Mfg date</th><th>Unit cost</th><th>Temp °C</th><th>COA</th><th /></tr></thead>
+              <table className="ui-table min-w-[1260px]">
+                <thead><tr><th>Product</th><th>UOM</th><th className="text-right">Ordered</th><th>Delivered</th><th>Accepted</th><th>Rejected</th><th>Batch no.</th><th>Expiry</th><th>Mfg date</th><th>Trade price</th><th>Disc. %</th><th>Unit cost</th><th>Temp °C</th><th>COA</th><th /></tr></thead>
                 <tbody>
                   {lines.map((l) => (
-                    <tr key={l.key}>
-                      <td className="text-xs font-semibold text-slate-900">{l.product_label}</td>
+                    <Fragment key={l.key}>
+                    <tr>
+                      <td className="text-xs font-semibold text-slate-900">
+                        {l.product_label}
+                        {canSetPrices && (
+                          <button type="button" onClick={() => setPricesOpen(pricesOpen === l.key ? null : l.key)} className="block mt-1 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+                            {pricesOpen === l.key ? 'Hide selling prices' : `Selling prices${sellingPriceEntries(l).length ? ` (${sellingPriceEntries(l).length} new)` : ''}`}
+                          </button>
+                        )}
+                      </td>
                       <td>
                         {l.uom_options.length > 1 ? (
                           <select value={l.uom_id} onChange={(e) => update(l.key, { uom_id: e.target.value })} className="ui-input h-7 w-auto text-xs">{l.uom_options.map((u) => (<option key={u.id} value={u.id}>{u.code}</option>))}</select>
@@ -282,11 +310,28 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
                       <td><input value={l.batch_number} onChange={(e) => update(l.key, { batch_number: e.target.value })} className="ui-input h-7 w-28 tabular font-semibold" placeholder="BATCH-001" /></td>
                       <td><input type="date" value={l.expiry_date} onChange={(e) => update(l.key, { expiry_date: e.target.value })} className="ui-input h-7 w-36" /></td>
                       <td><input type="date" value={l.manufacture_date} onChange={(e) => update(l.key, { manufacture_date: e.target.value })} className="ui-input h-7 w-36" /></td>
-                      <td><input value={l.unit_cost} onChange={(e) => update(l.key, { unit_cost: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-20 tabular text-right font-bold" /></td>
+                      <td><input value={l.trade_price} placeholder="Optional" onChange={(e) => updateTerms(l, { trade_price: decimalInput(e.target.value) })} className="ui-input h-7 w-20 tabular text-right" /></td>
+                      <td><input value={l.discount_pct} placeholder="0" onChange={(e) => updateTerms(l, { discount_pct: decimalInput(e.target.value) })} className="ui-input h-7 w-14 tabular text-right" /></td>
+                      <td><input value={l.unit_cost} title={l.trade_price ? 'Filled from trade price less discount. Change it to match the invoice.' : undefined} onChange={(e) => update(l.key, { unit_cost: decimalInput(e.target.value) })} className="ui-input h-7 w-20 tabular text-right font-bold" /></td>
                       <td><input value={l.temperature_on_arrival} placeholder="°C" onChange={(e) => update(l.key, { temperature_on_arrival: e.target.value.replace(/[^-\d.]/g, '') })} className="ui-input h-7 w-14 tabular text-right" /></td>
                       <td><input type="checkbox" checked={l.coa_received} onChange={(e) => update(l.key, { coa_received: e.target.checked })} /></td>
                       <td><Button size="sm" variant="ghost" onClick={() => setLines(lines.filter((x) => x.key !== l.key))} aria-label="Remove"><Trash2 size={13} /></Button></td>
                     </tr>
+                    {canSetPrices && pricesOpen === l.key && (
+                      <tr>
+                        <td colSpan={15} className="bg-slate-50/70">
+                          <SellingPricesPanel
+                            productId={l.product_id}
+                            uomId={l.uom_id}
+                            uomCode={l.uom_options.find((u) => u.id === l.uom_id)?.code ?? ''}
+                            buyingCost={l.unit_cost}
+                            values={l.selling_prices}
+                            onChange={(selling_prices) => update(l.key, { selling_prices })}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
@@ -300,6 +345,13 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
       </div>
     </Drawer>
   )
+}
+
+/** The prices keyed on a line, ready to post. */
+function sellingPriceEntries(line: GrnLine): { price_list_id: string; unit_price: string }[] {
+  return Object.entries(line.selling_prices)
+    .filter(([, price]) => price !== '')
+    .map(([price_list_id, unit_price]) => ({ price_list_id, unit_price }))
 }
 
 function ReceiptDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
@@ -325,7 +377,10 @@ function ReceiptDrawer({ id, onClose }: { id: string | null; onClose: () => void
                   <td className="text-right"><QtyCell value={l.qty_delivered} /></td>
                   <td className="text-right"><QtyCell value={l.qty_accepted} /></td>
                   <td className="text-right"><QtyCell value={l.qty_rejected} />{l.rejection_reason && <div className="text-xs text-slate-500">{l.rejection_reason}</div>}</td>
-                  <td className="text-right"><MoneyCell value={l.unit_cost} /></td>
+                  <td className="text-right">
+                    <MoneyCell value={l.unit_cost} />
+                    {tradeTermsLabel(l.trade_price, l.discount_pct) && <div className="text-xs text-slate-500 tabular">{tradeTermsLabel(l.trade_price, l.discount_pct)}</div>}
+                  </td>
                   <td className="text-right"><MoneyCell value={l.batch?.landed_unit_cost ?? l.landed_unit_cost} /></td>
                 </tr>
               ))}

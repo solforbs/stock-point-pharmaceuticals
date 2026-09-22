@@ -48,6 +48,8 @@ export default function PurchaseOrdersPage() {
           uom_id: l.uom_id,
           qty_ordered: l.qty_ordered,
           unit_price: l.unit_price,
+          trade_price: l.trade_price || null,
+          discount_pct: l.trade_price ? l.discount_pct || '0' : null,
         })),
       }),
     onSuccess: (po) => {

@@ -341,6 +341,21 @@ function ProductDrawer({ id, onClose }: { id: string | null; onClose: () => void
               { label: 'Default price', value: <MoneyCell value={p.default_price} symbol /> },
             ]}
           />
+          {showCost && p.last_purchase && (
+            <Card title="Last purchase">
+              <div className="p-3">
+                <DescriptionList
+                  items={[
+                    { label: 'Supplier', value: p.last_purchase.supplier ?? '—' },
+                    { label: 'Trade price', value: p.last_purchase.trade_price ? <><MoneyCell value={p.last_purchase.trade_price} symbol /> <span className="text-xs text-slate-500">/{p.last_purchase.uom_code}</span></> : '—' },
+                    { label: 'Discount', value: p.last_purchase.trade_price ? `${Number(p.last_purchase.discount_pct ?? 0)}%` : '—' },
+                    { label: 'Buying price', value: <><MoneyCell value={p.last_purchase.unit_cost} symbol /> <span className="text-xs text-slate-500">/{p.last_purchase.uom_code}</span></> },
+                    { label: 'Received', value: `${formatDate(p.last_purchase.received_at)} · ${p.last_purchase.grn_number}` },
+                  ]}
+                />
+              </div>
+            </Card>
+          )}
           <Card title="Units of measure">
             <table className="ui-table">
               <thead>

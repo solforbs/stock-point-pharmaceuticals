@@ -10,15 +10,18 @@ use App\Models\GoodsReceipt;
 use App\Models\GoodsReceiptLine;
 use App\Models\NumberSequence;
 use App\Models\Organisation;
+use App\Models\PriceList;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceLine;
 use App\Services\Notifications\Notifier;
+use App\Services\Pricing\PriceListWriter;
 use App\Services\Procurement\GoodsReceiptService;
 use App\Services\Procurement\SupplierPaymentService;
 use App\Services\Procurement\ThreeWayMatchService;
+use App\Services\Procurement\TradeTerms;
 use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,6 +29,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProcurementController extends ApiController
 {
@@ -133,9 +137,12 @@ class ProcurementController extends ApiController
             'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
             'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'lines.*.qty_ordered' => ['required', 'numeric', 'gt:0'],
-            'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'lines.*.unit_price' => ['nullable', 'required_without:lines.*.trade_price', 'numeric', 'min:0'],
+            'lines.*.trade_price' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'lines.*.tax_code_id' => ['nullable', 'uuid', TenantRules::exists('tax_codes')],
         ]);
+        $data['lines'] = array_map(fn (array $line) => TradeTerms::applyTo($line, 'unit_price'), $data['lines']);
 
         $supplier = Supplier::findOrFail($data['supplier_id']);
         if ($supplier->status !== 'ACTIVE' || ! $supplier->is_active) {
@@ -156,7 +163,7 @@ class ProcurementController extends ApiController
                 'expected_date' => $data['expected_date'] ?? null,
             ]);
             foreach ($data['lines'] as $line) {
-                PurchaseOrderLine::create(['purchase_order_id' => $po->id] + collect($line)->only(['product_id', 'uom_id', 'qty_ordered', 'unit_price', 'tax_code_id'])->all());
+                PurchaseOrderLine::create(['purchase_order_id' => $po->id] + collect($line)->only(['product_id', 'uom_id', 'qty_ordered', 'unit_price', 'trade_price', 'discount_pct', 'tax_code_id'])->all());
             }
             AuditLog::record('PO_CREATED', 'purchase_order', $po->id, ['reference' => $po->doc_number]);
 
@@ -260,7 +267,7 @@ class ProcurementController extends ApiController
     }
 
     /** POST /api/goods-receipts — lines mandatory; batch + expiry mandatory (Part 9.2). */
-    public function storeGoodsReceipt(Request $request, GoodsReceiptService $receipts): JsonResponse
+    public function storeGoodsReceipt(Request $request, GoodsReceiptService $receipts, PriceListWriter $prices): JsonResponse
     {
         $this->requirePermission($request, 'grn.create');
 
@@ -280,13 +287,25 @@ class ProcurementController extends ApiController
             'lines.*.batch_number' => ['required', 'string', 'max:100'],
             'lines.*.expiry_date' => ['required', 'date'],
             'lines.*.manufacture_date' => ['nullable', 'date'],
-            'lines.*.unit_cost' => ['required', 'numeric', 'min:0'],
+            'lines.*.unit_cost' => ['nullable', 'required_without:lines.*.trade_price', 'numeric', 'min:0'],
+            'lines.*.trade_price' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'lines.*.temperature_on_arrival' => ['nullable', 'numeric'],
             'lines.*.coa_received' => ['nullable', 'boolean'],
+            'lines.*.selling_prices' => ['nullable', 'array'],
+            'lines.*.selling_prices.*.price_list_id' => ['required', 'uuid', 'distinct', TenantRules::exists('price_lists')],
+            'lines.*.selling_prices.*.unit_price' => ['required', 'numeric', 'min:0'],
         ]);
+        $data['lines'] = array_map(fn (array $line) => TradeTerms::applyTo($line, 'unit_cost'), $data['lines']);
 
         if (empty($data['purchase_order_id']) && ! ($data['is_emergency'] ?? false)) {
             return $this->error('PO_REQUIRED', 'A goods receipt must reference a purchase order unless it is flagged as an emergency receipt (Part 9.2).', 422);
+        }
+
+        // Selling prices set on arrival are a price change like any other.
+        $setsPrices = collect($data['lines'])->contains(fn (array $line) => ! empty($line['selling_prices']));
+        if ($setsPrices && ! $request->user()->can('price.manage')) {
+            return $this->error('FORBIDDEN', "Setting selling prices needs the 'price.manage' permission. Post the receipt without them, or ask a manager.", 403);
         }
 
         foreach ($data['lines'] as $i => $line) {
@@ -306,7 +325,7 @@ class ProcurementController extends ApiController
         }
 
         $branchId = $this->branchId($request);
-        $receipt = DB::transaction(function () use ($data, $branchId, $request, $receipts) {
+        $receipt = DB::transaction(function () use ($data, $branchId, $request, $receipts, $prices) {
             $receipt = GoodsReceipt::create([
                 'doc_number' => $receipts->newDocNumber($branchId),
                 'purchase_order_id' => $data['purchase_order_id'] ?? null,
@@ -334,17 +353,50 @@ class ProcurementController extends ApiController
                     'expiry_date' => $line['expiry_date'],
                     'manufacture_date' => $line['manufacture_date'] ?? null,
                     'unit_cost' => $line['unit_cost'],
+                    'trade_price' => $line['trade_price'],
+                    'discount_pct' => $line['discount_pct'],
                     'temperature_on_arrival' => $line['temperature_on_arrival'] ?? null,
                     'coa_received' => (bool) ($line['coa_received'] ?? false),
                 ]);
             }
 
-            return $receipts->post($receipt->fresh(['lines']));
+            $posted = $receipts->post($receipt->fresh(['lines']));
+            $this->applySellingPrices($request, $data['lines'], $posted, $prices);
+
+            return $posted;
         });
 
         AuditLog::record('GRN_POSTED', 'goods_receipt', $receipt->id, ['reference' => $receipt->doc_number]);
 
         return response()->json($receipt->load('lines.batch'), 201);
+    }
+
+    /**
+     * Writes the selling prices keyed on the receipt as fixed prices in the
+     * received unit, one effective-dated row per price list, inside the
+     * receipt's own transaction — the stock and its new price land together.
+     *
+     * @param  list<array<string, mixed>>  $lines
+     */
+    private function applySellingPrices(Request $request, array $lines, GoodsReceipt $receipt, PriceListWriter $prices): void
+    {
+        $organisationId = $this->organisationId($request);
+
+        foreach ($lines as $line) {
+            foreach ($line['selling_prices'] ?? [] as $entry) {
+                $list = PriceList::where('organisation_id', $organisationId)->where('is_active', true)->find($entry['price_list_id']);
+                if (! $list) {
+                    throw ValidationException::withMessages(['selling_prices' => 'A price list chosen for the new selling prices is no longer active.']);
+                }
+
+                $prices->write($list, [
+                    'product_id' => $line['product_id'],
+                    'uom_id' => $line['uom_id'],
+                    'factor_type' => 'FIXED',
+                    'unit_price' => (string) $entry['unit_price'],
+                ], ['source' => 'goods_receipt', 'goods_receipt' => $receipt->doc_number, 'buying_cost' => (string) $line['unit_cost']]);
+            }
+        }
     }
 
     public function goodsReceipt(Request $request, string $receipt): JsonResponse

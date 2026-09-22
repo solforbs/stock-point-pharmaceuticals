@@ -14,7 +14,7 @@ class GoodsReceiptLine extends Model
         'goods_receipt_id', 'purchase_order_line_id', 'product_id', 'uom_id',
         'qty_ordered', 'qty_delivered', 'qty_accepted', 'qty_rejected', 'rejection_reason',
         'batch_number', 'expiry_date', 'manufacture_date', 'batch_id',
-        'unit_cost', 'landed_unit_cost', 'temperature_on_arrival', 'coa_received',
+        'unit_cost', 'trade_price', 'discount_pct', 'landed_unit_cost', 'temperature_on_arrival', 'coa_received',
     ];
 
     protected function casts(): array
@@ -27,6 +27,8 @@ class GoodsReceiptLine extends Model
             'expiry_date' => 'date',
             'manufacture_date' => 'date',
             'unit_cost' => 'decimal:4',
+            'trade_price' => 'decimal:4',
+            'discount_pct' => 'decimal:3',
             'landed_unit_cost' => 'decimal:4',
             'temperature_on_arrival' => 'decimal:2',
             'coa_received' => 'boolean',

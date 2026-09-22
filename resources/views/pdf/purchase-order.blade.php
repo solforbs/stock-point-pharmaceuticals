@@ -47,7 +47,10 @@
                 </td>
                 <td>{{ $line->uom?->code ?? '—' }}</td>
                 <td class="num">{{ $qty($line->qty_ordered) }}</td>
-                <td class="num">{{ $money($line->unit_price) }}</td>
+                <td class="num">
+                    {{ $money($line->unit_price) }}
+                    @if ($line->trade_price !== null)<div class="meta">Trade {{ $money($line->trade_price) }} less {{ rtrim(rtrim((string) $line->discount_pct, '0'), '.') ?: '0' }}%</div>@endif
+                </td>
                 <td class="num"><strong>{{ $money($lineTotal) }}</strong></td>
             </tr>
         @endforeach

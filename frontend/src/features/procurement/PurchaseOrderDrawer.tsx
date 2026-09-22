@@ -13,6 +13,7 @@ import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { PurchaseOrder } from '../../lib/types'
 import { ExpiryBadge } from '../inventory/ExpiryBadge'
+import { tradeTermsLabel } from './tradeTerms'
 
 export interface PurchaseOrderDrawerProps {
   id: string | null
@@ -107,7 +108,10 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
                   </td>
                   <td>{l.uom?.code ?? l.uom_id.slice(0, 8)}</td>
                   <td className="text-right"><QtyCell value={l.qty_ordered} /></td>
-                  <td className="text-right"><MoneyCell value={l.unit_price} /></td>
+                  <td className="text-right">
+                    <MoneyCell value={l.unit_price} />
+                    {tradeTermsLabel(l.trade_price, l.discount_pct) && <div className="text-xs text-slate-500 tabular">{tradeTermsLabel(l.trade_price, l.discount_pct)}</div>}
+                  </td>
                   <td className="text-right"><MoneyCell value={(Number(l.qty_ordered) * Number(l.unit_price)).toFixed(4)} /></td>
                 </tr>
               ))}
