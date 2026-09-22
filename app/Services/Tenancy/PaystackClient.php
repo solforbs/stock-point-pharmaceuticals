@@ -2,6 +2,7 @@
 
 namespace App\Services\Tenancy;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 class PaystackException extends \RuntimeException {}
@@ -62,9 +63,13 @@ class PaystackClient
             throw new PaystackException('Online payment is not set up yet (PAYSTACK_SECRET_KEY is missing).');
         }
 
-        $response = Http::withToken((string) config('services.paystack.secret_key'))
-            ->acceptJson()->timeout(20)
-            ->{$method}(rtrim((string) config('services.paystack.base_url'), '/').$path, $payload);
+        try {
+            $response = Http::withToken((string) config('services.paystack.secret_key'))
+                ->acceptJson()->connectTimeout(10)->timeout(30)
+                ->{$method}(rtrim((string) config('services.paystack.base_url'), '/').$path, $payload);
+        } catch (ConnectionException) {
+            throw new PaystackException('Paystack could not be reached just now. Nothing was charged; please try again in a moment.');
+        }
 
         if (! $response->successful() || ! $response->json('status')) {
             throw new PaystackException('Paystack refused the request: '.($response->json('message') ?? 'HTTP '.$response->status()));

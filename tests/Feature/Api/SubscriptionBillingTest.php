@@ -6,6 +6,7 @@ use App\Models\Organisation;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
@@ -60,6 +61,15 @@ class SubscriptionBillingTest extends TestCase
         // The webhook for the same charge arriving afterwards changes nothing.
         $this->webhook('charge.success', $this->charge($checkout['reference'], 600000))->assertOk();
         $this->assertTrue($subscription->fresh()->current_period_end->equalTo($subscription->current_period_end), 'settled once');
+    }
+
+    public function test_an_unreachable_paystack_is_reported_plainly_and_charges_nothing(): void
+    {
+        Http::fake(fn () => throw new ConnectionException('cURL error 28: Operation timed out'));
+
+        $this->postJson('/api/billing/checkout', ['plan_id' => $this->plan->id, 'billing_interval' => 'MONTHLY'])
+            ->assertStatus(502)->assertJsonPath('error.code', 'PAYMENT_GATEWAY');
+        $this->assertSame(Organisation::ACCESS_LAPSED, $this->org->fresh()->accessState());
     }
 
     public function test_the_webhook_needs_a_valid_signature(): void
