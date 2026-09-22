@@ -22,7 +22,7 @@ use Illuminate\Support\Str;
 class ProductImportService
 {
     /** Columns the import reads; anything else in the file (name, default_price…) is ignored. */
-    public const COLUMNS = ['code', 'category_code', 'tax_code', 'reorder_point', 'safety_stock', 'lead_time_days', 'generic_name', 'strength', 'is_active'];
+    public const COLUMNS = ['code', 'category_code', 'tax_code', 'reorder_point', 'safety_stock', 'lead_time_days', 'generic_name', 'strength', 'description', 'is_active'];
 
     private const TRUE_WORDS = ['1', 'true', 'yes', 'y', 'active'];
 
@@ -189,6 +189,14 @@ class ProductImportService
                     } else {
                         $values[$field] = $text;
                     }
+                }
+            }
+
+            if (($description = $cell('description')) !== '') {
+                if (mb_strlen($description) > 500) {
+                    $messages[] = 'description may not exceed 500 characters';
+                } else {
+                    $values['description'] = $description;
                 }
             }
 

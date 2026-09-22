@@ -84,4 +84,23 @@ class WasteAndSupplierReturnHttpTest extends TestCase
             'lines' => [['product_id' => $this->amox->id, 'batch_id' => $this->batch->id, 'qty_base' => '5000']],
         ])->assertStatus(409)->assertJsonPath('error.code', 'INSUFFICIENT_STOCK');
     }
+
+    public function test_a_supplier_return_line_records_its_reason_and_remarks(): void
+    {
+        $return = $this->postJson('/api/supplier-returns', [
+            'supplier_id' => $this->supplier->id, 'store_id' => $this->store->id, 'reason' => 'Delivery problems',
+            'lines' => [['product_id' => $this->amox->id, 'batch_id' => $this->batch->id, 'qty_base' => '100', 'return_reason' => 'SHORT_EXPIRY', 'remarks' => 'Under 6 months left on arrival']],
+        ])->assertCreated()->json();
+
+        $this->getJson("/api/supplier-returns/{$return['id']}")->assertOk()
+            ->assertJsonPath('lines.0.return_reason', 'SHORT_EXPIRY')
+            ->assertJsonPath('lines.0.remarks', 'Under 6 months left on arrival')
+            ->assertJsonPath('lines.0.product.strength', '500mg')
+            ->assertJsonPath('lines.0.batch.expiry_date', fn (string $date) => str_starts_with($date, $this->batch->expiry_date->toDateString()));
+
+        $this->postJson('/api/supplier-returns', [
+            'supplier_id' => $this->supplier->id, 'store_id' => $this->store->id, 'reason' => 'Other trouble',
+            'lines' => [['product_id' => $this->amox->id, 'batch_id' => $this->batch->id, 'qty_base' => '1', 'return_reason' => 'OTHER']],
+        ])->assertStatus(422)->assertJsonValidationErrors('lines.0.remarks');
+    }
 }

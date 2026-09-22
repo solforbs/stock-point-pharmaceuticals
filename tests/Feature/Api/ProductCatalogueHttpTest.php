@@ -159,9 +159,9 @@ class ProductCatalogueHttpTest extends TestCase
         $csv = $this->get('/api/products/export')->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8')->streamedContent();
         $lines = array_map(fn (string $l) => str_getcsv($l, ',', '"', ''), preg_split('/\r?\n/', trim(ltrim($csv, "\xEF\xBB\xBF"))));
 
-        $this->assertSame(['code', 'name', 'category_code', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'generic_name', 'strength', 'is_active'], $lines[0]);
-        $this->assertSame(['AMOX500', 'Amoxicillin 500mg Capsules', '', '', '2.5', '0', '0', '0', 'Amoxicillin', '500mg', '1'], $lines[1]);
-        $this->assertSame(['PARA500', 'Paracetamol 500mg Tablets', 'ANALG', 'VAT_STD', '', '100', '0', '7', '', '', '1'], $lines[2]);
+        $this->assertSame(['code', 'name', 'category_code', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'generic_name', 'strength', 'description', 'is_active'], $lines[0]);
+        $this->assertSame(['AMOX500', 'Amoxicillin 500mg Capsules', '', '', '2.5', '0', '0', '0', 'Amoxicillin', '500mg', '', '1'], $lines[1]);
+        $this->assertSame(['PARA500', 'Paracetamol 500mg Tablets', 'ANALG', 'VAT_STD', '', '100', '0', '7', '', '', '', '1'], $lines[2]);
 
         $rows = array_map(fn (array $cells) => array_combine($lines[0], $cells), array_slice($lines, 1));
         $this->postJson('/api/products/import', ['rows' => $rows])->assertCreated()->assertJsonPath('updated', 0)->assertJsonPath('unchanged', 2);

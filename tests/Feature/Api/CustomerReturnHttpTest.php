@@ -144,6 +144,29 @@ class CustomerReturnHttpTest extends TestCase
      * @param  array<string, mixed>  $extra
      * @return array<string, mixed>
      */
+    public function test_each_line_says_why_it_came_back_and_the_detail_names_the_exact_item(): void
+    {
+        $this->amox->update(['description' => 'Hard gelatin capsule, red/yellow']);
+        $line = ['sale_line_id' => $this->sale->lines()->first()->id, 'batch_id' => $this->batch->id, 'qty_base' => '200'];
+
+        $return = $this->postJson('/api/customer-returns', ['lines' => [['return_reason' => 'DAMAGED', 'remarks' => 'Box crushed in transit to Kakuma'] + $line]] + $this->payload('200'))->assertCreated()->json();
+
+        $this->getJson("/api/customer-returns/{$return['id']}")->assertOk()
+            ->assertJsonPath('lines.0.return_reason', 'DAMAGED')
+            ->assertJsonPath('lines.0.remarks', 'Box crushed in transit to Kakuma')
+            ->assertJsonPath('lines.0.product.strength', '500mg')
+            ->assertJsonPath('lines.0.product.generic_name', 'Amoxicillin')
+            ->assertJsonPath('lines.0.product.description', 'Hard gelatin capsule, red/yellow')
+            ->assertJsonPath('lines.0.product.base_uom.code', 'TAB')
+            ->assertJsonPath('lines.0.batch.batch_number', 'B1')
+            ->assertJsonPath('lines.0.batch.expiry_date', fn (string $date) => str_starts_with($date, $this->batch->expiry_date->toDateString()));
+
+        $this->postJson('/api/customer-returns', ['lines' => [['qty_base' => '10', 'return_reason' => 'OTHER'] + $line]] + $this->payload('10'))
+            ->assertStatus(422)->assertJsonValidationErrors('lines.0.remarks');
+        $this->postJson('/api/customer-returns', ['lines' => [['qty_base' => '10', 'return_reason' => 'SLOW_MOVING'] + $line]] + $this->payload('10'))
+            ->assertStatus(422)->assertJsonValidationErrors('lines.0.return_reason');
+    }
+
     private function payload(string $qty, array $extra = []): array
     {
         return [

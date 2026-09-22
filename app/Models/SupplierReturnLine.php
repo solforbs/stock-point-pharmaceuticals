@@ -10,7 +10,7 @@ class SupplierReturnLine extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['supplier_return_id', 'product_id', 'batch_id', 'qty_base', 'unit_cost'];
+    protected $fillable = ['supplier_return_id', 'product_id', 'batch_id', 'qty_base', 'unit_cost', 'return_reason', 'remarks'];
 
     protected function casts(): array
     {

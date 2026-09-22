@@ -41,7 +41,7 @@ class CustomerReturnService
     ) {}
 
     /**
-     * @param  array{sale_id: string, store_id: string, reason: string, user_id: int, recall_id?: ?string, refund_method?: ?string, refund_reference?: ?string, lines: list<array{sale_line_id: string, batch_id: string, qty_base: string, disposition?: ?string, inspection_notes?: ?string}>}  $data
+     * @param  array{sale_id: string, store_id: string, reason: string, user_id: int, recall_id?: ?string, refund_method?: ?string, refund_reference?: ?string, lines: list<array{sale_line_id: string, batch_id: string, qty_base: string, disposition?: ?string, inspection_notes?: ?string, return_reason?: ?string, remarks?: ?string}>}  $data
      */
     public function create(array $data): CustomerReturn
     {
@@ -110,6 +110,8 @@ class CustomerReturnService
                     'unit_cost' => (string) $allocation->unit_cost,
                     'line_cost' => bcmul($qty, (string) $allocation->unit_cost, 4),
                     'inspection_notes' => $line['inspection_notes'] ?? null,
+                    'return_reason' => $line['return_reason'] ?? null,
+                    'remarks' => $line['remarks'] ?? null,
                 ]);
             }
 

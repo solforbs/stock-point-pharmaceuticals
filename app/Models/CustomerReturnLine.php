@@ -13,6 +13,7 @@ class CustomerReturnLine extends Model
     protected $fillable = [
         'customer_return_id', 'sale_line_id', 'product_id', 'batch_id', 'qty_base', 'disposition',
         'unit_price', 'line_net', 'tax_amount', 'line_total', 'unit_cost', 'line_cost', 'inspection_notes',
+        'return_reason', 'remarks',
     ];
 
     protected function casts(): array

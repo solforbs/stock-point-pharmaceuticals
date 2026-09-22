@@ -13,7 +13,7 @@ class Product extends Model
     use HasUuids;
 
     protected $fillable = [
-        'organisation_id', 'code', 'sku', 'gtin', 'name', 'generic_name', 'strength',
+        'organisation_id', 'code', 'sku', 'gtin', 'name', 'generic_name', 'strength', 'description',
         'dosage_form_id', 'category_id', 'manufacturer_id', 'base_uom_id',
         'tax_code_id', 'storage_condition_id',
         'is_discrete', 'pack_integrity', 'requires_batch',

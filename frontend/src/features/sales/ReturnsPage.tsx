@@ -16,11 +16,14 @@ import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { useStores, useSuppliers } from '../../lib/hooks'
+import { dMul } from '../../lib/decimal'
 import { formatQty } from '../../lib/money'
 import { usePermissions } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
-import type { CustomerReturn, CustomerReturnLine, Disposition, Paginated, Sale, SupplierReturn } from '../../lib/types'
+import type { BatchRef, CustomerReturn, CustomerReturnLine, Disposition, ItemRef, Paginated, ReturnReason, Sale, SupplierReturn } from '../../lib/types'
 import { BatchLinesEditor, batchLinesPayload, batchLinesValid, type BatchLine } from '../inventory/BatchLinesEditor'
+import { ReturnBatchCell, ReturnItemCell, ReturnReasonCell } from './ReturnLineParts'
+import { CUSTOMER_RETURN_REASONS, RETURN_REASON_LABEL, SUPPLIER_RETURN_REASONS, returnLineExplained } from './returnReasons'
 
 const DISPOSITIONS: Disposition[] = ['QUARANTINE', 'RESALEABLE', 'DESTROY', 'REJECT']
 
@@ -100,7 +103,28 @@ function CustomerReturns() {
   )
 }
 
-type NewLine = { sale_line_id: string; batch_id: string; label: string; issued: string; qty_base: string; disposition: Disposition | ''; inspection_notes: string }
+type NewLine = {
+  sale_line_id: string
+  batch_id: string
+  product: ItemRef | null
+  productId: string
+  batch: BatchRef | null
+  baseUomCode: string
+  soldAs: string
+  issued: string
+  qty_base: string
+  return_reason: ReturnReason | ''
+  remarks: string
+  disposition: Disposition | ''
+  inspection_notes: string
+}
+
+/** The header reason: what was typed, or else a summary of the line reasons. */
+function summariseReasons(typed: string, lines: { return_reason: ReturnReason | '' | null }[]): string {
+  if (typed.trim()) return typed.trim()
+  const reasons = [...new Set(lines.map((l) => l.return_reason).filter((r): r is ReturnReason => !!r))]
+  return reasons.map((r) => RETURN_REASON_LABEL[r].replace(' (explain in remarks)', '')).join('; ')
+}
 
 function NewReturnDrawer({ saleId, canCreate, onClose, onCreated }: { saleId: string | null; canCreate: boolean; onClose: () => void; onCreated: (r: CustomerReturn) => void }) {
   const stores = useStores()
@@ -120,9 +144,15 @@ function NewReturnDrawer({ saleId, canCreate, onClose, onCreated }: { saleId: st
         (l.batch_allocations ?? []).filter((a) => !a.is_bonus).map((a) => ({
           sale_line_id: l.id,
           batch_id: a.batch_id,
-          label: `${l.product?.name ?? l.product_id.slice(0, 8)} · ${a.batch?.batch_number ?? a.batch_id.slice(0, 8)}`,
+          product: l.product ?? null,
+          productId: l.product_id,
+          batch: a.batch ?? null,
+          baseUomCode: l.product?.base_uom?.code ?? '',
+          soldAs: `${formatQty(l.qty)} ${l.uom?.code ?? ''}`.trim(),
           issued: a.qty_base,
           qty_base: '',
+          return_reason: '' as const,
+          remarks: '',
           disposition: '' as const,
           inspection_notes: '',
         })),
@@ -136,10 +166,18 @@ function NewReturnDrawer({ saleId, canCreate, onClose, onCreated }: { saleId: st
       apiPost<CustomerReturn>('/api/customer-returns', {
         sale_id: saleId,
         store_id: storeId,
-        reason,
+        reason: headerReason,
         refund_method: refundMethod || null,
         refund_reference: refundReference || null,
-        lines: lines.filter((l) => Number(l.qty_base) > 0).map((l) => ({ sale_line_id: l.sale_line_id, batch_id: l.batch_id, qty_base: l.qty_base, disposition: l.disposition || null, inspection_notes: l.inspection_notes || null })),
+        lines: lines.filter((l) => Number(l.qty_base) > 0).map((l) => ({
+          sale_line_id: l.sale_line_id,
+          batch_id: l.batch_id,
+          qty_base: l.qty_base,
+          return_reason: l.return_reason || null,
+          remarks: l.remarks.trim() || null,
+          disposition: l.disposition || null,
+          inspection_notes: l.inspection_notes || null,
+        })),
       }),
     onSuccess: (r) => {
       toast.success(`Return ${r.doc_number} drafted`, 'Inspect each line, then post.')
@@ -148,7 +186,13 @@ function NewReturnDrawer({ saleId, canCreate, onClose, onCreated }: { saleId: st
   })
 
   const active = lines.filter((l) => Number(l.qty_base) > 0)
-  const valid = !!storeId && reason.trim().length >= 5 && active.length > 0 && active.every((l) => Number(l.qty_base) <= Number(l.issued))
+  const headerReason = summariseReasons(reason, active)
+  const valid =
+    !!storeId &&
+    headerReason.length >= 5 &&
+    active.length > 0 &&
+    active.every((l) => Number(l.qty_base) <= Number(l.issued) && returnLineExplained(l.return_reason, l.remarks))
+  const patchLine = (i: number, patch: Partial<NewLine>) => setLines(lines.map((x, j) => (j === i ? { ...x, ...patch } : x)))
 
   return (
     <Drawer
@@ -156,7 +200,7 @@ function NewReturnDrawer({ saleId, canCreate, onClose, onCreated }: { saleId: st
       onClose={onClose}
       title={sale.data ? `Return items from ${sale.data.doc_number}` : 'Return items'}
       subtitle={sale.data ? `${sale.data.sale_mode} · ${sale.data.customer?.name ?? 'Walk-in'} · ${formatDateTime(sale.data.posted_at)}` : undefined}
-      width={860}
+      width={1080}
       footer={
         <DrawerFooter
           badge={`${active.length} items to return`}
@@ -194,36 +238,77 @@ function NewReturnDrawer({ saleId, canCreate, onClose, onCreated }: { saleId: st
               <Field label="Refund Reference">
                 <Input value={refundReference} onChange={(e) => setRefundReference(e.target.value)} placeholder="e.g. M-Pesa code" />
               </Field>
-              <Field label="Return Reason" required className="sm:col-span-3">
-                <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Provide specific reason (at least 5 characters)..." />
+              <Field label="Overall reason" className="sm:col-span-3" hint="Optional when each returning line has its own reason: the line reasons are used.">
+                <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={headerReason || 'e.g. Consignment damaged in transit'} />
               </Field>
             </div>
           </FormSection>
 
           <FormSection
-            title="Allocated Batch Lines"
-            description="Quantities in base units. Quarantined batches undergo strict QC before release."
+            title="Items being returned"
+            description="Enter a return quantity (in base units) on each line coming back, and why. Quarantined stock undergoes QC before release."
             icon={Package}
-            badge={`${lines.length} lines available`}
+            badge={`${lines.length} lines on the sale`}
           >
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="ui-table">
-                <thead><tr><th>Product · batch</th><th className="text-right">Issued</th><th>Return qty</th><th>Disposition</th><th>Inspection notes</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Batch · expiry</th>
+                    <th className="text-right">Sold</th>
+                    <th>Return qty</th>
+                    <th>Reason &amp; remarks</th>
+                    <th>Disposition &amp; inspection</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {lines.map((l, i) => (
-                    <tr key={`${l.sale_line_id}-${l.batch_id}`}>
-                      <td className="tabular text-xs font-medium text-slate-800">{l.label}</td>
-                      <td className="text-right"><QtyCell value={l.issued} /></td>
-                      <td><input value={l.qty_base} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, qty_base: e.target.value.replace(/[^\d.]/g, '') } : x)))} className={`ui-input h-7 w-24 tabular text-right ${Number(l.qty_base) > Number(l.issued) ? '!border-rose-500' : ''}`} /></td>
-                      <td>
-                        <select value={l.disposition} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, disposition: e.target.value as Disposition | '' } : x)))} className="ui-input h-7">
-                          <option value="">Quarantine (default)</option>
-                          {DISPOSITIONS.map((d) => (<option key={d} value={d} disabled={d === 'RESALEABLE' && !perms.has('quality.release')}>{titleCase(d)}</option>))}
-                        </select>
-                      </td>
-                      <td><input value={l.inspection_notes} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, inspection_notes: e.target.value } : x)))} className="ui-input h-7" placeholder="Notes..." /></td>
-                    </tr>
-                  ))}
+                  {lines.map((l, i) => {
+                    const returning = Number(l.qty_base) > 0
+                    const needsRemarks = returning && !returnLineExplained(l.return_reason, l.remarks)
+                    return (
+                      <tr key={`${l.sale_line_id}-${l.batch_id}`} className={`align-top ${returning ? 'bg-blue-50/30' : ''}`}>
+                        <td className="min-w-50"><ReturnItemCell product={l.product} fallbackId={l.productId} /></td>
+                        <td><ReturnBatchCell batch={l.batch} fallbackId={l.batch_id} /></td>
+                        <td className="text-right whitespace-nowrap">
+                          <QtyCell value={l.issued} /> <span className="text-[11px] text-slate-500">{l.baseUomCode}</span>
+                          {l.soldAs && <div className="text-[11px] text-slate-500">as {l.soldAs}</div>}
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-1">
+                            <input
+                              value={l.qty_base}
+                              onChange={(e) => patchLine(i, { qty_base: e.target.value.replace(/[^\d.]/g, '') })}
+                              placeholder="0"
+                              className={`ui-input h-7 w-20 tabular text-right ${Number(l.qty_base) > Number(l.issued) ? '!border-rose-500' : ''}`}
+                            />
+                            <span className="text-[11px] text-slate-500">{l.baseUomCode}</span>
+                          </div>
+                          {Number(l.qty_base) > Number(l.issued) && <div className="text-[11px] text-rose-600 font-medium mt-0.5">More than sold</div>}
+                        </td>
+                        <td className="min-w-55 space-y-1">
+                          <select value={l.return_reason} onChange={(e) => patchLine(i, { return_reason: e.target.value as ReturnReason | '' })} className="ui-input h-7 w-full">
+                            <option value="">Reason…</option>
+                            {CUSTOMER_RETURN_REASONS.map((r) => (<option key={r} value={r}>{RETURN_REASON_LABEL[r]}</option>))}
+                          </select>
+                          <input
+                            value={l.remarks}
+                            onChange={(e) => patchLine(i, { remarks: e.target.value })}
+                            maxLength={500}
+                            placeholder="Remarks, e.g. seal broken, 3 strips crushed"
+                            className={`ui-input h-7 w-full ${needsRemarks ? '!border-rose-500' : ''}`}
+                          />
+                        </td>
+                        <td className="min-w-45 space-y-1">
+                          <select value={l.disposition} onChange={(e) => patchLine(i, { disposition: e.target.value as Disposition | '' })} className="ui-input h-7 w-full">
+                            <option value="">Quarantine (default)</option>
+                            {DISPOSITIONS.map((d) => (<option key={d} value={d} disabled={d === 'RESALEABLE' && !perms.has('quality.release')}>{titleCase(d)}</option>))}
+                          </select>
+                          <input value={l.inspection_notes} onChange={(e) => patchLine(i, { inspection_notes: e.target.value })} className="ui-input h-7 w-full" placeholder="Inspection notes…" />
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -269,7 +354,7 @@ function ReturnDrawer({ id, onClose }: { id: string | null; onClose: () => void 
       onClose={onClose}
       title={r?.doc_number ?? 'Customer return'}
       subtitle={r ? `${r.customer?.name ?? 'Walk-in'} · against ${r.sale?.doc_number ?? ''}` : undefined}
-      width={860}
+      width={1080}
       actions={draft ? <div className="flex gap-2"><Button size="sm" variant="danger" onClick={() => setRejecting(true)}>Reject</Button><Button size="sm" variant="success" disabled={post.isPending || (anyDestroy && !witness)} onClick={() => post.mutate()}>{post.isPending ? 'Posting…' : 'Post return'}</Button></div> : null}
     >
       {ret.isLoading && <LoadingSkeleton />}
@@ -285,15 +370,16 @@ function ReturnDrawer({ id, onClose }: { id: string | null; onClose: () => void 
           </div>
           <DescriptionList items={[{ label: 'Reason', value: r.reason }, { label: 'Refund', value: `${titleCase(r.refund_method) || '—'}${r.refund_reference ? ` · ${r.refund_reference}` : ''}` }, { label: 'Posted', value: formatDateTime(r.posted_at) }]} />
           <table className="ui-table">
-            <thead><tr><th>Product</th><th>Batch</th><th className="text-right">Qty</th><th className="text-right">Unit price</th><th className="text-right">Total</th>{showCost && <th className="text-right">Cost</th>}<th>Disposition</th><th>Inspection</th>{draft && <th />}</tr></thead>
+            <thead><tr><th>Item</th><th>Batch · expiry</th><th className="text-right">Qty</th><th>Reason &amp; remarks</th><th className="text-right">Unit price</th><th className="text-right">Total</th>{showCost && <th className="text-right">Cost</th>}<th>Disposition</th><th>Inspection</th>{draft && <th />}</tr></thead>
             <tbody>
               {(r.lines ?? []).map((l) => {
                 const e = edits[l.id] ?? { disposition: l.disposition, notes: l.inspection_notes ?? '' }
                 return (
-                  <tr key={l.id}>
-                    <td>{l.product?.name ?? l.product_id.slice(0, 8)}</td>
-                    <td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}{l.batch && <div className="text-xs text-slate-400">exp {formatDate(l.batch.expiry_date)}</div>}</td>
-                    <td className="text-right"><QtyCell value={l.qty_base} /></td>
+                  <tr key={l.id} className="align-top">
+                    <td className="min-w-45"><ReturnItemCell product={l.product} fallbackId={l.product_id} /></td>
+                    <td><ReturnBatchCell batch={l.batch} fallbackId={l.batch_id} /></td>
+                    <td className="text-right whitespace-nowrap"><QtyCell value={l.qty_base} /> <span className="text-[11px] text-slate-500">{l.product?.base_uom?.code}</span></td>
+                    <td className="min-w-40"><ReturnReasonCell reason={l.return_reason} remarks={l.remarks} /></td>
                     <td className="text-right"><MoneyCell value={l.unit_price} /></td>
                     <td className="text-right"><MoneyCell value={l.line_total} /></td>
                     {showCost && <td className="text-right"><MoneyCell value={l.line_cost} muted /></td>}
@@ -344,13 +430,14 @@ function SupplierReturns() {
   const [reason, setReason] = useState('')
   const [lines, setLines] = useState<BatchLine[]>([])
   const selectedId = params.get('supplier_return')
+  const supplierHeaderReason = summariseReasons(reason, lines.map((l) => ({ return_reason: l.return_reason ?? '' })))
 
   const list = useQuery({ queryKey: ['supplier-returns', 'list', page], queryFn: () => apiGet<Paginated<SupplierReturn>>('/api/supplier-returns', { page, per_page: 50 }), placeholderData: (prev) => prev })
   const detail = useQuery({ queryKey: ['supplier-returns', selectedId], queryFn: () => apiGet<SupplierReturn>(`/api/supplier-returns/${selectedId}`), enabled: !!selectedId })
 
   const create = useMutation({
     meta: { silent: true },
-    mutationFn: () => apiPost<SupplierReturn>('/api/supplier-returns', { supplier_id: supplierId, store_id: storeId, reason, lines: batchLinesPayload(lines) }),
+    mutationFn: () => apiPost<SupplierReturn>('/api/supplier-returns', { supplier_id: supplierId, store_id: storeId, reason: supplierHeaderReason, lines: batchLinesPayload(lines) }),
     onSuccess: (r) => {
       toast.success(`Supplier return ${r.doc_number} posted`, 'Stock reversed and a debit note raised against the supplier.')
       queryClient.invalidateQueries({ queryKey: ['supplier-returns'] })
@@ -393,7 +480,7 @@ function SupplierReturns() {
         onClose={() => setCreating(false)}
         title="New Supplier Return"
         subtitle="Reverse goods receipt at batch cost and generate supplier debit note"
-        width={820}
+        width={1040}
         footer={
           <DrawerFooter
             badge={`${lines.length} lines`}
@@ -401,7 +488,7 @@ function SupplierReturns() {
             onSubmit={() => create.mutate()}
             submitLabel="Post supplier return"
             variant="danger"
-            disabled={!supplierId || !storeId || reason.trim().length < 3 || !batchLinesValid(lines) || create.isPending}
+            disabled={!supplierId || !storeId || supplierHeaderReason.length < 3 || !batchLinesValid(lines) || create.isPending}
             isPending={create.isPending}
           />
         }
@@ -426,42 +513,41 @@ function SupplierReturns() {
                   {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
                 </Select>
               </Field>
-              <Field label="Return Reason" required className="sm:col-span-2">
-                <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for returning items to vendor..." />
+              <Field label="Overall reason" className="sm:col-span-2" hint="Optional when each line has its own reason: the line reasons are used.">
+                <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={supplierHeaderReason || 'Reason for returning items to the supplier…'} />
               </Field>
             </div>
           </FormSection>
 
           <FormSection
-            title="Batch Quantities to Return"
-            description="Posts immediately: reverses stock from store balances at original batch cost."
+            title="Items to return"
+            description="Each line: the batch going back, the quantity in base units, and why. Posts immediately at the original batch cost."
             icon={Package}
             badge={`${lines.length} lines`}
           >
-            <BatchLinesEditor lines={lines} onChange={setLines} storeId={storeId} />
+            <BatchLinesEditor lines={lines} onChange={setLines} storeId={storeId} reasons={SUPPLIER_RETURN_REASONS} />
           </FormSection>
 
           {create.isError && <InlineError error={create.error} />}
         </div>
       </Drawer>
 
-      <Drawer open={!!selectedId} onClose={() => setParams({ tab: 'supplier' })} title={d?.doc_number ?? 'Supplier return'} subtitle={d?.supplier?.name} width={720}>
+      <Drawer open={!!selectedId} onClose={() => setParams({ tab: 'supplier' })} title={d?.doc_number ?? 'Supplier return'} subtitle={d ? `${d.supplier?.name ?? ''}${d.store?.code ? ` · from ${d.store.code}` : ''}` : undefined} width={980}>
         {detail.isLoading && <LoadingSkeleton />}
         {detail.isError && <InlineError error={detail.error} />}
         {d && (
           <div className="space-y-4">
             <div className="flex items-center gap-2"><StatusBadge status={d.status} /><span className="text-xs text-slate-600 font-medium">{d.reason}</span></div>
             <table className="ui-table">
-              <thead><tr><th>Product</th><th>Batch</th><th className="text-right">Qty (base)</th><th className="text-right">Unit cost</th></tr></thead>
+              <thead><tr><th>Item</th><th>Batch · expiry</th><th className="text-right">Qty</th><th>Reason &amp; remarks</th><th className="text-right">Unit cost</th><th className="text-right">Value</th></tr></thead>
               <tbody>
                 {(d.lines ?? []).map((l) => (
-                  <tr key={l.id}><td>{l.product?.name ?? l.product_id.slice(0, 8)}</td><td className="tabular">{l.batch?.batch_number ?? l.batch_id.slice(0, 8)}</td><td className="text-right">{formatQty(l.qty_base)}</td><td className="text-right"><MoneyCell value={l.unit_cost} /></td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Drawer>
-    </>
-  )
-}
+                  <tr key={l.id} className="align-top">
+                    <td className="min-w-45"><ReturnItemCell product={l.product} fallbackId={l.product_id} /></td>
+                    <td><ReturnBatchCell batch={l.batch} fallbackId={l.batch_id} /></td>
+                    <td className="text-right whitespace-nowrap">{formatQty(l.qty_base)} <span className="text-[11px] text-slate-500">{l.product?.base_uom?.code}</span></td>
+                    <td className="min-w-40"><ReturnReasonCell reason={l.return_reason} remarks={l.remarks} /></td>
+                    <td className="text-right"><MoneyCell value={l.unit_cost} /></td>
+                    <td className="text-right"><MoneyCell value={dMul(l.qty_base, l.unit_cost)} /></td>
+                  </tr>
+    

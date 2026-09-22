@@ -34,7 +34,7 @@ class SupplierReturnService
     ) {}
 
     /**
-     * @param  array{supplier_id: string, store_id: string, reason: string, user_id: int, recall_id?: ?string, lines: list<array{product_id: string, batch_id: string, qty_base: string}>}  $data
+     * @param  array{supplier_id: string, store_id: string, reason: string, user_id: int, recall_id?: ?string, lines: list<array{product_id: string, batch_id: string, qty_base: string, return_reason?: ?string, remarks?: ?string}>}  $data
      */
     public function post(array $data): SupplierReturn
     {
@@ -79,6 +79,7 @@ class SupplierReturnService
                 $srLine = SupplierReturnLine::create([
                     'supplier_return_id' => $return->id, 'product_id' => $batch->product_id, 'batch_id' => $batch->id,
                     'qty_base' => $qty, 'unit_cost' => $unitCost,
+                    'return_reason' => $line['return_reason'] ?? null, 'remarks' => $line['remarks'] ?? null,
                 ]);
 
                 $this->ledger->post([

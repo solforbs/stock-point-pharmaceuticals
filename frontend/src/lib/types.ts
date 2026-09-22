@@ -69,6 +69,13 @@ export type ProductUom = {
 
 export type NamedRef = { id: string; code?: string; name: string }
 
+/** A product as a document line names it: enough to tell the exact item apart. */
+export type ItemRef = NamedRef & { generic_name?: string | null; strength?: string | null; description?: string | null; base_uom?: { id: string; code: string } | null }
+
+export type ReturnReason =
+  | 'DAMAGED' | 'EXPIRED' | 'SHORT_EXPIRY' | 'WRONG_ITEM' | 'EXCESS_QUANTITY' | 'QUALITY_COMPLAINT'
+  | 'ADVERSE_REACTION' | 'RECALL' | 'NOT_REQUIRED' | 'NOT_ORDERED' | 'SLOW_MOVING' | 'OTHER'
+
 export type ProductPrice = {
   id: string
   price_list_id: string
@@ -89,6 +96,8 @@ export type Product = {
   name: string
   generic_name: string | null
   strength: string | null
+  /** Key features, for non-pharma items that have no strength. */
+  description?: string | null
   is_discrete: boolean
   pack_integrity: boolean
   requires_batch: boolean
@@ -419,7 +428,8 @@ export type SaleLine = {
   unit_cost?: Decimal
   line_cost?: Decimal
   is_bonus: boolean
-  product?: NamedRef | null
+  product?: ItemRef | null
+  uom?: { id: string; code: string } | null
   batch_allocations?: BatchAllocation[]
 }
 
@@ -892,7 +902,9 @@ export type CustomerReturnLine = {
   unit_cost?: Decimal
   line_cost?: Decimal
   inspection_notes: string | null
-  product?: NamedRef | null
+  return_reason: ReturnReason | null
+  remarks: string | null
+  product?: ItemRef | null
   batch?: BatchRef | null
 }
 
@@ -932,7 +944,7 @@ export type SupplierReturn = {
   lines_count?: number
   supplier?: NamedRef | null
   store?: NamedRef | null
-  lines?: { id: string; product_id: string; batch_id: string; qty_base: Decimal; unit_cost: Decimal; product?: NamedRef | null; batch?: BatchRef | null }[]
+  lines?: { id: string; product_id: string; batch_id: string; qty_base: Decimal; unit_cost: Decimal; return_reason: ReturnReason | null; remarks: string | null; product?: ItemRef | null; batch?: BatchRef | null }[]
 }
 
 export type WasteDisposal = {

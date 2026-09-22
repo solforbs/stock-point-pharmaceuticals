@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Models\CustomerReturn;
 use App\Models\CustomerReturnLine;
 use App\Models\SupplierReturn;
+use App\Services\Inventory\ReturnReasons;
 use App\Services\Procurement\SupplierReturnService;
 use App\Services\Sales\CustomerReturnService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /** Part 11.1 / 11.2 — customer and supplier returns. */
 class ReturnController extends ApiController
@@ -30,7 +32,7 @@ class ReturnController extends ApiController
     {
         $this->requirePermission($request, 'sale.view');
 
-        $return = $this->find($request, $return)->load(['customer:id,code,name', 'sale:id,doc_number,sale_mode,posted_at', 'lines.product:id,code,name', 'lines.batch:id,batch_number,expiry_date,status']);
+        $return = $this->find($request, $return)->load(['customer:id,code,name', 'sale:id,doc_number,sale_mode,posted_at', 'lines.product:id,code,name,generic_name,strength,description,base_uom_id', 'lines.product.baseUom:id,code', 'lines.batch:id,batch_number,expiry_date,status']);
         $payload = $return->toArray();
         if (! $request->user()->can('product.cost.view')) {
             unset($payload['cost_total']);
@@ -59,6 +61,8 @@ class ReturnController extends ApiController
             'lines.*.qty_base' => ['required', 'numeric', 'gt:0'],
             'lines.*.disposition' => ['nullable', 'in:RESALEABLE,QUARANTINE,DESTROY,REJECT'],
             'lines.*.inspection_notes' => ['nullable', 'string', 'max:255'],
+            'lines.*.return_reason' => ['nullable', Rule::in(ReturnReasons::CUSTOMER)],
+            'lines.*.remarks' => ['nullable', 'required_if:lines.*.return_reason,OTHER', 'string', 'max:500'],
         ]);
 
         foreach ($data['lines'] as $line) {
@@ -118,7 +122,7 @@ class ReturnController extends ApiController
     {
         $this->requirePermission($request, 'supplier.view');
 
-        return response()->json(SupplierReturn::where('branch_id', $this->branchId($request))->with(['supplier:id,code,name', 'lines.product:id,code,name', 'lines.batch:id,batch_number,expiry_date,status'])->findOrFail($return));
+        return response()->json(SupplierReturn::where('branch_id', $this->branchId($request))->with(['supplier:id,code,name', 'store:id,code', 'lines.product:id,code,name,generic_name,strength,description,base_uom_id', 'lines.product.baseUom:id,code', 'lines.batch:id,batch_number,expiry_date,status'])->findOrFail($return));
     }
 
     /** POST /api/supplier-returns — posts immediately: the reverse of a GRN. */
@@ -135,6 +139,8 @@ class ReturnController extends ApiController
             'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
             'lines.*.batch_id' => ['required', 'uuid', 'exists:product_batches,id'],
             'lines.*.qty_base' => ['required', 'numeric', 'gt:0'],
+            'lines.*.return_reason' => ['nullable', Rule::in(ReturnReasons::SUPPLIER)],
+            'lines.*.remarks' => ['nullable', 'required_if:lines.*.return_reason,OTHER', 'string', 'max:500'],
         ]);
 
         return response()->json($returns->post($data + ['user_id' => $request->user()->id]), 201);

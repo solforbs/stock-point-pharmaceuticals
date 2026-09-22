@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ProductCatalogueController extends ApiController
 {
     /** The CSV columns, in order; the import reads the ones listed in ProductImportService::COLUMNS. */
-    private const EXPORT_COLUMNS = ['code', 'name', 'category_code', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'generic_name', 'strength', 'is_active'];
+    private const EXPORT_COLUMNS = ['code', 'name', 'category_code', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'generic_name', 'strength', 'description', 'is_active'];
 
     /** GET /api/product-categories/all — every category, inactive included, with its product count. */
     public function categories(Request $request): JsonResponse
@@ -134,14 +134,14 @@ class ProductCatalogueController extends ApiController
                 ->leftJoin('tax_codes as t', 't.id', '=', 'p.tax_code_id')
                 ->where('p.organisation_id', $organisationId)
                 ->orderBy('p.code')
-                ->select('p.id', 'p.code', 'p.name', 'c.code as category_code', 't.code as tax_code', 'p.default_price', 'p.reorder_point', 'p.safety_stock', 'p.lead_time_days', 'p.generic_name', 'p.strength', 'p.is_active')
+                ->select('p.id', 'p.code', 'p.name', 'c.code as category_code', 't.code as tax_code', 'p.default_price', 'p.reorder_point', 'p.safety_stock', 'p.lead_time_days', 'p.generic_name', 'p.strength', 'p.description', 'p.is_active')
                 ->chunk(500, function ($products) use ($out) {
                     foreach ($products as $p) {
                         fputcsv($out, [
                             $p->code, $this->safeCell((string) $p->name), $p->category_code, $p->tax_code,
                             $p->default_price === null ? '' : $this->number((string) $p->default_price),
                             $this->number((string) $p->reorder_point), $this->number((string) $p->safety_stock),
-                            $p->lead_time_days, $p->generic_name, $p->strength, $p->is_active ? '1' : '0',
+                            $p->lead_time_days, $p->generic_name, $p->strength, $this->safeCell((string) $p->description), $p->is_active ? '1' : '0',
                         ], ',', '"', '');
                     }
                 });
