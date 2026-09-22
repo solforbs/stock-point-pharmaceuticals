@@ -1,17 +1,18 @@
 import { Printer } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { Modal } from '../../components/ui/Modal'
 import { Button, Kbd } from '../../components/ui/primitives'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { dIsPos, dSub, dSum, isValidDecimal } from '../../lib/decimal'
+import { dCmp, dIsPos, dSub, dSum, isValidDecimal } from '../../lib/decimal'
 import { formatDateTime } from '../../lib/format'
 import { formatMoney, formatQty } from '../../lib/money'
 import { useCartStore } from './cartStore'
 
 /**
- * The receipt shown after posting. The legal document is the server-rendered
- * PDF (Part 16.6); no endpoint exists yet, so this view prints via the
- * browser as an interim.
+ * The till slip shown after posting. The document for the customer's file is
+ * the server-rendered cash sale invoice PDF (Part 16.6), downloadable here
+ * once the sale has reached the server.
  */
 export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
   const sale = useCartStore((s) => s.postedSale)
@@ -118,6 +119,7 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
         <Button size="lg" onClick={() => window.print()}>
           <Printer size={14} /> Print
         </Button>
+        {!offline && <PdfDownloadButton size="md" url={`/api/sales/${sale.id}/pdf`} filename={sale.doc_number} label={payments.length > 0 && dCmp(paid, sale.grand_total) >= 0 ? 'Cash sale invoice' : 'Invoice PDF'} />}
         {!offline && (
           <Link to="/sell/invoices" className="text-[11.5px] text-[var(--color-navy)] underline ml-2">
             Open in Invoices

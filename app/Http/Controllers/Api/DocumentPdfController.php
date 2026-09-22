@@ -27,7 +27,7 @@ class DocumentPdfController extends ApiController
         $this->requirePermission($request, 'sale.view');
 
         $sale = Sale::where('branch_id', $this->branchId($request))
-            ->with(['customer', 'lines.product:id,code,name', 'lines.uom:id,code', 'lines.batchAllocations.batch:id,batch_number,expiry_date'])
+            ->with(['customer', 'lines.product:id,code,name,strength,generic_name', 'lines.uom:id,code', 'lines.taxCode:id,code', 'lines.batchAllocations.batch:id,batch_number,expiry_date'])
             ->findOrFail($sale);
 
         // A sale has no direct payment relation: money is allocated to a
@@ -35,18 +35,64 @@ class DocumentPdfController extends ApiController
         $payments = DB::table('payment_allocations as pa')
             ->join('payments as p', 'p.id', '=', 'pa.payment_id')
             ->where('pa.allocated_to_type', 'sale')->where('pa.allocated_to_id', $sale->id)
-            ->get(['p.method', 'pa.amount']);
+            ->get(['p.method', 'p.reference', 'pa.amount']);
+        $amountPaid = $payments->reduce(fn (string $sum, $p) => bcadd($sum, (string) $p->amount, 4), '0');
 
         AuditLog::record('INVOICE_PRINTED', 'sale', $sale->id, ['reference' => $sale->doc_number]);
 
         return $pdf->render('pdf.invoice', [
-            'title' => $sale->status === 'VOIDED' ? 'Voided invoice' : 'Tax invoice',
+            'title' => $sale->documentTitle($amountPaid),
             'sale' => $sale,
+            'amountPaid' => $amountPaid,
+            'balanceDue' => bccomp((string) $sale->grand_total, $amountPaid, 4) > 0 ? bcsub((string) $sale->grand_total, $amountPaid, 4) : '0',
+            'vatAnalysis' => $this->vatAnalysis($sale),
+            'amountInWords' => class_exists(\NumberFormatter::class) ? $this->amountInWords((string) $sale->grand_total) : null,
             'cashier' => User::where('id', $sale->user_id)->value('name'),
             'payments' => $payments,
             'money' => fn ($v) => number_format((float) $v, 2),
             'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
         ], $sale->doc_number, $sale->branch_id);
+    }
+
+    /**
+     * The VAT summary KRA expects at the foot of an invoice: net and VAT per
+     * rate, so zero-rated and exempt lines are visibly separate from 16%.
+     *
+     * @return list<array{label: string, net: string, vat: string}>
+     */
+    private function vatAnalysis(Sale $sale): array
+    {
+        $groups = [];
+        foreach ($sale->lines as $line) {
+            $label = $this->vatLabel($line->taxCode?->code, (string) $line->tax_rate);
+            $net = bcsub((string) $line->line_total, (string) $line->tax_amount, 4);
+            $groups[$label] ??= ['label' => $label, 'net' => '0', 'vat' => '0'];
+            $groups[$label]['net'] = bcadd($groups[$label]['net'], $net, 4);
+            $groups[$label]['vat'] = bcadd($groups[$label]['vat'], (string) $line->tax_amount, 4);
+        }
+
+        return array_values($groups);
+    }
+
+    private function vatLabel(?string $code, string $rate): string
+    {
+        $code = strtoupper((string) $code);
+
+        return match (true) {
+            str_contains($code, 'ZERO') => 'Zero-rated (0%)',
+            str_contains($code, 'EX') => 'Exempt',
+            bccomp($rate, '0', 3) > 0 => 'VAT '.rtrim(rtrim($rate, '0'), '.').'%',
+            default => 'No VAT',
+        };
+    }
+
+    private function amountInWords(string $amount): string
+    {
+        $shillings = (int) floor((float) $amount);
+        $cents = (int) round(((float) $amount - $shillings) * 100);
+        $words = ucfirst((string) (new \NumberFormatter('en', \NumberFormatter::SPELLOUT))->format($shillings)).' Kenya shillings';
+
+        return $cents > 0 ? "{$words} and {$cents} cents only" : "{$words} only";
     }
 
     /** GET /api/delivery-notes/{note}/pdf — the note that travels with the goods. */

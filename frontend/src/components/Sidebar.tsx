@@ -63,7 +63,7 @@ function SidebarInner({
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
               <Pill size={18} />
             </div>
-            <span className="font-extrabold tracking-tight text-[15px] text-slate-900 truncate">
+            <span className="font-display font-extrabold tracking-tight text-[15px] text-slate-900 truncate">
               PharmaPoint
             </span>
           </div>

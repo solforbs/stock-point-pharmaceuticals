@@ -95,7 +95,7 @@ export default function QuotationsPage() {
       <PageHeader
         parent="Commerce & Stock"
         title="Wholesale Quotations"
-        subtitle="Formal price quotations with customer tier pricing, credit limit validation, and 1-click conversion to sales orders"
+        subtitle="Price offers Stock Point sends out to its customers (clinics, pharmacies, hospitals) when they ask what an order would cost. An accepted quotation becomes a sales order. Quotes you receive from suppliers belong under Buy."
         actions={<PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New Quotation</PrimaryAction>}
       />
       <FilterBar>

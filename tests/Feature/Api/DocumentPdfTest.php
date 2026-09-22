@@ -42,6 +42,18 @@ class DocumentPdfTest extends TestCase
         $this->assertSame(1, AuditLog::where('action', 'INVOICE_PRINTED')->where('entity_id', $sale->id)->count());
     }
 
+    public function test_a_sale_paid_in_full_prints_as_a_cash_sale_and_one_on_account_as_a_tax_invoice(): void
+    {
+        $sale = $this->checkout([$this->saleLine('TAB', '10', '2.7500')], [['method' => 'MPESA', 'amount' => '27.5000', 'reference' => 'QWE123RTY']]);
+
+        $this->assertSame('Cash sale invoice', $sale->documentTitle('27.5000'));
+        $this->assertSame('Tax invoice', $sale->documentTitle('10.0000'), 'part-paid leaves a balance on account');
+        $this->get("/api/sales/{$sale->id}/pdf")->assertOk();
+
+        $sale->update(['status' => 'VOIDED']);
+        $this->assertSame('Voided invoice', $sale->documentTitle('27.5000'));
+    }
+
     public function test_a_placeholder_kra_pin_is_never_printed_as_if_it_were_real(): void
     {
         $renderer = app(PdfRenderer::class);

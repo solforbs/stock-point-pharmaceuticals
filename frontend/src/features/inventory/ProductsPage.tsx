@@ -14,6 +14,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Card, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select } from '../../components/ui/primitives'
 import { apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
 import { formatDate } from '../../lib/format'
+import { formatQty } from '../../lib/money'
 import { useDosageForms, useProduct, useProductCategories, useProductStock, useStorageConditions, useTaxCodes, useUoms } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
@@ -21,6 +22,14 @@ import type { Paginated, Product } from '../../lib/types'
 import { ExpiryBadge, StockStatesTable } from './StockOnHandPage'
 import { StockInForm } from './StockInForm'
 import { ProductCatalogueActions } from './ProductCatalogueTools'
+
+/** "BOX of 200 TAB": the largest pack a product moves in, as the notebook master list writes it. */
+function packSize(product: Product): string {
+  const base = product.base_uom?.code ?? ''
+  const largest = [...(product.uoms ?? [])].filter((u) => u.is_sales || u.is_purchase).sort((a, b) => b.factor_to_base - a.factor_to_base)[0]
+  if (!largest || largest.factor_to_base <= 1) return base || '—'
+  return `${largest.uom?.code ?? ''} of ${largest.factor_to_base} ${base}`.trim()
+}
 
 export default function ProductsPage() {
   const [params, setParams] = useSearchParams()
@@ -34,6 +43,7 @@ export default function ProductsPage() {
   const dbarcode = useDebounced(barcode, 250)
   const selectedId = params.get('product')
   const canSeeStock = usePermission('stock.view')
+  const canSeeCost = usePermission('product.cost.view')
   const [stockFilter, setStockFilter] = useState('')
 
   const list = useQuery({
@@ -46,7 +56,7 @@ export default function ProductsPage() {
     { key: 'code', header: 'Code', sortKey: 'code', render: (p) => <span className="font-semibold tabular">{p.code}</span> },
     { key: 'name', header: 'Name', sortKey: 'name', render: (p) => <>{p.name}{p.strength && <b className="ml-1">{p.strength}</b>}</> },
     { key: 'generic', header: 'Generic', sortKey: 'generic_name', render: (p) => p.generic_name ?? '—' },
-    { key: 'base', header: 'Base UOM', sortable: false, render: (p) => p.base_uom?.code ?? '—' },
+    { key: 'pack', header: 'Pack size', sortable: false, render: (p) => packSize(p) },
     { key: 'uoms', header: 'Sales UOMs', sortable: false, render: (p) => (p.uoms ?? []).filter((u) => u.is_sales).map((u) => u.uom?.code).join(', ') },
     { key: 'price', header: 'Default price', sortKey: 'default_price', align: 'right', render: (p) => <MoneyCell value={p.default_price} /> },
     ...(canSeeStock
@@ -63,7 +73,44 @@ export default function ProductsPage() {
               return <span className={low ? 'text-[var(--status-red)] font-semibold' : ''} title={low ? `Below reorder point ${p.reorder_point}` : undefined}><QtyCell value={p.stock?.free_to_sell ?? '0'} /></span>
             },
           },
+          {
+            key: 'by_store',
+            header: 'Location',
+            sortable: false,
+            render: (p) =>
+              p.stock?.by_store?.length ? (
+                <span className="text-[11.5px] tabular whitespace-nowrap" title="On hand per store (free to sell in brackets)">
+                  {p.stock.by_store.map((s) => (
+                    <span key={s.store_id} className={`mr-2 ${s.is_sellable ? '' : 'text-[var(--text-muted)]'}`}>
+                      <b>{s.store_code}</b> {formatQty(s.on_hand)}
+                      {s.free_to_sell !== s.on_hand && <span className="text-[var(--text-muted)]"> ({formatQty(s.free_to_sell)})</span>}
+                    </span>
+                  ))}
+                </span>
+              ) : (
+                '—'
+              ),
+          },
           { key: 'expiry', header: 'Nearest expiry', sortable: false, render: (p) => (p.stock?.nearest_expiry ? <ExpiryBadge date={p.stock.nearest_expiry} /> : '—') },
+        ] as Column<Product>[])
+      : []),
+    ...(canSeeCost
+      ? ([
+          {
+            key: 'last_purchase',
+            header: 'Last buying price',
+            sortable: false,
+            align: 'right',
+            render: (p) =>
+              p.last_purchase ? (
+                <span title={`${p.last_purchase.supplier ?? 'Supplier'} · ${p.last_purchase.grn_number} · ${formatDate(p.last_purchase.received_at)}`}>
+                  <MoneyCell value={p.last_purchase.unit_cost} />
+                  <span className="text-[11px] text-[var(--text-muted)]"> /{p.last_purchase.uom_code}</span>
+                </span>
+              ) : (
+                '—'
+              ),
+          },
         ] as Column<Product>[])
       : []),
     { key: 'active', header: 'Status', sortable: false, render: (p) => <StatusBadge status={p.is_active ? 'ACTIVE' : 'INACTIVE'} /> },
@@ -83,7 +130,7 @@ export default function ProductsPage() {
       <PageHeader
         parent="Inventory & Formulations"
         title="Medication & Product Catalogue"
-        subtitle="Manage active stock-keeping units, pharmaceutical strengths, packaging factor UOMs, and reorder levels"
+        subtitle="The master list and the shelf in one place: every product with its pack size, stock by store, nearest expiry and last buying price. Use Export CSV for a spreadsheet copy."
         actions={<><ProductCatalogueActions />{canCreate ? <PrimaryAction icon={Plus} onClick={() => setCreating(true)}>New product</PrimaryAction> : null}</>}
       />
       <FilterBar>

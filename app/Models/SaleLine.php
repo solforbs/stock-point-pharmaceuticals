@@ -72,4 +72,12 @@ class SaleLine extends Model
     {
         return $this->belongsTo(UnitOfMeasure::class, 'uom_id');
     }
+
+    /**
+     * @return BelongsTo<TaxCode, $this>
+     */
+    public function taxCode(): BelongsTo
+    {
+        return $this->belongsTo(TaxCode::class);
+    }
 }

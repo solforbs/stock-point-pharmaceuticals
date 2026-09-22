@@ -107,7 +107,48 @@ export type Product = {
   tax_code?: NamedRef | null
   prices?: ProductPrice[]
   /** Active-branch stock, present when the user holds stock.view (GET /api/products). */
-  stock?: { on_hand: Decimal; reserved: Decimal; free_to_sell: Decimal; nearest_expiry: string | null }
+  stock?: {
+    on_hand: Decimal
+    reserved: Decimal
+    free_to_sell: Decimal
+    nearest_expiry: string | null
+    by_store?: { store_id: string; store_code: string; is_sellable: boolean; on_hand: Decimal; free_to_sell: Decimal }[]
+  }
+  /** The distributor's last price, present only with product.cost.view. */
+  last_purchase?: LastPurchase | null
+}
+
+export type LastPurchase = {
+  unit_cost_per_base: Decimal
+  unit_cost: Decimal
+  uom_code: string | null
+  supplier: string | null
+  received_at: string | null
+  grn_number: string
+}
+
+export type InsightPrice = { unit_price: Decimal; gross_price: Decimal; floor_price: Decimal | null; source: string }
+
+export type UsualPrice = { unit_price: Decimal; uom_id: string; uom_code: string | null; times: number; last_price: Decimal; last_sold_at: string }
+
+/** GET /api/products/{id}/insight — everything a cashier needs beside one cart line. */
+export type ProductInsight = {
+  product: { id: string; code: string; name: string; generic_name: string | null; strength: string | null }
+  tax: { code: string | null; name: string | null; rate_pct: Decimal; treatment: 'STANDARD' | 'ZERO_RATED' | 'EXEMPT' | 'NOT_SET' }
+  min_margin_pct: Decimal | null
+  uoms: {
+    uom_id: string
+    uom_code: string | null
+    factor_to_base: number
+    is_default_sales: boolean
+    retail: InsightPrice | null
+    trade: InsightPrice | null
+    unit_cost: Decimal | null
+    retail_markup_pct: Decimal | null
+  }[]
+  buying: { wac_per_base: Decimal | null; last_purchase: LastPurchase | null } | null
+  usual_price: { customer: UsualPrice | null; everyone: UsualPrice | null }
+  alternatives: { match: 'SAME_GENERIC' | 'SAME_CATEGORY'; free_in_store: Decimal; free_in_branch: Decimal; product: Product }[]
 }
 
 export type Alert = {

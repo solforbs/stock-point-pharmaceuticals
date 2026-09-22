@@ -86,7 +86,7 @@ export default function AppLayout() {
 
             {isPos ? (
               <div className="flex items-center gap-3">
-                <span className="text-[15px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                <span className="font-display text-[15px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
                   PharmaPoint POS
                 </span>
                 <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200/60">

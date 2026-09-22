@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Services\Inventory\InventoryReport;
+use App\Services\Sales\ProductInsight;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends ApiController
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, ProductInsight $insight): JsonResponse
     {
         $this->requirePermission($request, 'product.view');
         $organisationId = $this->organisationId($request);
@@ -66,7 +67,18 @@ class ProductController extends ApiController
                 ->selectRaw("MIN(CASE WHEN pb.status = 'RELEASED' AND sb.qty_on_hand > 0 THEN pb.expiry_date END) as nearest_expiry")
                 ->get()->keyBy('product_id');
 
-            $products->getCollection()->transform(function (Product $p) use ($stock) {
+            // The same stock split by store, so the master list shows where it sits.
+            $byStore = $this->branchStockQuery($request)
+                ->whereIn('sb.product_id', $ids)
+                ->groupBy('sb.product_id', 'st.id', 'st.code', 'st.is_sellable')
+                ->selectRaw('sb.product_id, st.id as store_id, st.code as store_code, st.is_sellable')
+                ->selectRaw('SUM(sb.qty_on_hand) as on_hand')
+                ->selectRaw("SUM(CASE WHEN pb.status = 'RELEASED' AND pb.expiry_date >= ? THEN sb.qty_on_hand - sb.qty_reserved - sb.qty_quarantined ELSE 0 END) as free_to_sell", [now()->toDateString()])
+                ->havingRaw('SUM(sb.qty_on_hand) > 0')
+                ->orderBy('st.code')
+                ->get()->groupBy('product_id');
+
+            $products->getCollection()->transform(function (Product $p) use ($stock, $byStore) {
                 $row = $stock->get($p->id);
 
                 return $p->toArray() + ['stock' => [
@@ -74,7 +86,24 @@ class ProductController extends ApiController
                     'reserved' => number_format((float) ($row->reserved ?? 0), 4, '.', ''),
                     'free_to_sell' => number_format(max(0, (float) ($row->free_to_sell ?? 0)), 4, '.', ''),
                     'nearest_expiry' => $row->nearest_expiry ?? null,
+                    'by_store' => ($byStore->get($p->id) ?? collect())->map(fn ($s) => [
+                        'store_id' => $s->store_id,
+                        'store_code' => $s->store_code,
+                        'is_sellable' => (bool) $s->is_sellable,
+                        'on_hand' => number_format((float) $s->on_hand, 4, '.', ''),
+                        'free_to_sell' => number_format(max(0, (float) $s->free_to_sell), 4, '.', ''),
+                    ])->values()->all(),
                 ]];
+            });
+        }
+
+        // The distributor's last price beside the stock — cost is need-to-know.
+        if ($request->user()->can('product.cost.view')) {
+            $lastPurchases = $insight->lastPurchases($products->getCollection()->pluck('id')->all(), $this->branchId($request));
+            $products->getCollection()->transform(function ($p) use ($lastPurchases) {
+                $row = is_array($p) ? $p : $p->toArray();
+
+                return $row + ['last_purchase' => $lastPurchases[$row['id']] ?? null];
             });
         }
 
@@ -127,6 +156,33 @@ class ProductController extends ApiController
         }
 
         return response()->json(['product' => $product->only(['id', 'code', 'name']), 'stores' => $rows]);
+    }
+
+    /**
+     * GET /api/products/{id}/insight — the POS line's side panel: buying,
+     * trade and retail prices per unit and per pack, VAT treatment, the
+     * margin floor, the usual selling price and in-stock alternatives.
+     */
+    public function insight(Request $request, string $product, ProductInsight $insight): JsonResponse
+    {
+        $this->requirePermission($request, 'product.view');
+        $organisationId = $this->organisationId($request);
+        $branchId = $this->branchId($request);
+
+        $data = $request->validate([
+            'store_id' => ['required', 'uuid', Rule::exists('stores', 'id')->where('branch_id', $branchId)],
+            'customer_id' => ['nullable', 'uuid', Rule::exists('customers', 'id')->where('organisation_id', $organisationId)],
+        ]);
+
+        $product = Product::where('organisation_id', $organisationId)->findOrFail($product);
+
+        return response()->json($insight->for($product, [
+            'organisation_id' => $organisationId,
+            'branch_id' => $branchId,
+            'store_id' => $data['store_id'],
+            'customer_id' => $data['customer_id'] ?? null,
+            'user_id' => $request->user()->id,
+        ], $request->user()->can('product.cost.view')));
     }
 
     public function store(Request $request): JsonResponse

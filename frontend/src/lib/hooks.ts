@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from './api'
-import type { AdminBranch, AdminRole, AdminUser, ChartAccount, CustomerTier, DashboardSummary, DosageForm, JournalEntry, Paginated, PermissionGroup, PriceList, Product, ProductCategory, ProductStock, PurchaseOrder, StorageCondition, Store, Supplier, TaxCode, Uom, UserRef } from './types'
+import type { AdminBranch, AdminRole, AdminUser, ChartAccount, CustomerTier, DashboardSummary, DosageForm, JournalEntry, Paginated, PermissionGroup, PriceList, Product, ProductCategory, ProductInsight, ProductStock, PurchaseOrder, StorageCondition, Store, Supplier, TaxCode, Uom, UserRef } from './types'
 
 export function useUsers(q = '') {
   return useQuery({ queryKey: ['users', q], queryFn: () => apiGet<UserRef[]>('/api/users', { q }), staleTime: 60_000 })
@@ -72,6 +72,15 @@ export function useProductStock(id: string | null | undefined) {
     queryFn: () => apiGet<ProductStock>(`/api/products/${id}/stock`),
     enabled: !!id,
     staleTime: 15_000,
+  })
+}
+
+export function useProductInsight(id: string | null | undefined, storeId: string | null | undefined, customerId: string | null | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ['products', id, 'insight', storeId, customerId ?? null],
+    queryFn: () => apiGet<ProductInsight>(`/api/products/${id}/insight`, { store_id: storeId, customer_id: customerId ?? undefined }),
+    enabled: enabled && !!id && !!storeId,
+    staleTime: 60_000,
   })
 }
 

@@ -2,6 +2,7 @@
 
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Poppins', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 @custom-variant dark (&:where(.never-dark-selector *));
@@ -30,6 +31,20 @@ td {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/*
+ * Two typefaces: key headings (page, drawer, card and section titles, h1/h2)
+ * are set in Poppins so they read apart from the Inter subheadings, labels
+ * and body text beneath them. Declared after the blanket Inter rule above,
+ * which it outranks on specificity.
+ */
+h1,
+h2,
+.font-display,
+.font-display * {
+  font-family: var(--font-display) !important;
+  letter-spacing: -0.01em;
 }
 
 :root {

@@ -78,4 +78,17 @@ class Sale extends Model
     {
         return $this->sale_mode === 'WHOLESALE' && $this->customer_id !== null;
     }
+
+    /**
+     * What the printed document is called: a sale settled in full at the
+     * counter is a cash sale; anything left on account is a tax invoice.
+     */
+    public function documentTitle(string $amountPaid): string
+    {
+        if ($this->status === 'VOIDED') {
+            return 'Voided invoice';
+        }
+
+        return bccomp($amountPaid, (string) $this->grand_total, 4) >= 0 ? 'Cash sale invoice' : 'Tax invoice';
+    }
 }

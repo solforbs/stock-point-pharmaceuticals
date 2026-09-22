@@ -3,11 +3,12 @@ import { useState } from 'react'
 import { PriceBreakdownPopover } from '../../components/PriceBreakdownPopover'
 import { MoneyCell } from '../../components/ui/MoneyCell'
 import { QuantityInput } from '../../components/ui/QuantityInput'
-import { dAdd, dCmp, dIsPos, dSub } from '../../lib/decimal'
+import { dAdd, dCmp, dIsPos, dSub, isValidDecimal } from '../../lib/decimal'
 import { formatDate } from '../../lib/format'
 import { useProductStock, useStores } from '../../lib/hooks'
 import { formatMoney, formatQty } from '../../lib/money'
 import { useIsOffline } from '../../lib/offline/connectivity'
+import { CartLineInsight } from './CartLineInsight'
 import { previewFefo } from './fefo'
 import { useCartStore, type CartLine } from './cartStore'
 
@@ -38,6 +39,9 @@ export function CartLineRow({
   const setUom = useCartStore((s) => s.setUom)
   const setLineDiscount = useCartStore((s) => s.setLineDiscount)
   const storeId = useCartStore((s) => s.storeId)
+  const customerId = useCartStore((s) => s.customer?.id ?? null)
+  const addProduct = useCartStore((s) => s.addProduct)
+  const [targetPrice, setTargetPrice] = useState('')
   const [fefoOpen, setFefoOpen] = useState(false)
   const [discountOpen, setDiscountOpen] = useState(!!line.requestedDiscountPct)
 
@@ -59,6 +63,17 @@ export function CartLineRow({
   const showQuoted = !!quoted && quoteFresh
   const lineTotal = showQuoted ? quoted.line_total : line.localEstimate
   const hasBonus = !!quoted && dIsPos(quoted.bonus_qty)
+
+  // The price before any discount: what a typed target price is measured against.
+  const basePrice = showQuoted ? dAdd(quoted.unit_price, quoted.discount_per_unit) : null
+
+  /** Turns a price the cashier agreed with the customer into the discount % the quote understands. */
+  function applyTargetPrice(target: string, reason: string) {
+    if (!basePrice || !isValidDecimal(target) || Number(basePrice) <= 0) return
+    const pct = Math.max(0, ((Number(basePrice) - Number(target)) / Number(basePrice)) * 100)
+    setLineDiscount(line.lineRef, pct > 0 ? pct.toFixed(3) : '', pct > 0 ? line.discountReason || reason : '')
+    setDiscountOpen(true)
+  }
 
   function stepQty(delta: 1 | -1) {
     if (disabled) return
@@ -273,6 +288,20 @@ export function CartLineRow({
         </ul>
       )}
 
+      <CartLineInsight
+        line={line}
+        storeId={storeId}
+        customerId={customerId}
+        stock={stock}
+        short={!!stock && (fefo.allocations.length === 0 || dIsPos(fefo.shortfall))}
+        offline={offline}
+        canUsePrice={canDiscount && !disabled && showQuoted}
+        onUsePrice={(price, reason) => applyTargetPrice(price, reason)}
+        onAddAlternative={(product) => {
+          if (!disabled) addProduct(product)
+        }}
+      />
+
       {/* Expanded Line Discount Inputs */}
       {discountOpen && canDiscount && (
         <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-slate-100">
@@ -287,6 +316,29 @@ export function CartLineRow({
             data-discount-for={line.lineRef}
             className="w-12 h-6 px-1 rounded bg-white border border-slate-200 text-xs font-bold text-slate-800 text-right focus:outline-none focus:border-blue-500"
           />
+          <span className="text-[10.5px] text-slate-500 font-semibold">or price:</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            placeholder={basePrice ? formatMoney(basePrice) : '—'}
+            value={targetPrice}
+            disabled={disabled || !basePrice}
+            onChange={(e) => setTargetPrice(e.target.value.replace(/[^\d.]/g, ''))}
+            onBlur={() => {
+              if (targetPrice) applyTargetPrice(targetPrice, 'Negotiated price')
+              setTargetPrice('')
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+            }}
+            title="Type the price agreed with the customer; it becomes the discount %. The margin floor still applies."
+            className="w-20 h-6 px-1 rounded bg-white border border-slate-200 text-xs font-bold text-slate-800 text-right focus:outline-none focus:border-blue-500"
+          />
+          {showQuoted && dIsPos(quoted.discount_per_unit) && (
+            <span className="text-[10.5px] text-emerald-700 font-bold tabular whitespace-nowrap" title="Unit price after the discount">
+              = {formatMoney(quoted.unit_price)}
+            </span>
+          )}
           <input
             type="text"
             placeholder="Reason (required)…"
