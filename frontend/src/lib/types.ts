@@ -1810,3 +1810,21 @@ export type TrainingFeedbackRow = {
   user: { id: number; name: string; username: string | null } | null
   updated_at: string
 }
+
+/* The assistant on the sign-in page (read-only, verified by an emailed code). */
+export type AssistantCommand = { command: string; title: string; hint: string }
+
+export type AssistantVerified = {
+  session_token: string
+  expires_at: string | null
+  user: { name: string; email: string }
+}
+
+export type AssistantAnswer = {
+  command: string
+  title: string
+  summary: string
+  columns: { key: string; label: string }[]
+  rows: Record<string, string | number | null>[]
+}
+

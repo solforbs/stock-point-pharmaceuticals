@@ -9,6 +9,7 @@ import { Toaster } from './components/ui/Toaster'
 const Login = lazy(() => import('./pages/Login'))
 const RequestQuotePage = lazy(() => import('./features/onboarding/RequestQuotePage'))
 const InvitationPage = lazy(() => import('./features/onboarding/InvitationPage'))
+const AssistantWidget = lazy(() => import('./features/assistant/AssistantWidget'))
 const PlatformPage = lazy(() => import('./features/platform/PlatformPage'))
 const BillingPage = lazy(() => import('./features/billing/BillingPage'))
 const BillingCallbackPage = lazy(() => import('./features/billing/BillingCallbackPage'))
@@ -110,9 +111,9 @@ function App() {
       <Suspense fallback={<PageLoadingSkeleton />}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<><Login /><AssistantWidget /></>} />
           {/* Reached without signing in: asking for a quote and the one-time emailed links. */}
-          <Route path="/request-quote" element={<RequestQuotePage />} />
+          <Route path="/request-quote" element={<><RequestQuotePage /><AssistantWidget /></>} />
           <Route path="/register" element={<InvitationPage />} />
           <Route path="/activate" element={<InvitationPage />} />
 

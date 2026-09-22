@@ -5,6 +5,7 @@ use App\Http\Middleware\AttachRequestId;
 use App\Http\Middleware\EnforceInstitutionAccess;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\ResolveActiveBranch;
+use App\Http\Middleware\ResolveAssistantSession;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->append(AttachRequestId::class);
         $middleware->alias([
+            'assistant.session' => ResolveAssistantSession::class,
             'branch.context' => ResolveActiveBranch::class,
             'tenant.access' => EnforceInstitutionAccess::class,
             'platform' => EnsurePlatformAdmin::class,

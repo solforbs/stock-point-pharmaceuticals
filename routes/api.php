@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdrReportController;
 use App\Http\Controllers\Api\AlertController;
+use App\Http\Controllers\Api\AssistantController;
 use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\Api\ColdChainController;
 use App\Http\Controllers\Api\CompanyProfileController;
@@ -497,6 +498,19 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/billing', [BillingController::class, 'show']);
     Route::post('/billing/checkout', [BillingController::class, 'checkout']);
     Route::post('/billing/verify', [BillingController::class, 'verify']);
+});
+
+// The assistant on the sign-in page: an emailed code, then a fixed list of
+// read-only questions answered under the asker's own permissions.
+Route::prefix('assistant')->group(function () {
+    Route::post('/request-code', [AssistantController::class, 'requestCode'])->middleware('throttle:20,10');
+    Route::post('/verify', [AssistantController::class, 'verify'])->middleware('throttle:10,10');
+
+    Route::middleware(['assistant.session', 'branch.context', 'throttle:30,1'])->group(function () {
+        Route::get('/commands', [AssistantController::class, 'commands']);
+        Route::post('/ask', [AssistantController::class, 'ask']);
+        Route::post('/end', [AssistantController::class, 'end']);
+    });
 });
 
 // The public edge: plans, quote requests, the one-time links, Paystack's webhook.
