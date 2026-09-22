@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pause, Play, Plus, Send, Trash2, X } from 'lucide-react'
+import { Inbox, Pause, Play, Plus, Send, Trash2, X } from 'lucide-react'
 import { useState, type KeyboardEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { CustomerPicker, useCustomer } from '../../components/CustomerPicker'
 import { ProductSearch } from '../../components/ProductSearch'
 import { DataTable, type Column } from '../../components/ui/DataTable'
@@ -15,7 +16,7 @@ import { formatDateTime, titleCase } from '../../lib/format'
 import { useProduct, useProductCategories, useStores } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast, toastApiError } from '../../lib/toast'
-import type { Customer, Product, ReportDef } from '../../lib/types'
+import type { Customer, Product, ReportDef, ScheduledReportRunPage } from '../../lib/types'
 
 type Frequency = 'DAILY' | 'WEEKLY' | 'MONTHLY'
 
@@ -37,7 +38,12 @@ type ScheduledReport = {
   creator?: { id: number; name: string } | null
 }
 
-type RunResult = { status: 'SENT' | 'FAILED'; error: string | null; rows: number | null; from: string; to: string; schedule: ScheduledReport }
+type RunResult = { status: 'SENT' | 'FAILED'; error: string | null; rows: number | null; from: string; to: string; run_id: string | null; schedule: ScheduledReport }
+
+const TIME_PRESETS = [
+  { label: 'Midday (12:00)', value: '12:00' },
+  { label: 'Evening (18:00)', value: '18:00' },
+]
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const NUMERIC_FILTERS = ['threshold_pct', 'threshold', 'dead_days', 'open_hour', 'close_hour']
@@ -66,12 +72,21 @@ export default function ScheduledReportsPage() {
     queryFn: () => apiGet<{ data: ScheduledReport[] }>('/api/scheduled-reports'),
     enabled: canSchedule,
   })
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['scheduled-reports'] })
+  const unreviewed = useQuery({
+    queryKey: ['scheduled-report-runs', 'UNREVIEWED', 1],
+    queryFn: () => apiGet<ScheduledReportRunPage>('/api/scheduled-report-runs', { review_status: 'UNREVIEWED', page: 1 }),
+    enabled: canSchedule,
+  })
+  const unreviewedCount = unreviewed.data?.counts.UNREVIEWED ?? 0
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['scheduled-reports'] })
+    queryClient.invalidateQueries({ queryKey: ['scheduled-report-runs'] })
+  }
 
   const runNow = useMutation({
     mutationFn: (s: ScheduledReport) => apiPost<RunResult>(`/api/scheduled-reports/${s.id}/run-now`),
     onSuccess: (r) => {
-      if (r.status === 'SENT') toast.success(`${r.schedule.report_title} sent`, `${r.rows ?? 0} rows, ${r.from} to ${r.to}, to ${r.schedule.recipients.length} recipient(s).`)
+      if (r.status === 'SENT') toast.success(`${r.schedule.report_title} sent`, `${r.rows ?? 0} rows, ${r.from} to ${r.to}, to ${r.schedule.recipients.length} recipient(s). A copy is in the Report Inbox.`)
       else toast.error('Run failed', r.error ?? undefined)
       invalidate()
     },
@@ -129,9 +144,15 @@ export default function ScheduledReportsPage() {
       <PageHeader
         parent="Reports"
         title="Scheduled Reports"
-        subtitle="Each schedule emails a CSV to its recipients and runs with the permissions of the person who set it up."
+        subtitle="Each schedule emails a CSV to its recipients and keeps a copy in the Report Inbox for checking. It runs with the permissions of the person who set it up."
         actions={
-          <div id="tour-scheduled-new">
+          <div id="tour-scheduled-new" className="flex items-center gap-2">
+            <Link to="/reports/inbox">
+              <Button>
+                <Inbox size={13} /> Report Inbox
+                {unreviewedCount > 0 && <span className="ml-1 rounded-full bg-amber-100 text-amber-800 px-1.5 text-[11px] tabular" title="Reports not yet checked">{unreviewedCount}</span>}
+              </Button>
+            </Link>
             <Button variant="primary" onClick={() => setEditing('new')}><Plus size={13} /> New schedule</Button>
           </div>
         }
@@ -329,6 +350,19 @@ function ScheduleForm({ schedule, onDone }: { schedule: ScheduledReport | null; 
           <Field label="Day of month" required hint="1–28, so every month has it." error={err?.errors.month_day?.[0]}><Select value={form.month_day} onChange={(e) => set({ month_day: e.target.value })}>{Array.from({ length: 28 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}</Select></Field>
         )}
         <Field label="Time" required error={err?.errors.run_at?.[0]}><Input type="time" step={900} value={form.run_at} onChange={(e) => set({ run_at: e.target.value.slice(0, 5) })} /></Field>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5 -mt-2">
+        <span className="text-xs text-slate-500">Quick times:</span>
+        {TIME_PRESETS.map((p) => (
+          <button
+            key={p.value}
+            type="button"
+            onClick={() => set({ run_at: p.value })}
+            className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${form.run_at === p.value ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
 
       <Field label="Recipients" required error={recipientError} hint="Type an address and press Enter. Up to 20.">

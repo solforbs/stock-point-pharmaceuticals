@@ -80,6 +80,7 @@ const LeavePage = lazy(() => import('./features/people/LeavePage'))
 const ReportsPage = lazy(() => import('./features/reports/ReportsPage'))
 const AnalyticsPage = lazy(() => import('./features/reports/AnalyticsPage'))
 const ScheduledReportsPage = lazy(() => import('./features/reports/ScheduledReportsPage'))
+const ReportInboxPage = lazy(() => import('./features/reports/ReportInboxPage'))
 
 // Admin
 const UsersRolesPage = lazy(() => import('./features/admin/UsersRolesPage'))
@@ -196,6 +197,7 @@ function App() {
             <Route path="/people/leave" element={<LeavePage />} />
             <Route path="/reports/analytics" element={<AnalyticsPage />} />
             <Route path="/reports/scheduled" element={<ScheduledReportsPage />} />
+            <Route path="/reports/inbox" element={<ReportInboxPage />} />
             <Route path="/admin/pricing-rules" element={<PricingRulesPage />} />
             <Route path="/admin/billing" element={<BillingPage />} />
             <Route path="/billing/callback" element={<BillingCallbackPage />} />

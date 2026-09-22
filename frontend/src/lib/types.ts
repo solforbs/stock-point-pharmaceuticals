@@ -1069,6 +1069,40 @@ export type ReportResult = {
   totals: Record<string, unknown>
 }
 
+export type ReportReviewStatus = 'UNREVIEWED' | 'VERIFIED' | 'FLAGGED'
+
+/** Part 20.3 — one archived scheduled-report run in the Report inbox. */
+export type ScheduledReportRun = {
+  id: string
+  scheduled_report_id: string | null
+  report_key: string
+  report_title: string
+  period_from: string
+  period_to: string
+  trigger: 'SCHEDULED' | 'MANUAL'
+  triggered_by: number | null
+  requester?: { id: number; name: string } | null
+  generated_at: string
+  row_count: number | null
+  columns_json: ReportColumn[] | null
+  totals_json: Record<string, unknown> | null
+  csv_filename: string | null
+  emailed_to: string[] | null
+  status: 'SUCCESS' | 'FAILED'
+  error: string | null
+  review_status: ReportReviewStatus
+  reviewer: { id: number; name: string } | null
+  reviewed_at: string | null
+  review_notes: string | null
+}
+
+export type ScheduledReportRunPage = Paginated<ScheduledReportRun> & { counts: Record<ReportReviewStatus, number> }
+
+export type ScheduledReportRunDetail = ScheduledReportRun & {
+  has_file: boolean
+  preview: { columns: ReportColumn[]; rows: Record<string, unknown>[]; totals: Record<string, unknown>; truncated: boolean } | null
+}
+
 export type Employee = {
   id: string
   employee_no: string
