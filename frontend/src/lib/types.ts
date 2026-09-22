@@ -222,6 +222,8 @@ export type StockStateRow = {
   product_id: string
   product_code: string
   product_name: string
+  category_id: string | null
+  category_name: string | null
   store_id: string
   store_code: string
   store_name: string
@@ -567,6 +569,15 @@ export type DeliveryNoteLine = {
   batch_allocations?: BatchAllocation[]
 }
 
+export const DELIVERY_MODES = ['VEHICLE', 'MOTORBIKE', 'HAND', 'CUSTOMER_PICKUP'] as const
+export type DeliveryMode = (typeof DELIVERY_MODES)[number]
+export const DELIVERY_MODE_LABELS: Record<DeliveryMode, string> = {
+  VEHICLE: 'Vehicle',
+  MOTORBIKE: 'Motorbike',
+  HAND: 'Hand delivery',
+  CUSTOMER_PICKUP: 'Customer pickup',
+}
+
 export type DeliveryNote = {
   id: string
   doc_number: string
@@ -574,6 +585,7 @@ export type DeliveryNote = {
   sales_order_id: string
   picking_list_id: string
   customer_id: string
+  delivery_mode: DeliveryMode | null
   vehicle_reg: string | null
   driver_name: string | null
   driver_phone: string | null

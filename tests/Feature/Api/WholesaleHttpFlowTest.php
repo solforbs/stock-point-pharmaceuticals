@@ -72,9 +72,10 @@ class WholesaleHttpFlowTest extends TestCase
         $this->postJson("/api/picking-lists/{$list['id']}/complete")->assertOk()->assertJsonPath('status', 'COMPLETED');
 
         // Dispatch posts stock OUT, COGS, revenue and AR in one transaction.
-        $note = $this->postJson("/api/sales-orders/{$order['id']}/dispatch", ['vehicle_reg' => 'KDA 123A', 'driver_name' => 'J. Ekai'], ['Idempotency-Key' => 'dn-1'])
+        $note = $this->postJson("/api/sales-orders/{$order['id']}/dispatch", ['delivery_mode' => 'MOTORBIKE', 'vehicle_reg' => 'KMEA 123A', 'driver_name' => 'J. Ekai'], ['Idempotency-Key' => 'dn-1'])
             ->assertCreated()
             ->assertJsonPath('status', 'DISPATCHED')
+            ->assertJsonPath('delivery_mode', 'MOTORBIKE')
             ->json();
         $this->assertNotNull($note['sale_id']);
 

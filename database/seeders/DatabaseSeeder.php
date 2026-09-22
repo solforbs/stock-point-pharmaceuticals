@@ -46,6 +46,7 @@ class DatabaseSeeder extends Seeder
             MrlPricelistSeeder::class,
             MrlPricelistRemainderSeeder::class,
             ProductTaxDefaultSeeder::class,
+            ProductCategorySeeder::class,
         ]);
 
         // Demo customers, stock, sales, receipts and approvals for training and

@@ -135,6 +135,17 @@ class ProcurementHttpFlowTest extends TestCase
             'lines' => [['purchase_order_line_id' => $po['lines'][0]['id'], 'product_id' => $this->amox->id, 'qty' => '10', 'unit_price' => '480']],
         ])->assertCreated()->json();
 
+        // The comparison shows why before anyone runs the match.
+        $this->getJson("/api/supplier-invoices/{$invoice['id']}/comparison")
+            ->assertOk()
+            ->assertJsonPath('would_match', false)
+            ->assertJsonPath('lines.0.qty_ordered', '10.0000')
+            ->assertJsonPath('lines.0.qty_accepted', '10.0000')
+            ->assertJsonPath('lines.0.checks.quantity', true)
+            ->assertJsonPath('lines.0.checks.price', false)
+            ->assertJsonPath('lines.0.price_variance_pct', '14.28')
+            ->assertJsonPath('lines.0.po_number', $po['doc_number']);
+
         $this->postJson("/api/supplier-invoices/{$invoice['id']}/match")
             ->assertOk()
             ->assertJsonPath('matched', false)

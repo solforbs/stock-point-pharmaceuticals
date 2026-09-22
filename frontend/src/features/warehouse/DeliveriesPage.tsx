@@ -14,7 +14,7 @@ import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { formatQty } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
-import type { DeliveryNote, Paginated } from '../../lib/types'
+import { DELIVERY_MODE_LABELS, type DeliveryNote, type Paginated } from '../../lib/types'
 
 const STATUSES = ['DRAFT', 'DISPATCHED', 'DELIVERED', 'CANCELLED']
 
@@ -36,7 +36,7 @@ export default function DeliveriesPage() {
     { key: 'order', header: 'Sales order', render: (d) => <span className="tabular">{d.sales_order?.doc_number ?? d.sales_order_id.slice(0, 8)}</span> },
     { key: 'customer', header: 'Customer', render: (d) => d.sales_order?.customer?.name ?? '—', sortValue: (d) => d.sales_order?.customer?.name ?? '' },
     { key: 'status', header: 'Status', render: (d) => <StatusBadge status={d.status} /> },
-    { key: 'vehicle', header: 'Vehicle / driver', render: (d) => `${d.vehicle_reg ?? '—'} · ${d.driver_name ?? '—'}` },
+    { key: 'vehicle', header: 'Mode / carrier', render: (d) => `${d.delivery_mode ? DELIVERY_MODE_LABELS[d.delivery_mode] : '—'}${d.vehicle_reg ? ` ${d.vehicle_reg}` : ''} · ${d.driver_name ?? '—'}` },
     { key: 'dispatched', header: 'Dispatched', render: (d) => formatDateTime(d.dispatched_at), sortValue: (d) => d.dispatched_at ?? '' },
     { key: 'delivered', header: 'Delivered', render: (d) => (d.delivered_at ? <span className="tabular">{formatDateTime(d.delivered_at)}<div className="text-xs text-slate-500 tabular">{d.received_by_name}</div></span> : '—') },
   ]
@@ -87,7 +87,7 @@ function DeliveryNoteDrawer({ id, onClose }: { id: string | null; onClose: () =>
             {d.sale_id && <Link to={`/sell/invoices?sale=${d.sale_id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open the posted invoice</Link>}
             <Link to={`/sell/sales-orders?order=${d.sales_order_id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open sales order</Link>
           </div>
-          <DescriptionList items={[{ label: 'Vehicle', value: d.vehicle_reg ?? '—' }, { label: 'Driver', value: `${d.driver_name ?? '—'}${d.driver_phone ? ` (${d.driver_phone})` : ''}` }, { label: 'Dispatched', value: formatDateTime(d.dispatched_at) }, { label: 'Delivered', value: d.delivered_at ? `${formatDateTime(d.delivered_at)} · received by ${d.received_by_name ?? ''}` : '—' }]} />
+          <DescriptionList items={[{ label: 'Delivery mode', value: d.delivery_mode ? DELIVERY_MODE_LABELS[d.delivery_mode] : '—' }, { label: 'Registration', value: d.vehicle_reg ?? '—' }, { label: 'Carried by', value: `${d.driver_name ?? '—'}${d.driver_phone ? ` (${d.driver_phone})` : ''}` }, { label: 'Dispatched', value: formatDateTime(d.dispatched_at) }, { label: 'Delivered', value: d.delivered_at ? `${formatDateTime(d.delivered_at)} · received by ${d.received_by_name ?? ''}` : '—' }]} />
           <table className="ui-table">
             <thead><tr><th>Product</th><th className="text-right">Qty (base)</th><th>Batches</th></tr></thead>
             <tbody>

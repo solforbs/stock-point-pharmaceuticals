@@ -39,6 +39,7 @@ const RequisitionsPage = lazy(() => import('./features/procurement/RequisitionsP
 const PurchaseOrdersPage = lazy(() => import('./features/procurement/PurchaseOrdersPage'))
 const GoodsReceiptsPage = lazy(() => import('./features/procurement/GoodsReceiptsPage'))
 const SupplierInvoicesPage = lazy(() => import('./features/procurement/SupplierInvoicesPage'))
+const ThreeWayMatchPage = lazy(() => import('./features/procurement/ThreeWayMatchPage'))
 const SuppliersPage = lazy(() => import('./features/procurement/SuppliersPage'))
 
 // Warehouse
@@ -142,7 +143,7 @@ function App() {
             <Route path="/buy/purchase-orders" element={<PurchaseOrdersPage />} />
             <Route path="/buy/goods-receipts" element={<GoodsReceiptsPage />} />
             <Route path="/buy/supplier-invoices" element={<SupplierInvoicesPage />} />
-            <Route path="/buy/three-way-match" element={<Navigate to="/buy/supplier-invoices" replace />} />
+            <Route path="/buy/three-way-match" element={<ThreeWayMatchPage />} />
             <Route path="/buy/suppliers" element={<SuppliersPage />} />
 
             <Route path="/warehouse/pick-lists" element={<PickListsPage />} />

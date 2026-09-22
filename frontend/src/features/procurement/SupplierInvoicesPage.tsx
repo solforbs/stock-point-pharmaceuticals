@@ -51,7 +51,7 @@ export default function SupplierInvoicesPage() {
   return (
     <Page>
       <PageHeader
-        parent="Buy"
+        parent="Procurement"
         title="Supplier Invoices"
         subtitle="Record the invoice as received, then match it against the PO and GRN. A match creates the payable; an exception does not."
         actions={

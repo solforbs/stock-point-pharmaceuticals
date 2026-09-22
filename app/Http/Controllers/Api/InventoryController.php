@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\ProductBatch;
+use App\Models\ProductCategory;
 use App\Models\StockAdjustment;
 use App\Models\StockLedger;
 use App\Models\Store;
@@ -27,9 +28,11 @@ class InventoryController extends ApiController
             'product_id' => ['nullable', 'uuid'],
             'store_id' => ['nullable', 'uuid'],
             'q' => ['nullable', 'string', 'max:100'],
+            'category_id' => ['nullable', 'uuid'],
         ]);
 
-        $rows = $report->stockStates($this->organisationId($request), $filters['product_id'] ?? null, $filters['store_id'] ?? null, $filters['q'] ?? null);
+        $categoryIds = isset($filters['category_id']) ? ProductCategory::withDescendantIds($filters['category_id']) : null;
+        $rows = $report->stockStates($this->organisationId($request), $filters['product_id'] ?? null, $filters['store_id'] ?? null, $filters['q'] ?? null, $categoryIds);
 
         if (! $request->user()->can('product.cost.view')) {
             foreach ($rows as &$row) {

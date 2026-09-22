@@ -10,7 +10,7 @@ import { apiGet, apiPost, newIdempotencyKey, withIdempotency } from '../../lib/a
 import { formatMoney } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
-import { PAYMENT_METHODS, type DeliveryNote, type Paginated, type PaymentMethod, type SalesOrder, type TenderLine } from '../../lib/types'
+import { DELIVERY_MODE_LABELS, DELIVERY_MODES, PAYMENT_METHODS, type DeliveryMode, type DeliveryNote, type Paginated, type PaymentMethod, type SalesOrder, type TenderLine } from '../../lib/types'
 
 /** Part 10.2 — dispatch posts stock OUT, COGS, revenue and AR in one transaction. */
 export default function DispatchPage() {
@@ -18,6 +18,7 @@ export default function DispatchPage() {
   const queryClient = useQueryClient()
   const canDispatch = usePermission('warehouse.dispatch')
   const [orderId, setOrderId] = useState(params.get('order') ?? '')
+  const [mode, setMode] = useState<DeliveryMode>('VEHICLE')
   const [vehicle, setVehicle] = useState('')
   const [driver, setDriver] = useState('')
   const [phone, setPhone] = useState('')
@@ -33,7 +34,7 @@ export default function DispatchPage() {
     mutationFn: () =>
       apiPost<DeliveryNote>(
         `/api/sales-orders/${orderId}/dispatch`,
-        { vehicle_reg: vehicle || null, driver_name: driver || null, driver_phone: phone || null, payments: payments.map((p) => ({ method: p.method, amount: p.amount, reference: p.reference || null })) },
+        { delivery_mode: mode, vehicle_reg: mode === 'VEHICLE' || mode === 'MOTORBIKE' ? vehicle || null : null, driver_name: driver || null, driver_phone: phone || null, payments: payments.map((p) => ({ method: p.method, amount: p.amount, reference: p.reference || null })) },
         withIdempotency(attemptKey),
       ),
     onSuccess: (dn) => {
@@ -64,10 +65,19 @@ export default function DispatchPage() {
                   </Select>
                 </Field>
               </div>
+              <Field label="Delivery mode" required>
+                <div className="flex flex-wrap gap-1.5">
+                  {DELIVERY_MODES.map((m) => (
+                    <Button key={m} size="sm" variant={mode === m ? 'primary' : 'secondary'} onClick={() => setMode(m)}>{DELIVERY_MODE_LABELS[m]}</Button>
+                  ))}
+                </div>
+              </Field>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                <Field label="Vehicle registration"><Input value={vehicle} onChange={(e) => setVehicle(e.target.value.toUpperCase())} placeholder="KDA 123A" /></Field>
-                <Field label="Driver"><Input value={driver} onChange={(e) => setDriver(e.target.value)} placeholder="Driver full name" /></Field>
-                <Field label="Driver phone"><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" /></Field>
+                {(mode === 'VEHICLE' || mode === 'MOTORBIKE') && (
+                  <Field label={mode === 'MOTORBIKE' ? 'Motorbike registration' : 'Vehicle registration'}><Input value={vehicle} onChange={(e) => setVehicle(e.target.value.toUpperCase())} placeholder={mode === 'MOTORBIKE' ? 'KMEA 123A' : 'KDA 123A'} /></Field>
+                )}
+                <Field label={personLabel(mode)}><Input value={driver} onChange={(e) => setDriver(e.target.value)} placeholder="Full name" /></Field>
+                <Field label="Phone"><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" /></Field>
               </div>
               <Field label="Payments collected on dispatch (optional)" hint="Leave empty to invoice on the customer's credit account.">
                 <div className="space-y-2">
@@ -101,7 +111,7 @@ export default function DispatchPage() {
             ) : (
               <div className="p-4 space-y-2 text-sm">
                 <div className="flex items-center gap-2"><span className="font-bold tabular">{note.doc_number}</span><StatusBadge status={note.status} /></div>
-                <div>Vehicle {note.vehicle_reg ?? '—'} · Driver {note.driver_name ?? '—'} {note.driver_phone ? `(${note.driver_phone})` : ''}</div>
+                <div>{note.delivery_mode ? DELIVERY_MODE_LABELS[note.delivery_mode] : '—'}{note.vehicle_reg ? ` ${note.vehicle_reg}` : ''} · {note.driver_name ?? '—'} {note.driver_phone ? `(${note.driver_phone})` : ''}</div>
                 {note.sale_id && <div><Link to={`/sell/invoices?sale=${note.sale_id}`} className="text-blue-600 hover:text-blue-700 hover:underline font-medium">Open the posted invoice</Link></div>}
                 <div><Link to={`/warehouse/deliveries?note=${note.id}`} className="text-blue-600 hover:text-blue-700 hover:underline font-medium">Record proof of delivery</Link></div>
               </div>
@@ -111,4 +121,11 @@ export default function DispatchPage() {
       </div>
     </Page>
   )
+}
+
+function personLabel(mode: DeliveryMode): string {
+  if (mode === 'MOTORBIKE') return 'Rider'
+  if (mode === 'HAND') return 'Delivered by'
+  if (mode === 'CUSTOMER_PICKUP') return 'Collected by'
+  return 'Driver'
 }

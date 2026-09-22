@@ -33,7 +33,7 @@ export function withPlatformItems(items: NavItem[], isPlatformAdmin: boolean): N
 export const NAV_ITEMS: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   {
-    key: 'sell', label: 'Sell', icon: ShoppingCart, path: '/sell',
+    key: 'sell', label: 'Sales', icon: ShoppingCart, path: '/sell',
     children: [
       { key: 'pos', label: 'POS', path: '/sell/pos' },
       { key: 'quotations', label: 'Quotations', path: '/sell/quotations' },
@@ -58,7 +58,7 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    key: 'buy', label: 'Buy', icon: Truck, path: '/buy',
+    key: 'buy', label: 'Procurement', icon: Truck, path: '/buy',
     children: [
       { key: 'requisitions', label: 'Requisitions', path: '/buy/requisitions' },
       { key: 'purchase-orders', label: 'Purchase Orders', path: '/buy/purchase-orders' },

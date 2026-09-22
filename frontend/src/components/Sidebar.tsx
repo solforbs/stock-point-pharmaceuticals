@@ -21,7 +21,7 @@ function readInitialCollapsed() {
 
 const SECTIONS: { title?: string; items: NavItem[] }[] = [
   { items: NAV_ITEMS.slice(0, 1) }, // Dashboard
-  { title: 'Commerce & Stock', items: NAV_ITEMS.slice(1, 5) }, // Sell, Inventory, Buy, Warehouse
+  { title: 'Commerce & Stock', items: NAV_ITEMS.slice(1, 5) }, // Sales, Inventory, Procurement, Warehouse
   { title: 'Finance & Quality', items: NAV_ITEMS.slice(5, 8) }, // Customers, Finance, Quality
   { title: 'Management', items: NAV_ITEMS.slice(8, 11) }, // Reports, People, Admin
 ]
@@ -94,7 +94,7 @@ function SidebarInner({
         </div>
       </header>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-2 nav-scroll">
         {SECTIONS.map((sec) => ({ ...sec, items: withPlatformItems(sec.items, !!user?.is_platform_admin) })).map((sec, idx) => (
           <div key={sec.title ?? idx} className="space-y-0.5">
             {!collapsed && sec.title && (

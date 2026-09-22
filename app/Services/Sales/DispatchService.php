@@ -97,7 +97,7 @@ class DispatchService
 
     /**
      * @param  array{
-     *     user_id: int, vehicle_reg?: ?string, driver_name?: ?string, driver_phone?: ?string,
+     *     user_id: int, delivery_mode?: ?string, vehicle_reg?: ?string, driver_name?: ?string, driver_phone?: ?string,
      *     payments?: list<array{method: string, reference?: ?string, amount: string}>,
      * }  $meta
      */
@@ -232,6 +232,7 @@ class DispatchService
                 'status' => 'DISPATCHED',
                 'dispatched_at' => now(),
                 'sale_id' => $sale->id,
+                'delivery_mode' => $meta['delivery_mode'] ?? (($meta['vehicle_reg'] ?? null) ? 'VEHICLE' : null),
                 'vehicle_reg' => $meta['vehicle_reg'] ?? null,
                 'driver_name' => $meta['driver_name'] ?? null,
                 'driver_phone' => $meta['driver_phone'] ?? null,

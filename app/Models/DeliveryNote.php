@@ -15,9 +15,19 @@ class DeliveryNote extends Model
 {
     use BelongsToOrganisation, HasUuids;
 
+    /** How the goods travel. HAND is carried on foot by a staff member. */
+    public const DELIVERY_MODES = ['VEHICLE', 'MOTORBIKE', 'HAND', 'CUSTOMER_PICKUP'];
+
+    public const DELIVERY_MODE_LABELS = [
+        'VEHICLE' => 'Vehicle',
+        'MOTORBIKE' => 'Motorbike',
+        'HAND' => 'Hand delivery',
+        'CUSTOMER_PICKUP' => 'Customer pickup',
+    ];
+
     protected $fillable = [
         'organisation_id', 'branch_id', 'store_id', 'sales_order_id', 'picking_list_id', 'customer_id',
-        'doc_number', 'status', 'vehicle_reg', 'driver_name', 'driver_phone',
+        'doc_number', 'status', 'delivery_mode', 'vehicle_reg', 'driver_name', 'driver_phone',
         'dispatched_at', 'delivered_at', 'received_by_name', 'sale_id', 'idempotency_key',
     ];
 

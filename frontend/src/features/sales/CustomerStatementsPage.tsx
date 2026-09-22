@@ -96,7 +96,7 @@ export default function CustomerStatementsPage() {
     <Page>
       <style>{PRINT_CSS}</style>
       <PageHeader
-        parent="Sell"
+        parent="Sales"
         title="Customer Statements"
         subtitle="Every invoice, receipt and credit note for a customer with a running balance, plus what is owed by age."
         actions={

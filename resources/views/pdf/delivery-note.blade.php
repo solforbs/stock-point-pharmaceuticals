@@ -12,8 +12,9 @@
             </td>
             <td>
                 <h2>Transport</h2>
-                <div>Vehicle: {{ $note->vehicle_reg ?: '—' }}</div>
-                <div>Driver: {{ $note->driver_name ?: '—' }}</div>
+                <div>Mode: {{ \App\Models\DeliveryNote::DELIVERY_MODE_LABELS[$note->delivery_mode] ?? '—' }}</div>
+                @if ($note->vehicle_reg)<div>Registration: {{ $note->vehicle_reg }}</div>@endif
+                <div>{{ $note->delivery_mode === 'CUSTOMER_PICKUP' ? 'Collected by' : ($note->delivery_mode === 'HAND' ? 'Delivered by' : 'Rider / driver') }}: {{ $note->driver_name ?: '—' }}</div>
                 @if ($note->driver_phone)<div>{{ $note->driver_phone }}</div>@endif
             </td>
         </tr>

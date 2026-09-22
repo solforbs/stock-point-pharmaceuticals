@@ -20,6 +20,7 @@ use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * Part 10.2 / V6 21.7 — the wholesale document chain. Every price on a
@@ -255,6 +256,7 @@ class OrderController extends ApiController
         $key = $this->idempotencyKey($request);
 
         $data = $request->validate([
+            'delivery_mode' => ['nullable', Rule::in(DeliveryNote::DELIVERY_MODES)],
             'vehicle_reg' => ['nullable', 'string', 'max:20'],
             'driver_name' => ['nullable', 'string', 'max:100'],
             'driver_phone' => ['nullable', 'string', 'max:30'],
@@ -275,6 +277,7 @@ class OrderController extends ApiController
         if ($note->status === 'DRAFT') {
             $note = $dispatch->dispatch($note, [
                 'user_id' => $request->user()->id,
+                'delivery_mode' => $data['delivery_mode'] ?? null,
                 'vehicle_reg' => $data['vehicle_reg'] ?? null,
                 'driver_name' => $data['driver_name'] ?? null,
                 'driver_phone' => $data['driver_phone'] ?? null,
@@ -285,7 +288,8 @@ class OrderController extends ApiController
         // On its way: the customer is told, with the vehicle and driver so
         // they know who is arriving.
         $customer->announce($order->fresh(), 'DISPATCHED', trim(implode(' ', array_filter([
-            $data['vehicle_reg'] ?? null ? 'Vehicle '.$data['vehicle_reg'].'.' : null,
+            isset($data['delivery_mode']) ? DeliveryNote::DELIVERY_MODE_LABELS[$data['delivery_mode']].'.' : null,
+            $data['vehicle_reg'] ?? null ? 'Registration '.$data['vehicle_reg'].'.' : null,
             $data['driver_name'] ?? null ? 'Driver '.$data['driver_name'].($data['driver_phone'] ?? null ? ' ('.$data['driver_phone'].')' : '').'.' : null,
         ]))) ?: null);
 

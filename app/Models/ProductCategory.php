@@ -28,4 +28,30 @@ class ProductCategory extends Model
     {
         return $this->hasMany(self::class, 'parent_id');
     }
+
+    /**
+     * A category's id with every sub-category beneath it, at any depth, so a
+     * filter on "Drugs" also finds the antibiotics and antimalarials.
+     *
+     * @return list<string>
+     */
+    public static function withDescendantIds(string $categoryId): array
+    {
+        $childrenByParent = self::query()->whereNotNull('parent_id')->get(['id', 'parent_id'])
+            ->groupBy(fn (self $category) => (string) $category->parent_id)
+            ->map(fn ($children) => $children->map(fn (self $category) => (string) $category->id)->all());
+
+        $ids = [];
+        $pending = [$categoryId];
+        while ($pending !== []) {
+            $id = array_pop($pending);
+            if (in_array($id, $ids, true)) {
+                continue;
+            }
+            $ids[] = $id;
+            array_push($pending, ...($childrenByParent[$id] ?? []));
+        }
+
+        return $ids;
+    }
 }

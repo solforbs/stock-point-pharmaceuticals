@@ -9,11 +9,14 @@ use App\Models\SubscriptionPayment;
 use App\Models\TenantInvitation;
 use App\Models\TenantRequest;
 use App\Models\User;
+use App\Services\Admin\BackupService;
+use App\Services\Admin\TransactionPurgeService;
 use App\Services\Tenancy\InvalidTenantRequestStateException;
 use App\Services\Tenancy\InvitationUnusableException;
 use App\Services\Tenancy\OnboardingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -153,6 +156,42 @@ class PlatformController extends ApiController
         AuditLog::record('TENANT_TRIAL_EXTENDED', 'organisation', $organisation->id, ['reference' => $organisation->name, 'after_json' => ['trial_ends_at' => $organisation->trial_ends_at->toIso8601String()]]);
 
         return response()->json($this->tenantRow($organisation->loadCount('branches')));
+    }
+
+    /**
+     * GET /api/platform/tenants/{id}/transactions-since?since= — what a
+     * clear-out would remove, before anyone commits to it.
+     */
+    public function purgePreview(Request $request, string $organisation, TransactionPurgeService $purger): JsonResponse
+    {
+        $data = $request->validate(['since' => ['required', 'date', 'before_or_equal:now']]);
+        $organisation = Organisation::findOrFail($organisation);
+
+        return response()->json([
+            'since' => Carbon::parse($data['since'])->toIso8601String(),
+            'documents' => $purger->preview($organisation, Carbon::parse($data['since'])),
+        ]);
+    }
+
+    /**
+     * POST /api/platform/tenants/{id}/clear-transactions — removes demo or
+     * training transactions recorded since a moment. The institution's name
+     * must be typed back, and a database backup is taken first; if the
+     * backup fails nothing is deleted.
+     */
+    public function purgeTransactions(Request $request, string $organisation, TransactionPurgeService $purger, BackupService $backups): JsonResponse
+    {
+        $organisation = Organisation::findOrFail($organisation);
+        $data = $request->validate([
+            'since' => ['required', 'date', 'before_or_equal:now'],
+            'confirm_name' => ['required', 'string', Rule::in([$organisation->name])],
+            'reason' => ['required', 'string', 'min:3', 'max:255'],
+        ], ['confirm_name.in' => 'Type the institution\'s name exactly as shown to confirm.']);
+
+        $backup = $backups->create();
+        $summary = $purger->purge($organisation, Carbon::parse($data['since']), $data['reason']);
+
+        return response()->json(['backup' => $backup['name'], ...$summary]);
     }
 
     /** POST /api/platform/tenants/{id}/complimentary — never billed (partners, pilots) or back to paying. */

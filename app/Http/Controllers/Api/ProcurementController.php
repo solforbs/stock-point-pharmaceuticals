@@ -397,6 +397,25 @@ class ProcurementController extends ApiController
         return response()->json($invoice->fresh('lines'), 201);
     }
 
+    /**
+     * GET /api/supplier-invoices/{id}/comparison — the PO, GRN and invoice
+     * figures side by side, line by line, with the checks the match applies.
+     */
+    public function supplierInvoiceComparison(Request $request, string $invoice, ThreeWayMatchService $matcher): JsonResponse
+    {
+        $this->requirePermission($request, 'invoice.match');
+
+        $invoice = SupplierInvoice::where('branch_id', $this->branchId($request))->with('supplier:id,code,name')->findOrFail($invoice);
+        $lines = $matcher->compare($invoice);
+
+        return response()->json([
+            'invoice' => $invoice->only(['id', 'doc_number', 'invoice_number', 'invoice_date', 'due_date', 'match_status', 'matched_at', 'subtotal', 'tax_total', 'grand_total', 'supplier']),
+            'tolerances' => $matcher->tolerances(),
+            'lines' => $lines,
+            'would_match' => collect($lines)->every(fn (array $line) => $line['failures'] === []),
+        ]);
+    }
+
     /** POST /api/supplier-invoices/{id}/match — Part 9.4. Only a match creates a payable. */
     public function matchSupplierInvoice(Request $request, string $invoice, ThreeWayMatchService $matcher): JsonResponse
     {

@@ -269,6 +269,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/goods-receipts', [DocumentListController::class, 'goodsReceipts']);
     Route::get('/supplier-invoices', [DocumentListController::class, 'supplierInvoices']);
     Route::get('/supplier-invoices/{invoice}', [DocumentListController::class, 'supplierInvoice']);
+    Route::get('/supplier-invoices/{invoice}/comparison', [ProcurementController::class, 'supplierInvoiceComparison']);
     Route::get('/inventory/adjustments', [DocumentListController::class, 'adjustments']);
     Route::get('/inventory/adjustments/{adjustment}', [DocumentListController::class, 'adjustment']);
     Route::get('/delivery-notes', [DocumentListController::class, 'deliveryNotes']);
@@ -474,6 +475,8 @@ Route::middleware(['auth:sanctum', 'platform'])->prefix('platform')->group(funct
     Route::post('/tenants/{organisation}/reactivate', [PlatformController::class, 'reactivate']);
     Route::post('/tenants/{organisation}/extend-trial', [PlatformController::class, 'extendTrial']);
     Route::post('/tenants/{organisation}/complimentary', [PlatformController::class, 'setComplimentary']);
+    Route::get('/tenants/{organisation}/transactions-since', [PlatformController::class, 'purgePreview']);
+    Route::post('/tenants/{organisation}/clear-transactions', [PlatformController::class, 'purgeTransactions']);
     Route::post('/invitations/{invitation}/resend', [PlatformController::class, 'resendInvitation']);
     Route::get('/plans', [PlatformController::class, 'plans']);
     Route::post('/plans', [PlatformController::class, 'storePlan']);

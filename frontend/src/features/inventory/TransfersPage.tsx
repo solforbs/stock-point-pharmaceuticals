@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRightLeft, Package, Plus } from 'lucide-react'
+import { ArrowRightLeft, MapPin, Package, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
 import { Modal } from '../../components/ui/Modal'
@@ -15,7 +15,7 @@ import { apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { useStores } from '../../lib/hooks'
-import { usePermissions } from '../../lib/permissions'
+import { usePermission, usePermissions } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Paginated, StockTransfer } from '../../lib/types'
 import { BatchLinesEditor, batchLinesPayload, batchLinesValid, type BatchLine } from './BatchLinesEditor'
@@ -81,6 +81,7 @@ export default function TransfersPage() {
           ) : null
         }
       />
+      <BranchExpansionNote />
       <div id="tour-transfers-filters">
         <FilterBar>
           <Field label="Status">
@@ -271,5 +272,36 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
         </div>
       </Modal>
     </Drawer>
+  )
+}
+
+/**
+ * With one branch, transfers only move stock between that branch's stores
+ * (main warehouse to the retail counter, into quarantine). Branch-to-branch
+ * transfers come into play once a second branch exists; until then the page
+ * says so and shows the branches the business plans to open.
+ */
+function BranchExpansionNote() {
+  const { data: user } = useCurrentUser()
+  const canAddBranch = usePermission('admin.settings')
+  const branches = user?.branches ?? []
+  if (branches.length > 1) return null
+
+  return (
+    <div className="ui-card p-4 flex flex-col sm:flex-row sm:items-center gap-3 border-dashed">
+      <MapPin size={20} className="text-blue-600 shrink-0" />
+      <div className="text-sm text-slate-600 flex-1">
+        <div className="font-semibold text-slate-800">One branch today: {branches[0]?.name ?? 'your main branch'}</div>
+        Transfers currently move stock between this branch's stores, for example Main Warehouse to the Retail counter.
+        Branch-to-branch transfers switch on when a second branch is added.
+        <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">Planned: second branch in Lodwar town</span>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">Planned: branches outside Lodwar</span>
+        </div>
+      </div>
+      {canAddBranch && (
+        <Link to="/admin/branches" className="text-sm font-semibold text-blue-600 hover:underline shrink-0">Add a branch</Link>
+      )}
+    </div>
   )
 }

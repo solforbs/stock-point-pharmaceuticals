@@ -351,6 +351,8 @@ function TenantDrawer({ id, onClose }: { id: string | null; onClose: () => void 
             </div>
           </div>
 
+          <ClearTransactionsCard organisationId={t.id} organisationName={t.name} />
+
           <div className="ui-card">
             <header className="px-5 py-3 border-b border-slate-100"><h3 className="text-sm font-semibold">Administrators</h3></header>
             <table className="ui-table">
@@ -516,5 +518,70 @@ function PaymentsTab() {
         <Pagination page={list.data} onPage={setPage} />
       </div>
     </>
+  )
+}
+
+type PurgePreview = { since: string; documents: { table: string; label: string; count: number }[] }
+
+/**
+ * Clearing a demonstration or training session: everything recorded since
+ * a chosen moment is removed, and stock, balances and numbering go back to
+ * where they stood. A backup is taken first, and the name must be typed.
+ */
+function ClearTransactionsCard({ organisationId, organisationName }: { organisationId: string; organisationName: string }) {
+  const queryClient = useQueryClient()
+  const [since, setSince] = useState('')
+  const [confirmName, setConfirmName] = useState('')
+  const [reason, setReason] = useState('Online demo')
+
+  const preview = useQuery({
+    queryKey: ['platform', 'purge-preview', organisationId, since],
+    queryFn: () => apiGet<PurgePreview>(`/api/platform/tenants/${organisationId}/transactions-since`, { since }),
+    enabled: since !== '',
+  })
+  const purge = useMutation({
+    mutationFn: () => apiPost<{ backup: string; deleted: Record<string, number> }>(`/api/platform/tenants/${organisationId}/clear-transactions`, { since, confirm_name: confirmName, reason }),
+    onSuccess: (result) => {
+      toast.success('Transactions cleared', `Backup ${result.backup} was taken first.`)
+      setConfirmName('')
+      queryClient.invalidateQueries()
+    },
+  })
+
+  const found = (preview.data?.documents ?? []).filter((d) => d.count > 0)
+
+  return (
+    <div className="ui-card p-4 space-y-3 border-rose-200">
+      <div>
+        <h3 className="text-sm font-semibold text-slate-900">Clear demo or training transactions</h3>
+        <p className="text-xs text-slate-500">
+          Removes every document, stock movement, payment and journal recorded since the moment you choose. Products, prices, customers,
+          suppliers, users and everything before that moment stay. A database backup is taken first.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Recorded since">
+          <Input type="datetime-local" value={since} onChange={(e) => setSince(e.target.value)} />
+        </Field>
+        <Field label="Reason">
+          <Input value={reason} onChange={(e) => setReason(e.target.value)} />
+        </Field>
+        <Field label={`Type "${organisationName}" to confirm`}>
+          <Input value={confirmName} onChange={(e) => setConfirmName(e.target.value)} />
+        </Field>
+      </div>
+      {preview.isError && <InlineError error={preview.error} />}
+      {since && preview.data && (
+        found.length === 0
+          ? <p className="text-sm text-slate-500">Nothing was recorded since then.</p>
+          : <ul className="flex flex-wrap gap-1.5 text-xs">{found.map((d) => <li key={d.table} className="rounded-full bg-rose-50 text-rose-800 px-2.5 py-1 font-semibold">{d.count} × {d.label}</li>)}</ul>
+      )}
+      {purge.isError && <InlineError error={purge.error} />}
+      <div className="flex justify-end">
+        <Button variant="danger" disabled={!since || found.length === 0 || confirmName !== organisationName || reason.trim().length < 3 || purge.isPending} onClick={() => purge.mutate()}>
+          {purge.isPending ? 'Backing up and clearing…' : 'Clear these transactions'}
+        </Button>
+      </div>
+    </div>
   )
 }

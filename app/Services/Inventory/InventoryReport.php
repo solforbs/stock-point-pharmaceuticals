@@ -13,9 +13,10 @@ use Illuminate\Support\Facades\DB;
 class InventoryReport
 {
     /**
+     * @param  list<string>|null  $categoryIds  a category and its sub-categories; null for all
      * @return list<array<string, mixed>>
      */
-    public function stockStates(string $organisationId, ?string $productId = null, ?string $storeId = null, ?string $search = null): array
+    public function stockStates(string $organisationId, ?string $productId = null, ?string $storeId = null, ?string $search = null, ?array $categoryIds = null): array
     {
         $today = now()->toDateString();
 
@@ -23,12 +24,14 @@ class InventoryReport
             ->join('product_batches as pb', 'pb.id', '=', 'b.batch_id')
             ->join('products as p', 'p.id', '=', 'b.product_id')
             ->join('stores as s', 's.id', '=', 'b.store_id')
+            ->leftJoin('product_categories as c', 'c.id', '=', 'p.category_id')
             ->where('p.organisation_id', $organisationId)
+            ->when($categoryIds !== null, fn ($q) => $q->whereIn('p.category_id', $categoryIds))
             ->when($productId, fn ($q) => $q->where('b.product_id', $productId))
             ->when($storeId, fn ($q) => $q->where('b.store_id', $storeId))
             ->when($search, fn ($q) => $q->where(fn ($w) => $w->where('p.name', 'like', "%{$search}%")->orWhere('p.code', 'like', "%{$search}%")))
             ->select([
-                'b.product_id', 'p.code as product_code', 'p.name as product_name', 'p.reorder_point',
+                'b.product_id', 'p.code as product_code', 'p.name as product_name', 'p.reorder_point', 'p.category_id', 'c.name as category_name',
                 'b.store_id', 's.code as store_code', 's.name as store_name', 's.branch_id',
                 'b.batch_id', 'pb.batch_number', 'pb.expiry_date', 'pb.status', 'b.qty_on_hand', 'b.qty_reserved', 'b.qty_quarantined', 'b.wac',
             ])
@@ -43,6 +46,7 @@ class InventoryReport
             $key = $row->product_id.'|'.$row->store_id;
             $g = $grouped[$key] ?? [
                 'product_id' => $row->product_id, 'product_code' => $row->product_code, 'product_name' => $row->product_name,
+                'category_id' => $row->category_id, 'category_name' => $row->category_name,
                 'store_id' => $row->store_id, 'store_code' => $row->store_code, 'store_name' => $row->store_name,
                 'on_hand' => '0.0000', 'reserved' => '0.0000', 'free_to_sell' => '0.0000', 'in_transit' => '0.0000',
                 'pending_qc' => '0.0000', 'quarantined' => '0.0000', 'expired' => '0.0000', 'recalled' => '0.0000',
@@ -99,13 +103,16 @@ class InventoryReport
             if (($productId && $productId !== $transitProductId) || ($storeId && $storeId !== $transitStoreId)) {
                 continue;
             }
-            $product = DB::table('products')->where('id', $transitProductId)->where('organisation_id', $organisationId)->first(['code', 'name', 'reorder_point']);
+            $product = DB::table('products as p')->leftJoin('product_categories as c', 'c.id', '=', 'p.category_id')
+                ->where('p.id', $transitProductId)->where('p.organisation_id', $organisationId)
+                ->first(['p.code', 'p.name', 'p.reorder_point', 'p.category_id', 'c.name as category_name']);
             $store = DB::table('stores')->where('id', $transitStoreId)->first(['code', 'name', 'branch_id']);
-            if (! $product || ! $store) {
+            if (! $product || ! $store || ($categoryIds !== null && ! in_array($product->category_id, $categoryIds, true))) {
                 continue;
             }
             $grouped[$key] = [
                 'product_id' => $transitProductId, 'product_code' => $product->code, 'product_name' => $product->name,
+                'category_id' => $product->category_id, 'category_name' => $product->category_name,
                 'store_id' => $transitStoreId, 'store_code' => $store->code, 'store_name' => $store->name,
                 'on_hand' => '0.0000', 'reserved' => '0.0000', 'free_to_sell' => '0.0000', 'in_transit' => $qty,
                 'pending_qc' => '0.0000', 'quarantined' => '0.0000', 'expired' => '0.0000', 'recalled' => '0.0000',

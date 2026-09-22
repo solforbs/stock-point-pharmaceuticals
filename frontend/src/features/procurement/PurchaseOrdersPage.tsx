@@ -81,7 +81,7 @@ export default function PurchaseOrdersPage() {
   return (
     <Page>
       <PageHeader
-        parent="Buy"
+        parent="Procurement"
         title="Purchase Orders"
         subtitle="DRAFT → APPROVED → SENT. Goods receipting completes procurement."
         actions={

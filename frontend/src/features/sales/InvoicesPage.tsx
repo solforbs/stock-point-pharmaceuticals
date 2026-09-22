@@ -42,7 +42,7 @@ export default function InvoicesPage() {
 
   return (
     <Page>
-      <PageHeader parent="Sell" title="Invoices" subtitle="Every posted sale — retail receipts and wholesale invoices — for the active branch." />
+      <PageHeader parent="Sales" title="Invoices" subtitle="Every posted sale — retail receipts and wholesale invoices — for the active branch." />
       <FilterBar>
         <div id="tour-invoices-mode">
           <Field label="Mode">

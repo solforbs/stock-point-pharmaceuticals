@@ -42,44 +42,8 @@ class ThreeWayMatchService
         }
 
         $failures = [];
-
-        foreach ($invoice->lines as $line) {
-            $poLine = $line->purchaseOrderLine;
-
-            if (! $poLine) {
-                $failures[] = "Line for product {$line->product_id}: no linked PO line.";
-
-                continue;
-            }
-
-            if ($poLine->purchaseOrder->supplier_id !== $invoice->supplier_id) {
-                $failures[] = "Line {$line->id}: invoice supplier does not match the PO's supplier.";
-            }
-
-            $acceptedQty = (string) $poLine->goodsReceiptLines()->sum('qty_accepted');
-            if (bccomp((string) $line->qty, $acceptedQty, 4) > 0) {
-                $failures[] = "Line {$line->id}: invoiced qty ({$line->qty}) exceeds accepted qty ({$acceptedQty}) — over-invoicing.";
-            }
-
-            // Part 9.3 — the percentage tolerance is what blocks (Trace 10:
-            // 432 vs 420 = 2.86% → exception). The absolute KES floor exists
-            // so a cheap item does not block on a few shillings' worth of
-            // percentage: a line only fails when it exceeds BOTH.
-            $priceDiff = bcsub((string) $line->unit_price, (string) $poLine->unit_price, 4);
-            $priceDiffAbs = bccomp($priceDiff, '0', 4) < 0 ? bcmul($priceDiff, '-1', 4) : $priceDiff;
-            $percentTolerance = bcdiv(bcmul((string) $poLine->unit_price, self::DEFAULT_PRICE_VARIANCE_PCT, 6), '100', 4);
-            $lineVariance = bcmul($priceDiffAbs, (string) $line->qty, 4);
-
-            $beyondPercent = bccomp($priceDiffAbs, $percentTolerance, 4) > 0;
-            $beyondAbsolute = bccomp($lineVariance, self::DEFAULT_PRICE_VARIANCE_ABS, 4) > 0;
-
-            if ($beyondPercent && $beyondAbsolute) {
-                $variancePct = bccomp((string) $poLine->unit_price, '0', 4) > 0
-                    ? bcmul(bcdiv($priceDiffAbs, (string) $poLine->unit_price, 6), '100', 2)
-                    : '0.00';
-                $failures[] = "Line {$line->id}: price variance {$priceDiffAbs}/unit ({$variancePct}%, KES {$lineVariance} on the line) exceeds tolerance "
-                    .self::DEFAULT_PRICE_VARIANCE_PCT.'% / KES '.self::DEFAULT_PRICE_VARIANCE_ABS.'.';
-            }
+        foreach ($this->compare($invoice) as $row) {
+            array_push($failures, ...$row['failures']);
         }
 
         $matched = $failures === [];
@@ -96,6 +60,109 @@ class ThreeWayMatchService
         });
 
         return new MatchResult($matched, $failures);
+    }
+
+    /**
+     * The side-by-side view behind a match: for every invoice line, what was
+     * ordered on the PO, what the GRNs accepted and what the supplier billed,
+     * with the check each figure passed or failed. match() uses exactly these
+     * checks, so the screen and the posting can never disagree.
+     *
+     * @return list<array{
+     *     line_id: string, product: array{id: string, code: string|null, name: string|null},
+     *     po_number: string|null, grn_numbers: list<string>,
+     *     qty_ordered: string|null, qty_accepted: string|null, qty_invoiced: string,
+     *     po_unit_price: string|null, invoice_unit_price: string,
+     *     price_variance_per_unit: string|null, price_variance_pct: string|null, line_variance: string|null,
+     *     checks: array{po_linked: bool, supplier: bool|null, quantity: bool|null, price: bool|null},
+     *     failures: list<string>
+     * }>
+     */
+    public function compare(SupplierInvoice $invoice): array
+    {
+        $invoice->loadMissing(['lines.product:id,code,name', 'lines.purchaseOrderLine.purchaseOrder:id,doc_number,supplier_id', 'lines.purchaseOrderLine.goodsReceiptLines.goodsReceipt:id,doc_number']);
+
+        $rows = [];
+        foreach ($invoice->lines as $line) {
+            $poLine = $line->purchaseOrderLine;
+            $row = [
+                'line_id' => (string) $line->id,
+                'product' => ['id' => (string) $line->product_id, 'code' => $line->product?->code, 'name' => $line->product?->name],
+                'po_number' => null,
+                'grn_numbers' => [],
+                'qty_ordered' => null,
+                'qty_accepted' => null,
+                'qty_invoiced' => (string) $line->qty,
+                'po_unit_price' => null,
+                'invoice_unit_price' => (string) $line->unit_price,
+                'price_variance_per_unit' => null,
+                'price_variance_pct' => null,
+                'line_variance' => null,
+                'checks' => ['po_linked' => $poLine !== null, 'supplier' => null, 'quantity' => null, 'price' => null],
+                'failures' => [],
+            ];
+
+            if (! $poLine) {
+                $row['failures'][] = "Line for product {$line->product_id}: no linked PO line.";
+                $rows[] = $row;
+
+                continue;
+            }
+
+            $row['po_number'] = $poLine->purchaseOrder->doc_number;
+            $row['grn_numbers'] = $poLine->goodsReceiptLines->map(fn ($grnLine) => $grnLine->goodsReceipt?->doc_number)->filter()->unique()->values()->all();
+            $row['qty_ordered'] = (string) $poLine->qty_ordered;
+            $row['po_unit_price'] = (string) $poLine->unit_price;
+
+            $row['checks']['supplier'] = $poLine->purchaseOrder->supplier_id === $invoice->supplier_id;
+            if (! $row['checks']['supplier']) {
+                $row['failures'][] = "Line {$line->id}: invoice supplier does not match the PO's supplier.";
+            }
+
+            $acceptedQty = $poLine->goodsReceiptLines->reduce(fn (string $total, $grnLine) => bcadd($total, (string) $grnLine->qty_accepted, 4), '0.0000');
+            $row['qty_accepted'] = $acceptedQty;
+            $row['checks']['quantity'] = bccomp((string) $line->qty, $acceptedQty, 4) <= 0;
+            if (! $row['checks']['quantity']) {
+                $row['failures'][] = "Line {$line->id}: invoiced qty ({$line->qty}) exceeds accepted qty ({$acceptedQty}) — over-invoicing.";
+            }
+
+            // Part 9.3 — the percentage tolerance is what blocks (Trace 10:
+            // 432 vs 420 = 2.86% → exception). The absolute KES floor exists
+            // so a cheap item does not block on a few shillings' worth of
+            // percentage: a line only fails when it exceeds BOTH.
+            $priceDiff = bcsub((string) $line->unit_price, (string) $poLine->unit_price, 4);
+            $priceDiffAbs = bccomp($priceDiff, '0', 4) < 0 ? bcmul($priceDiff, '-1', 4) : $priceDiff;
+            $percentTolerance = bcdiv(bcmul((string) $poLine->unit_price, self::DEFAULT_PRICE_VARIANCE_PCT, 6), '100', 4);
+            $lineVariance = bcmul($priceDiffAbs, (string) $line->qty, 4);
+            $variancePct = bccomp((string) $poLine->unit_price, '0', 4) > 0
+                ? bcmul(bcdiv($priceDiffAbs, (string) $poLine->unit_price, 6), '100', 2)
+                : '0.00';
+
+            $row['price_variance_per_unit'] = $priceDiff;
+            $row['price_variance_pct'] = $variancePct;
+            $row['line_variance'] = $lineVariance;
+
+            $beyondPercent = bccomp($priceDiffAbs, $percentTolerance, 4) > 0;
+            $beyondAbsolute = bccomp($lineVariance, self::DEFAULT_PRICE_VARIANCE_ABS, 4) > 0;
+            $row['checks']['price'] = ! ($beyondPercent && $beyondAbsolute);
+
+            if (! $row['checks']['price']) {
+                $row['failures'][] = "Line {$line->id}: price variance {$priceDiffAbs}/unit ({$variancePct}%, KES {$lineVariance} on the line) exceeds tolerance "
+                    .self::DEFAULT_PRICE_VARIANCE_PCT.'% / KES '.self::DEFAULT_PRICE_VARIANCE_ABS.'.';
+            }
+
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array{price_variance_pct: string, price_variance_abs: string}
+     */
+    public function tolerances(): array
+    {
+        return ['price_variance_pct' => self::DEFAULT_PRICE_VARIANCE_PCT, 'price_variance_abs' => self::DEFAULT_PRICE_VARIANCE_ABS];
     }
 
     private function postPayable(SupplierInvoice $invoice, ?int $matchedBy): void

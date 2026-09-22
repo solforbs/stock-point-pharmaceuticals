@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\ProductCategory;
 use App\Models\StockAdjustment;
 use App\Models\StockLedger;
 use Laravel\Sanctum\Sanctum;
@@ -60,6 +61,21 @@ class InventoryHttpTest extends TestCase
         $this->grantPermissions(['stock.view']);
         $this->getJson('/api/inventory/stock?product_id='.$this->amox->id)->assertOk()->assertJsonMissingPath('data.0.value_at_cost');
         $this->postJson("/api/batches/{$released->id}/quarantine", ['reason' => 'Trying it on'])->assertStatus(403);
+    }
+
+    public function test_stock_can_be_narrowed_to_a_heading_and_its_sub_headings(): void
+    {
+        $drugs = ProductCategory::create(['code' => 'T-DRUGS', 'name' => 'Drugs']);
+        $antibiotics = ProductCategory::create(['code' => 'T-ABX', 'name' => 'Antibiotics', 'parent_id' => $drugs->id]);
+        $topicals = ProductCategory::create(['code' => 'T-TOP', 'name' => 'Topicals']);
+        $this->amox->update(['category_id' => $antibiotics->id]);
+        $this->receive('C1', now()->addYears(2)->toDateString(), '100', '2.0000');
+
+        $this->getJson('/api/inventory/stock?category_id='.$drugs->id)
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.category_name', 'Antibiotics');
+        $this->getJson('/api/inventory/stock?category_id='.$topicals->id)->assertOk()->assertJsonCount(0, 'data');
     }
 
     public function test_adjustments_need_a_reason_and_large_ones_wait_for_approval(): void
