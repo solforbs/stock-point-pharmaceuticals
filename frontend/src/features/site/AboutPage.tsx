@@ -36,7 +36,7 @@ export default function AboutPage() {
         image="pharmacy-counter.jpg"
       />
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
+      <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6">
         <Reveal className="grid gap-6 sm:grid-cols-2">
           {BELIEFS.map((belief) => (
             <RevealItem
@@ -55,7 +55,7 @@ export default function AboutPage() {
       </section>
 
       <section className="border-y border-slate-200/70 bg-white">
-        <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2">
+        <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2">
           <div>
             <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">What we do</h2>
             <p className="mt-4 leading-relaxed text-slate-600">

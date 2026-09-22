@@ -17,6 +17,7 @@ import {
   WifiOff,
   type LucideIcon,
 } from 'lucide-react'
+import { FacebookIcon, InstagramIcon, TikTokIcon, WhatsAppIcon, XIcon, YouTubeIcon, type BrandIcon } from './BrandIcons'
 
 /**
  * The public site's copy in one place, so the pages stay layout and the words
@@ -200,6 +201,65 @@ export const TRUST_POINTS: Highlight[] = [
   { icon: Activity, title: 'Audited end to end', body: 'Postings, voids, discounts and approvals all name the person behind them.' },
   { icon: FileText, title: 'Your documents, your brand', body: 'Invoices, orders and delivery notes carry your letterhead, stamp and signature.' },
   { icon: Users, title: 'Trained, not just installed', body: 'The training pack is part of the product, not an afterthought.' },
+]
+
+/**
+ * Social accounts. Each one appears in the header strip and the footer as
+ * soon as it has an address — leave it empty and it is simply not shown, so
+ * the site never links to a page that does not exist yet.
+ */
+export const SOCIALS: { label: string; href: string; icon: BrandIcon }[] = [
+  { label: 'WhatsApp', href: 'https://wa.me/254759900802', icon: WhatsAppIcon },
+  { label: 'Facebook', href: '', icon: FacebookIcon },
+  { label: 'Instagram', href: '', icon: InstagramIcon },
+  { label: 'TikTok', href: '', icon: TikTokIcon },
+  { label: 'X', href: '', icon: XIcon },
+  { label: 'YouTube', href: '', icon: YouTubeIcon },
+]
+
+/** The slides the front page opens on. */
+export type Slide = {
+  badge: string
+  title: string
+  highlight: string
+  body: string
+  priceLabel: string
+  price: string
+  image: string
+  cta: string
+}
+
+export const SLIDES: Slide[] = [
+  {
+    badge: 'Sells offline · syncs later',
+    title: 'The counter never',
+    highlight: 'stops trading',
+    body: 'Retail and wholesale on one till, with batch, expiry and M-PESA handled behind the scenes — and every receipt kept when the line drops.',
+    priceLabel: 'Plans from',
+    price: 'KES 2,500',
+    image: 'hero-pharmacist.jpg',
+    cta: 'Request a demo',
+  },
+  {
+    badge: 'Batch · expiry · FEFO',
+    title: 'Know every unit you',
+    highlight: 'hold and owe',
+    body: 'From the goods receipt to the customer’s hand, each pack carries its batch and expiry. Quarantine is real and the cold chain is logged.',
+    priceLabel: 'Ready for',
+    price: 'eTIMS & KRA',
+    image: 'pills.jpg',
+    cta: 'See the modules',
+  },
+  {
+    badge: 'PPB · county · VAT',
+    title: 'Inspection-ready,',
+    highlight: 'every single day',
+    body: 'Licence renewals counted down, twelve SOPs ready to issue, recalls and disposals recorded, and an audit log naming who did what.',
+    priceLabel: 'Setup & training',
+    price: 'Included',
+    image: 'dispensary.jpg',
+    cta: 'Talk to us',
+  },
 ]
 
 /** How to reach us, written once and used everywhere. */

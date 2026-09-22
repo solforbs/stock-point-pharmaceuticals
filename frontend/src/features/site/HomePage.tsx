@@ -1,20 +1,19 @@
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion'
-import { useRef } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check, PhoneCall } from 'lucide-react'
+import { ArrowRight, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { AppPreview } from './AppPreview'
 import { CallToAction } from './SiteLayout'
-import { HEADLINE_POINTS, HOW_IT_WORKS, MODULES, PHONE, PHONE_HREF } from './content'
-import { Blob, CountUp, Reveal, RevealItem, riseItem, stagger } from './motion'
+import { HEADLINE_POINTS, HOW_IT_WORKS, MODULES, SLIDES } from './content'
+import { CountUp, Reveal, RevealItem } from './motion'
 
 export default function HomePage() {
   return (
     <>
-      <Hero />
-      <Marquee />
-      <Headlines />
+      <HeroSlider />
+      <TrustStrip />
+      <ModuleShelf />
       <SellingFloor />
-      <Modules />
       <Warehouse />
       <HowItWorks />
       <CallToAction />
@@ -22,148 +21,158 @@ export default function HomePage() {
   )
 }
 
-function Hero() {
+/** The rotating opening panel, in the shape a pharmacy storefront uses. */
+function HeroSlider() {
   const quiet = useReducedMotion()
-  const ref = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
-  const photoY = useTransform(scrollYProgress, [0, 1], ['0%', '14%'])
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const slide = SLIDES[index]
+
+  const go = useCallback((next: number) => setIndex((next + SLIDES.length) % SLIDES.length), [])
+
+  useEffect(() => {
+    if (paused || quiet) return
+    const timer = setTimeout(() => go(index + 1), 7000)
+
+    return () => clearTimeout(timer)
+  }, [index, paused, quiet, go])
 
   return (
-    <section ref={ref} className="relative overflow-hidden border-b border-slate-200/70">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_60%_at_15%_0%,rgba(37,99,235,0.12),transparent)]" aria-hidden />
-      <Blob className="-left-28 top-20 h-80 w-80 bg-blue-400/20" />
+    <section
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      className="relative overflow-hidden bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50"
+    >
+      {/* The soft discs the pharmacy templates float behind the product. */}
+      <span className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-white/50 blur-2xl" aria-hidden />
+      <span className="pointer-events-none absolute right-1/3 -top-24 h-80 w-80 rounded-full bg-cyan-200/40 blur-3xl" aria-hidden />
 
-      <div className="relative mx-auto grid w-full max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1.05fr_1fr]">
-        <motion.div variants={quiet ? undefined : stagger} initial={quiet ? undefined : 'hidden'} animate={quiet ? undefined : 'shown'}>
-          <motion.span
-            variants={quiet ? undefined : riseItem}
-            className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1.5 text-sm font-semibold text-blue-700"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-500 opacity-70" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
-            </span>
-            Live in Lodwar, built for Kenya
-          </motion.span>
-
-          <motion.h1
-            variants={quiet ? undefined : riseItem}
-            className="mt-6 font-display text-[2.75rem] font-extrabold leading-[1.05] tracking-tight text-slate-900 sm:text-6xl"
-          >
-            The pharmacy runs itself.
-            <span className="block text-blue-600">You run the pharmacy.</span>
-          </motion.h1>
-
-          <motion.p variants={quiet ? undefined : riseItem} className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600 sm:text-xl">
-            Counter sales, batch and expiry, procurement, the books and the regulator — one system, every branch, and it keeps
-            selling when the line goes down.
-          </motion.p>
-
-          <motion.div variants={quiet ? undefined : riseItem} className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <motion.div whileHover={quiet ? undefined : { y: -2 }} whileTap={{ scale: 0.97 }}>
-              <Link
-                to="/request-quote"
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-7 py-4 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-colors hover:bg-blue-700"
-              >
-                Request a demo
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden />
-              </Link>
-            </motion.div>
-            <motion.a
-              href={PHONE_HREF}
-              whileHover={quiet ? undefined : { y: -2 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-7 py-4 text-base font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 sm:w-auto"
+      <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-2">
+        <div className="min-h-[21rem]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={index}
+              initial={quiet ? undefined : { opacity: 0, x: -28 }}
+              animate={quiet ? undefined : { opacity: 1, x: 0 }}
+              exit={quiet ? undefined : { opacity: 0, x: 28 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             >
-              <PhoneCall className="h-4.5 w-4.5 text-blue-600" aria-hidden />
-              {PHONE}
-            </motion.a>
-          </motion.div>
+              <span className="inline-flex items-center rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
+                {slide.badge}
+              </span>
 
-          <motion.dl variants={quiet ? undefined : riseItem} className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-slate-200 pt-7">
-            {[
-              ['8', 'modules, one login'],
-              ['60+', 'reports ready to run'],
-              ['0', 'sales lost offline'],
-            ].map(([figure, label]) => (
-              <div key={label}>
-                <dt>
-                  <CountUp value={figure} className="font-display text-3xl font-extrabold text-slate-900 sm:text-4xl" />
-                </dt>
-                <dd className="mt-1 text-sm leading-snug text-slate-500">{label}</dd>
-              </div>
-            ))}
-          </motion.dl>
-        </motion.div>
+              <h1 className="mt-5 font-display text-[2.6rem] font-extrabold uppercase leading-[0.98] tracking-tight text-slate-900 sm:text-6xl">
+                {slide.title}
+                <span className="block text-blue-600">{slide.highlight}</span>
+              </h1>
 
-        {/* The photograph carries the trade; the panel in front of it carries the product. */}
-        <motion.div
-          initial={quiet ? undefined : { opacity: 0, scale: 0.96, y: 26 }}
-          animate={quiet ? undefined : { opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
-          className="relative"
-        >
-          <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-100 shadow-2xl shadow-slate-900/15">
-            <motion.img
-              style={quiet ? undefined : { y: photoY }}
-              src={`${import.meta.env.BASE_URL}assets/hero-pharmacist.jpg`}
-              alt="A pharmacist checking stock behind the dispensary counter"
-              className="h-[26rem] w-full scale-110 object-cover object-center sm:h-[34rem]"
-              loading="eager"
-            />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent" aria-hidden />
-          </div>
+              <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600">{slide.body}</p>
+
+              <p className="mt-6 text-slate-500">
+                {slide.priceLabel}{' '}
+                <span className="font-display text-3xl font-extrabold text-blue-600">{slide.price}</span>
+              </p>
+
+              <motion.div whileHover={quiet ? undefined : { y: -2 }} whileTap={{ scale: 0.97 }} className="mt-7 inline-block">
+                <Link
+                  to="/request-quote"
+                  className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-blue-600/25 transition-colors hover:bg-blue-700"
+                >
+                  {slide.cta}
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden />
+                </Link>
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <div className="relative">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={index}
+              initial={quiet ? undefined : { opacity: 0, scale: 0.94 }}
+              animate={quiet ? undefined : { opacity: 1, scale: 1 }}
+              exit={quiet ? undefined : { opacity: 0, scale: 1.04 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-blue-900/10"
+            >
+              <img
+                src={`${import.meta.env.BASE_URL}assets/${slide.image}`}
+                alt=""
+                aria-hidden
+                className="h-[19rem] w-full object-cover sm:h-[26rem]"
+                loading="eager"
+              />
+            </motion.div>
+          </AnimatePresence>
 
           <motion.div
             initial={quiet ? undefined : { opacity: 0, y: 20 }}
             animate={quiet ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="absolute -bottom-10 -left-4 w-[22rem] max-w-[92%] sm:-left-16 sm:w-[26rem]"
+            transition={{ duration: 0.6, delay: 0.35 }}
+            className="absolute -bottom-8 -left-4 hidden w-[20rem] sm:block lg:-left-14 lg:w-[23rem]"
           >
             <AppPreview screen="dashboard" />
           </motion.div>
-        </motion.div>
+
+          <div className="absolute right-3 top-3 flex gap-2 sm:right-4 sm:top-4">
+            <SliderButton label="Previous slide" onClick={() => go(index - 1)}>
+              <ChevronLeft className="h-5 w-5" aria-hidden />
+            </SliderButton>
+            <SliderButton label="Next slide" onClick={() => go(index + 1)}>
+              <ChevronRight className="h-5 w-5" aria-hidden />
+            </SliderButton>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative flex justify-center gap-2 pb-8">
+        {SLIDES.map((item, dot) => (
+          <button
+            key={item.title}
+            type="button"
+            onClick={() => go(dot)}
+            aria-label={`Go to slide ${dot + 1}`}
+            aria-current={dot === index}
+            className={`h-2 rounded-full transition-all cursor-pointer ${dot === index ? 'w-8 bg-blue-600' : 'w-2 bg-blue-300 hover:bg-blue-400'}`}
+          />
+        ))}
       </div>
     </section>
   )
 }
 
-/** A quiet band of the things the system deals with all day. */
-function Marquee() {
-  const items = [
-    'Batch & expiry', 'FEFO picking', 'M-PESA', 'Wholesale invoices', 'PPB licences', 'eTIMS-ready',
-    'Cold chain', 'Three-way match', 'Multi-branch', 'Offline selling',
-  ]
-
+function SliderButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
-    <div className="mt-24 overflow-hidden border-y border-slate-200 bg-white py-4 sm:mt-12">
-      <div className="flex w-max animate-[site-marquee_38s_linear_infinite] gap-10 pr-10 motion-reduce:animate-none">
-        {[...items, ...items].map((item, index) => (
-          <span key={`${item}-${index}`} className="flex items-center gap-10 whitespace-nowrap text-sm font-semibold uppercase tracking-wider text-slate-400">
-            {item}
-            <span className="h-1 w-1 rounded-full bg-slate-300" aria-hidden />
-          </span>
-        ))}
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-slate-600 shadow-md backdrop-blur transition-colors hover:bg-white hover:text-blue-600 cursor-pointer"
+    >
+      {children}
+    </button>
   )
 }
 
-function Headlines() {
+/** The four-up promise strip that sits directly under the slider. */
+function TrustStrip() {
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-      <Reveal className="grid gap-6 sm:grid-cols-2">
+    <section className="border-b border-slate-100 bg-white">
+      <Reveal className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
         {HEADLINE_POINTS.map((point) => (
           <RevealItem
             key={point.title}
             hover
-            className="group rounded-2xl border border-slate-200/90 bg-white p-7 shadow-xs transition-shadow hover:shadow-lg"
+            className="group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-blue-300 hover:bg-blue-50/40"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-              <point.icon className="h-6 w-6" aria-hidden />
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+              <point.icon className="h-7 w-7" aria-hidden />
             </span>
-            <h3 className="mt-5 font-display text-xl font-bold tracking-tight text-slate-900">{point.title}</h3>
-            <p className="mt-2.5 leading-relaxed text-slate-600">{point.body}</p>
+            <span>
+              <span className="block font-display text-base font-bold text-slate-900">{point.title}</span>
+              <span className="mt-1 block text-sm leading-relaxed text-slate-500">{point.body}</span>
+            </span>
           </RevealItem>
         ))}
       </Reveal>
@@ -171,14 +180,51 @@ function Headlines() {
   )
 }
 
-/** An editorial row: the till, shown rather than described. */
+/** The module grid, laid out the way a storefront lays out its shelves. */
+function ModuleShelf() {
+  return (
+    <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-16">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">What is inside</h2>
+          <p className="mt-2 text-lg text-slate-500">Eight modules, one product list, one ledger.</p>
+        </div>
+        <span className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-blue-600" aria-hidden />
+          Free 7-day trial · no card needed
+        </span>
+      </div>
+
+      <Reveal className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" amount={0.1}>
+        {MODULES.map((module) => (
+          <RevealItem key={module.key} hover className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-6 transition-shadow hover:shadow-xl">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600">{module.points.length} capabilities</span>
+            <motion.span
+              whileHover={{ rotate: -8, scale: 1.06 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+              className="mt-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white group-hover:bg-blue-600"
+            >
+              <module.icon className="h-6 w-6" aria-hidden />
+            </motion.span>
+            <h3 className="mt-4 font-display text-lg font-bold text-slate-900">{module.name}</h3>
+            <p className="mt-1.5 flex-1 text-sm leading-relaxed text-slate-500">{module.summary}</p>
+            <Link to="/features" className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:underline">
+              See what it does <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </RevealItem>
+        ))}
+      </Reveal>
+    </section>
+  )
+}
+
 function SellingFloor() {
   return (
-    <section className="border-y border-slate-200/70 bg-white">
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-2">
+    <section className="border-y border-slate-100 bg-slate-50">
+      <div className="mx-auto grid w-full max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2">
         <Reveal>
           <RevealItem>
-            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">At the counter</span>
+            <span className="text-sm font-bold uppercase tracking-[0.18em] text-blue-600">At the counter</span>
           </RevealItem>
           <RevealItem>
             <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
@@ -187,8 +233,8 @@ function SellingFloor() {
           </RevealItem>
           <RevealItem>
             <p className="mt-4 text-lg leading-relaxed text-slate-600">
-              Scan or search, take cash or M-PESA, print the receipt. Behind it the batch is allocated first-expired-first-out,
-              the stock moves, and the sale posts to the books — without anybody thinking about it.
+              Scan or search, take cash or M-PESA, print the receipt. Behind it the batch is allocated first-expired-first-out, the
+              stock moves and the sale posts to the books — without anybody thinking about it.
             </p>
           </RevealItem>
           <RevealItem as="div">
@@ -205,6 +251,22 @@ function SellingFloor() {
               ))}
             </ul>
           </RevealItem>
+          <RevealItem as="div">
+            <dl className="mt-8 grid max-w-md grid-cols-3 gap-6 border-t border-slate-200 pt-6">
+              {[
+                ['8', 'modules, one login'],
+                ['60+', 'reports ready to run'],
+                ['0', 'sales lost offline'],
+              ].map(([figure, label]) => (
+                <div key={label}>
+                  <dt>
+                    <CountUp value={figure} className="font-display text-3xl font-extrabold text-slate-900" />
+                  </dt>
+                  <dd className="mt-1 text-sm text-slate-500">{label}</dd>
+                </div>
+              ))}
+            </dl>
+          </RevealItem>
         </Reveal>
 
         <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.6 }}>
@@ -215,71 +277,22 @@ function SellingFloor() {
   )
 }
 
-function Modules() {
-  return (
-    <section className="relative overflow-hidden">
-      <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-        <Reveal className="max-w-2xl">
-          <RevealItem>
-            <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Everything the pharmacy does, in one place
-            </h2>
-          </RevealItem>
-          <RevealItem>
-            <p className="mt-4 text-lg text-slate-600">
-              Eight modules sharing one product list, one set of prices and one ledger — so a sale at the counter reaches the books
-              without anybody retyping it.
-            </p>
-          </RevealItem>
-        </Reveal>
-
-        <Reveal className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" amount={0.1}>
-          {MODULES.map((module) => (
-            <RevealItem
-              key={module.key}
-              hover
-              className="group rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-blue-300 hover:bg-blue-50/40"
-            >
-              <motion.span
-                whileHover={{ rotate: -8, scale: 1.06 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white group-hover:bg-blue-600"
-              >
-                <module.icon className="h-5 w-5" aria-hidden />
-              </motion.span>
-              <h3 className="mt-4 font-display text-lg font-bold text-slate-900">{module.name}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{module.summary}</p>
-            </RevealItem>
-          ))}
-        </Reveal>
-
-        <div className="mt-10">
-          <Link to="/features" className="group inline-flex items-center gap-2 text-base font-semibold text-blue-600 hover:underline">
-            The full list, module by module
-            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden />
-          </Link>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/** The other editorial row: the store, shown on a photograph. */
 function Warehouse() {
   return (
     <section className="relative overflow-hidden bg-slate-900">
       <img
         src={`${import.meta.env.BASE_URL}assets/warehouse.jpg`}
-        alt="Aisles of a pharmaceutical distribution warehouse"
+        alt=""
+        aria-hidden
         className="absolute inset-0 h-full w-full object-cover opacity-25"
         loading="lazy"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/40" aria-hidden />
 
-      <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-2">
+      <div className="relative mx-auto grid w-full max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2">
         <Reveal>
           <RevealItem>
-            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-400">In the store</span>
+            <span className="text-sm font-bold uppercase tracking-[0.18em] text-blue-400">In the store</span>
           </RevealItem>
           <RevealItem>
             <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
@@ -318,7 +331,7 @@ function Warehouse() {
 
 function HowItWorks() {
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+    <section className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
       <Reveal className="max-w-2xl">
         <RevealItem>
           <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">From today to going live</h2>
@@ -328,9 +341,9 @@ function HowItWorks() {
         </RevealItem>
       </Reveal>
 
-      <Reveal as="ol" className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" amount={0.1}>
+      <Reveal as="ol" className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" amount={0.1}>
         {HOW_IT_WORKS.map((step) => (
-          <RevealItem key={step.number} as="li" hover className="group relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-7 shadow-xs">
+          <RevealItem key={step.number} as="li" hover className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-7">
             <span className="absolute -right-3 -top-4 font-display text-7xl font-extrabold text-blue-600/10 transition-colors group-hover:text-blue-600/20">
               {step.number}
             </span>

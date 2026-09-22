@@ -282,46 +282,31 @@ textarea.ui-input {
 /*
  * The public site's typeface.
  *
- * TT Drugs is a licensed TypeType family, so its files are not in this
- * repository. Drop the licensed web fonts into frontend/public/fonts/ with
- * the names below and the site picks them up on the next build — nothing
- * else changes. Until then the stack falls through to Barlow, which shares
- * TT Drugs' narrow humanist proportions closely enough that the layout does
- * not move when the real font arrives.
+ * One variable file covers every weight from thin to black, which is why it
+ * is preferred over the eight static cuts sitting beside it. Both a built
+ * path (/spa/fonts) and a dev path (/fonts) are listed, so the font resolves
+ * whether the page came from Vite or from Laravel.
+ *
+ * NOTE: these are the TT Drugs *trial* files. A trial licence covers
+ * evaluation only — the full TypeType licence is needed before this site
+ * goes live.
  */
 @font-face {
   font-family: 'TT Drugs';
-  src: url('/spa/fonts/TTDrugs-Regular.woff2') format('woff2');
+  src:
+    url('/spa/fonts/TT-Drugs-Trial-Variable-BF668809066b3d1.ttf') format('truetype'),
+    url('/fonts/TT-Drugs-Trial-Variable-BF668809066b3d1.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TT Drugs';
+  src:
+    url('/spa/fonts/TT-Drugs-Trial-Italic-BF66880906046fe.ttf') format('truetype'),
+    url('/fonts/TT-Drugs-Trial-Italic-BF66880906046fe.ttf') format('truetype');
   font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'TT Drugs';
-  src: url('/spa/fonts/TTDrugs-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'TT Drugs';
-  src: url('/spa/fonts/TTDrugs-DemiBold.woff2') format('woff2');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'TT Drugs';
-  src: url('/spa/fonts/TTDrugs-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'TT Drugs';
-  src: url('/spa/fonts/TTDrugs-ExtraBold.woff2') format('woff2');
-  font-weight: 800;
-  font-style: normal;
+  font-style: italic;
   font-display: swap;
 }
 

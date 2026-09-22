@@ -29,7 +29,7 @@ export default function PricingPage() {
         image="dispensary.jpg"
       />
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
+      <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6">
         {yearlyOffered && (
           <div className="mb-10 flex justify-center">
             <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">

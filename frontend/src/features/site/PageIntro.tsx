@@ -21,7 +21,7 @@ export function PageIntro({ eyebrow, title, body, image }: { eyebrow: string; ti
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 sm:py-28"
+        className="relative mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-28"
       >
         <span className="text-sm font-bold uppercase tracking-[0.2em] text-blue-400">{eyebrow}</span>
         <h1 className="mt-4 max-w-3xl font-display text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl">{title}</h1>

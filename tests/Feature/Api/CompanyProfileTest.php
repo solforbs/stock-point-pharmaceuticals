@@ -38,8 +38,8 @@ class CompanyProfileTest extends TestCase
             'vision' => 'The most trusted pharmacy in northern Kenya.',
             'core_values' => ['Integrity', '  ', 'Patient safety', ''],
             'services' => ['Wholesale supply', 'Retail pharmacy'],
-            'website' => 'www.stockpoint.co.ke',
-            'contact_email' => 'info@stockpoint.co.ke',
+            'website' => 'www.stockpoint.solforbs.com',
+            'contact_email' => 'info@stockpoint.solforbs.com',
             'contact_phone' => '+254 700 000 000',
             'physical_address' => 'Kanamkemer Road, Lodwar',
             'postal_address' => 'P.O. Box 12-30500 Lodwar',
@@ -82,7 +82,7 @@ class CompanyProfileTest extends TestCase
 
         $first = Organisation::findOrFail($this->org->id)->stamp_path;
         Storage::disk('local')->assertExists($first);
-        $this->assertStringStartsWith('company-profile/'.$this->org->id.'/', $first);
+        $this->assertStringStartsWith('company-profile/' . $this->org->id . '/', $first);
 
         $this->get('/api/admin/company-profile/images/stamp')->assertOk()->assertHeader('Content-Type', 'image/png');
 
@@ -122,9 +122,16 @@ class CompanyProfileTest extends TestCase
         $this->assertStringContainsString('Tel +254 700 000 000', (string) $letterhead['contact_line']);
 
         $html = $renderer->html('pdf.invoice', [
-            'title' => 'Cash sale invoice', 'sale' => $sale->load('lines'), 'amountPaid' => '5.5', 'balanceDue' => '0',
-            'vatAnalysis' => [], 'amountInWords' => null, 'cashier' => 'Test', 'payments' => collect(),
-            'money' => fn ($v) => number_format((float) $v, 2), 'qty' => fn ($v) => (string) $v,
+            'title' => 'Cash sale invoice',
+            'sale' => $sale->load('lines'),
+            'amountPaid' => '5.5',
+            'balanceDue' => '0',
+            'vatAnalysis' => [],
+            'amountInWords' => null,
+            'cashier' => 'Test',
+            'payments' => collect(),
+            'money' => fn($v) => number_format((float) $v, 2),
+            'qty' => fn($v) => (string) $v,
         ], $this->branch->id);
         $this->assertStringContainsString($letterhead['logo'], $html);
         $this->assertStringContainsString($letterhead['stamp'], $html);
@@ -142,9 +149,13 @@ class CompanyProfileTest extends TestCase
     {
         Organisation::where('id', $this->org->id)->update(['mission' => 'To supply genuine medicines on time, every time.']);
         Licence::create([
-            'organisation_id' => $this->org->id, 'holder_type' => 'BRANCH', 'holder_id' => $this->branch->id,
-            'licence_type' => 'PPB_PREMISES', 'licence_number' => 'PPB/PREM/2026/118',
-            'issued_by' => 'Pharmacy and Poisons Board', 'expiry_date' => now()->addYear()->toDateString(),
+            'organisation_id' => $this->org->id,
+            'holder_type' => 'BRANCH',
+            'holder_id' => $this->branch->id,
+            'licence_type' => 'PPB_PREMISES',
+            'licence_number' => 'PPB/PREM/2026/118',
+            'issued_by' => 'Pharmacy and Poisons Board',
+            'expiry_date' => now()->addYear()->toDateString(),
         ]);
 
         $organisation = Organisation::findOrFail($this->org->id);

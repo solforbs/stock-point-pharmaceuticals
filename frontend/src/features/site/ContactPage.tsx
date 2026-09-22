@@ -15,7 +15,7 @@ export default function ContactPage() {
       />
 
       {/* The three details people actually came for, before anything else. */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
+      <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6">
         <Reveal className="grid gap-5 md:grid-cols-3">
           <RevealItem hover className="rounded-2xl border border-slate-200/90 bg-white p-7 shadow-xs">
             <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
@@ -56,7 +56,7 @@ export default function ContactPage() {
       </section>
 
       <section className="border-y border-slate-200/70 bg-white">
-        <div className="mx-auto grid w-full max-w-6xl gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2">
+        <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2">
           <div>
             <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Where we are</h2>
             <dl className="mt-7 space-y-6">
