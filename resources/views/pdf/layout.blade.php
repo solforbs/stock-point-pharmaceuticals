@@ -10,6 +10,17 @@
         .head h1 { font-size: 16px; margin: 0 0 2px; color: #1e3a8a; }
         .head .org { font-size: 12px; font-weight: bold; }
         .head .meta { font-size: 9px; color: #6b7280; }
+        .head .tagline { font-size: 9px; font-style: italic; color: #1e3a8a; margin-bottom: 2px; }
+        .brand { border-collapse: collapse; }
+        .brand td { vertical-align: top; padding: 0; width: auto; }
+        .brand td.logo { padding-right: 8px; }
+        .brand td.logo img { max-width: 22mm; max-height: 22mm; }
+        .issued-by { width: 100%; margin-top: 22px; page-break-inside: avoid; }
+        .issued-by td { vertical-align: bottom; padding: 0; }
+        .issued-by img.stamp { max-width: 34mm; max-height: 34mm; }
+        .issued-by img.signature { max-width: 45mm; max-height: 18mm; }
+        .issued-by .line { border-top: 1px solid #9ca3af; padding-top: 3px; margin-top: 2px; width: 62mm; }
+        .issued-by .meta { font-size: 9px; color: #6b7280; }
         .cols { width: 100%; }
         .cols td { vertical-align: top; width: 50%; padding: 0; }
         h2 { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; margin: 0 0 3px; }
@@ -32,18 +43,28 @@
     <table class="cols">
         <tr>
             <td>
-                <div class="org">{{ $letterhead['legal_name'] ?: $letterhead['organisation'] }}</div>
-                <div class="meta">
-                    @if ($letterhead['branch']){{ $letterhead['branch'] }}@endif
-                    @if ($letterhead['address']) · {{ $letterhead['address'] }}@endif
-                </div>
-                <div class="meta">
-                    @if ($letterhead['kra_pin'])
-                        KRA PIN: {{ $letterhead['kra_pin'] }}
-                    @else
-                        <span class="warn">KRA PIN not set</span>
-                    @endif
-                </div>
+                <table class="brand">
+                    <tr>
+                        @if ($letterhead['logo'] ?? null)
+                            <td class="logo"><img src="{{ $letterhead['logo'] }}" alt="Logo"></td>
+                        @endif
+                        <td>
+                            <div class="org">{{ $letterhead['legal_name'] ?: $letterhead['organisation'] }}</div>
+                            @if ($letterhead['tagline'] ?? null)<div class="tagline">{{ $letterhead['tagline'] }}</div>@endif
+                            <div class="meta">
+                                {{ implode(' · ', array_filter([$letterhead['branch'], $letterhead['address']])) }}
+                            </div>
+                            @if ($letterhead['contact_line'] ?? null)<div class="meta">{{ $letterhead['contact_line'] }}</div>@endif
+                            <div class="meta">
+                                @if ($letterhead['kra_pin'])
+                                    KRA PIN: {{ $letterhead['kra_pin'] }}
+                                @else
+                                    <span class="warn">KRA PIN not set</span>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             </td>
             <td style="text-align: right;">
                 <h1>{{ $title }}</h1>

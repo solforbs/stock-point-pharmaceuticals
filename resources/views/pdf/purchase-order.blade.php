@@ -77,4 +77,6 @@
             </td>
         </tr>
     </table>
+
+    @include('pdf.partials.issued-by')
 @endsection

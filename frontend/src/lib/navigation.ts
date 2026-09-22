@@ -136,6 +136,7 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'permissions', label: 'Permissions', path: '/admin/permissions' },
       { key: 'branches', label: 'Branches & Stores', path: '/admin/branches' },
       { key: 'settings', label: 'Settings', path: '/admin/settings' },
+      { key: 'company-profile', label: 'Company Profile', path: '/admin/company-profile' },
       { key: 'billing', label: 'Plan & Billing', path: '/admin/billing' },
       { key: 'security', label: 'Security (MFA)', path: '/admin/security' },
       { key: 'pricing-rules', label: 'Pricing Rules', path: '/admin/pricing-rules' },

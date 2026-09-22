@@ -37,12 +37,28 @@ class Organisation extends Model
         'name', 'legal_name', 'kra_pin', 'vat_number', 'vat_registered',
         'base_currency', 'fiscal_year_start', 'is_active', 'updated_by',
         'contact_email', 'contact_phone',
+        'tagline', 'about', 'mission', 'vision', 'core_values', 'services', 'website',
+        'physical_address', 'postal_address', 'signatory_name', 'signatory_title',
+    ];
+
+    /**
+     * The company profile images, by the name the API uses for each, and the
+     * column holding its path on the private disk.
+     *
+     * @var array<string, string>
+     */
+    public const PROFILE_IMAGES = [
+        'logo' => 'logo_path',
+        'stamp' => 'stamp_path',
+        'signature' => 'signature_path',
     ];
 
     protected function casts(): array
     {
         return [
             'vat_registered' => 'boolean',
+            'core_values' => 'array',
+            'services' => 'array',
             'is_active' => 'boolean',
             'is_complimentary' => 'boolean',
             'trial_ends_at' => 'datetime',
