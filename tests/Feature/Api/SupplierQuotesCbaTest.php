@@ -10,6 +10,7 @@ use App\Models\PurchaseOrder;
 use App\Models\Rfq;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsBlueprintWorld;
@@ -110,7 +111,7 @@ class SupplierQuotesCbaTest extends TestCase
             ->assertOk()->assertJsonPath('weight_price', '100.00');
 
         $this->getJson("/api/rfqs/{$rfq['id']}/analysis")->assertOk()
-            ->assertJsonPath('weights.price', 100.0)
+            ->assertJsonPath('weights.price', 100)
             ->assertJsonPath('lines.0.recommendation.supplier_id', $this->supplierA->id);
     }
 
@@ -327,9 +328,14 @@ class SupplierQuotesCbaTest extends TestCase
     public function test_another_institutions_requests_and_suppliers_are_out_of_reach(): void
     {
         $orgB = Organisation::create(['name' => 'Nairobi Chemists Ltd', 'legal_name' => 'Nairobi Chemists Ltd', 'base_currency' => 'KES', 'fiscal_year_start' => 1]);
-        $branchB = Branch::create(['organisation_id' => $orgB->id, 'code' => 'NBO', 'name' => 'Nairobi CBD', 'retail_enabled' => true, 'wholesale_enabled' => true]);
-        $supplierB = Supplier::create(['organisation_id' => $orgB->id, 'code' => 'NBS', 'name' => 'Nairobi Supplier', 'status' => 'ACTIVE']);
-        $rfqB = Rfq::create(['doc_number' => 'RFQ-B-1', 'branch_id' => $branchB->id, 'title' => 'Theirs', 'status' => 'SENT']);
+        [$supplierB, $rfqB] = app(TenantContext::class)->run($orgB->id, function () use ($orgB) {
+            $branchB = Branch::create(['organisation_id' => $orgB->id, 'code' => 'NBO', 'name' => 'Nairobi CBD', 'retail_enabled' => true, 'wholesale_enabled' => true]);
+
+            return [
+                Supplier::create(['organisation_id' => $orgB->id, 'code' => 'NBS', 'name' => 'Nairobi Supplier', 'status' => 'ACTIVE']),
+                Rfq::create(['doc_number' => 'RFQ-B-1', 'branch_id' => $branchB->id, 'title' => 'Theirs', 'status' => 'SENT']),
+            ];
+        });
 
         $payload = $this->rfqPayload();
         $payload['supplier_ids'][] = $supplierB->id;

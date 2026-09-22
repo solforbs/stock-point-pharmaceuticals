@@ -39,7 +39,7 @@ return new class extends Migration
             $table->text('review_notes')->nullable();
             $table->timestamps();
 
-            $table->index(['organisation_id', 'branch_id', 'generated_at']);
+            $table->index(['organisation_id', 'branch_id', 'generated_at'], 'report_runs_org_branch_generated_idx');
         });
     }
 

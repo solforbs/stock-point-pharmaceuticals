@@ -73,8 +73,9 @@ class CompanyProfileTest extends TestCase
                 ->assertStatus(422)->assertJsonValidationErrors('image');
         }
 
+        // Only the three known kinds are routed at all; the SPA fallback answers the GET, so an unknown kind is refused as a bad method.
         $this->post('/api/admin/company-profile/images/unknown', ['image' => UploadedFile::fake()->image('x.png')], ['Accept' => 'application/json'])
-            ->assertNotFound();
+            ->assertStatus(405);
 
         $this->post('/api/admin/company-profile/images/stamp', ['image' => UploadedFile::fake()->image('stamp.png', 200, 200)], ['Accept' => 'application/json'])
             ->assertOk()->assertJsonPath('images.stamp', true);
