@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Mail\AlertDigestMail;
 use App\Models\Alert;
+use App\Models\Licence;
 use App\Models\Sale;
 use App\Models\Setting;
 use App\Models\User;
@@ -83,6 +84,44 @@ class AlertsHttpTest extends TestCase
         $this->assertSame(1, $this->scan()['resolved']);
         $this->assertNotNull($receivable->fresh()->resolved_at);
         $this->assertNull($expiry->fresh()->resolved_at, 'the stock is still short-dated');
+    }
+
+    public function test_licences_coming_up_for_renewal_become_alerts(): void
+    {
+        Licence::create([
+            'organisation_id' => $this->org->id, 'holder_type' => 'ORGANISATION', 'holder_id' => $this->org->id,
+            'licence_type' => 'PPB_PREMISES', 'licence_number' => 'PPB/123', 'issued_by' => 'PPB',
+            'issue_date' => now()->subYear()->toDateString(), 'expiry_date' => now()->addDays(20)->toDateString(), 'is_active' => true,
+        ]);
+        Licence::create([
+            'organisation_id' => $this->org->id, 'holder_type' => 'ORGANISATION', 'holder_id' => $this->org->id,
+            'licence_type' => 'BUSINESS_PERMIT', 'licence_number' => 'TC/88', 'issued_by' => 'Turkana County',
+            'issue_date' => now()->subYear()->toDateString(), 'expiry_date' => now()->addYear()->toDateString(), 'is_active' => true,
+        ]);
+        $this->supplier->update(['licence_expiry' => now()->subDays(3)->toDateString()]);
+
+        $this->scan();
+
+        $alerts = Alert::where('category', 'LICENCE')->orderBy('due_date')->get();
+        $this->assertCount(2, $alerts, 'a permit a year away raises nothing');
+        $this->assertSame('CRITICAL', $alerts[0]->severity, 'the supplier licence has lapsed');
+        $this->assertSame('WARNING', $alerts[1]->severity);
+        $this->assertStringContainsString('PPB premises licence PPB/123 expires in 20 days', $alerts[1]->title);
+    }
+
+    public function test_the_daily_reminder_sums_up_sales_and_what_needs_attention(): void
+    {
+        $this->overdueInvoice();
+        $this->scan();
+        $this->grantPermissions(['finance.ar.view', 'sale.view']);
+        Sanctum::actingAs($this->user);
+
+        $this->getJson('/api/reminders/today')
+            ->assertOk()
+            ->assertJsonPath('categories.0.category', 'RECEIVABLE')
+            ->assertJsonPath('categories.0.total', 1)
+            ->assertJsonPath('categories.0.critical', 1)
+            ->assertJsonPath('sales.today.count', 0);
     }
 
     public function test_stock_past_its_expiry_is_critical_and_far_dated_stock_raises_nothing(): void

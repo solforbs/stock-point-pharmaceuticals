@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Bell, CalendarClock, PackageX } from 'lucide-react'
+import { AlertTriangle, BadgeCheck, Bell, CalendarClock, PackageX } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { apiGet, apiPost } from '../lib/api'
@@ -10,6 +10,7 @@ const categoryIcon = {
   RECEIVABLE: CalendarClock,
   PAYABLE: CalendarClock,
   EXPIRY: PackageX,
+  LICENCE: BadgeCheck,
 } as const
 
 const severityStyle: Record<Alert['severity'], string> = {

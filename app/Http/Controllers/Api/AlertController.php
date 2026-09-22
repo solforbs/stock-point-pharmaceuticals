@@ -144,12 +144,12 @@ class AlertController extends ApiController
         }
 
         $held = array_values(array_filter(
-            ['finance.ar.view', 'finance.ap.view', 'stock.view'],
+            ['finance.ar.view', 'finance.ap.view', 'stock.view', 'licence.view'],
             fn (string $permission) => $user->can($permission)
         ));
 
         if ($held === []) {
-            throw new HttpException(403, "You do not have any of the 'finance.ar.view', 'finance.ap.view' or 'stock.view' permissions.");
+            throw new HttpException(403, "You do not have any of the 'finance.ar.view', 'finance.ap.view', 'stock.view' or 'licence.view' permissions.");
         }
 
         return $held;

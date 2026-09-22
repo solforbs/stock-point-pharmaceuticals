@@ -21,7 +21,7 @@ class Alert extends Model
 {
     use BelongsToOrganisation, HasUuids;
 
-    public const CATEGORIES = ['RECEIVABLE', 'PAYABLE', 'EXPIRY'];
+    public const CATEGORIES = ['RECEIVABLE', 'PAYABLE', 'EXPIRY', 'LICENCE'];
 
     protected $fillable = [
         'organisation_id', 'branch_id', 'alert_key', 'category', 'type', 'severity',

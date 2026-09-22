@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarClock, PackageX, RefreshCw } from 'lucide-react'
+import { BadgeCheck, CalendarClock, PackageX, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -20,6 +20,7 @@ const categoryLabel: Record<Alert['category'], string> = {
   RECEIVABLE: 'Customer invoices',
   PAYABLE: 'Supplier invoices',
   EXPIRY: 'Shelf life',
+  LICENCE: 'Licence renewals',
 }
 
 /**
@@ -67,10 +68,10 @@ export default function AlertsPage() {
         }
       />
 
-      <div id="tour-alerts-categories" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {(['RECEIVABLE', 'PAYABLE', 'EXPIRY'] as const).map((key) => {
+      <div id="tour-alerts-categories" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        {(['RECEIVABLE', 'PAYABLE', 'EXPIRY', 'LICENCE'] as const).map((key) => {
           const stats = summary.data?.by_category[key]
-          const Icon = key === 'EXPIRY' ? PackageX : CalendarClock
+          const Icon = key === 'EXPIRY' ? PackageX : key === 'LICENCE' ? BadgeCheck : CalendarClock
           return (
             <div key={key} className="ui-card p-4 flex items-center gap-3">
               <span className={`p-2 rounded-xl border ${stats?.critical ? severityStyle.CRITICAL : stats?.warning ? severityStyle.WARNING : severityStyle.INFO}`}>
@@ -90,7 +91,7 @@ export default function AlertsPage() {
         <div id="tour-alerts-filters" className="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center gap-2">
           <Select value={category} onChange={(e) => setCategory(e.target.value)} className="w-auto">
             <option value="">All categories</option>
-            {(['RECEIVABLE', 'PAYABLE', 'EXPIRY'] as const).map((c) => (<option key={c} value={c}>{categoryLabel[c]}</option>))}
+            {(['RECEIVABLE', 'PAYABLE', 'EXPIRY', 'LICENCE'] as const).map((c) => (<option key={c} value={c}>{categoryLabel[c]}</option>))}
           </Select>
           <Select value={severity} onChange={(e) => setSeverity(e.target.value)} className="w-auto">
             <option value="">All severities</option>

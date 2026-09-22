@@ -4,12 +4,13 @@ namespace App\Services\Alerts;
 
 use App\Models\Alert;
 use App\Models\Branch;
+use App\Models\Licence;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Part 17 — the standing-alert engine. It recomputes, for one branch, every
- * payment deadline and shelf-life risk that is true today, then makes the
+ * payment deadline, shelf-life risk and licence renewal that is true today, then makes the
  * alerts table say exactly that: new conditions are inserted, conditions
  * that still hold are refreshed (and may escalate), and conditions that
  * have gone away are resolved. Nothing here writes to the books.
@@ -24,6 +25,19 @@ class AlertScanner
 
     public const EXPIRY_WATCH_DAYS = 90;
 
+    /** How each kind of licence is named in an alert. */
+    private const LICENCE_LABELS = [
+        'PPB_PREMISES' => 'PPB premises licence',
+        'PPB_PHARMACIST' => 'PPB pharmacist licence',
+        'PPB_PHARMTECH' => 'PPB pharmaceutical technologist licence',
+        'BUSINESS_PERMIT' => 'County business permit',
+        'FIRE' => 'Fire safety certificate',
+        'PUBLIC_HEALTH' => 'Public health licence',
+        'KRA_TCC' => 'KRA tax compliance certificate',
+        'NHIF_SHIF' => 'SHIF accreditation',
+        'OTHER' => 'Licence',
+    ];
+
     /**
      * @return array{opened: int, refreshed: int, resolved: int}
      */
@@ -35,6 +49,7 @@ class AlertScanner
             ...$this->receivables($branch, $asOf),
             ...$this->payables($branch, $asOf),
             ...$this->expiringStock($branch, $asOf),
+            ...$this->licences($branch, $asOf),
         ];
 
         $opened = 0;
@@ -236,6 +251,91 @@ class AlertScanner
         }
 
         return $alerts;
+    }
+
+    /**
+     * Licences and certificates coming up for renewal: the institution's own
+     * (PPB premises, county business permit…), this branch's, its staff's,
+     * and those of the suppliers it buys from. Warned about from 60 days out.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function licences(Branch $branch, Carbon $asOf): array
+    {
+        $horizon = $asOf->copy()->addDays(Licence::EXPIRING_WITHIN_DAYS)->toDateString();
+
+        $rows = DB::table('licences')
+            ->where('organisation_id', $branch->organisation_id)
+            ->where('is_active', true)
+            ->whereNotNull('expiry_date')
+            ->whereDate('expiry_date', '<=', $horizon)
+            ->where(fn ($q) => $q->where('holder_type', '!=', 'BRANCH')->orWhere('holder_id', $branch->id))
+            ->get(['id', 'holder_type', 'holder_id', 'licence_type', 'licence_number', 'issued_by', 'expiry_date'])
+            ->map(fn ($row) => [
+                'key' => 'licence:'.$row->id,
+                'what' => trim((self::LICENCE_LABELS[$row->licence_type] ?? $row->licence_type).($row->licence_number ? " {$row->licence_number}" : '')),
+                'holder' => $this->holderName($row->holder_type, (string) $row->holder_id),
+                'issued_by' => $row->issued_by,
+                'expiry' => $row->expiry_date,
+                'entity_id' => (string) $row->id,
+            ])->all();
+
+        // Suppliers whose licence is kept on the supplier record itself.
+        $suppliers = DB::table('suppliers')
+            ->where('organisation_id', $branch->organisation_id)
+            ->where('is_active', true)
+            ->whereNotNull('licence_expiry')
+            ->whereDate('licence_expiry', '<=', $horizon)
+            ->get(['id', 'name', 'licence_number', 'licence_expiry']);
+        foreach ($suppliers as $supplier) {
+            $rows[] = [
+                'key' => 'licence:supplier:'.$supplier->id,
+                'what' => trim('Supplier licence'.($supplier->licence_number ? " {$supplier->licence_number}" : '')),
+                'holder' => $supplier->name,
+                'issued_by' => 'PPB',
+                'expiry' => $supplier->licence_expiry,
+                'entity_id' => (string) $supplier->id,
+            ];
+        }
+
+        $alerts = [];
+        foreach ($rows as $row) {
+            $expiry = Carbon::parse($row['expiry'])->startOfDay();
+            $days = (int) $asOf->diffInDays($expiry, false);
+
+            [$type, $severity, $title] = match (true) {
+                $days < 0 => ['LICENCE_EXPIRED', 'CRITICAL', "{$row['what']} expired {$this->plural(abs($days), 'day')} ago"],
+                $days <= 30 => ['LICENCE_EXPIRING', 'WARNING', "{$row['what']} expires in {$this->plural($days, 'day')}"],
+                default => ['LICENCE_EXPIRING', 'INFO', "{$row['what']} expires in {$this->plural($days, 'day')}"],
+            };
+
+            $alerts[] = [
+                'alert_key' => $row['key'],
+                'category' => 'LICENCE',
+                'type' => $type,
+                'severity' => $severity,
+                'title' => $title,
+                'detail' => trim(($row['holder'] ? "Held by {$row['holder']}" : 'Licence').($row['issued_by'] ? " · issued by {$row['issued_by']}" : '')." · expires {$expiry->toDateString()}. Start the renewal now."),
+                'entity_type' => 'licence',
+                'entity_id' => $row['entity_id'],
+                'due_date' => $expiry->toDateString(),
+                'amount' => null,
+                'link' => '/quality/licences',
+                'permission' => 'licence.view',
+            ];
+        }
+
+        return $alerts;
+    }
+
+    private function holderName(string $holderType, string $holderId): ?string
+    {
+        return match ($holderType) {
+            'BRANCH' => DB::table('branches')->where('id', $holderId)->value('name'),
+            'SUPPLIER' => DB::table('suppliers')->where('id', $holderId)->value('name'),
+            'EMPLOYEE' => DB::table('employees')->where('id', $holderId)->value('name'),
+            default => DB::table('organisations')->where('id', $holderId)->value('name'),
+        };
     }
 
     private function rank(string $severity): int

@@ -6,6 +6,7 @@ import { useBranchStore } from '../lib/branch'
 import { formatDate, todayIso } from '../lib/format'
 import { useOutboxReplayer } from '../lib/offline/useOutboxReplayer'
 import { AlertBell } from './AlertBell'
+import { DailyReminders } from './DailyReminders'
 import { MessagesBell } from './MessagesBell'
 import Sidebar from './Sidebar'
 import { ProductTour } from './tour/ProductTour'
@@ -129,6 +130,7 @@ export default function AppLayout() {
 
             <MessagesBell />
             <AlertBell />
+            <DailyReminders />
 
             {/* Keyboard Shortcuts Help Button */}
             <button

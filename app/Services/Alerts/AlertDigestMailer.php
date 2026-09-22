@@ -22,7 +22,7 @@ use Spatie\Permission\PermissionRegistrar;
 class AlertDigestMailer
 {
     /** The permissions that carry an alert, and so decide who hears about it. */
-    public const ALERT_PERMISSIONS = ['finance.ar.view', 'finance.ap.view', 'stock.view'];
+    public const ALERT_PERMISSIONS = ['finance.ar.view', 'finance.ap.view', 'stock.view', 'licence.view'];
 
     /**
      * @return array{sent: int, skipped: int}

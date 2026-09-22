@@ -170,7 +170,7 @@ export type Alert = {
   id: string
   branch_id: string
   alert_key: string
-  category: 'RECEIVABLE' | 'PAYABLE' | 'EXPIRY'
+  category: 'RECEIVABLE' | 'PAYABLE' | 'EXPIRY' | 'LICENCE'
   type: string
   severity: 'INFO' | 'WARNING' | 'CRITICAL'
   title: string

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ColdChainController;
 use App\Http\Controllers\Api\ControlledDocumentController;
 use App\Http\Controllers\Api\CustomerContactController;
 use App\Http\Controllers\Api\CustomerStatementController;
+use App\Http\Controllers\Api\DailyBriefingController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeploymentController;
 use App\Http\Controllers\Api\DocumentListController;
@@ -410,6 +411,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
 
     Route::get('/alerts', [AlertController::class, 'index']);
     Route::get('/alerts/summary', [AlertController::class, 'summary']);
+    Route::get('/reminders/today', [DailyBriefingController::class, 'today']);
     Route::post('/alerts/scan', [AlertController::class, 'scan']);
     Route::post('/alerts/acknowledge-all', [AlertController::class, 'acknowledgeAll']);
     Route::post('/alerts/{alert}/acknowledge', [AlertController::class, 'acknowledge']);
