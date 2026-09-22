@@ -85,10 +85,12 @@ class ProductInsight
 
     /**
      * The most recent posted goods receipt per product in the branch — the
-     * price the distributor last charged us.
+     * price the distributor last charged us. The supplier's quoted trade
+     * price and purchase discount come with it when they were captured on
+     * the receipt (null otherwise).
      *
      * @param  list<string>  $productIds
-     * @return array<string, array{unit_cost_per_base: string, unit_cost: string, uom_code: ?string, supplier: ?string, received_at: ?string, grn_number: string}>
+     * @return array<string, array{unit_cost_per_base: string, unit_cost: string, trade_price: ?string, discount_pct: ?string, uom_code: ?string, supplier: ?string, received_at: ?string, grn_number: string}>
      */
     public function lastPurchases(array $productIds, string $branchId): array
     {
@@ -107,7 +109,7 @@ class ProductInsight
             ->whereIn('l.product_id', $productIds)
             ->orderByDesc('g.received_at')
             ->orderByDesc('g.created_at')
-            ->get(['l.product_id', 'l.unit_cost', 'pu.factor_to_base', 'u.code as uom_code', 's.name as supplier', 'g.received_at', 'g.doc_number']);
+            ->get(['l.product_id', 'l.unit_cost', 'l.trade_price', 'l.discount_pct', 'pu.factor_to_base', 'u.code as uom_code', 's.name as supplier', 'g.received_at', 'g.doc_number']);
 
         $latest = [];
         foreach ($rows as $row) {
@@ -118,6 +120,8 @@ class ProductInsight
             $latest[$row->product_id] = [
                 'unit_cost_per_base' => bcdiv((string) $row->unit_cost, $factor, 4),
                 'unit_cost' => (string) $row->unit_cost,
+                'trade_price' => $row->trade_price !== null ? (string) $row->trade_price : null,
+                'discount_pct' => $row->discount_pct !== null ? (string) $row->discount_pct : null,
                 'uom_code' => $row->uom_code,
                 'supplier' => $row->supplier,
                 'received_at' => $row->received_at,

@@ -85,6 +85,16 @@ export function CartLineInsight({
           </span>
         )}
 
+        {lastPurchase?.trade_price && (
+          <span
+            className="px-1.5 py-0.5 rounded-md border bg-violet-50 text-violet-800 border-violet-200 font-semibold"
+            title={`What ${lastPurchase.supplier ?? 'the supplier'} quoted on ${lastPurchase.grn_number}: trade price less their discount gave ${formatMoney(lastPurchase.unit_cost)} per ${lastPurchase.uom_code ?? 'unit'}`}
+          >
+            Supplier trade {formatMoney(lastPurchase.trade_price)}/{lastPurchase.uom_code ?? 'unit'}
+            {Number(lastPurchase.discount_pct ?? 0) > 0 && ` less ${Number(lastPurchase.discount_pct)}%`}
+          </span>
+        )}
+
         {current?.trade && (
           <span className="px-1.5 py-0.5 rounded-md border bg-slate-50 text-slate-700 border-slate-200 font-semibold" title="Trade (wholesale list) price, before VAT">
             Trade {formatMoney(current.trade.unit_price)}

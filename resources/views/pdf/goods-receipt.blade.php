@@ -55,7 +55,10 @@
                 <td class="num">{{ $qty($line->qty_delivered) }}</td>
                 <td class="num">{{ $qty($line->qty_accepted) }}</td>
                 <td class="num">{{ $qty($line->qty_rejected) }}</td>
-                <td class="num">{{ $money($line->unit_cost) }}</td>
+                <td class="num">
+                    {{ $money($line->unit_cost) }}
+                    @if ($line->trade_price !== null)<div class="meta">Trade {{ $money($line->trade_price) }} less {{ rtrim(rtrim((string) $line->discount_pct, '0'), '.') ?: '0' }}%</div>@endif
+                </td>
                 <td class="num">{{ $money(bcmul((string) $line->qty_accepted, (string) $line->unit_cost, 4)) }}</td>
             </tr>
         @endforeach

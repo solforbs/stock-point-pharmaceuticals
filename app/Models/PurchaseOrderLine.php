@@ -11,13 +11,15 @@ class PurchaseOrderLine extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['purchase_order_id', 'product_id', 'uom_id', 'qty_ordered', 'unit_price', 'tax_code_id'];
+    protected $fillable = ['purchase_order_id', 'product_id', 'uom_id', 'qty_ordered', 'unit_price', 'trade_price', 'discount_pct', 'tax_code_id'];
 
     protected function casts(): array
     {
         return [
             'qty_ordered' => 'decimal:4',
             'unit_price' => 'decimal:4',
+            'trade_price' => 'decimal:4',
+            'discount_pct' => 'decimal:3',
         ];
     }
 

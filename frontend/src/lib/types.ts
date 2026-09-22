@@ -136,6 +136,9 @@ export type Product = {
 export type LastPurchase = {
   unit_cost_per_base: Decimal
   unit_cost: Decimal
+  /** The supplier's gross trade price and purchase discount, when captured on the receipt. */
+  trade_price: Decimal | null
+  discount_pct: Decimal | null
   uom_code: string | null
   supplier: string | null
   received_at: string | null
@@ -621,6 +624,8 @@ export type PurchaseOrderLine = {
   uom_id: string
   qty_ordered: Decimal
   unit_price: Decimal
+  trade_price: Decimal | null
+  discount_pct: Decimal | null
   tax_code_id: string | null
   product?: NamedRef | null
   uom?: Uom | null
@@ -659,6 +664,8 @@ export type GoodsReceiptLine = {
   batch_number: string
   expiry_date: string
   unit_cost: Decimal
+  trade_price: Decimal | null
+  discount_pct: Decimal | null
   landed_unit_cost: Decimal | null
   batch?: ProductBatch | null
 }
@@ -1305,6 +1312,17 @@ export type PriceList = {
   product_prices_count?: number
   tier?: { id: string; code: string; name: string } | null
   branch?: { id: string; code: string; name: string } | null
+}
+
+/** GET /api/products/{id}/selling-prices — the product's current row on each active list, in one unit. */
+export type SellingPrices = {
+  product_id: string
+  uom_id: string
+  tax_rate_pct: Decimal
+  lists: {
+    price_list: Pick<PriceList, 'id' | 'code' | 'name' | 'sale_mode' | 'prices_include_tax' | 'tier' | 'branch'>
+    current: { id: string; factor_type: PriceFactorType; unit_price: Decimal; factor_value: Decimal | null; effective_from: string | null } | null
+  }[]
 }
 
 export type PriceFactorType = 'FIXED' | 'COST_PLUS_MARKUP' | 'TARGET_MARGIN' | 'LIST_RELATIVE'
