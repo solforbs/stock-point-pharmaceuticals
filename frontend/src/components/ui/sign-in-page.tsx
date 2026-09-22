@@ -31,7 +31,7 @@ export function LoginPage() {
       {/* Mobile Top Hero Banner */}
       <div className="md:hidden relative h-48 w-full overflow-hidden shrink-0">
         <img
-          src="/assets/login-hero.jpg"
+          src={`${import.meta.env.BASE_URL}assets/login-hero.jpg`}
           alt="Pharmaceutical Automation & Digital Workflow"
           className="w-full h-full object-cover"
         />
@@ -55,7 +55,7 @@ export function LoginPage() {
 
         <div className="absolute inset-0">
           <img
-            src="/assets/login-hero.jpg"
+            src={`${import.meta.env.BASE_URL}assets/login-hero.jpg`}
             alt="Pharmaceutical Automation & Digital Workflow"
             className="w-full h-full object-cover"
           />

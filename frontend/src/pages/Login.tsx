@@ -150,7 +150,7 @@ export default function Login() {
         {/* Unpeopled Light-Mode Pharmaceutical Robotics & Dashboard Workstation Image */}
         <div className="absolute inset-0">
           <img
-            src="/assets/login-hero.jpg"
+            src={`${import.meta.env.BASE_URL}assets/login-hero.jpg`}
             alt="Stockpoint Solforbs Pharmaceutical Automation"
             className="w-full h-full object-cover object-center"
           />
