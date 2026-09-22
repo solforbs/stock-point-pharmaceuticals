@@ -118,6 +118,7 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'catalogue', label: 'Report Catalogue', path: '/reports/catalogue' },
       { key: 'analytics', label: 'Analytics', path: '/reports/analytics' },
       { key: 'scheduled', label: 'Scheduled Reports', path: '/reports/scheduled' },
+      { key: 'inbox', label: 'Report Inbox', path: '/reports/inbox' },
     ],
   },
   {

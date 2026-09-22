@@ -32,7 +32,7 @@ class PermissionSeeder extends Seeder
         'payroll.view', 'payroll.process', 'payroll.approve.own',
         'leave.request', 'leave.approve', 'report.schedule',
         'admin.users', 'admin.settings', 'record.delete', 'deploy.run',
-        'audit.view', 'report.view', 'report.financial.view',
+        'audit.view', 'report.view', 'report.financial.view', 'report.review',
     ];
 
     public function run(): void

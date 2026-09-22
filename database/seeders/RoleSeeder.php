@@ -29,7 +29,7 @@ class RoleSeeder extends Seeder
             // A small business's owner prepares and approves payroll alone (decision 2026-09-18).
             'payroll.process', 'payroll.approve.own',
             'payment.reconcile',
-            'leave.request', 'leave.approve', 'report.schedule', 'price.manage', 'price.simulate',
+            'leave.request', 'leave.approve', 'report.schedule', 'report.review', 'price.manage', 'price.simulate',
         ],
         'Operations Manager' => [
             'sale.view', 'product.view', 'product.edit', 'customer.manage', 'supplier.view', 'supplier.manage',
@@ -42,7 +42,7 @@ class RoleSeeder extends Seeder
             'grn.create', 'quality.release', 'recall.initiate', 'waste.approve', 'return.create', 'return.post', 'supplier.return',
             'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view', 'licence.manage', 'document.manage',
             'report.view', 'report.financial.view',
-            'leave.approve', 'report.schedule', 'price.manage', 'price.simulate',
+            'leave.approve', 'report.schedule', 'report.review', 'price.manage', 'price.simulate',
         ],
         'Pharmacist' => [
             'sale.view', 'product.view', 'requisition.view', 'requisition.create', 'sale.create', 'stock.view', 'stock.fefo.override', 'quality.release',
@@ -75,10 +75,10 @@ class RoleSeeder extends Seeder
             'payment.record', 'journal.post', 'journal.reverse', 'invoice.match', 'tax.etims.manage', 'payroll.view', 'payroll.process',
             'report.financial.view', 'product.cost.view',
             'payment.reconcile',
-            'leave.request', 'leave.approve', 'report.schedule',
+            'leave.request', 'leave.approve', 'report.schedule', 'report.review',
         ],
         'Auditor' => [
-            'sale.view', 'product.view', 'supplier.view', 'finance.ar.view', 'finance.ap.view', 'audit.view', 'report.view', 'report.financial.view', 'stock.view', 'product.cost.view', 'payroll.view',
+            'sale.view', 'product.view', 'supplier.view', 'finance.ar.view', 'finance.ap.view', 'audit.view', 'report.view', 'report.financial.view', 'stock.view', 'product.cost.view', 'payroll.view', 'report.review',
             'licence.view',
             'leave.request',
         ],

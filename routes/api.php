@@ -45,6 +45,7 @@ use App\Http\Controllers\Api\RequisitionController;
 use App\Http\Controllers\Api\ReturnController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\ScheduledReportController;
+use App\Http\Controllers\Api\ScheduledReportRunController;
 use App\Http\Controllers\Api\StockCountController;
 use App\Http\Controllers\Api\StockTransferController;
 use App\Models\Branch;
@@ -378,6 +379,10 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::patch('/scheduled-reports/{schedule}', [ScheduledReportController::class, 'update']);
     Route::delete('/scheduled-reports/{schedule}', [ScheduledReportController::class, 'destroy']);
     Route::post('/scheduled-reports/{schedule}/run-now', [ScheduledReportController::class, 'runNow']);
+    Route::get('/scheduled-report-runs', [ScheduledReportRunController::class, 'index']);
+    Route::get('/scheduled-report-runs/{run}', [ScheduledReportRunController::class, 'show']);
+    Route::get('/scheduled-report-runs/{run}/download', [ScheduledReportRunController::class, 'download']);
+    Route::post('/scheduled-report-runs/{run}/review', [ScheduledReportRunController::class, 'review']);
     Route::get('/pricing-rules/promotions', [PricingRuleController::class, 'promotions']);
     Route::post('/pricing-rules/promotions', [PricingRuleController::class, 'storePromotion']);
     Route::get('/pricing-rules/promotions/{promotion}', [PricingRuleController::class, 'promotion']);

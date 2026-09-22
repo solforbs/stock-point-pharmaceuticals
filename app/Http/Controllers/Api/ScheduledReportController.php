@@ -114,13 +114,13 @@ class ScheduledReportController extends ApiController
         return response()->json(['deleted' => true]);
     }
 
-    /** POST /api/scheduled-reports/{id}/run-now — runs and mails synchronously; the regular schedule is unchanged. */
+    /** POST /api/scheduled-reports/{id}/run-now — runs, archives and mails synchronously; the regular schedule is unchanged. */
     public function runNow(Request $request, string $schedule, ScheduledReportService $service): JsonResponse
     {
         $this->requirePermission($request, 'report.schedule');
         $schedule = $this->find($request, $schedule);
 
-        $result = $service->run($schedule);
+        $result = $service->run($schedule, triggeredBy: $request->user());
 
         return response()->json($result + ['schedule' => $this->present($schedule->fresh() ?? $schedule)]);
     }

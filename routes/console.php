@@ -25,6 +25,9 @@ Schedule::command('deploy:check-release')->dailyAt('06:00')->withoutOverlapping(
 // Part 20.3 — scheduled reports are mailed when due (run_at is HH:MM, so a quarter-hour tick is enough).
 Schedule::command('reports:run-scheduled')->everyFifteenMinutes()->withoutOverlapping();
 
+// Part 20.3 — archived report runs are kept for REPORT_RUN_RETENTION_DAYS (180 by default).
+Schedule::command('reports:prune-runs')->dailyAt('03:15')->withoutOverlapping();
+
 // Part 16.7 — the tills' offline price packs read prices from this cache, so a
 // price change reaches them within a quarter hour and a pack request is fast.
 Schedule::command('pos:warm-price-packs')->everyFifteenMinutes()->withoutOverlapping();
