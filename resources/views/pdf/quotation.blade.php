@@ -63,4 +63,6 @@
     <div class="note">
         This quotation is an estimate based on current catalogue pricing and stock availability. Prices and item availability remain subject to confirmation at the time the order is accepted.
     </div>
+
+    @include('pdf.partials.issued-by')
 @endsection

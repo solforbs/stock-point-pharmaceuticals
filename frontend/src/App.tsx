@@ -86,6 +86,7 @@ const UsersRolesPage = lazy(() => import('./features/admin/UsersRolesPage'))
 const PermissionsPage = lazy(() => import('./features/admin/PermissionsPage'))
 const BranchesPage = lazy(() => import('./features/admin/BranchesPage'))
 const SettingsPage = lazy(() => import('./features/admin/SettingsPage'))
+const CompanyProfilePage = lazy(() => import('./features/admin/CompanyProfilePage'))
 const SecurityPage = lazy(() => import('./features/admin/SecurityPage'))
 const NumberSequencesPage = lazy(() => import('./features/admin/NumberSequencesPage'))
 const AuditLogPage = lazy(() => import('./features/admin/AuditLogPage'))
@@ -174,6 +175,7 @@ function App() {
             <Route path="/admin/permissions" element={<PermissionsPage />} />
             <Route path="/admin/branches" element={<BranchesPage />} />
             <Route path="/admin/settings" element={<SettingsPage />} />
+            <Route path="/admin/company-profile" element={<CompanyProfilePage />} />
             <Route path="/admin/security" element={<SecurityPage />} />
             <Route path="/admin/number-sequences" element={<NumberSequencesPage />} />
             <Route path="/admin/audit-log" element={<AuditLogPage />} />

@@ -68,4 +68,6 @@
     <div class="note">
         Please check this statement against your records and tell us within 14 days if anything is wrong. Quote account {{ $customer['code'] }} with every payment.
     </div>
+
+    @include('pdf.partials.issued-by')
 @endsection

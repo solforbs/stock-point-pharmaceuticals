@@ -1445,3 +1445,27 @@ export type OpenedInvitation = {
   contact_phone: string | null
   town: string | null
 }
+
+/** Client item 14 — the company profile behind the letterhead and the company profile PDF. */
+export type CompanyProfileImageKind = 'logo' | 'stamp' | 'signature'
+
+export type CompanyProfile = {
+  id: string
+  name: string
+  legal_name: string | null
+  tagline: string | null
+  about: string | null
+  mission: string | null
+  vision: string | null
+  core_values: string[]
+  services: string[]
+  website: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  physical_address: string | null
+  postal_address: string | null
+  signatory_name: string | null
+  signatory_title: string | null
+  images: Record<CompanyProfileImageKind, boolean>
+  images_version: number | null
+}

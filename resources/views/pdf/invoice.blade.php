@@ -86,4 +86,6 @@
     @endif
 
     <div class="note">Goods remain the property of {{ $letterhead['organisation'] }} until paid for in full.</div>
+
+    @include('pdf.partials.issued-by')
 @endsection
