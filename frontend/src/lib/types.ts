@@ -634,6 +634,8 @@ export type PurchaseOrder = {
   expected_date: string | null
   sent_at: string | null
   created_at?: string
+  /** Set when the order was raised by awarding a request for quotation. */
+  rfq_id?: string | null
   lines_count?: number
   supplier?: (NamedRef & { licence_expiry?: string | null; status?: string }) | null
   lines?: PurchaseOrderLine[]
@@ -1437,6 +1439,171 @@ export type TenantRow = {
   plan: { id: string; code: string; name: string } | null
   current_period_end: string | null
   created_at: string
+}
+
+/** Supplier quotes and competitive bid analysis (client item 19). */
+export type RfqStatus = 'DRAFT' | 'SENT' | 'CLOSED' | 'AWARDED' | 'CANCELLED'
+
+export type RfqLine = {
+  id: string
+  product_id: string
+  uom_id: string
+  qty: Decimal
+  notes: string | null
+  sort_order: number
+  awarded_supplier_id: string | null
+  recommended_supplier_id: string | null
+  product?: (NamedRef & { strength?: string | null }) | null
+  uom?: { id: string; code: string } | null
+}
+
+export type RfqQuoteLine = {
+  id: string
+  rfq_line_id: string
+  unit_price: Decimal
+  qty_available: Decimal | null
+  lead_time_days: number
+  shelf_life_months: number | null
+  notes: string | null
+}
+
+export type RfqInvite = {
+  id: string
+  supplier_id: string
+  quote_status: 'AWAITING' | 'RECEIVED' | 'DECLINED'
+  quote_reference: string | null
+  quote_date: string | null
+  valid_until: string | null
+  payment_terms_days: number | null
+  delivery_charge: Decimal
+  notes: string | null
+  received_at: string | null
+  supplier?: (NamedRef & { email?: string | null; status?: string; is_active?: boolean; licence_expiry?: string | null; payment_terms_days?: number | null; lead_time_days?: number | null }) | null
+  quote_lines?: RfqQuoteLine[]
+}
+
+export type Rfq = {
+  id: string
+  doc_number: string
+  title: string
+  needed_by: string | null
+  notes: string | null
+  status: RfqStatus
+  weight_price: Decimal
+  weight_lead_time: Decimal
+  weight_payment_terms: Decimal
+  weight_supplier_record: Decimal
+  sent_at: string | null
+  closed_at: string | null
+  award_mode: 'SINGLE' | 'SPLIT' | null
+  award_followed_recommendation: boolean | null
+  award_justification: string | null
+  awarded_at: string | null
+  cancel_reason: string | null
+  created_at?: string
+  lines_count?: number
+  suppliers_count?: number
+  quotes_received_count?: number
+  lines?: RfqLine[]
+  suppliers?: RfqInvite[]
+  purchase_orders?: { id: string; doc_number: string; supplier_id: string; status: string; expected_date: string | null; supplier?: NamedRef | null }[]
+  awarder?: { id: number; name: string } | null
+  creator?: { id: number; name: string } | null
+  created_purchase_orders?: PurchaseOrder[]
+}
+
+export type CbaRisk = { code: string; message: string }
+
+export type CbaScores = { price: number; lead_time: number; payment_terms: number; supplier_record: number; total: number }
+
+export type CbaQuote = {
+  supplier_id: string
+  supplier_name: string
+  unit_price: Decimal
+  qty_available: Decimal | null
+  qty_to_order: Decimal
+  full_quantity: boolean
+  line_total: Decimal
+  lead_time_days: number
+  shelf_life_months: number | null
+  payment_terms_days: number | null
+  notes: string | null
+  is_lowest: boolean
+  eligible: boolean
+  quote_valid: boolean
+  scores: CbaScores
+  risks: CbaRisk[]
+}
+
+export type CbaSupplier = {
+  supplier_id: string
+  code: string
+  name: string
+  quote_status: RfqInvite['quote_status']
+  quote_reference: string | null
+  valid_until: string | null
+  quote_valid: boolean
+  payment_terms_days: number | null
+  delivery_charge: Decimal
+  eligible: boolean
+  lines_quoted: number
+  total: Decimal
+  total_with_delivery: Decimal
+  record: {
+    score: number
+    licence_status: 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING'
+    licence_expiry: string | null
+    invoices_matched: number
+    invoices_exception: number
+    deliveries: number
+    deliveries_timed: number
+    deliveries_on_time: number
+    rejected_share_pct: number | null
+    summary: string
+  }
+  risks: CbaRisk[]
+}
+
+export type CbaLine = {
+  rfq_line_id: string
+  product: { id: string; code: string | null; name: string | null; strength: string | null }
+  uom: { id: string; code: string | null }
+  qty: Decimal
+  notes: string | null
+  lowest_unit_price: Decimal | null
+  quotes: CbaQuote[]
+  recommendation: {
+    supplier_id: string
+    supplier_name: string
+    unit_price: Decimal
+    qty_to_order: Decimal
+    line_total: Decimal
+    score: number
+    reasons: string[]
+    summary: string
+    risks: CbaRisk[]
+  } | null
+  no_recommendation_reason: string | null
+}
+
+export type CbaAnalysis = {
+  rfq: { id: string; doc_number: string; title: string; status: RfqStatus; needed_by: string | null }
+  weights: { price: number; lead_time: number; payment_terms: number; supplier_record: number }
+  suppliers: CbaSupplier[]
+  lines: CbaLine[]
+  overall: {
+    mode: 'SINGLE' | 'SPLIT' | 'NONE'
+    supplier_id: string | null
+    supplier_name: string | null
+    /** rfq_line_id → supplier_id; an empty plan may arrive as []. */
+    plan: Record<string, string> | []
+    total: Decimal
+    reasons: string[]
+    summary: string
+    risks: CbaRisk[]
+    unawarded_lines: number
+  }
+  generated_at: string
 }
 
 export type TenantDetail = TenantRow & {

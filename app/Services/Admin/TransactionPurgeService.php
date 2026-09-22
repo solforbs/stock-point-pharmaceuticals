@@ -50,6 +50,7 @@ class TransactionPurgeService
         ['table' => 'supplier_returns', 'label' => 'Supplier returns', 'time' => 'created_at', 'scope' => 'branch'],
         ['table' => 'goods_receipts', 'label' => 'Goods receipts', 'time' => 'created_at', 'scope' => 'branch'],
         ['table' => 'purchase_orders', 'label' => 'Purchase orders', 'time' => 'created_at', 'scope' => 'branch'],
+        ['table' => 'rfqs', 'label' => 'Requests for quotation', 'time' => 'created_at', 'scope' => 'branch'],
         ['table' => 'requisitions', 'label' => 'Requisitions', 'time' => 'created_at', 'scope' => 'branch'],
         ['table' => 'stock_transfers', 'label' => 'Stock transfers', 'time' => 'created_at', 'scope' => 'from_store'],
         ['table' => 'stock_adjustments', 'label' => 'Stock adjustments', 'time' => 'created_at', 'scope' => 'store'],

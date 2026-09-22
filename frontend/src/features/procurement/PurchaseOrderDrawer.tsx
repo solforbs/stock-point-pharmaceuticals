@@ -47,6 +47,11 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
         p ? (
           <div className="flex items-center gap-2">
             <PdfDownloadButton url={`/api/purchase-orders/${p.id}/pdf`} filename={p.doc_number} label="Download PO PDF" />
+            {p.rfq_id && (
+              <Link to={`/buy/supplier-quotes?rfq=${p.rfq_id}`} className="text-xs font-semibold text-blue-600 hover:underline">
+                Bid analysis
+              </Link>
+            )}
             {canApprove && (p.status === 'DRAFT' || p.status === 'PENDING_APPROVAL') && (
               <Button size="sm" variant="success" disabled={act.isPending} onClick={() => act.mutate('approve')}>
                 Approve

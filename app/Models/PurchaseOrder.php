@@ -19,7 +19,7 @@ class PurchaseOrder extends Model
     use BelongsToTenantBranch, HasUuids;
 
     protected $fillable = [
-        'doc_number', 'supplier_id', 'branch_id', 'requisition_id', 'status',
+        'doc_number', 'supplier_id', 'branch_id', 'requisition_id', 'rfq_id', 'status',
         'created_by', 'approved_by', 'sent_at', 'expected_date',
         'over_receipt_tolerance_pct', 'under_receipt_close_pct',
     ];
@@ -48,6 +48,14 @@ class PurchaseOrder extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * @return BelongsTo<Rfq, $this>
+     */
+    public function rfq(): BelongsTo
+    {
+        return $this->belongsTo(Rfq::class);
     }
 
     /**

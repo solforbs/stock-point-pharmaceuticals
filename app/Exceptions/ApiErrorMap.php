@@ -18,7 +18,9 @@ use App\Services\Payroll\InvalidPayrollStatusException;
 use App\Services\Pricing\PriceChangedException;
 use App\Services\Pricing\QuoteExpiredException;
 use App\Services\Pricing\QuoteNotFoundException;
+use App\Services\Procurement\AwardJustificationRequiredException;
 use App\Services\Procurement\InvalidRequisitionStatusException;
+use App\Services\Procurement\InvalidRfqStatusException;
 use App\Services\Procurement\SupplierOverpaymentException;
 use App\Services\Quality\InvalidExcursionStatusException;
 use App\Services\Quality\InvalidRecallStatusException;
@@ -80,11 +82,13 @@ class ApiErrorMap
             $e instanceof InvalidTransferStatusException,
             $e instanceof InvalidCountStatusException,
             $e instanceof InvalidRequisitionStatusException,
+            $e instanceof InvalidRfqStatusException,
             $e instanceof InvalidRecallStatusException,
             $e instanceof InvalidExcursionStatusException,
             $e instanceof InvalidWasteStatusException,
             $e instanceof InvalidReturnStatusException,
             $e instanceof InvalidPayrollStatusException => ['INVALID_STATE', 409, []],
+            $e instanceof AwardJustificationRequiredException => ['JUSTIFICATION_REQUIRED', 422, []],
             $e instanceof SecondApproverRequiredException => ['SECOND_APPROVER_REQUIRED', 422, ['variance_value' => $e->varianceValue, 'threshold' => $e->threshold]],
             $e instanceof StoreNotSellableException => ['STORE_NOT_SELLABLE', 422, ['store' => $e->storeCode]],
             $e instanceof RecordInUseException => ['RECORD_IN_USE', 409, ['references' => $e->references]],

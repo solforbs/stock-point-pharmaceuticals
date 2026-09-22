@@ -61,6 +61,7 @@ export const NAV_ITEMS: NavItem[] = [
     key: 'buy', label: 'Procurement', icon: Truck, path: '/buy',
     children: [
       { key: 'requisitions', label: 'Requisitions', path: '/buy/requisitions' },
+      { key: 'supplier-quotes', label: 'Supplier Quotes & CBA', path: '/buy/supplier-quotes' },
       { key: 'purchase-orders', label: 'Purchase Orders', path: '/buy/purchase-orders' },
       { key: 'goods-receipts', label: 'Goods Receipts', path: '/buy/goods-receipts' },
       { key: 'supplier-invoices', label: 'Supplier Invoices', path: '/buy/supplier-invoices' },
