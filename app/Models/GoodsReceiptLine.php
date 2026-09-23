@@ -14,7 +14,7 @@ class GoodsReceiptLine extends Model
         'goods_receipt_id', 'purchase_order_line_id', 'product_id', 'uom_id',
         'qty_ordered', 'qty_delivered', 'qty_accepted', 'qty_rejected', 'rejection_reason',
         'batch_number', 'expiry_date', 'manufacture_date', 'batch_id',
-        'unit_cost', 'trade_price', 'discount_pct', 'landed_unit_cost', 'temperature_on_arrival', 'coa_received',
+        'unit_cost', 'trade_price', 'discount_pct', 'tax_code_id', 'landed_unit_cost', 'temperature_on_arrival', 'coa_received',
     ];
 
     protected function casts(): array
@@ -67,6 +67,17 @@ class GoodsReceiptLine extends Model
     public function uom(): BelongsTo
     {
         return $this->belongsTo(UnitOfMeasure::class, 'uom_id');
+    }
+
+    /**
+     * The VAT treatment captured from the supplier's invoice as the goods
+     * were received (Part 13).
+     *
+     * @return BelongsTo<TaxCode, $this>
+     */
+    public function taxCode(): BelongsTo
+    {
+        return $this->belongsTo(TaxCode::class);
     }
 
     /**

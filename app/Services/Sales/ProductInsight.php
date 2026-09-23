@@ -90,7 +90,7 @@ class ProductInsight
      * the receipt (null otherwise).
      *
      * @param  list<string>  $productIds
-     * @return array<string, array{unit_cost_per_base: string, unit_cost: string, trade_price: ?string, discount_pct: ?string, uom_code: ?string, supplier: ?string, received_at: ?string, grn_number: string}>
+     * @return array<string, array{unit_cost_per_base: string, unit_cost: string, trade_price: ?string, trade_price_per_base: ?string, discount_pct: ?string, uom_code: ?string, supplier: ?string, received_at: ?string, grn_number: string}>
      */
     public function lastPurchases(array $productIds, string $branchId): array
     {
@@ -121,6 +121,7 @@ class ProductInsight
                 'unit_cost_per_base' => bcdiv((string) $row->unit_cost, $factor, 4),
                 'unit_cost' => (string) $row->unit_cost,
                 'trade_price' => $row->trade_price !== null ? (string) $row->trade_price : null,
+                'trade_price_per_base' => $row->trade_price !== null ? bcdiv((string) $row->trade_price, $factor, 4) : null,
                 'discount_pct' => $row->discount_pct !== null ? (string) $row->discount_pct : null,
                 'uom_code' => $row->uom_code,
                 'supplier' => $row->supplier,

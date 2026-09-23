@@ -5,6 +5,9 @@ import { apiGet } from '../../lib/api'
 import type { SellingPrices } from '../../lib/types'
 import { decimalInput } from './tradeTerms'
 
+/** The house mark-up band on landed cost, as agreed with the client. */
+const MARKUP_BAND = [18, 20]
+
 type Props = {
   productId: string
   uomId: string
@@ -34,6 +37,13 @@ export function SellingPricesPanel({ productId, uomId, uomCode, buyingCost, valu
   const cost = Number(buyingCost)
   const taxRate = Number(data.tax_rate_pct)
 
+  /** The house band: landed cost plus 18–20%, grossed up where the list is quoted incl. VAT. */
+  function markedUp(pct: number, includesTax: boolean): string | null {
+    if (!(cost > 0)) return null
+    const net = cost * (1 + pct / 100)
+    return (includesTax ? net * (1 + taxRate / 100) : net).toFixed(2)
+  }
+
   /** Margin on the selling price, before VAT: (price − cost) ÷ price. */
   function marginPct(price: string | null | undefined, includesTax: boolean): number | null {
     if (price == null || price === '' || !(cost > 0)) return null
@@ -45,7 +55,7 @@ export function SellingPricesPanel({ productId, uomId, uomCode, buyingCost, valu
   return (
     <div className="py-2 space-y-2">
       <div className="text-xs text-slate-600">
-        Selling prices per <strong>{uomCode || 'unit'}</strong>. Buying cost <strong className="tabular">KES {cost > 0 ? cost.toFixed(2) : '—'}</strong>. New prices are saved when the receipt posts; leave a box blank to keep the current price.
+        Selling prices per <strong>{uomCode || 'unit'}</strong>. Buying cost <strong className="tabular">KES {cost > 0 ? cost.toFixed(2) : '—'}</strong>. New prices are saved when the receipt posts; leave a box blank to keep the current price. The +18% and +20% buttons price off the landed cost.
       </div>
       {data.lists.length === 0 ? (
         <p className="text-xs text-slate-500">There are no active price lists. Set them up under Pricing first.</p>
@@ -84,6 +94,21 @@ export function SellingPricesPanel({ productId, uomId, uomCode, buyingCost, valu
                       className="ui-input h-7 w-24 tabular text-right font-bold"
                       aria-label={`New price on ${list.name}`}
                     />
+                    {cost > 0 && (
+                      <div className="flex items-center justify-end gap-1 mt-1">
+                        {MARKUP_BAND.map((pct) => (
+                          <button
+                            key={pct}
+                            type="button"
+                            onClick={() => onChange({ ...values, [list.id]: markedUp(pct, list.prices_include_tax) ?? '' })}
+                            title={`Landed cost plus ${pct}%${list.prices_include_tax ? ', including VAT' : ''}`}
+                            className="px-1.5 h-5 rounded border border-slate-300 bg-white text-[10px] font-bold text-slate-600 hover:border-blue-400 hover:text-blue-700 cursor-pointer"
+                          >
+                            +{pct}%
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="text-right"><MarginBadge pct={marginPct(typed, list.prices_include_tax)} /></td>
                 </tr>

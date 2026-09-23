@@ -32,7 +32,8 @@ class DocumentListController extends ApiController
                     'supplier:id,code,name,licence_expiry,status',
                     // qty_received = Σ accepted across every GRN for the line (Part 9.2 outstanding quantity).
                     'lines' => fn ($q) => $q->withSum('goodsReceiptLines as qty_received', 'qty_accepted'),
-                    'lines.product:id,code,name', 'lines.uom:id,code,name',
+                    // tax_code_id so the goods receipt can show the VAT treatment the product carries today.
+                    'lines.product:id,code,name,tax_code_id', 'lines.uom:id,code,name',
                     'goodsReceipts:id,purchase_order_id,doc_number,status,received_at',
                 ])
                 ->findOrFail($po)

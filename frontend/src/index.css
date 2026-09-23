@@ -350,3 +350,38 @@ textarea.ui-input {
     transform: translateX(-50%);
   }
 }
+
+/*
+ * Printing the till slip prints the till slip and nothing else. The cart
+ * behind it carries buying price, landed cost and mark-up; none of that
+ * belongs on a customer's receipt, so everything outside the slip is
+ * hidden rather than merely pushed off the page.
+ */
+@media print {
+  body:has(#pos-receipt) * {
+    visibility: hidden;
+  }
+
+  body:has(#pos-receipt) #pos-receipt,
+  body:has(#pos-receipt) #pos-receipt * {
+    visibility: visible;
+  }
+
+  body:has(#pos-receipt) #pos-receipt {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    color: #000;
+  }
+
+  #pos-receipt .no-print {
+    display: none !important;
+  }
+
+  @page {
+    margin: 8mm;
+  }
+}
