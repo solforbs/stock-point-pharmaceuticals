@@ -185,6 +185,10 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
   const { data: currentUser } = useCurrentUser()
   const t = transfer.data
   const isCreator = !!currentUser && !!t && t.requested_by === currentUser.id
+  // Segregation of duties, waived for a holder of stock.transfer.approve.own
+  // (the owner or administrator of a branch with nobody else to ask).
+  const mayApproveOwn = perms.has('stock.transfer.approve.own')
+  const blockedAsCreator = isCreator && !mayApproveOwn
 
   return (
     <Drawer
@@ -200,9 +204,15 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
               <Button
                 size="sm"
                 variant="success"
-                disabled={approve.isPending || isCreator}
+                disabled={approve.isPending || blockedAsCreator}
                 onClick={() => approve.mutate()}
-                title={isCreator ? 'You requested this transfer. Another authorized user must approve it (Segregation of Duties).' : undefined}
+                title={
+                  blockedAsCreator
+                    ? 'You requested this transfer. Another authorized user must approve it (Segregation of Duties).'
+                    : isCreator
+                      ? 'You raised this transfer. Approving it yourself is recorded as a self-approval.'
+                      : undefined
+                }
               >
                 Approve
               </Button>
@@ -221,9 +231,15 @@ function TransferDrawer({ id, onClose }: { id: string | null; onClose: () => voi
         <div className="space-y-4">
           <div className="flex items-center gap-2"><StatusBadge status={t.status} /></div>
           {t.status === 'DRAFT' && isCreator && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-              <span className="font-semibold">Segregation of Duties:</span> You created this transfer request. Another user with transfer approval permission must review and approve it.
-            </div>
+            blockedAsCreator ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                <span className="font-semibold">Segregation of Duties:</span> You created this transfer request. Another user with transfer approval permission must review and approve it.
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                <span className="font-semibold">You raised this transfer.</span> Your role may approve it anyway; the approval is recorded as a self-approval in the audit trail.
+              </div>
+            )
           )}
           <DescriptionList items={[{ label: 'Created', value: formatDateTime(t.created_at) }, { label: 'Dispatched', value: formatDateTime(t.dispatched_at) }, { label: 'Received', value: formatDateTime(t.received_at) }]} />
           <table className="ui-table">
