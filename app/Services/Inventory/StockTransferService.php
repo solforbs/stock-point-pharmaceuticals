@@ -73,17 +73,28 @@ class StockTransferService
         });
     }
 
-    public function approve(StockTransfer $transfer, int $approverId): StockTransfer
+    /**
+     * Part 18.3 — a second person approves what one prepared. A holder of
+     * stock.transfer.approve.own (the owner or administrator of a branch
+     * with nobody else to ask) may approve their own request; the waiver is
+     * written to the audit row so it is visible afterwards.
+     */
+    public function approve(StockTransfer $transfer, int $approverId, bool $mayApproveOwn = false): StockTransfer
     {
         $this->assertStatus($transfer, 'DRAFT');
 
-        if ($approverId === (int) $transfer->requested_by) {
+        $selfApproved = $approverId === (int) $transfer->requested_by;
+        if ($selfApproved && ! $mayApproveOwn) {
             throw new \DomainException('The creator of a transfer cannot approve their own transfer (segregation of duties).');
         }
 
         $transfer->update(['status' => 'APPROVED', 'approved_by' => $approverId]);
 
-        AuditLog::record('TRANSFER_APPROVED', 'stock_transfer', $transfer->id, ['user_id' => $approverId, 'reference' => $transfer->doc_number]);
+        AuditLog::record('TRANSFER_APPROVED', 'stock_transfer', $transfer->id, [
+            'user_id' => $approverId,
+            'reference' => $transfer->doc_number,
+            'after_json' => ['self_approved' => $selfApproved],
+        ]);
 
         return $transfer->fresh(['lines']);
     }

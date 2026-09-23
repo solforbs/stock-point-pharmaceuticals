@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\AuditLog;
 use App\Models\JournalEntry;
 use App\Models\ProductBatch;
 use App\Models\Role;
@@ -122,6 +123,32 @@ class StockTransferHttpTest extends TestCase
 
         $this->postJson("/api/inventory/transfers/{$transfer['id']}/dispatch")->assertStatus(409)->assertJsonPath('error.code', 'INSUFFICIENT_STOCK');
         $this->assertSame(0, StockLedger::where('txn_type', 'TRANSFER_OUT')->count());
+    }
+
+    /**
+     * Part 18.3 — the waiver for a branch with nobody else to ask: a holder
+     * of stock.transfer.approve.own approves their own request, and the
+     * audit row says that is what happened.
+     */
+    public function test_a_holder_of_the_self_approval_permission_may_approve_their_own_transfer(): void
+    {
+        $transfer = $this->postJson('/api/inventory/transfers', $this->payload($this->batchId('T1'), '500'))->assertCreated()->json();
+
+        $this->postJson("/api/inventory/transfers/{$transfer['id']}/approve")->assertStatus(422);
+
+        $this->grantPermissions([
+            'stock.view', 'stock.transfer.create', 'stock.transfer.approve', 'stock.transfer.approve.own',
+            'stock.transfer.dispatch', 'stock.transfer.receive',
+        ]);
+
+        $this->postJson("/api/inventory/transfers/{$transfer['id']}/approve")->assertOk()->assertJsonPath('status', 'APPROVED');
+        $this->assertDatabaseHas('audit_logs', ['action' => 'TRANSFER_APPROVED', 'entity_id' => $transfer['id'], 'user_id' => $this->user->id]);
+
+        $log = AuditLog::where('action', 'TRANSFER_APPROVED')->where('entity_id', $transfer['id'])->firstOrFail();
+        $this->assertTrue((bool) ($log->after_json['self_approved'] ?? false), 'the waiver is visible on the audit row');
+
+        // The rest of the chain still works on a self-approved transfer.
+        $this->postJson("/api/inventory/transfers/{$transfer['id']}/dispatch")->assertOk()->assertJsonPath('status', 'DISPATCHED');
     }
 
     public function test_transfer_actions_need_their_permissions(): void

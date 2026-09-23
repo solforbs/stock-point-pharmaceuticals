@@ -54,7 +54,11 @@ class StockTransferController extends ApiController
     {
         $this->requirePermission($request, 'stock.transfer.approve');
 
-        return response()->json($transfers->approve($this->find($request, $transfer), $request->user()->id));
+        return response()->json($transfers->approve(
+            $this->find($request, $transfer),
+            $request->user()->id,
+            $request->user()->can('stock.transfer.approve.own'),
+        ));
     }
 
     public function dispatch(Request $request, string $transfer, StockTransferService $transfers, Notifier $notifier): JsonResponse

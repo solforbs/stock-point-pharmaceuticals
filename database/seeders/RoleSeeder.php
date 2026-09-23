@@ -24,6 +24,9 @@ class RoleSeeder extends Seeder
             'sale.view', 'product.view', 'stock.view', 'supplier.view', 'finance.ar.view', 'finance.ap.view',
             'report.view', 'report.financial.view', 'admin.settings', 'sale.discount.approve',
             'stock.adjust.approve', 'po.approve', 'period.close', 'recall.initiate',
+            // The owner of a small branch has nobody else to ask, so they may
+            // approve a transfer they raised themselves; the audit row says so.
+            'stock.transfer.create', 'stock.transfer.approve', 'stock.transfer.approve.own',
             'waste.approve', 'customer.credit.override', 'payroll.view', 'audit.view',
             'licence.view', 'licence.manage', 'document.manage',
             // A small business's owner prepares and approves payroll alone (decision 2026-09-18).

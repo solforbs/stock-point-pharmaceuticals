@@ -13,7 +13,7 @@ class PermissionSeeder extends Seeder
         'sale.view', 'sale.create', 'sale.void', 'sale.discount.apply', 'sale.discount.approve',
         'sale.mode.switch', 'sale.price.override',
         'stock.view', 'stock.adjust', 'stock.adjust.approve', 'stock.count.post',
-        'stock.transfer.create', 'stock.transfer.approve', 'stock.transfer.dispatch', 'stock.transfer.receive',
+        'stock.transfer.create', 'stock.transfer.approve', 'stock.transfer.approve.own', 'stock.transfer.dispatch', 'stock.transfer.receive',
         'stock.count.enter', 'stock.fefo.override',
         'product.view', 'product.create', 'product.edit', 'product.cost.view',
         'customer.manage', 'supplier.view', 'supplier.manage',
