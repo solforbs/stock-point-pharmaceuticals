@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronRight, Plus, Repeat2 } from 'lucide-react'
 import { useState } from 'react'
-import { dCmp, dIsPos } from '../../lib/decimal'
+import { dCmp, dDiv, dIsPos, dMul, dSub } from '../../lib/decimal'
 import { formatDate } from '../../lib/format'
 import { useProductInsight } from '../../lib/hooks'
 import { formatMoney, formatPct, formatQty } from '../../lib/money'
@@ -58,6 +58,16 @@ export function CartLineInsight({
   const canApplyUsual = canUsePrice && usualMatchesUnit && !!usual && !!retailNow && dCmp(usual.unit_price, retailNow) < 0
   const stores = (stock?.stores ?? []).filter((row) => dIsPos(row.free_to_sell))
   const showAlternatives = insight.alternatives.length > 0 && (short || altOpen)
+  // The pricing model, in the client's own columns: what is on the shelf, what
+  // we paid for it, what it lists at and what this line is actually going out at.
+  const storeRow = (stock?.stores ?? []).find((row) => row.store_id === storeId)
+  const freeToSell = storeRow?.free_to_sell ?? null
+  const tradePerBase = lastPurchase?.trade_price_per_base ?? null
+  const soldAt = line.quoted?.unit_price ?? line.estimateUnitPrice
+  const discounted = !!line.quoted && dIsPos(line.quoted.discount_per_unit)
+  const lineCost = current?.unit_cost ?? null
+  const soldAtMarkupPct = soldAt && lineCost && dIsPos(lineCost) ? dMul(dDiv(dSub(soldAt, lineCost), lineCost), '100') : null
+  const floorPrice = current?.retail?.floor_price ?? null
 
   return (
     <div className="mt-2 pt-1.5 border-t border-slate-100/80 space-y-1.5" onClick={(e) => e.stopPropagation()}>
@@ -140,7 +150,7 @@ export function CartLineInsight({
       <div className="flex items-center gap-3 text-[11px] font-semibold">
         {insight.uoms.length > 0 && (
           <button type="button" onClick={() => setPricesOpen((v) => !v)} className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 cursor-pointer">
-            {pricesOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Price per unit &amp; pack
+            {pricesOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Pricing model
           </button>
         )}
         {insight.alternatives.length > 0 && !short && (
@@ -151,33 +161,63 @@ export function CartLineInsight({
       </div>
 
       {pricesOpen && (
-        <table className="w-full text-[10.5px] tabular bg-slate-50 rounded-lg border border-slate-100">
-          <thead>
-            <tr className="text-slate-500 text-left">
-              <th className="px-2 py-1 font-semibold">Unit</th>
-              {insight.buying && <th className="px-2 py-1 font-semibold text-right">Buying</th>}
-              <th className="px-2 py-1 font-semibold text-right">Trade</th>
-              <th className="px-2 py-1 font-semibold text-right">Retail</th>
-              <th className="px-2 py-1 font-semibold text-right">Incl. VAT</th>
-              <th className="px-2 py-1 font-semibold text-right">Never below</th>
-            </tr>
-          </thead>
-          <tbody>
-            {insight.uoms.map((u) => (
-              <tr key={u.uom_id} className={u.uom_id === line.uomId ? 'font-bold text-slate-900' : 'text-slate-700'}>
-                <td className="px-2 py-0.5">
-                  {u.uom_code}
-                  {u.factor_to_base !== 1 && <span className="text-slate-400 font-normal"> ×{u.factor_to_base}</span>}
-                </td>
-                {insight.buying && <td className="px-2 py-0.5 text-right">{u.unit_cost ? formatMoney(u.unit_cost) : '—'}</td>}
-                <td className="px-2 py-0.5 text-right">{u.trade ? formatMoney(u.trade.unit_price) : '—'}</td>
-                <td className="px-2 py-0.5 text-right">{u.retail ? formatMoney(u.retail.unit_price) : '—'}</td>
-                <td className="px-2 py-0.5 text-right">{u.retail ? formatMoney(u.retail.gross_price) : '—'}</td>
-                <td className="px-2 py-0.5 text-right text-rose-700">{u.retail?.floor_price ? formatMoney(u.retail.floor_price) : '—'}</td>
+        <div className="bg-slate-50 rounded-lg border border-slate-100 overflow-hidden">
+          <table className="w-full text-[10.5px] tabular">
+            <thead>
+              <tr className="text-slate-500 text-left border-b border-slate-200">
+                <th className="px-2 py-1 font-semibold">Unit / whole</th>
+                <th className="px-2 py-1 font-semibold text-right">Stock available</th>
+                <th className="px-2 py-1 font-semibold text-right">Qty</th>
+                {insight.buying && <th className="px-2 py-1 font-semibold text-right">Trade buying</th>}
+                {insight.buying && <th className="px-2 py-1 font-semibold text-right">Landed cost</th>}
+                <th className="px-2 py-1 font-semibold text-right">Sale price</th>
+                <th className="px-2 py-1 font-semibold text-right">Sold at</th>
+                {insight.buying && <th className="px-2 py-1 font-semibold text-right">Mark-up</th>}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {insight.uoms.map((u) => {
+                const isLine = u.uom_id === line.uomId
+                const available = freeToSell !== null ? dDiv(freeToSell, String(u.factor_to_base)) : null
+                const tradeBuying = tradePerBase ? dMul(tradePerBase, String(u.factor_to_base)) : null
+                return (
+                  <tr key={u.uom_id} className={isLine ? 'font-bold text-slate-900 bg-white' : 'text-slate-700'}>
+                    <td className="px-2 py-0.5">
+                      {u.uom_code}
+                      {u.factor_to_base !== 1 && <span className="text-slate-400 font-normal"> ×{u.factor_to_base}</span>}
+                    </td>
+                    <td className="px-2 py-0.5 text-right">{available !== null ? formatQty(available) : '—'}</td>
+                    <td className="px-2 py-0.5 text-right">{isLine ? formatQty(line.qty) : ''}</td>
+                    {insight.buying && <td className="px-2 py-0.5 text-right">{tradeBuying ? formatMoney(tradeBuying) : '—'}</td>}
+                    {insight.buying && <td className="px-2 py-0.5 text-right">{u.unit_cost ? formatMoney(u.unit_cost) : '—'}</td>}
+                    <td className="px-2 py-0.5 text-right">
+                      {u.retail ? formatMoney(u.retail.unit_price) : '—'}
+                      {u.retail && dCmp(u.retail.gross_price, u.retail.unit_price) !== 0 && (
+                        <span className="text-slate-500 font-normal"> ({formatMoney(u.retail.gross_price)} incl.)</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-0.5 text-right">
+                      {isLine && soldAt ? (
+                        <span className={discounted ? 'text-amber-700' : ''}>{formatMoney(soldAt)}</span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    {insight.buying && (
+                      <td className="px-2 py-0.5 text-right">
+                        {isLine && soldAtMarkupPct ? formatPct(soldAtMarkupPct) : u.retail_markup_pct ? <span className="font-normal text-slate-500">{formatPct(u.retail_markup_pct)}</span> : '—'}
+                      </td>
+                    )}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+          <div className="px-2 py-1 text-[10px] text-slate-500 border-t border-slate-200 bg-white/60">
+            Landed cost is the buying price plus direct expenses. Mark-up on the line being sold is measured against it.
+            {floorPrice && <span className="text-rose-700 font-semibold"> Never below {formatMoney(floorPrice)}.</span>}
+          </div>
+        </div>
       )}
 
       {showAlternatives && (

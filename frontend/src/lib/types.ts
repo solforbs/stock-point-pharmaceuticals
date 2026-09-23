@@ -119,6 +119,7 @@ export type Product = {
   manufacturer?: NamedRef | null
   dosage_form?: NamedRef | null
   storage_condition?: StorageCondition | null
+  tax_code_id?: string | null
   tax_code?: NamedRef | null
   prices?: ProductPrice[]
   /** Active-branch stock, present when the user holds stock.view (GET /api/products). */
@@ -138,6 +139,8 @@ export type LastPurchase = {
   unit_cost: Decimal
   /** The supplier's gross trade price and purchase discount, when captured on the receipt. */
   trade_price: Decimal | null
+  /** The same trade price expressed per base unit, for the pricing model table. */
+  trade_price_per_base?: Decimal | null
   discount_pct: Decimal | null
   uom_code: string | null
   supplier: string | null
@@ -627,7 +630,8 @@ export type PurchaseOrderLine = {
   trade_price: Decimal | null
   discount_pct: Decimal | null
   tax_code_id: string | null
-  product?: NamedRef | null
+  /** tax_code_id comes with it so a goods receipt can show the product's VAT treatment. */
+  product?: (NamedRef & { tax_code_id?: string | null }) | null
   uom?: Uom | null
 }
 

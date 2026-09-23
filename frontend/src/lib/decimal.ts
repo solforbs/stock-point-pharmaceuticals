@@ -45,6 +45,12 @@ export const dMax = (a: string, b: string) => (dCmp(a, b) >= 0 ? a : b)
 /** Multiplies a quantity by an integer factor (UOM to base units). */
 export const dMulInt = (a: string, factor: number) => fromUnits(toUnits(a) * BigInt(Math.trunc(factor)))
 
+/** Truncating division, for display-only ratios such as a mark-up percentage. Dividing by zero gives "0.0000". */
+export const dDiv = (a: string, b: string) => {
+  const divisor = toUnits(b)
+  return divisor === 0n ? fromUnits(0n) : fromUnits((toUnits(a) * SCALE) / divisor)
+}
+
 /** Rounds half-up to 2dp and returns "1234.57". */
 export function dRound2(a: string): string {
   const units = toUnits(a)

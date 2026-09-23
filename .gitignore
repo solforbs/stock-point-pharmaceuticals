@@ -33,3 +33,6 @@ Thumbs.db
 !/README.md
 !/AGENTS.md
 !/CLAUDE.md
+
+# Word lock files, created while a .docx is open
+~$*

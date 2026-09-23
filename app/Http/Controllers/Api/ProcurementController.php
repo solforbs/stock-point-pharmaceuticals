@@ -11,11 +11,13 @@ use App\Models\GoodsReceiptLine;
 use App\Models\NumberSequence;
 use App\Models\Organisation;
 use App\Models\PriceList;
+use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceLine;
+use App\Models\TaxCode;
 use App\Services\Notifications\Notifier;
 use App\Services\Pricing\PriceListWriter;
 use App\Services\Procurement\GoodsReceiptService;
@@ -290,6 +292,7 @@ class ProcurementController extends ApiController
             'lines.*.unit_cost' => ['nullable', 'required_without:lines.*.trade_price', 'numeric', 'min:0'],
             'lines.*.trade_price' => ['nullable', 'numeric', 'min:0'],
             'lines.*.discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'lines.*.vat' => ['nullable', 'in:STANDARD,ZERO'],
             'lines.*.temperature_on_arrival' => ['nullable', 'numeric'],
             'lines.*.coa_received' => ['nullable', 'boolean'],
             'lines.*.selling_prices' => ['nullable', 'array'],
@@ -355,6 +358,7 @@ class ProcurementController extends ApiController
                     'unit_cost' => $line['unit_cost'],
                     'trade_price' => $line['trade_price'],
                     'discount_pct' => $line['discount_pct'],
+                    'tax_code_id' => $this->captureVat($line, $this->organisationId($request)),
                     'temperature_on_arrival' => $line['temperature_on_arrival'] ?? null,
                     'coa_received' => (bool) ($line['coa_received'] ?? false),
                 ]);
@@ -369,6 +373,49 @@ class ProcurementController extends ApiController
         AuditLog::record('GRN_POSTED', 'goods_receipt', $receipt->id, ['reference' => $receipt->doc_number]);
 
         return response()->json($receipt->load('lines.batch'), 201);
+    }
+
+    /**
+     * Part 13 — the VAT treatment as it appears on the supplier's invoice,
+     * captured while the goods are being received. There are only two
+     * answers at the receiving bay: the invoice charged 16%, or it did not.
+     * The choice is kept on the receipt line as evidence and carried to the
+     * product, because that is what the till charges the customer.
+     *
+     * Returns the tax code recorded on the line, or null when the receiver
+     * made no choice (the product keeps whatever treatment it already had).
+     *
+     * @param  array<string, mixed>  $line
+     */
+    private function captureVat(array $line, string $organisationId): ?string
+    {
+        $choice = $line['vat'] ?? null;
+        if ($choice === null) {
+            return null;
+        }
+
+        $taxCode = TaxCode::where('organisation_id', $organisationId)
+            ->where('code', $choice === 'STANDARD' ? 'VAT_STD' : 'VAT_ZERO')
+            ->where('is_active', true)
+            ->first();
+
+        if (! $taxCode) {
+            throw ValidationException::withMessages(['lines' => 'The VAT codes have not been set up for this organisation yet.']);
+        }
+
+        $product = Product::find($line['product_id']);
+        if ($product && $product->tax_code_id !== $taxCode->id) {
+            $before = $product->taxCode?->code;
+            $product->update(['tax_code_id' => $taxCode->id]);
+
+            AuditLog::record('PRODUCT_TAX_CODE_SET_ON_RECEIPT', 'product', $product->id, [
+                'reference' => $product->code,
+                'before_json' => ['tax_code' => $before],
+                'after_json' => ['tax_code' => $taxCode->code],
+            ]);
+        }
+
+        return $taxCode->id;
     }
 
     /**

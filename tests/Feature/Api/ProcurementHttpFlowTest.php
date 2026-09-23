@@ -3,8 +3,11 @@
 namespace Tests\Feature\Api;
 
 use App\Models\AccountsPayable;
+use App\Models\GoodsReceiptLine;
 use App\Models\ProductBatch;
 use App\Models\StockLedger;
+use App\Models\TaxCode;
+use App\Models\TaxRate;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -113,6 +116,56 @@ class ProcurementHttpFlowTest extends TestCase
         $this->postJson('/api/supplier-payments', ['supplier_id' => $this->supplier->id, 'method' => 'BANK', 'reference' => 'RTGS-1', 'amount' => '4200'])
             ->assertCreated()
             ->assertJsonPath('payable_balance', '0.0000');
+    }
+
+    /**
+     * Part 13 — the receiving bay reads the VAT treatment off the supplier's
+     * invoice: charged at 16%, or not charged at all. The answer is kept on
+     * the receipt line and becomes the product's treatment, because that is
+     * what the till will charge the customer.
+     */
+    public function test_the_vat_treatment_on_the_suppliers_invoice_is_captured_as_goods_are_received(): void
+    {
+        $standard = $this->vat16();
+        $zero = TaxCode::create(['organisation_id' => $this->org->id, 'code' => 'VAT_ZERO', 'name' => 'VAT zero-rated', 'tax_type' => 'VAT']);
+        TaxRate::create(['tax_code_id' => $zero->id, 'rate_pct' => '0.000', 'effective_from' => now()->subYear()->toDateString()]);
+
+        $this->assertSame($standard->id, $this->amox->fresh()->tax_code_id, 'the product starts out standard-rated');
+
+        $po = $this->postJson('/api/purchase-orders', $this->poPayload())->assertCreated()->json();
+        $this->postJson("/api/purchase-orders/{$po['id']}/approve")->assertOk();
+
+        $grn = $this->postJson('/api/goods-receipts', [
+            'purchase_order_id' => $po['id'], 'supplier_id' => $this->supplier->id, 'store_id' => $this->store->id,
+            'lines' => [[
+                'purchase_order_line_id' => $po['lines'][0]['id'], 'product_id' => $this->amox->id, 'uom_id' => $this->uoms['BOX']->id,
+                'qty_delivered' => '10', 'qty_accepted' => '10', 'batch_number' => 'AMX-VAT-01',
+                'expiry_date' => now()->addYears(2)->toDateString(), 'unit_cost' => '420', 'vat' => 'ZERO',
+            ]],
+        ])->assertCreated()->json();
+
+        $this->assertSame($zero->id, GoodsReceiptLine::findOrFail($grn['lines'][0]['id'])->tax_code_id, 'the receipt line records what the invoice said');
+        $this->assertSame($zero->id, $this->amox->fresh()->tax_code_id, 'and the product now sells zero-rated');
+        $this->assertDatabaseHas('audit_logs', ['action' => 'PRODUCT_TAX_CODE_SET_ON_RECEIPT', 'entity_id' => $this->amox->id]);
+    }
+
+    public function test_a_receipt_that_says_nothing_about_vat_leaves_the_product_alone(): void
+    {
+        $standard = $this->vat16();
+        $po = $this->postJson('/api/purchase-orders', $this->poPayload())->assertCreated()->json();
+        $this->postJson("/api/purchase-orders/{$po['id']}/approve")->assertOk();
+
+        $grn = $this->postJson('/api/goods-receipts', [
+            'purchase_order_id' => $po['id'], 'supplier_id' => $this->supplier->id, 'store_id' => $this->store->id,
+            'lines' => [[
+                'purchase_order_line_id' => $po['lines'][0]['id'], 'product_id' => $this->amox->id, 'uom_id' => $this->uoms['BOX']->id,
+                'qty_delivered' => '10', 'qty_accepted' => '10', 'batch_number' => 'AMX-VAT-02',
+                'expiry_date' => now()->addYears(2)->toDateString(), 'unit_cost' => '420',
+            ]],
+        ])->assertCreated()->json();
+
+        $this->assertNull(GoodsReceiptLine::findOrFail($grn['lines'][0]['id'])->tax_code_id);
+        $this->assertSame($standard->id, $this->amox->fresh()->tax_code_id);
     }
 
     public function test_an_invoice_priced_beyond_tolerance_goes_to_the_exception_queue(): void
