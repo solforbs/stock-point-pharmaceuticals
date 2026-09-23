@@ -28,6 +28,8 @@ export type Branch = {
   default_sale_mode: SaleMode | null
 }
 
+export type ModuleKey = 'HOSPITAL' | 'LABORATORY' | 'PHARMACY'
+
 export type CurrentUser = {
   id: number
   name: string
@@ -36,6 +38,8 @@ export type CurrentUser = {
   mfa_required?: boolean
   roles?: { id: number; name: string }[]
   permissions: string[]
+  /** The platform modules this user may enter; drives the module splash. */
+  modules?: ModuleKey[]
   /** The institution this account belongs to; every screen shows only its data. */
   organisation?: { id: string; name: string; legal_name: string | null } | null
   /** Runs the platform itself: backups, deployment, system health. */
@@ -1830,5 +1834,187 @@ export type AssistantAnswer = {
   summary: string
   columns: { key: string; label: string }[]
   rows: Record<string, string | number | null>[]
+}
+
+// ── Healthcare platform (Hospital + Laboratory modules) ─────────────────────
+
+export type HospitalLevel = { id: string; name: string; rank: number; is_active: boolean }
+
+export type Department = { id: string; facility_id: string; name: string; code: string | null; is_active: boolean }
+
+export type Facility = {
+  id: string
+  code: string
+  name: string
+  hospital_level_id: string | null
+  hospital_level?: { id: string; name: string } | null
+  offers_hospital: boolean
+  offers_laboratory: boolean
+  offers_pharmacy: boolean
+  pharmacy_branch_id: string | null
+  pharmacy_branch?: { id: string; code: string; name: string } | null
+  phone: string | null
+  email: string | null
+  address: string | null
+  is_active: boolean
+  departments?: Department[]
+  staff?: { id: number; name: string; email: string }[]
+}
+
+export type Patient = {
+  id: string
+  patient_no: string
+  first_name: string
+  last_name: string
+  sex: 'MALE' | 'FEMALE' | 'OTHER' | null
+  date_of_birth: string | null
+  phone: string | null
+  email: string | null
+  national_id: string | null
+  address: string | null
+  next_of_kin_name: string | null
+  next_of_kin_phone: string | null
+  notes: string | null
+  is_active: boolean
+  encounters?: Encounter[]
+}
+
+export type EncounterStatus = 'REGISTERED' | 'WAITING' | 'IN_CONSULTATION' | 'AWAITING_RESULTS' | 'COMPLETED' | 'CANCELLED'
+
+export type Consultation = {
+  id: string
+  encounter_id: string
+  clinician?: UserRef
+  chief_complaint: string | null
+  history: string | null
+  symptoms: string | null
+  vital_signs: Record<string, string> | null
+  examination: string | null
+  clinical_notes: string | null
+  treatment_plan: string | null
+  follow_up: string | null
+  follow_up_date: string | null
+}
+
+export type Diagnosis = { id: string; diagnosis: string; icd_code: string | null; diagnosis_type: string; diagnosed_by?: UserRef; created_at: string }
+
+export type Referral = { id: string; referred_to: string; reason: string; status: string; referred_by?: UserRef; created_at: string }
+
+export type EncounterCharge = {
+  id: string
+  charge_type: 'CONSULTATION' | 'LAB_TEST' | 'PROCEDURE' | 'OTHER'
+  description: string
+  amount: Decimal
+  status: 'PENDING' | 'PAID' | 'WAIVED'
+  paid_at: string | null
+}
+
+export type Encounter = {
+  id: string
+  encounter_no: string
+  patient_id: string
+  patient?: Patient
+  facility_id: string
+  facility?: Facility
+  department?: { id: string; name: string } | null
+  encounter_type: string
+  status: EncounterStatus
+  attending_clinician?: UserRef | null
+  consultation_fee: Decimal
+  fee_status: 'PENDING' | 'PAID' | 'WAIVED'
+  presenting_notes: string | null
+  started_at: string
+  completed_at: string | null
+  consultations?: Consultation[]
+  diagnoses?: Diagnosis[]
+  referrals?: Referral[]
+  charges?: EncounterCharge[]
+  lab_orders?: LabOrder[]
+  prescriptions?: Prescription[]
+}
+
+export type LabTestCategory = { id: string; name: string; is_active: boolean }
+
+export type LabTest = {
+  id: string
+  category_id: string
+  category?: { id: string; name: string }
+  code: string
+  name: string
+  price: Decimal
+  sample_type: string | null
+  description: string | null
+  normal_range: string | null
+  unit: string | null
+  is_active: boolean
+}
+
+export type LabOrderStatus = 'PENDING' | 'ACCEPTED' | 'SAMPLE_COLLECTED' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED'
+
+export type LabOrderTest = {
+  id: string
+  lab_test_id: string
+  test_name: string
+  price: Decimal
+  normal_range: string | null
+  unit: string | null
+  result_value: string | null
+  result_notes: string | null
+  is_abnormal: boolean | null
+  result_entered_by?: UserRef | null
+  result_entered_at: string | null
+}
+
+export type LabSample = { id: string; sample_no: string; sample_type: string; collected_by?: UserRef; collected_at: string; condition_notes: string | null }
+
+export type LabOrder = {
+  id: string
+  order_no: string
+  encounter_id: string
+  encounter?: { id: string; encounter_no: string; status?: EncounterStatus }
+  patient?: Patient
+  facility?: { id: string; name: string }
+  ordered_by?: UserRef
+  clinical_notes: string | null
+  status: LabOrderStatus
+  accepted_at: string | null
+  completed_at: string | null
+  cancelled_at: string | null
+  cancel_reason: string | null
+  tests?: LabOrderTest[]
+  tests_count?: number
+  samples?: LabSample[]
+  created_at: string
+}
+
+export type PrescriptionLine = {
+  id: string
+  product_id: string | null
+  product?: { id: string; code: string; name: string } | null
+  medicine_name: string
+  quantity: Decimal
+  frequency: string | null
+  duration: string | null
+  instructions: string | null
+  dispensed_qty: Decimal
+}
+
+export type Prescription = {
+  id: string
+  rx_no: string
+  encounter_id: string
+  encounter?: { id: string; encounter_no: string }
+  patient?: Patient
+  branch_id: string | null
+  prescribed_by?: UserRef
+  status: 'PENDING' | 'DISPENSED' | 'CANCELLED'
+  notes: string | null
+  sale_id: string | null
+  sale?: { id: string; doc_number: string; grand_total: Decimal; status: string } | null
+  dispensed_by?: UserRef | null
+  dispensed_at: string | null
+  lines?: PrescriptionLine[]
+  lines_count?: number
+  created_at: string
 }
 

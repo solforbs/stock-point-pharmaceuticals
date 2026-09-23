@@ -4,6 +4,7 @@ use App\Exceptions\ApiErrorMap;
 use App\Http\Middleware\AttachRequestId;
 use App\Http\Middleware\EnforceInstitutionAccess;
 use App\Http\Middleware\EnsurePlatformAdmin;
+use App\Http\Middleware\RequireModuleAccess;
 use App\Http\Middleware\ResolveActiveBranch;
 use App\Http\Middleware\ResolveAssistantSession;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'assistant.session' => ResolveAssistantSession::class,
             'branch.context' => ResolveActiveBranch::class,
+            'module.access' => RequireModuleAccess::class,
             'tenant.access' => EnforceInstitutionAccess::class,
             'platform' => EnsurePlatformAdmin::class,
         ]);

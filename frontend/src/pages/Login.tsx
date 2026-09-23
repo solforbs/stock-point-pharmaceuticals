@@ -5,6 +5,7 @@ import { Eye, EyeOff, ArrowLeft, ShieldCheck, Cpu } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api, apiGet, ensureCsrfCookie, getApiError } from '../lib/api'
 import { formatDateTime, todayIso } from '../lib/format'
+import { postLoginTarget } from '../lib/modules'
 import type { CurrentUser, DashboardSummary, Paginated, Sale } from '../lib/types'
 
 type LoginResult = { mfa_required: true } | { mfa_required?: false; email: string }
@@ -26,7 +27,7 @@ export default function Login() {
   // A link opened while signed out (e.g. the training link sent to new
   // staff) lands on its page after sign-in. Only in-app paths are honoured.
   const from = (location.state as { from?: string } | null)?.from
-  const returnTo = from && from.startsWith('/') && !from.startsWith('//') && from !== '/login' ? from : '/dashboard'
+  const returnTo = from && from.startsWith('/') && !from.startsWith('//') && from !== '/login' ? from : null
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -59,7 +60,10 @@ export default function Login() {
 
     const { data } = await api.get<CurrentUser>('/api/user')
     queryClient.setQueryData(['auth', 'user'], data)
-    navigate(!data.organisation && data.is_platform_admin ? '/platform' : returnTo)
+    // A deep link wins; otherwise the module rule decides: no modules →
+    // denied, one module → its dashboard, several → the module splash.
+    if (!data.organisation && data.is_platform_admin) navigate('/platform')
+    else navigate(returnTo ?? postLoginTarget(data))
   }
 
   const login = useMutation({

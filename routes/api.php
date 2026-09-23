@@ -15,9 +15,13 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeploymentController;
 use App\Http\Controllers\Api\DocumentListController;
 use App\Http\Controllers\Api\DocumentPdfController;
+use App\Http\Controllers\Api\EncounterController;
 use App\Http\Controllers\Api\EtimsController;
 use App\Http\Controllers\Api\FinanceController;
+use App\Http\Controllers\Api\HospitalConfigController;
 use App\Http\Controllers\Api\InventoryController;
+use App\Http\Controllers\Api\LabConfigController;
+use App\Http\Controllers\Api\LabOrderController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LicenceController;
 use App\Http\Controllers\Api\LocationController;
@@ -28,10 +32,12 @@ use App\Http\Controllers\Api\OperationsController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganisationController;
 use App\Http\Controllers\Api\PackingController;
+use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PayrollBandController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\PlatformController;
+use App\Http\Controllers\Api\PrescriptionController;
 use App\Http\Controllers\Api\PriceListController;
 use App\Http\Controllers\Api\PricingController;
 use App\Http\Controllers\Api\PricingRuleController;
@@ -53,6 +59,7 @@ use App\Http\Controllers\Api\StockCountController;
 use App\Http\Controllers\Api\StockTransferController;
 use App\Http\Controllers\Api\TrainingController;
 use App\Models\Branch;
+use App\Services\Modules\ModuleCatalogue;
 use App\Services\Sales\SaleModes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -79,6 +86,9 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->get('/us
         // not $user->permissions, which is direct grants only and is
         // normally empty since every permission here comes through a role.
         'permissions' => $user->getAllPermissions()->pluck('name'),
+        // Which platform modules (HOSPITAL / LABORATORY / PHARMACY) this user
+        // may enter — drives the module splash / direct-redirect after login.
+        'modules' => ModuleCatalogue::accessibleTo($user),
         'organisation' => $user->organisation?->only(['id', 'name', 'legal_name']),
         // Drives the trial / lapsed banner and read-only mode in the web app.
         'subscription' => $user->organisation ? (function ($organisation) {
@@ -490,7 +500,73 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/etims/queue', [EtimsController::class, 'queue']);
     Route::post('/etims/sales/{sale}/retry', [EtimsController::class, 'retrySale']);
     Route::post('/etims/credit-notes/{return}/retry', [EtimsController::class, 'retryCreditNote']);
+
+    // Healthcare platform — pharmacy-side prescriptions. These sit with the
+    // pharmacy module (prescription.* permissions): the pharmacist's queue
+    // of prescriptions sent from the hospital module, and dispensing.
+    Route::get('/prescriptions', [PrescriptionController::class, 'index']);
+    Route::get('/prescriptions/{prescription}', [PrescriptionController::class, 'show'])->whereUuid('prescription');
+    Route::post('/prescriptions/{prescription}/dispense', [PrescriptionController::class, 'dispense'])->whereUuid('prescription');
+    Route::post('/prescriptions/{prescription}/cancel', [PrescriptionController::class, 'cancel'])->whereUuid('prescription');
 });
+
+// Healthcare platform — the Hospital module. The module gate refuses anyone
+// without a hospital-catalogue permission, so no URL crosses modules; each
+// controller then checks its own fine-grained permission as usual.
+Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access', 'module.access:hospital'])
+    ->prefix('hospital')->group(function () {
+        Route::get('/levels', [HospitalConfigController::class, 'levels']);
+        Route::get('/facilities', [HospitalConfigController::class, 'facilities']);
+        Route::post('/facilities', [HospitalConfigController::class, 'storeFacility']);
+        Route::patch('/facilities/{facility}', [HospitalConfigController::class, 'updateFacility'])->whereUuid('facility');
+        Route::post('/facilities/{facility}/departments', [HospitalConfigController::class, 'storeDepartment'])->whereUuid('facility');
+        Route::patch('/departments/{department}', [HospitalConfigController::class, 'updateDepartment'])->whereUuid('department');
+        Route::put('/facilities/{facility}/staff', [HospitalConfigController::class, 'syncStaff'])->whereUuid('facility');
+
+        Route::get('/patients', [PatientController::class, 'index']);
+        Route::post('/patients', [PatientController::class, 'store']);
+        Route::get('/patients/{patient}', [PatientController::class, 'show'])->whereUuid('patient');
+        Route::patch('/patients/{patient}', [PatientController::class, 'update'])->whereUuid('patient');
+
+        Route::get('/encounters', [EncounterController::class, 'index']);
+        Route::post('/encounters', [EncounterController::class, 'store']);
+        Route::get('/encounters/{encounter}', [EncounterController::class, 'show'])->whereUuid('encounter');
+        Route::post('/encounters/{encounter}/start-consultation', [EncounterController::class, 'startConsultation'])->whereUuid('encounter');
+        Route::post('/encounters/{encounter}/complete', [EncounterController::class, 'complete'])->whereUuid('encounter');
+        Route::post('/encounters/{encounter}/cancel', [EncounterController::class, 'cancel'])->whereUuid('encounter');
+        Route::post('/encounters/{encounter}/consultation', [EncounterController::class, 'saveConsultation'])->whereUuid('encounter');
+        Route::post('/encounters/{encounter}/diagnoses', [EncounterController::class, 'addDiagnosis'])->whereUuid('encounter');
+        Route::post('/encounters/{encounter}/referrals', [EncounterController::class, 'addReferral'])->whereUuid('encounter');
+        Route::post('/encounters/{encounter}/charges/{charge}/settle', [EncounterController::class, 'settleCharge'])->whereUuid('encounter')->whereUuid('charge');
+        Route::post('/encounters/{encounter}/lab-orders', [EncounterController::class, 'orderLabTests'])->whereUuid('encounter');
+        Route::post('/encounters/{encounter}/prescriptions', [EncounterController::class, 'prescribe'])->whereUuid('encounter');
+
+        // The clinician's read of the orderable test catalogue and of one
+        // order's results (laboratory.order.create / .view — hospital-side
+        // permissions, which is why these live under /hospital).
+        Route::get('/lab-tests', [EncounterController::class, 'labTests']);
+        Route::get('/lab-orders/{order}', [LabOrderController::class, 'show'])->whereUuid('order');
+    });
+
+// Healthcare platform — the Laboratory module: the bench queue and the
+// guarded order workflow, plus the administrator's test catalogue.
+Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access', 'module.access:laboratory'])
+    ->prefix('laboratory')->group(function () {
+        Route::get('/facilities', [LabConfigController::class, 'facilities']);
+        Route::get('/categories', [LabConfigController::class, 'categories']);
+        Route::post('/categories', [LabConfigController::class, 'storeCategory']);
+        Route::get('/tests', [LabConfigController::class, 'tests']);
+        Route::post('/tests', [LabConfigController::class, 'storeTest']);
+        Route::patch('/tests/{test}', [LabConfigController::class, 'updateTest'])->whereUuid('test');
+
+        Route::get('/orders', [LabOrderController::class, 'index']);
+        Route::get('/orders/{order}', [LabOrderController::class, 'show'])->whereUuid('order');
+        Route::post('/orders/{order}/accept', [LabOrderController::class, 'accept'])->whereUuid('order');
+        Route::post('/orders/{order}/collect-sample', [LabOrderController::class, 'collectSample'])->whereUuid('order');
+        Route::post('/orders/{order}/start-processing', [LabOrderController::class, 'startProcessing'])->whereUuid('order');
+        Route::post('/orders/{order}/results', [LabOrderController::class, 'enterResults'])->whereUuid('order');
+        Route::post('/orders/{order}/cancel', [LabOrderController::class, 'cancel'])->whereUuid('order');
+    });
 
 // An institution's own plan and Paystack checkout. tenant.access leaves these
 // open even when the institution has lapsed, so it can always pay.
