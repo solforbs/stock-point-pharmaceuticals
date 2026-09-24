@@ -59,6 +59,7 @@ class DatabaseSeeder extends Seeder
         // environment is wanted.
         if (! app()->isProduction()) {
             $this->call([
+                LabTestStarterSeeder::class,
                 KenyanPharmaMasterSeeder::class,
                 KenyanPharmaStockSeeder::class,
                 KenyanPharmaSalesSeeder::class,
