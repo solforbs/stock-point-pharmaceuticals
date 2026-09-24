@@ -1,10 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { connectRealtime } from '../lib/realtime'
 import { toast } from '../lib/toast'
 import { useCurrentUser } from './useCurrentUser'
 
-type PatientFlowEvent = {
+export type PatientFlowEvent = {
   kind: 'ENCOUNTER' | 'LAB_ORDER' | 'PRESCRIPTION'
   id: string
   number: string
@@ -20,11 +20,17 @@ type PatientFlowEvent = {
  * watching queue (reception, clinician, lab bench, pharmacy) refetches.
  * Without a websocket the pages still work — they just refresh on the
  * usual react-query cadence.
+ *
+ * A page that wants to react to a specific event beyond refetching (the
+ * lab bench pops a new order open, say) passes `onEvent`; the latest
+ * callback is kept in a ref so it never re-subscribes the channel.
  */
-export function usePatientFlowRealtime() {
+export function usePatientFlowRealtime(onEvent?: (event: PatientFlowEvent) => void) {
   const { data: user } = useCurrentUser()
   const queryClient = useQueryClient()
   const organisationId = user?.organisation?.id
+  const onEventRef = useRef(onEvent)
+  onEventRef.current = onEvent
 
   useEffect(() => {
     if (!organisationId) return
@@ -47,6 +53,7 @@ export function usePatientFlowRealtime() {
         queryClient.invalidateQueries({ queryKey: ['prescriptions'] })
         if (event.encounter_id) queryClient.invalidateQueries({ queryKey: ['hospital', 'encounter', event.encounter_id] })
       }
+      onEventRef.current?.(event)
     })
 
     return () => {

@@ -26,12 +26,19 @@ const STATUSES = ['PENDING', 'ACCEPTED', 'SAMPLE_COLLECTED', 'PROCESSING', 'COMP
  * own permission and records who did it, when.
  */
 export default function LabOrdersPage() {
-  usePatientFlowRealtime()
   const perms = usePermissions()
   const canView = perms.has('laboratory.view')
 
   const [params, setParams] = useSearchParams()
   const selectedId = params.get('order')
+
+  // A freshly placed order opens itself on the bench — but never over a
+  // dialog the technician is already working in.
+  usePatientFlowRealtime((event) => {
+    if (event.kind === 'LAB_ORDER' && event.status === 'PENDING' && !selectedId) {
+      select(event.id)
+    }
+  })
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
 
