@@ -125,6 +125,16 @@ class RoleSeeder extends Seeder
             'hospital.view', 'hospital.patient.view', 'hospital.consultation.manage',
             'laboratory.order.view',
         ],
+        // The lab's clinician-grade professional: works the full bench
+        // workflow AND signs results off (client ask 2026-09-24: the three
+        // quick-assign roles are Clinician, Pharmacist, Laboratory Doctor).
+        'Laboratory Doctor' => [
+            'laboratory.view',
+            'laboratory.order.accept', 'laboratory.order.cancel',
+            'laboratory.sample.collect',
+            'laboratory.result.enter', 'laboratory.result.approve',
+            'laboratory.report.view',
+        ],
         'Laboratory Technician' => [
             'laboratory.view',
             'laboratory.order.accept', 'laboratory.sample.collect',

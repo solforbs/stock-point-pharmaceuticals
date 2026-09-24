@@ -222,7 +222,17 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
     }
   })
   const [showPassword, setShowPassword] = useState(false)
+  // Quick-create: the person's email doubles as their temporary password, and
+  // they set their own at first sign-in (must_change_password stays on).
+  const [emailAsPassword, setEmailAsPassword] = useState(!user)
+  const [usernameTouched, setUsernameTouched] = useState(!!user)
   const set = (patch: Partial<UserFormState>) => setForm({ ...form, ...patch })
+
+  function onEmailChange(email: string) {
+    // Derive the username from the email until the admin types their own.
+    const derived = email.split('@')[0]?.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase() ?? ''
+    set(usernameTouched ? { email } : { email, username: derived })
+  }
 
   function toggleRole(branchId: string, role: string, on: boolean) {
     const current = form.assignments[branchId] ?? []
@@ -251,7 +261,7 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
         username: form.username,
         email: form.email,
         phone: form.phone || null,
-        password: form.password,
+        password: emailAsPassword ? form.email : form.password,
         must_change_password: form.must_change_password,
         assignments,
       })
@@ -266,7 +276,12 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
     },
   })
   const err = save.isError ? getApiError(save.error) : null
-  const passwordOk = user ? form.password === '' || form.password.length >= 12 : form.password.length >= 12
+  // The server requires 12+ characters; a very short email cannot serve as
+  // the temporary password, so the form falls back to a typed one.
+  const emailPasswordUsable = !user && emailAsPassword && form.email.length >= 12
+  const passwordOk = user
+    ? form.password === '' || form.password.length >= 12
+    : emailPasswordUsable || form.password.length >= 12
   const canSubmit = !!form.name && !!form.email && (user || !!form.username) && passwordOk && !save.isPending
 
   return (
@@ -278,9 +293,19 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-          <Field label="Username" required error={err?.errors.username?.[0]}><Input value={form.username} disabled={!!user} onChange={(e) => set({ username: e.target.value })} /></Field>
-          <Field label="Email" required error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} /></Field>
+          <Field label="Username" required hint={user ? undefined : 'Auto-filled from the email.'} error={err?.errors.username?.[0]}><Input value={form.username} disabled={!!user} onChange={(e) => { setUsernameTouched(true); set({ username: e.target.value }) }} /></Field>
+          <Field label="Email" required error={err?.errors.email?.[0]}><Input type="email" value={form.email} onChange={(e) => onEmailChange(e.target.value)} /></Field>
           <Field label="Phone" error={err?.errors.phone?.[0]}><Input value={form.phone} onChange={(e) => set({ phone: e.target.value })} /></Field>
+          {!user && (
+            <label className="col-span-1 sm:col-span-2 flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+              <input type="checkbox" checked={emailAsPassword} onChange={(e) => setEmailAsPassword(e.target.checked)} />
+              Use their email as the temporary password (they set their own at first sign-in)
+              {emailAsPassword && form.email.length > 0 && form.email.length < 12 && (
+                <span className="text-amber-700">— this email is under 12 characters, type a password instead</span>
+              )}
+            </label>
+          )}
+          {(!emailAsPassword || !!user) && (
           <Field label={user ? 'New password' : 'Temporary password'} required={!user} hint="At least 12 characters." error={err?.errors.password?.[0] ?? (form.password && !passwordOk ? 'At least 12 characters.' : null)} className="col-span-1 sm:col-span-2">
             <div className="relative">
               <Input
@@ -302,6 +327,7 @@ function UserForm({ user, onDone, onCancel }: { user?: AdminUser; onDone: (u: Ad
               </button>
             </div>
           </Field>
+          )}
         </div>
       </FormSection>
 
