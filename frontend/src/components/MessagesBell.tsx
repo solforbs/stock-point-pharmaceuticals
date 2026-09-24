@@ -6,6 +6,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser'
 import { apiGet, apiPost, getApiError } from '../lib/api'
 import { formatDateTime } from '../lib/format'
 import { connectRealtime } from '../lib/realtime'
+import { playMessageReceived, playMessageSent } from '../lib/sounds'
 import { toast } from '../lib/toast'
 import { Modal } from './ui/Modal'
 import { Button, Field, Input, Select, Textarea } from './ui/primitives'
@@ -64,6 +65,7 @@ export function MessagesBell() {
     if (!echo) return
 
     const refresh = (payload: { subject: string; sender?: { name?: string } }) => {
+      playMessageReceived()
       toast.info(`${payload.sender?.name ?? 'Someone'}: ${payload.subject}`)
       queryClient.invalidateQueries({ queryKey: ['messages'] })
     }
@@ -193,6 +195,7 @@ function ComposeMessage({ open, onClose }: { open: boolean; onClose: () => void 
         recipient_id: form.recipient_id === '' ? null : Number(form.recipient_id),
       }),
     onSuccess: () => {
+      playMessageSent()
       toast.success('Message sent')
       queryClient.invalidateQueries({ queryKey: ['messages'] })
       setForm({ recipient_id: '', subject: '', body: '', priority: 'NORMAL' })
