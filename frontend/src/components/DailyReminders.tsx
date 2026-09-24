@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { BadgeCheck, CalendarClock, PackageX, Sparkles, TrendingUp } from 'lucide-react'
+import { BadgeCheck, CalendarClock, PackageX, Pill, Sparkles, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
@@ -29,6 +29,7 @@ const CATEGORY: Record<Alert['category'], { label: string; icon: typeof Calendar
   PAYABLE: { label: 'Supplier payments', icon: CalendarClock, link: '/finance/payables' },
   EXPIRY: { label: 'Expiring stock', icon: PackageX, link: '/inventory/batches' },
   LICENCE: { label: 'Licence renewals', icon: BadgeCheck, link: '/quality/licences' },
+  PRESCRIPTION: { label: 'Waiting prescriptions', icon: Pill, link: '/sell/prescriptions' },
 }
 
 const SEEN_KEY = 'daily-reminders-seen'
