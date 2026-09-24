@@ -7,6 +7,7 @@ use App\Models\Consultation;
 use App\Models\Encounter;
 use App\Models\EncounterCharge;
 use App\Models\LabTest;
+use App\Models\Product;
 use App\Services\Hospital\EncounterService;
 use App\Services\Hospital\PrescriptionService;
 use App\Services\Laboratory\LabOrderService;
@@ -173,6 +174,34 @@ class EncounterController extends ApiController
         $record = EncounterCharge::where('encounter_id', $this->find($encounter)->id)->findOrFail($charge);
 
         return response()->json($encounters->settleCharge($record, $request->user(), $request->boolean('waive')));
+    }
+
+    /**
+     * The prescribable medicine catalogue, for the clinician's prescription
+     * form. Deliberately thin: name, code, strength — never costs, stock or
+     * prices, which stay behind the pharmacy module's own permissions
+     * (which is also why this lives here and not on /api/products).
+     */
+    public function medicines(Request $request): JsonResponse
+    {
+        $this->requirePermission($request, 'hospital.prescription.create');
+
+        return response()->json(
+            Product::query()
+                ->where('organisation_id', $this->organisationId($request))
+                ->where('is_active', true)
+                ->when($request->string('q')->trim()->isNotEmpty(), function ($query) use ($request) {
+                    $term = '%'.$request->string('q')->trim().'%';
+                    $query->where(fn ($q) => $q->where('name', 'like', $term)
+                        ->orWhere('code', 'like', $term)
+                        ->orWhere('sku', 'like', $term)
+                        ->orWhere('generic_name', 'like', $term));
+                })
+                ->when($request->filled('barcode'), fn ($q) => $q->whereHas('uoms', fn ($u) => $u->where('barcode', $request->string('barcode'))))
+                ->select(['id', 'code', 'name', 'generic_name', 'strength'])
+                ->orderBy('name')
+                ->paginate($request->integer('per_page', 20))
+        );
     }
 
     /** The orderable test catalogue, for the clinician's lab-order form. */

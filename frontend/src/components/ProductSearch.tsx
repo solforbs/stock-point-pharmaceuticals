@@ -13,11 +13,11 @@ export function useDebounced<T>(value: T, delay = 250): T {
   return debounced
 }
 
-export function useProductSearch(query: string, enabled = true) {
+export function useProductSearch(query: string, enabled = true, endpoint = '/api/products') {
   const q = useDebounced(query.trim(), 200)
   return useQuery({
-    queryKey: ['products', 'search', q],
-    queryFn: () => apiGet<Paginated<Product>>('/api/products', { q, per_page: 20, is_active: 1 }),
+    queryKey: ['products', 'search', endpoint, q],
+    queryFn: () => apiGet<Paginated<Product>>(endpoint, { q, per_page: 20, is_active: 1 }),
     enabled: enabled && q.length > 0,
     staleTime: 60_000,
     placeholderData: (prev) => prev,
@@ -25,8 +25,8 @@ export function useProductSearch(query: string, enabled = true) {
 }
 
 /** Exact barcode match only (Part 24.2): a scan never fuzzy-matches. */
-export async function lookupBarcode(barcode: string): Promise<Product | null> {
-  const { data } = await api.get<Paginated<Product>>('/api/products', { params: { barcode, per_page: 1 } })
+export async function lookupBarcode(barcode: string, endpoint = '/api/products'): Promise<Product | null> {
+  const { data } = await api.get<Paginated<Product>>(endpoint, { params: { barcode, per_page: 1 } })
   return data.data[0] ?? null
 }
 
@@ -47,6 +47,7 @@ export function ProductSearch({
   autoFocus,
   clearOnSelect = true,
   disabled,
+  endpoint,
 }: {
   onSelect: (product: Product) => void
   placeholder?: string
@@ -54,13 +55,15 @@ export function ProductSearch({
   autoFocus?: boolean
   clearOnSelect?: boolean
   disabled?: boolean
+  /** Where to search. A module without product.view points this at its own catalogue read. */
+  endpoint?: string
 }) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(-1)
   const [scanError, setScanError] = useState<string | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const { data, isFetching } = useProductSearch(query, open)
+  const { data, isFetching } = useProductSearch(query, open, endpoint)
   const results = data?.data ?? []
 
   useEffect(() => {
@@ -95,7 +98,7 @@ export function ProductSearch({
       }
       const term = query.trim()
       if (!term) return
-      const product = await lookupBarcode(term)
+      const product = await lookupBarcode(term, endpoint)
       if (product) choose(product)
       else setScanError(`Unknown barcode "${term}"`)
     } else if (e.key === 'Escape') {

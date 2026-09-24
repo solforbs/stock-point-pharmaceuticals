@@ -633,7 +633,7 @@ function PrescribeModal({ encounter, open, onClose, onSaved }: { encounter: Enco
     >
       <div className="space-y-4">
         <Field label="Add stocked medicine" hint="Search the pharmacy catalogue. Quantities are in dispensing units (tablets, capsules…).">
-          <ProductSearch onSelect={addProduct} />
+          <ProductSearch onSelect={addProduct} endpoint="/api/hospital/medicines" />
         </Field>
         <Field label="Or a medicine the pharmacy does not stock">
           <div className="flex gap-2">

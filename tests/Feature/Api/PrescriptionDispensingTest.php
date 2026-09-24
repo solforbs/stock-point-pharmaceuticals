@@ -5,8 +5,11 @@ namespace Tests\Feature\Api;
 use App\Models\Prescription;
 use App\Models\Sale;
 use App\Models\StockLedger;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\BuildsHospitalWorld;
 use Tests\TestCase;
 
@@ -34,6 +37,33 @@ class PrescriptionDispensingTest extends TestCase
             'prescription.view', 'prescription.dispense', 'sale.view', 'stock.view',
         ]);
         Sanctum::actingAs($this->user);
+    }
+
+    /**
+     * The prescription form's medicine search. A clinician holds no
+     * product.view (that permission would open the whole pharmacy module),
+     * so /api/products refuses them — the hospital-side catalogue read is
+     * what the form searches, by name or code.
+     */
+    public function test_a_clinician_searches_medicines_without_the_pharmacy_permission(): void
+    {
+        $clinician = User::create([
+            'organisation_id' => $this->org->id,
+            'name' => 'Dr Achieng', 'username' => 'achieng', 'email' => 'achieng@stockpoint.test',
+            'password' => Hash::make('a-long-enough-password'), 'is_active' => true,
+        ]);
+        $role = $this->grantPermissions(['hospital.view', 'hospital.prescription.create'], 'Clinician only');
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->branch->id);
+        $clinician->assignRole($role);
+        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+        Sanctum::actingAs($clinician);
+
+        $this->getJson('/api/products?q=AMOX500')->assertForbidden();
+
+        $this->getJson('/api/hospital/medicines?q=AMOX500')
+            ->assertOk()
+            ->assertJsonPath('data.0.code', 'AMOX500')
+            ->assertJsonPath('data.0.name', 'Amoxicillin 500mg Capsules');
     }
 
     public function test_a_prescription_is_dispensed_through_the_existing_checkout_stock_and_sale(): void
