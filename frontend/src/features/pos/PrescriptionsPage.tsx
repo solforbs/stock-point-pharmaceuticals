@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Pill } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { DataTable, type Column } from '../../components/ui/DataTable'
@@ -13,6 +13,7 @@ import { InlineError, NoAccess } from '../../components/ui/States'
 import { usePatientFlowRealtime } from '../../hooks/usePatientFlowRealtime'
 import { apiGet, apiPost, newIdempotencyKey, withIdempotency } from '../../lib/api'
 import { formatDateTime, titleCase } from '../../lib/format'
+import { formatMoney } from '../../lib/money'
 import { usePermissions } from '../../lib/permissions'
 import { useStores } from '../../lib/hooks'
 import { toast } from '../../lib/toast'
@@ -211,7 +212,11 @@ function DispenseModal({ rx, open, onClose, onDone }: { rx: Prescription; open: 
   const sellable = (stores.data ?? []).filter((s) => s.is_sellable)
   const [storeId, setStoreId] = useState('')
   const [method, setMethod] = useState('CASH')
-  const [amount, setAmount] = useState('')
+  // Prefilled with the priced total so nobody computes it by hand; still
+  // editable for a part-payment carried by a customer account.
+  const pricedTotal = rx.estimate ? Number(rx.estimate.grand_total).toFixed(2) : ''
+  const [amount, setAmount] = useState(pricedTotal)
+  useEffect(() => setAmount(pricedTotal), [pricedTotal, open])
   const idempotencyKey = useMemo(() => newIdempotencyKey(), [open])
 
   const effectiveStoreId = storeId || (sellable.length === 1 ? sellable[0].id : '')
@@ -245,6 +250,12 @@ function DispenseModal({ rx, open, onClose, onDone }: { rx: Prescription; open: 
           Stock is allocated FEFO, deducted from the store you pick, and a sale posts through the normal checkout.
           The payment must cover the priced total.
         </div>
+        {rx.estimate && (
+          <div className="flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 py-2.5 text-sm">
+            <span className="text-emerald-900">Total to collect (incl. tax)</span>
+            <span className="font-bold text-emerald-900">{formatMoney(rx.estimate.grand_total)}</span>
+          </div>
+        )}
         <Field label="Store" required>
           <Select value={effectiveStoreId} onChange={(e) => setStoreId(e.target.value)}>
             <option value="">Select store…</option>

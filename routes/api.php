@@ -547,6 +547,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access', 'module.ac
         // permissions, which is why these live under /hospital).
         Route::get('/lab-tests', [EncounterController::class, 'labTests']);
         Route::get('/medicines', [EncounterController::class, 'medicines']);
+        Route::post('/prescription-estimate', [EncounterController::class, 'priceEstimate']);
         Route::get('/lab-orders/{order}', [LabOrderController::class, 'show'])->whereUuid('order');
     });
 

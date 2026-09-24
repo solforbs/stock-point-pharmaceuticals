@@ -119,6 +119,15 @@ class PrescriptionDispensingTest extends TestCase
         // The pharmacist sees it in the branch queue…
         $this->getJson('/api/prescriptions?status=PENDING')->assertOk()->assertJsonPath('data.0.id', $prescription['id']);
 
+        // …the clinician could already quote the till's number while
+        // writing it, and opening it shows the same priced total…
+        $this->postJson('/api/hospital/prescription-estimate', [
+            'branch_id' => $this->branch->id,
+            'lines' => [['product_id' => $this->amox->id, 'quantity' => '21']],
+        ])->assertOk()->assertJsonPath('grand_total', '52.5000');
+        $this->getJson("/api/prescriptions/{$prescription['id']}")
+            ->assertOk()->assertJsonPath('estimate.grand_total', '52.5000');
+
         // …and dispenses it. 21 TAB at the 2.50 default price = 52.50 cash.
         $dispensed = $this->postJson("/api/prescriptions/{$prescription['id']}/dispense", [
             'store_id' => $this->store->id,

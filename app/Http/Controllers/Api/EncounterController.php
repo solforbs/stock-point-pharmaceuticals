@@ -204,6 +204,28 @@ class EncounterController extends ApiController
         );
     }
 
+    /**
+     * What the pharmacy will charge for a prescription being written —
+     * priced through the same engine dispensing uses, so the clinician
+     * (and the patient in front of them) sees the till's number before
+     * the prescription is sent. Free-text medicines are not priced.
+     */
+    public function priceEstimate(Request $request, PrescriptionService $prescriptions): JsonResponse
+    {
+        $this->requirePermission($request, 'hospital.prescription.create');
+
+        $data = $request->validate([
+            'branch_id' => ['required', 'uuid', TenantRules::exists('branches')],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
+        ]);
+
+        return response()->json($prescriptions->priceEstimate(
+            $this->organisationId($request), $data['branch_id'], $request->user()->id, $data['lines'],
+        ));
+    }
+
     /** The orderable test catalogue, for the clinician's lab-order form. */
     public function labTests(Request $request): JsonResponse
     {

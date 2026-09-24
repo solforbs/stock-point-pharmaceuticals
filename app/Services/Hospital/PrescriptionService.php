@@ -211,6 +211,65 @@ class PrescriptionService
     }
 
     /**
+     * What the pharmacy will charge, computed through the same pricing
+     * engine dispensing uses — so the number the clinician quotes the
+     * patient is the number at the till, not an estimate that drifts.
+     * Cost, profit and margin never leave this method: the caller may be
+     * a clinician, and those figures belong to the pharmacy module.
+     *
+     * @param  list<array{product_id: string, uom_id?: ?string, quantity: string}>  $lines  stocked lines only
+     * @return ?array{lines: list<array<string, string>>, subtotal: string, discount: string, tax: string, grand_total: string}
+     */
+    public function priceEstimate(string $organisationId, string $branchId, int $userId, array $lines): ?array
+    {
+        $stocked = collect($lines)->filter(fn (array $l) => ! empty($l['product_id']))->values();
+        if ($stocked->isEmpty()) {
+            return null;
+        }
+
+        $storeId = DB::table('stores')->where('branch_id', $branchId)->where('is_sellable', true)->orderBy('code')->value('id')
+            ?? DB::table('stores')->where('branch_id', $branchId)->orderBy('code')->value('id');
+        if (! $storeId) {
+            return null;
+        }
+
+        $branch = Branch::findOrFail($branchId);
+        $saleMode = in_array('DISPENSING', SaleModes::enabledFor($branch), true) ? 'DISPENSING' : SaleModes::defaultFor($branch);
+
+        $quote = $this->quotes->quote([
+            'organisation_id' => $organisationId,
+            'branch_id' => $branchId,
+            'store_id' => (string) $storeId,
+            'sale_mode' => $saleMode,
+            'user_id' => $userId,
+            'lines' => $stocked->map(fn (array $l) => [
+                'product_id' => $l['product_id'],
+                // Prescribed quantities are in dispensing units (the base
+                // UOM), exactly as create() records them.
+                'uom_id' => $l['uom_id'] ?? ProductUom::where('product_id', $l['product_id'])
+                    ->orderByDesc('is_base')->orderByDesc('is_default_sales')->value('uom_id'),
+                'quantity' => (string) $l['quantity'],
+            ])->all(),
+        ], persist: false);
+
+        return [
+            'lines' => collect($quote['lines'])->map(fn (array $line) => [
+                'product_id' => $line['product_id'],
+                'product_name' => $line['product_name'],
+                'uom_code' => $line['uom_code'],
+                'quantity' => $line['quantity'],
+                'unit_price' => $line['unit_price'],
+                'tax_amount' => $line['tax_amount'],
+                'line_total' => $line['line_total'],
+            ])->all(),
+            'subtotal' => $quote['totals']['subtotal'],
+            'discount' => $quote['totals']['discount'],
+            'tax' => $quote['totals']['tax'],
+            'grand_total' => $quote['totals']['grand_total'],
+        ];
+    }
+
+    /**
      * The bell should not wait for tomorrow's 05:30 scan: a prescription
      * arriving at (or leaving) the pharmacy queue rescans its branch's
      * alerts once the surrounding transaction commits. External

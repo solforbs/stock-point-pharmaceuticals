@@ -2016,5 +2016,15 @@ export type Prescription = {
   lines?: PrescriptionLine[]
   lines_count?: number
   created_at: string
+  estimate?: PrescriptionEstimate | null
+}
+
+/** What the till will charge, priced through the same engine dispensing uses. */
+export type PrescriptionEstimate = {
+  lines: { product_id: string; product_name: string; uom_code: string; quantity: Decimal; unit_price: Decimal; tax_amount: Decimal; line_total: Decimal }[]
+  subtotal: Decimal
+  discount: Decimal
+  tax: Decimal
+  grand_total: Decimal
 }
 

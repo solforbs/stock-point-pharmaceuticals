@@ -34,15 +34,34 @@ class PrescriptionController extends ApiController
         );
     }
 
-    public function show(Request $request, string $prescription): JsonResponse
+    public function show(Request $request, string $prescription, PrescriptionService $prescriptions): JsonResponse
     {
         $this->requireAnyPermission($request, ['prescription.view', 'hospital.prescription.create']);
 
-        return response()->json(Prescription::with([
+        $record = Prescription::with([
             'patient:id,patient_no,first_name,last_name,sex,date_of_birth',
             'encounter:id,encounter_no', 'prescribedBy:id,name', 'dispensedBy:id,name',
             'lines.product:id,code,name', 'sale:id,doc_number,grand_total,status',
-        ])->findOrFail($prescription));
+        ])->findOrFail($prescription);
+
+        // A pending prescription carries what the till will charge, so the
+        // pharmacist collects the exact amount instead of computing one.
+        $estimate = null;
+        if ($record->status === 'PENDING') {
+            try {
+                $estimate = $prescriptions->priceEstimate(
+                    (string) $record->organisation_id,
+                    (string) ($record->branch_id ?? $this->branchId($request)),
+                    $request->user()->id,
+                    $record->lines->map(fn ($l) => ['product_id' => $l->product_id, 'uom_id' => $l->uom_id, 'quantity' => (string) $l->quantity])->all(),
+                );
+            } catch (\Throwable) {
+                // Pricing can fail (a product deactivated since it was
+                // written); the prescription itself must still open.
+            }
+        }
+
+        return response()->json(['estimate' => $estimate] + $record->toArray());
     }
 
     public function dispense(Request $request, string $prescription, PrescriptionService $prescriptions): JsonResponse

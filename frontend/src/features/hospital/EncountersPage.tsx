@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Activity, ClipboardList, FileText, FlaskConical, Pill, Plus, Send, Stethoscope, XCircle } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
@@ -15,9 +15,10 @@ import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { usePatientFlowRealtime } from '../../hooks/usePatientFlowRealtime'
 import { apiPost } from '../../lib/api'
 import { formatDateTime, titleCase } from '../../lib/format'
+import { formatMoney } from '../../lib/money'
 import { usePermissions } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
-import type { Consultation, Encounter, Product } from '../../lib/types'
+import type { Consultation, Encounter, PrescriptionEstimate, Product } from '../../lib/types'
 import { patientAge, patientName, useEncounter, useEncounters, useFacilities, useOrderableLabTests } from './api'
 
 const STATUSES = ['OPEN', 'REGISTERED', 'WAITING', 'IN_CONSULTATION', 'AWAITING_RESULTS', 'COMPLETED', 'CANCELLED']
@@ -580,6 +581,21 @@ function PrescribeModal({ encounter, open, onClose, onSaved }: { encounter: Enco
   const facilityBranch = encounter.facility?.pharmacy_branch_id ?? null
   const effectiveBranch = branchId !== '' ? (branchId === 'NONE' ? null : branchId) : facilityBranch
 
+  // What the pharmacy till will charge for the stocked lines — the same
+  // pricing engine dispensing uses, so the patient hears the real number.
+  const stockedLines = lines.filter((l) => l.product && Number(l.quantity) > 0)
+  const estimate = useQuery({
+    queryKey: ['hospital', 'rx-estimate', effectiveBranch, stockedLines.map((l) => `${l.product!.id}:${l.quantity}`).join('|')],
+    queryFn: () =>
+      apiPost<PrescriptionEstimate | null>('/api/hospital/prescription-estimate', {
+        branch_id: effectiveBranch,
+        lines: stockedLines.map((l) => ({ product_id: l.product!.id, quantity: l.quantity })),
+      }),
+    enabled: open && !!effectiveBranch && stockedLines.length > 0,
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
+  })
+
   const create = useMutation({
     meta: { silent: true },
     mutationFn: () =>
@@ -668,6 +684,21 @@ function PrescribeModal({ encounter, open, onClose, onSaved }: { encounter: Enco
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {estimate.data && stockedLines.length > 0 && (
+          <div className="rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm space-y-1">
+            {estimate.data.lines.map((l) => (
+              <div key={l.product_id} className="flex items-center justify-between text-xs text-slate-600">
+                <span className="truncate">{l.product_name} · {Number(l.quantity)} {l.uom_code} × {formatMoney(l.unit_price)}</span>
+                <span className="font-medium text-slate-800">{formatMoney(l.line_total)}</span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between border-t border-slate-200 pt-1.5">
+              <span className="text-slate-600">Charge at the pharmacy (incl. tax)</span>
+              <span className="font-bold text-slate-900">{formatMoney(estimate.data.grand_total)}</span>
+            </div>
           </div>
         )}
 
