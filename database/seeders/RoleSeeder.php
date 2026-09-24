@@ -39,6 +39,11 @@ class RoleSeeder extends Seeder
             // Client ask 2026-09-24: the POS is for admins and the pharmacist
             // only, so the owner-admin can sell.
             'sale.create',
+            // The director oversees every module (client ask 2026-09-24):
+            // read-level hospital and laboratory access opens those modules
+            // without making the owner a clinician or a bench tech.
+            'hospital.view', 'hospital.patient.view',
+            'laboratory.view', 'laboratory.order.view', 'laboratory.report.view',
         ],
         'Operations Manager' => [
             'sale.view', 'product.view', 'product.edit', 'customer.manage', 'supplier.view', 'supplier.manage',

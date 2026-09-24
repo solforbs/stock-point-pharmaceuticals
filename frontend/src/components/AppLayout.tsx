@@ -1,8 +1,9 @@
 import { Building2, Calendar, ChevronLeft, Compass, HelpCircle, Menu, Search, ShoppingCart } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useBranchStore } from '../lib/branch'
+import { moduleForPath, postLoginTarget } from '../lib/modules'
 import { formatDate, todayIso } from '../lib/format'
 import { useOutboxReplayer } from '../lib/offline/useOutboxReplayer'
 import { AlertBell } from './AlertBell'
@@ -65,6 +66,15 @@ export default function AppLayout() {
 
   const activeBranch = user?.active_branch
   const today = todayIso()
+
+  // The module gate, client side: a URL inside a module the user does not
+  // hold bounces them to their own landing page. The server refuses the
+  // data anyway (module.access middleware + per-permission checks); this
+  // just stops another module's empty shell from ever rendering.
+  const urlModule = moduleForPath(location.pathname)
+  if (user && user.modules && !user.modules.includes(urlModule)) {
+    return <Navigate to={postLoginTarget(user)} replace />
+  }
 
   return (
     <div className={`flex ${isPos ? 'h-screen max-h-screen overflow-hidden' : 'min-h-svh'} bg-[#f8fafc]`}>
