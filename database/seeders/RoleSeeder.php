@@ -36,12 +36,17 @@ class RoleSeeder extends Seeder
             'training.manage',
             // Supplier quotes: the director awards; buyers prepare (client item 19).
             'rfq.view', 'rfq.award',
+            // Client ask 2026-09-24: the POS is for admins and the pharmacist
+            // only, so the owner-admin can sell.
+            'sale.create',
         ],
         'Operations Manager' => [
             'sale.view', 'product.view', 'product.edit', 'customer.manage', 'supplier.view', 'supplier.manage',
             'warehouse.pick', 'warehouse.dispatch', 'finance.ar.view',
             'location.manage',
-            'sale.create', 'sale.void', 'sale.discount.approve', 'sale.mode.switch',
+            // No sale.create: client ask 2026-09-24 — the POS belongs to
+            // admins and the pharmacist; managers approve, they don't sell.
+            'sale.void', 'sale.discount.approve', 'sale.mode.switch',
             'stock.view', 'stock.adjust', 'stock.adjust.approve', 'stock.count.post',
             'stock.transfer.create', 'stock.transfer.approve', 'stock.transfer.dispatch', 'stock.transfer.receive',
             'stock.count.enter', 'stock.fefo.override', 'requisition.view', 'requisition.create', 'requisition.approve', 'po.create', 'po.approve',
@@ -58,13 +63,17 @@ class RoleSeeder extends Seeder
             'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view',
             'leave.request',
         ],
+        // Client ask 2026-09-24: cashier roles no longer carry sale.create —
+        // the POS is for admins and the pharmacist. These roles keep their
+        // supporting permissions and can be re-granted selling in Users &
+        // Roles if the business changes its mind.
         'Senior Cashier' => [
-            'sale.view', 'product.view', 'payment.record', 'return.create', 'sale.create', 'sale.void', 'sale.discount.apply', 'sale.mode.switch', 'stock.view',
+            'sale.view', 'product.view', 'payment.record', 'return.create', 'sale.void', 'sale.discount.apply', 'sale.mode.switch', 'stock.view',
             'adr.report',
             'leave.request', 'price.simulate',
         ],
         'Cashier' => [
-            'sale.view', 'product.view', 'sale.create', 'sale.discount.apply', 'stock.view',
+            'sale.view', 'product.view', 'sale.discount.apply', 'stock.view',
             'leave.request',
         ],
         'Storekeeper' => [

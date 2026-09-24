@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Search, ShoppingCart } from 'lucide-react'
 import { KeyboardHintBar } from '../../components/KeyboardHintBar'
 import { PosRemoveConfirmModal } from './PosRemoveConfirmModal'
-import { EmptyState, LoadingSkeleton } from '../../components/ui/States'
+import { EmptyState, LoadingSkeleton, NoAccess } from '../../components/ui/States'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { useStores } from '../../lib/hooks'
 import { useIsOffline } from '../../lib/offline/connectivity'
@@ -29,7 +29,20 @@ function isTyping(target: EventTarget | null) {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)
 }
 
+/** The till is for people who may post sales; the server enforces the same. */
 export default function PosPage() {
+  const canSell = usePermission('sale.create')
+  if (!canSell) {
+    return (
+      <div className="p-6">
+        <div className="ui-card"><NoAccess permission="sale.create" /></div>
+      </div>
+    )
+  }
+  return <PosPageInner />
+}
+
+function PosPageInner() {
   const { data: user } = useCurrentUser()
   const canDiscount = usePermission('sale.discount.apply')
   const stores = useStores()

@@ -18,8 +18,19 @@ export type NavItem = {
   label: string
   icon: LucideIcon
   path: string
-  /** platformOnly: pages that act on the whole platform, shown to platform administrators only. */
-  children?: { key: string; label: string; path: string; platformOnly?: boolean }[]
+  /**
+   * platformOnly: pages that act on the whole platform, shown to platform
+   * administrators only. permission: shown only to holders of it — the page
+   * still gates itself; hidden buttons are never the security layer.
+   */
+  children?: { key: string; label: string; path: string; platformOnly?: boolean; permission?: string }[]
+}
+
+/** Hides children whose `permission` the user does not hold. */
+export function withPermittedItems(items: NavItem[], can: (permission: string) => boolean): NavItem[] {
+  return items.map((item) => (item.children
+    ? { ...item, children: item.children.filter((child) => !child.permission || can(child.permission)) }
+    : item))
 }
 
 /** Hides the platform-only pages (backups, deployment, system health) from institution users. */
@@ -35,8 +46,8 @@ export const NAV_ITEMS: NavItem[] = [
   {
     key: 'sell', label: 'Sales', icon: ShoppingCart, path: '/sell',
     children: [
-      { key: 'pos', label: 'POS', path: '/sell/pos' },
-      { key: 'prescriptions', label: 'Prescriptions', path: '/sell/prescriptions' },
+      { key: 'pos', label: 'POS', path: '/sell/pos', permission: 'sale.create' },
+      { key: 'prescriptions', label: 'Prescriptions', path: '/sell/prescriptions', permission: 'prescription.view' },
       { key: 'quotations', label: 'Quotations', path: '/sell/quotations' },
       { key: 'sales-orders', label: 'Sales Orders', path: '/sell/sales-orders' },
       { key: 'invoices', label: 'Invoices', path: '/sell/invoices' },

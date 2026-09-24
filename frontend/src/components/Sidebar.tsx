@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { HOSPITAL_NAV, LABORATORY_NAV, moduleForPath, moduleInfo } from '../lib/modules'
-import { NAV_ITEMS, withPlatformItems, type NavItem } from '../lib/navigation'
+import { NAV_ITEMS, withPermittedItems, withPlatformItems, type NavItem } from '../lib/navigation'
+import { usePermissions } from '../lib/permissions'
 import { SyncStatusChip } from './SyncStatusChip'
 import { SidebarBranchSelector } from './navigation/SidebarBranchSelector'
 import { SidebarNavGroup } from './navigation/SidebarNavGroup'
@@ -40,6 +41,7 @@ function SidebarInner({
   const [showStatusPopup, setShowStatusPopup] = useState(false)
   const location = useLocation()
   const { data: user } = useCurrentUser()
+  const perms = usePermissions()
 
   // The sidebar shows the navigation of whichever module the URL is inside.
   // The pharmacy keeps its existing eleven workspaces untouched; hospital and
@@ -123,7 +125,9 @@ function SidebarInner({
             )}
           </NavLink>
         )}
-        {sections.map((sec) => ({ ...sec, items: withPlatformItems(sec.items, !!user?.is_platform_admin) })).map((sec, idx) => (
+        {sections
+          .map((sec) => ({ ...sec, items: withPermittedItems(withPlatformItems(sec.items, !!user?.is_platform_admin), (p) => perms.has(p)) }))
+          .map((sec, idx) => (
           <div key={sec.title ?? idx} className="space-y-0.5">
             {!collapsed && sec.title && (
               <div className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
