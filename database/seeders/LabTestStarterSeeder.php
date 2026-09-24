@@ -38,10 +38,18 @@ class LabTestStarterSeeder extends Seeder
 
     public function run(): void
     {
+        // Shared categories first, OUTSIDE any tenant context — inside one,
+        // the tenant trait stamps a "shared" insert with the organisation id
+        // and the second test in that category collides on the unique key.
+        (new LabTestCategorySeeder)->run();
+
         foreach (Organisation::pluck('id') as $organisationId) {
             app(TenantContext::class)->run((string) $organisationId, function () {
                 foreach (self::TESTS as [$category, $code, $name, $price, $sample, $range, $unit]) {
-                    $categoryId = LabTestCategory::firstOrCreate(['name' => $category, 'organisation_id' => null])->id;
+                    // Prefer the shared row; tolerate an organisation-owned
+                    // copy left behind by an earlier partial run.
+                    $categoryId = LabTestCategory::where('name', $category)
+                        ->orderByRaw('organisation_id is not null')->value('id');
 
                     LabTest::firstOrCreate(['code' => $code], [
                         'category_id' => $categoryId,
