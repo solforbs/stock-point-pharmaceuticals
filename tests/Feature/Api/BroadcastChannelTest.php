@@ -85,4 +85,24 @@ class BroadcastChannelTest extends TestCase
         $this->assertFalse($this->mayJoin(null, 'private-users.'.$this->user->id));
         $this->assertFalse($this->mayJoin(null, 'private-branches.'.$this->branch->id));
     }
+
+    /**
+     * Exercised over HTTP on purpose: the healthcare channel checks module
+     * permissions, which are team-scoped to the active branch. Only the real
+     * route proves branch.context runs on /broadcasting/auth — calling the
+     * broadcaster directly (as the tests above do) would pass even without
+     * that middleware, which is exactly the regression this guards against.
+     */
+    public function test_a_lab_tech_may_join_the_healthcare_channel_over_http(): void
+    {
+        $this->grantPermissions(['laboratory.view'], 'Laboratory Technician');
+
+        $this->actingAs($this->user)
+            ->withHeader('X-Branch-Id', (string) $this->branch->id)
+            ->postJson('/broadcasting/auth', [
+                'channel_name' => 'private-healthcare.'.$this->org->id,
+                'socket_id' => '1.1',
+            ])
+            ->assertOk();
+    }
 }

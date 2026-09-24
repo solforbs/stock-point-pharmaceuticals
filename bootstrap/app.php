@@ -20,8 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
-        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
+    )
+    // Channels are registered here rather than through withRouting(channels:)
+    // so that /broadcasting/auth runs branch.context: the healthcare channel
+    // checks module permissions, which are team-scoped to the active branch
+    // and resolve to nothing unless that middleware has set the team id.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['middleware' => ['web', 'auth:sanctum', 'branch.context']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
