@@ -3,6 +3,7 @@
 namespace App\Services\Hospital;
 
 use App\Events\PatientFlowUpdated;
+use App\Jobs\RescanBranchAlerts;
 use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\Encounter;
@@ -86,6 +87,7 @@ class PrescriptionService
             }
 
             event(PatientFlowUpdated::forPrescription($prescription));
+            $this->rescanAlerts($prescription);
 
             AuditLog::record('PRESCRIPTION_CREATED', 'prescription', $prescription->id, [
                 'user_id' => $prescriber->id,
@@ -177,6 +179,7 @@ class PrescriptionService
             ]);
 
             event(PatientFlowUpdated::forPrescription($prescription));
+            $this->rescanAlerts($prescription);
 
             AuditLog::record('PRESCRIPTION_DISPENSED', 'prescription', $prescription->id, [
                 'user_id' => $pharmacist->id,
@@ -196,6 +199,7 @@ class PrescriptionService
 
         $prescription->update(['status' => 'CANCELLED', 'cancelled_by' => $user->id, 'cancelled_at' => now()]);
         event(PatientFlowUpdated::forPrescription($prescription));
+        $this->rescanAlerts($prescription);
 
         AuditLog::record('PRESCRIPTION_CANCELLED', 'prescription', $prescription->id, [
             'user_id' => $user->id,
@@ -204,5 +208,18 @@ class PrescriptionService
         ]);
 
         return $prescription;
+    }
+
+    /**
+     * The bell should not wait for tomorrow's 05:30 scan: a prescription
+     * arriving at (or leaving) the pharmacy queue rescans its branch's
+     * alerts once the surrounding transaction commits. External
+     * prescriptions have no branch and raise no alert.
+     */
+    private function rescanAlerts(Prescription $prescription): void
+    {
+        if ($prescription->branch_id) {
+            RescanBranchAlerts::dispatch((string) $prescription->branch_id)->afterCommit();
+        }
     }
 }

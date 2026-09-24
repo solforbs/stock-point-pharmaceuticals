@@ -21,6 +21,7 @@ const categoryLabel: Record<Alert['category'], string> = {
   PAYABLE: 'Supplier invoices',
   EXPIRY: 'Shelf life',
   LICENCE: 'Licence renewals',
+  PRESCRIPTION: 'Prescriptions',
 }
 
 /**
@@ -69,7 +70,7 @@ export default function AlertsPage() {
       />
 
       <div id="tour-alerts-categories" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        {(['RECEIVABLE', 'PAYABLE', 'EXPIRY', 'LICENCE'] as const).map((key) => {
+        {(['RECEIVABLE', 'PAYABLE', 'EXPIRY', 'LICENCE', 'PRESCRIPTION'] as const).map((key) => {
           const stats = summary.data?.by_category[key]
           const Icon = key === 'EXPIRY' ? PackageX : key === 'LICENCE' ? BadgeCheck : CalendarClock
           return (
@@ -91,7 +92,7 @@ export default function AlertsPage() {
         <div id="tour-alerts-filters" className="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center gap-2">
           <Select value={category} onChange={(e) => setCategory(e.target.value)} className="w-auto">
             <option value="">All categories</option>
-            {(['RECEIVABLE', 'PAYABLE', 'EXPIRY', 'LICENCE'] as const).map((c) => (<option key={c} value={c}>{categoryLabel[c]}</option>))}
+            {(['RECEIVABLE', 'PAYABLE', 'EXPIRY', 'LICENCE', 'PRESCRIPTION'] as const).map((c) => (<option key={c} value={c}>{categoryLabel[c]}</option>))}
           </Select>
           <Select value={severity} onChange={(e) => setSeverity(e.target.value)} className="w-auto">
             <option value="">All severities</option>

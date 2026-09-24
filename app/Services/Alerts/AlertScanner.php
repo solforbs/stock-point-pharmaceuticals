@@ -50,6 +50,7 @@ class AlertScanner
             ...$this->payables($branch, $asOf),
             ...$this->expiringStock($branch, $asOf),
             ...$this->licences($branch, $asOf),
+            ...$this->pendingPrescriptions($branch, $asOf),
         ];
 
         $opened = 0;
@@ -260,6 +261,53 @@ class AlertScanner
      *
      * @return list<array<string, mixed>>
      */
+    /**
+     * Prescriptions sent to this branch's pharmacy and not yet dispensed.
+     * Fresh ones are worth a glance; one still waiting the next day means
+     * a patient left without their medicine.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function pendingPrescriptions(Branch $branch, Carbon $asOf): array
+    {
+        $rows = DB::table('prescriptions as rx')
+            ->join('patients as p', 'p.id', '=', 'rx.patient_id')
+            ->leftJoin('users as u', 'u.id', '=', 'rx.prescribed_by')
+            ->where('rx.branch_id', $branch->id)
+            ->where('rx.status', 'PENDING')
+            ->select(['rx.id', 'rx.rx_no', 'rx.created_at', 'p.first_name', 'p.last_name', 'p.patient_no', 'u.name as prescriber'])
+            ->get();
+
+        $alerts = [];
+        foreach ($rows as $row) {
+            $written = Carbon::parse($row->created_at);
+            $days = (int) $written->copy()->startOfDay()->diffInDays($asOf, false);
+
+            [$severity, $title] = match (true) {
+                $days >= 3 => ['CRITICAL', "Prescription {$row->rx_no} undispensed for {$this->plural($days, 'day')}"],
+                $days >= 1 => ['WARNING', "Prescription {$row->rx_no} undispensed since ".$written->toFormattedDateString()],
+                default => ['INFO', "Prescription {$row->rx_no} awaiting dispensing"],
+            };
+
+            $alerts[] = [
+                'alert_key' => "rx-pending:{$row->id}",
+                'category' => 'PRESCRIPTION',
+                'type' => 'PRESCRIPTION_PENDING',
+                'severity' => $severity,
+                'title' => $title,
+                'detail' => trim("{$row->first_name} {$row->last_name}")." ({$row->patient_no})".($row->prescriber ? " · prescribed by {$row->prescriber}" : '').' · written '.$written->format('Y-m-d H:i').'.',
+                'entity_type' => 'prescription',
+                'entity_id' => (string) $row->id,
+                'due_date' => null,
+                'amount' => null,
+                'link' => '/sell/prescriptions?prescription='.$row->id,
+                'permission' => 'prescription.view',
+            ];
+        }
+
+        return $alerts;
+    }
+
     private function licences(Branch $branch, Carbon $asOf): array
     {
         $horizon = $asOf->copy()->addDays(Licence::EXPIRING_WITHIN_DAYS)->toDateString();

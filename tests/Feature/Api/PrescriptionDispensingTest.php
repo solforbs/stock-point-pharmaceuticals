@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Alert;
 use App\Models\Prescription;
 use App\Models\Sale;
 use App\Models\StockLedger;
@@ -64,6 +65,36 @@ class PrescriptionDispensingTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.0.code', 'AMOX500')
             ->assertJsonPath('data.0.name', 'Amoxicillin 500mg Capsules');
+    }
+
+    /**
+     * Part 17 meets the pharmacy queue: a prescription waiting at the
+     * branch is a standing alert the moment it is written (the service
+     * rescans the branch rather than waiting for the 05:30 schedule), and
+     * dispensing it resolves the alert on the same rescan.
+     */
+    public function test_a_waiting_prescription_raises_an_alert_that_dispensing_resolves(): void
+    {
+        $patient = $this->registerPatient();
+        $encounter = $this->openEncounter($patient['id'], ['consultation_fee' => '0']);
+
+        $prescription = $this->postJson("/api/hospital/encounters/{$encounter['id']}/prescriptions", [
+            'branch_id' => $this->branch->id,
+            'lines' => [['product_id' => $this->amox->id, 'quantity' => '21', 'frequency' => '3 times daily', 'duration' => '7 days']],
+        ])->assertCreated()->json();
+
+        $alert = Alert::where('type', 'PRESCRIPTION_PENDING')->where('entity_id', $prescription['id'])->firstOrFail();
+        $this->assertSame('INFO', $alert->severity);
+        $this->assertSame('PRESCRIPTION', $alert->category);
+        $this->assertNull($alert->resolved_at);
+        $this->assertStringContainsString($prescription['rx_no'], $alert->title);
+
+        $this->postJson("/api/prescriptions/{$prescription['id']}/dispense", [
+            'store_id' => $this->store->id,
+            'payments' => [['method' => 'CASH', 'amount' => '52.50']],
+        ], ['Idempotency-Key' => (string) Str::uuid()])->assertOk();
+
+        $this->assertNotNull($alert->fresh()->resolved_at, 'dispensing resolves the waiting-prescription alert');
     }
 
     public function test_a_prescription_is_dispensed_through_the_existing_checkout_stock_and_sale(): void
