@@ -6,8 +6,8 @@
  * Browsers refuse audio before the first user gesture; that rejection is
  * swallowed because a silent first message is better than a console error.
  */
-const receivedSound = new Audio('/sounds/message-received.wav')
-const sentSound = new Audio('/sounds/message-sent.mp3')
+const receivedSound = new Audio(`${import.meta.env.BASE_URL}sounds/message-received.wav`)
+const sentSound = new Audio(`${import.meta.env.BASE_URL}sounds/message-sent.mp3`)
 receivedSound.volume = 1.0
 sentSound.volume = 1.0
 
