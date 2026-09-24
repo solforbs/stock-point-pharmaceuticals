@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { connectRealtime } from '../lib/realtime'
+import { toast } from '../lib/toast'
 import { useCurrentUser } from './useCurrentUser'
 
 type PatientFlowEvent = {
@@ -32,6 +33,8 @@ export function usePatientFlowRealtime() {
 
     const channelName = `healthcare.${organisationId}`
     echo.private(channelName).listen('.patient-flow.updated', (event: PatientFlowEvent) => {
+      const noun = { ENCOUNTER: 'Encounter', LAB_ORDER: 'Lab order', PRESCRIPTION: 'Prescription' }[event.kind]
+      toast.info(`${noun} ${event.number}`, `Now ${event.status.replaceAll('_', ' ').toLowerCase()}`)
       if (event.kind === 'ENCOUNTER') {
         queryClient.invalidateQueries({ queryKey: ['hospital', 'encounters'] })
         queryClient.invalidateQueries({ queryKey: ['hospital', 'encounter', event.id] })
