@@ -100,7 +100,8 @@ nginx -t && systemctl reload nginx
 
 echo "==> Queue worker (eTIMS submissions) and scheduler"
 sed "s|__APP_DIR__|${APP_DIR}|g" deploy/supervisor-queue.conf > /etc/supervisor/conf.d/stockpoint-queue.conf
-supervisorctl reread && supervisorctl update && supervisorctl start stockpoint-queue:* || true
+sed "s|__APP_DIR__|${APP_DIR}|g" deploy/supervisor-reverb.conf > /etc/supervisor/conf.d/stockpoint-reverb.conf
+supervisorctl reread && supervisorctl update && supervisorctl start stockpoint-queue:* stockpoint-reverb:* || true
 sed "s|__APP_DIR__|${APP_DIR}|g" deploy/cron > /etc/cron.d/stockpoint
 chmod 644 /etc/cron.d/stockpoint
 
