@@ -8,160 +8,88 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\PermissionRegistrar;
 
 class RoleSeeder extends Seeder
 {
     /**
-     * [NEW-RECOMMENDATION] The blueprint (Part 18.3) names these ten roles and
-     * the permission catalogue, plus the separation-of-duties principle, but
-     * leaves the exact role -> permission matrix as a business decision for
-     * the owner. This mapping is a reasonable starting point, not a source
-     * fact — review and adjust per Part 32's "discount authority matrix" step.
+     * Governance decision (client, 2026-09-24): a deliberately small,
+     * two-level role model to keep the system healthy.
+     *
+     * PLATFORM level — "us", the system owners: the platform administrator
+     * account (users.is_platform_admin) approves/suspends institutions,
+     * manages plans and billing, and holds NO operational role inside any
+     * institution.
+     *
+     * INSTITUTION level — exactly these standard roles:
+     *   Director   — owns the institution: every institution permission,
+     *                all three modules, users & roles, approvals.
+     *   Clinician  — the hospital: patients, reception work, consultations,
+     *                diagnoses, referrals, ordering tests, prescribing.
+     *   Laboratory Technician — the bench: the full order workflow through
+     *                to signed-off results.
+     *   Pharmacist — runs the pharmacy day to day: selling and dispensing,
+     *                inventory, procurement and the pre-existing workflow.
+     *                Approvals (PO, adjustments, transfers, discounts,
+     *                supplier awards) stay with the Director.
+     *   Patient    — reserved for the future patient portal; carries no
+     *                permissions yet, so such an account opens no module.
+     *
+     * A custom role is still possible in Users & Roles, but the standard
+     * provisioning creates nothing beyond this list.
      */
     public const ROLE_PERMISSIONS = [
-        'Director' => [
-            'sale.view', 'product.view', 'stock.view', 'supplier.view', 'finance.ar.view', 'finance.ap.view',
-            'report.view', 'report.financial.view', 'admin.settings', 'sale.discount.approve',
-            'stock.adjust.approve', 'po.approve', 'period.close', 'recall.initiate',
-            // The owner of a small branch has nobody else to ask, so they may
-            // approve a transfer they raised themselves; the audit row says so.
-            'stock.transfer.create', 'stock.transfer.approve', 'stock.transfer.approve.own',
-            'waste.approve', 'customer.credit.override', 'payroll.view', 'audit.view',
-            'licence.view', 'licence.manage', 'document.manage',
-            // A small business's owner prepares and approves payroll alone (decision 2026-09-18).
-            'payroll.process', 'payroll.approve.own',
-            'payment.reconcile',
-            'leave.request', 'leave.approve', 'report.schedule', 'report.review', 'price.manage', 'price.simulate',
-            'training.manage',
-            // Supplier quotes: the director awards; buyers prepare (client item 19).
-            'rfq.view', 'rfq.award',
-            // Client ask 2026-09-24: the POS is for admins and the pharmacist
-            // only, so the owner-admin can sell.
-            'sale.create',
-            // The director oversees every module (client ask 2026-09-24):
-            // read-level hospital and laboratory access opens those modules
-            // without making the owner a clinician or a bench tech.
-            'hospital.view', 'hospital.patient.view',
-            'laboratory.view', 'laboratory.order.view', 'laboratory.report.view',
-        ],
-        'Operations Manager' => [
-            'sale.view', 'product.view', 'product.edit', 'customer.manage', 'supplier.view', 'supplier.manage',
-            'warehouse.pick', 'warehouse.dispatch', 'finance.ar.view',
-            'location.manage',
-            // No sale.create: client ask 2026-09-24 — the POS belongs to
-            // admins and the pharmacist; managers approve, they don't sell.
-            'sale.void', 'sale.discount.approve', 'sale.mode.switch',
-            'stock.view', 'stock.adjust', 'stock.adjust.approve', 'stock.count.post',
-            'stock.transfer.create', 'stock.transfer.approve', 'stock.transfer.dispatch', 'stock.transfer.receive',
-            'stock.count.enter', 'stock.fefo.override', 'requisition.view', 'requisition.create', 'requisition.approve', 'po.create', 'po.approve',
-            'grn.create', 'quality.release', 'recall.initiate', 'waste.approve', 'return.create', 'return.post', 'supplier.return',
-            'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view', 'licence.manage', 'document.manage',
-            'report.view', 'report.financial.view',
-            'leave.approve', 'report.schedule', 'report.review', 'price.manage', 'price.simulate',
-            'training.manage',
-            'rfq.view', 'rfq.manage', 'rfq.award',
-        ],
-        'Pharmacist' => [
-            'sale.view', 'product.view', 'requisition.view', 'requisition.create', 'sale.create', 'stock.view', 'stock.fefo.override', 'quality.release',
-            'grn.qc.release', 'recall.initiate', 'waste.approve', 'return.post', 'stock.adjust',
-            'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view',
-            'leave.request',
-        ],
-        // Client ask 2026-09-24: cashier roles no longer carry sale.create —
-        // the POS is for admins and the pharmacist. These roles keep their
-        // supporting permissions and can be re-granted selling in Users &
-        // Roles if the business changes its mind.
-        'Senior Cashier' => [
-            'sale.view', 'product.view', 'payment.record', 'return.create', 'sale.void', 'sale.discount.apply', 'sale.mode.switch', 'stock.view',
-            'adr.report',
-            'leave.request', 'price.simulate',
-        ],
-        'Cashier' => [
-            'sale.view', 'product.view', 'sale.discount.apply', 'stock.view',
-            'leave.request',
-        ],
-        'Storekeeper' => [
-            'product.view', 'warehouse.pick', 'warehouse.dispatch', 'stock.view', 'stock.adjust', 'stock.count.post', 'stock.count.enter',
-            'stock.transfer.create', 'stock.transfer.dispatch', 'stock.transfer.receive',
-            'requisition.view', 'requisition.create', 'grn.create', 'product.create', 'return.create', 'supplier.return',
-            'coldchain.record',
-            'location.manage',
-            'leave.request',
-        ],
-        'Procurement Officer' => [
-            'product.view', 'supplier.view', 'supplier.manage', 'stock.view', 'requisition.view', 'requisition.approve', 'supplier.return', 'report.view', 'po.create', 'grn.create', 'invoice.match', 'product.create',
-            'rfq.view', 'rfq.manage',
-        ],
-        'Finance Officer' => [
-            'sale.view', 'product.view', 'supplier.view', 'finance.ar.view', 'finance.ap.view', 'customer.credit.override', 'report.view',
-            'payment.record', 'journal.post', 'journal.reverse', 'invoice.match', 'tax.etims.manage', 'payroll.view', 'payroll.process',
-            'report.financial.view', 'product.cost.view',
-            'payment.reconcile',
-            'leave.request', 'leave.approve', 'report.schedule', 'report.review',
-            'rfq.view',
-        ],
-        'Auditor' => [
-            'sale.view', 'product.view', 'supplier.view', 'finance.ar.view', 'finance.ap.view', 'audit.view', 'report.view', 'report.financial.view', 'stock.view', 'product.cost.view', 'payroll.view', 'report.review',
-            'licence.view', 'rfq.view',
-            'leave.request',
-        ],
-        'System Administrator' => [
-            'admin.users', 'admin.settings', 'audit.view', 'record.delete',
-            'licence.view', 'licence.manage', 'document.manage',
-            'training.manage',
-        ],
-        // ——— Healthcare platform roles (hospital + laboratory modules). ———
-        // These deliberately carry no pharmacy catalogue permissions, so a
-        // clinician or lab tech never sees the Pharmacy module. `leave.request`
-        // is also left off for now because it currently counts as a pharmacy
-        // permission and would drag the whole Pharmacy module into view.
-        'Hospital Administrator' => [
-            'hospital.view', 'hospital.manage',
-            'hospital.patient.view', 'hospital.patient.manage',
-            'hospital.encounter.manage', 'hospital.consultation.manage',
-            'hospital.diagnosis.manage', 'hospital.referral.manage',
-            'hospital.prescription.create',
-            'laboratory.order.create', 'laboratory.order.view',
-        ],
-        'Receptionist' => [
-            'hospital.view', 'hospital.patient.view', 'hospital.patient.manage',
-            'hospital.encounter.manage',
-        ],
         'Clinician' => [
-            'hospital.view', 'hospital.patient.view',
+            'hospital.view', 'hospital.patient.view', 'hospital.patient.manage',
             'hospital.encounter.manage', 'hospital.consultation.manage',
             'hospital.diagnosis.manage', 'hospital.referral.manage',
             'hospital.prescription.create',
             'laboratory.order.create', 'laboratory.order.view',
-        ],
-        'Nurse' => [
-            'hospital.view', 'hospital.patient.view', 'hospital.consultation.manage',
-            'laboratory.order.view',
-        ],
-        // The lab's clinician-grade professional: works the full bench
-        // workflow AND signs results off (client ask 2026-09-24: the three
-        // quick-assign roles are Clinician, Pharmacist, Laboratory Doctor).
-        'Laboratory Doctor' => [
-            'laboratory.view',
-            'laboratory.order.accept', 'laboratory.order.cancel',
-            'laboratory.sample.collect',
-            'laboratory.result.enter', 'laboratory.result.approve',
-            'laboratory.report.view',
         ],
         'Laboratory Technician' => [
             'laboratory.view',
-            'laboratory.order.accept', 'laboratory.sample.collect',
-            'laboratory.result.enter',
-        ],
-        'Laboratory Manager' => [
-            'laboratory.view', 'laboratory.manage',
-            'laboratory.category.manage', 'laboratory.test.manage',
             'laboratory.order.accept', 'laboratory.order.cancel',
             'laboratory.sample.collect',
             'laboratory.result.enter', 'laboratory.result.approve',
             'laboratory.report.view',
         ],
+        'Pharmacist' => [
+            // Selling and dispensing
+            'sale.view', 'sale.create', 'sale.void', 'sale.discount.apply', 'sale.mode.switch',
+            'prescription.view', 'prescription.dispense',
+            'payment.record',
+            // Inventory
+            'stock.view', 'stock.adjust', 'stock.count.enter', 'stock.count.post',
+            'stock.transfer.create', 'stock.transfer.dispatch', 'stock.transfer.receive',
+            'stock.fefo.override',
+            'product.view', 'product.create', 'product.edit',
+            'location.manage', 'warehouse.pick', 'warehouse.dispatch',
+            // Procurement
+            'requisition.view', 'requisition.create', 'po.create', 'grn.create', 'grn.qc.release',
+            'invoice.match', 'supplier.view', 'supplier.manage', 'rfq.view', 'rfq.manage',
+            // Returns
+            'return.create', 'return.post', 'supplier.return',
+            // Quality and compliance, as before
+            'quality.release', 'recall.initiate', 'waste.approve',
+            'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view',
+            // Everyday extras
+            'report.view', 'price.simulate', 'leave.request',
+        ],
+        'Patient' => [],
+    ];
+
+    /**
+     * Roles the platform no longer provisions. A retired role that nobody
+     * holds is deleted; one still assigned is left alone (reassign its
+     * people in Users & Roles, then reseed to complete the clean-up).
+     */
+    public const RETIRED_ROLES = [
+        'Super Administrator', 'System Administrator',
+        'Operations Manager', 'Senior Cashier', 'Cashier', 'Storekeeper', 'Wholesale Rep',
+        'Procurement Officer', 'Finance Officer', 'Auditor',
+        'Hospital Administrator', 'Receptionist', 'Nurse',
+        'Laboratory Doctor', 'Laboratory Manager',
     ];
 
     /** Every institution gets its own copy of the standard roles. */
@@ -181,9 +109,10 @@ class RoleSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
-        // A database seeded before a permission was added lacks it; make sure
-        // every permission a standard role names exists before assigning it.
-        foreach (array_unique(array_merge(...array_values(self::ROLE_PERMISSIONS))) as $permission) {
+        // A database seeded before a permission was added lacks it; heal the
+        // whole catalogue, because the Director role carries every
+        // permission — not only the ones the smaller roles name.
+        foreach (PermissionSeeder::all() as $permission) {
             Permission::findOrCreate($permission, 'web');
         }
 
@@ -193,12 +122,21 @@ class RoleSeeder extends Seeder
                     ->syncPermissions($permissions);
             }
 
-            // The institution's owner role. It carries every permission there
-            // is, including ones added by later releases; the platform-level
-            // operations (backups, deployment) additionally need a platform
-            // administrator, so owning an institution never reaches them.
+            // The institution's owner role — the Director. It carries every
+            // permission there is, including ones added by later releases.
+            // Platform-level operations (approving institutions, billing,
+            // backups, deployment) need a platform administrator account and
+            // never come from owning an institution.
             Role::firstOrCreate(['organisation_id' => $organisationId, 'name' => CreateAdminUser::SUPER_ADMINISTRATOR, 'guard_name' => 'web', 'branch_id' => null])
                 ->syncPermissions(Permission::where('guard_name', 'web')->get());
+
+            // Retire the old role zoo: delete retired roles nobody holds.
+            foreach (self::RETIRED_ROLES as $retired) {
+                $role = Role::where('organisation_id', $organisationId)->where('name', $retired)->first();
+                if ($role && ! DB::table(config('permission.table_names.model_has_roles'))->where('role_id', $role->id)->exists()) {
+                    $role->delete();
+                }
+            }
         });
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

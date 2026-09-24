@@ -71,7 +71,7 @@ class SaasOnboardingTest extends TestCase
         $this->assertTrue($organisation->trial_ends_at->between(now()->addDays(6), now()->addDays(7)->addMinute()));
         $this->assertSame('REGISTERED', $request->fresh()->status);
         $this->assertGreaterThan(0, ChartOfAccount::withoutGlobalScopes()->where('organisation_id', $organisation->id)->count(), 'the books exist');
-        $this->assertTrue(Role::withoutGlobalScopes()->where('organisation_id', $organisation->id)->where('name', 'Cashier')->exists(), 'its own roles');
+        $this->assertTrue(Role::withoutGlobalScopes()->where('organisation_id', $organisation->id)->where('name', 'Pharmacist')->exists(), 'its own roles');
 
         $owner = User::where('email', 'amina@lodwarchem.test')->sole();
         $this->assertSame($organisation->id, $owner->organisation_id);

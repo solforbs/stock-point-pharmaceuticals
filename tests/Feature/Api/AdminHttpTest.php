@@ -34,12 +34,12 @@ class AdminHttpTest extends TestCase
     {
         $created = $this->postJson('/api/admin/users', [
             'name' => 'Grace Storekeeper', 'username' => 'grace', 'email' => 'grace@example.test', 'password' => 'a-temporary-password',
-            'assignments' => [['branch_id' => $this->branch->id, 'roles' => ['Storekeeper', 'Cashier']]],
+            'assignments' => [['branch_id' => $this->branch->id, 'roles' => ['Pharmacist', 'Clinician']]],
         ])->assertCreated()
             ->assertJsonPath('must_change_password', true)
             ->assertJsonPath('assignments.0.branch_code', 'LDW')
-            ->assertJsonPath('assignments.0.role', 'Cashier')
-            ->assertJsonPath('assignments.1.role', 'Storekeeper')
+            ->assertJsonPath('assignments.0.role', 'Clinician')
+            ->assertJsonPath('assignments.1.role', 'Pharmacist')
             ->assertJsonMissingPath('password')
             ->json();
 
@@ -54,7 +54,7 @@ class AdminHttpTest extends TestCase
         User::whereKey($created['id'])->update(['failed_login_attempts' => 5, 'locked_until' => now()->addHour()]);
         $this->postJson("/api/admin/users/{$created['id']}/unlock")->assertOk()->assertJsonPath('locked_until', null)->assertJsonPath('failed_login_attempts', 0);
 
-        $this->patchJson("/api/admin/users/{$created['id']}", ['is_active' => false, 'assignments' => [['branch_id' => $this->branch->id, 'roles' => ['Cashier']]]])
+        $this->patchJson("/api/admin/users/{$created['id']}", ['is_active' => false, 'assignments' => [['branch_id' => $this->branch->id, 'roles' => ['Clinician']]]])
             ->assertOk()->assertJsonPath('is_active', false)->assertJsonCount(1, 'assignments');
         $this->assertSame(1, AuditLog::where('action', 'USER_UPDATED')->where('entity_id', (string) $created['id'])->count());
 
@@ -64,13 +64,13 @@ class AdminHttpTest extends TestCase
     public function test_role_permission_sets_can_be_read_and_replaced(): void
     {
         $roles = $this->getJson('/api/admin/roles')->assertOk()->json();
-        $cashier = collect($roles)->firstWhere('name', 'Cashier');
-        $this->assertContains('sale.create', $cashier['permissions']);
+        $pharmacist = collect($roles)->firstWhere('name', 'Pharmacist');
+        $this->assertContains('sale.create', $pharmacist['permissions']);
 
         $this->getJson('/api/admin/permissions')->assertOk()->assertJsonFragment(['group' => 'sale']);
 
-        $this->patchJson("/api/admin/roles/{$cashier['id']}", ['permissions' => ['sale.view', 'product.view']])->assertOk()->assertJsonPath('permissions', ['product.view', 'sale.view']);
-        $this->patchJson("/api/admin/roles/{$cashier['id']}", ['permissions' => ['no.such.permission']])->assertStatus(422);
+        $this->patchJson("/api/admin/roles/{$pharmacist['id']}", ['permissions' => ['sale.view', 'product.view']])->assertOk()->assertJsonPath('permissions', ['product.view', 'sale.view']);
+        $this->patchJson("/api/admin/roles/{$pharmacist['id']}", ['permissions' => ['no.such.permission']])->assertStatus(422);
         $this->assertSame(1, AuditLog::where('action', 'ROLE_PERMISSIONS_CHANGED')->count());
 
         $this->postJson('/api/admin/roles', ['name' => 'Dispatch Clerk', 'permissions' => ['warehouse.dispatch']])->assertCreated()->assertJsonPath('permissions.0', 'warehouse.dispatch');

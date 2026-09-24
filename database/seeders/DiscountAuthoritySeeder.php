@@ -15,11 +15,12 @@ class DiscountAuthoritySeeder extends Seeder
      * values. Roles not listed may not discount at all.
      */
     public const AUTHORITY = [
-        //  role                   line %   header %  may override floor
-        'Cashier' => ['2.000', '0.000', false],
-        'Senior Cashier' => ['5.000', '2.000', false],
-        'Wholesale Rep' => ['8.000', '5.000', false],
-        'Operations Manager' => ['15.000', '10.000', true],
+        // Governance 2026-09-24: the standard role set is small, so only
+        // the two selling roles carry discount authority. The Director (the
+        // institution owner) may discount freely; the Pharmacist within a
+        // modest band. Custom roles can be granted authority in the app.
+        //  role            line %     header %   may override floor
+        'Pharmacist' => ['5.000', '2.000', false],
         'Director' => ['100.000', '100.000', true],
     ];
 

@@ -18,7 +18,9 @@ class Branch extends Model
     // branch, including new ones, because Spatie's "teams" pivot requires a
     // real (non-null) branch_id on every assignment — see Part 0.7's
     // "organisation -> branch -> store" structure and 18.3's role list.
-    public const GLOBAL_ROLES = ['Director', 'System Administrator', 'Auditor'];
+    // Governance 2026-09-24: only the Director spans branches by right;
+    // every other standard role is assigned per branch.
+    public const GLOBAL_ROLES = ['Director'];
 
     protected $fillable = [
         'organisation_id', 'code', 'name', 'address', 'county',

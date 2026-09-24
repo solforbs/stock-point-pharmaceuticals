@@ -30,7 +30,15 @@ class CreateAdminUser extends Command
 {
     public const SYSTEM_ADMINISTRATOR = 'System Administrator';
 
-    public const SUPER_ADMINISTRATOR = 'Super Administrator';
+    /**
+     * The institution's owner role. Historically named "Super Administrator";
+     * since the governance decision of 2026-09-24 the owner of an institution
+     * is its Director (all institution permissions), while platform-level
+     * power lives only on users.is_platform_admin accounts. Everything that
+     * provisions an owner (tenant signup, this command's --full-access)
+     * reads this constant.
+     */
+    public const SUPER_ADMINISTRATOR = 'Director';
 
     protected $signature = 'user:create-admin
         {email : The email address the administrator signs in with}
