@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Api;
 
+use App\Events\PatientFlowUpdated;
 use App\Models\AuditLog;
 use App\Models\Patient;
+use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsHospitalWorld;
 use Tests\TestCase;
@@ -94,6 +96,23 @@ class HospitalFlowTest extends TestCase
         foreach (['PATIENT_REGISTERED', 'ENCOUNTER_CREATED', 'CONSULTATION_SAVED', 'DIAGNOSIS_RECORDED', 'ENCOUNTER_COMPLETED'] as $action) {
             $this->assertTrue(AuditLog::where('action', $action)->exists(), "missing audit action {$action}");
         }
+    }
+
+    public function test_every_stage_change_broadcasts_a_patient_flow_event(): void
+    {
+        Event::fake([PatientFlowUpdated::class]);
+
+        $patient = $this->registerPatient();
+        $encounter = $this->openEncounter($patient['id']);
+        $this->postJson("/api/hospital/encounters/{$encounter['id']}/start-consultation")->assertOk();
+        $this->postJson("/api/hospital/encounters/{$encounter['id']}/complete")->assertOk();
+
+        // Opened (WAITING), consultation started, completed: three stages,
+        // three broadcasts on the institution's healthcare channel.
+        Event::assertDispatchedTimes(PatientFlowUpdated::class, 3);
+        Event::assertDispatched(PatientFlowUpdated::class, fn (PatientFlowUpdated $e) => $e->kind === 'ENCOUNTER'
+            && $e->payload['status'] === 'COMPLETED'
+            && $e->broadcastOn()[0]->name === 'private-healthcare.'.$this->org->id);
     }
 
     public function test_a_referral_is_a_valid_way_out_of_a_consultation(): void

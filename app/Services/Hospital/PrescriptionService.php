@@ -2,6 +2,7 @@
 
 namespace App\Services\Hospital;
 
+use App\Events\PatientFlowUpdated;
 use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\Encounter;
@@ -83,6 +84,8 @@ class PrescriptionService
                     'instructions' => $line['instructions'] ?? null,
                 ]);
             }
+
+            event(PatientFlowUpdated::forPrescription($prescription));
 
             AuditLog::record('PRESCRIPTION_CREATED', 'prescription', $prescription->id, [
                 'user_id' => $prescriber->id,
@@ -173,6 +176,8 @@ class PrescriptionService
                 'dispensed_at' => now(),
             ]);
 
+            event(PatientFlowUpdated::forPrescription($prescription));
+
             AuditLog::record('PRESCRIPTION_DISPENSED', 'prescription', $prescription->id, [
                 'user_id' => $pharmacist->id,
                 'reference' => $prescription->rx_no,
@@ -190,6 +195,7 @@ class PrescriptionService
         }
 
         $prescription->update(['status' => 'CANCELLED', 'cancelled_by' => $user->id, 'cancelled_at' => now()]);
+        event(PatientFlowUpdated::forPrescription($prescription));
 
         AuditLog::record('PRESCRIPTION_CANCELLED', 'prescription', $prescription->id, [
             'user_id' => $user->id,

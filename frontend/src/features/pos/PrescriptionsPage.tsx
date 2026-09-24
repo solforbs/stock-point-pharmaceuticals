@@ -10,6 +10,7 @@ import { Pagination } from '../../components/ui/Pagination'
 import { Button, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { InlineError, NoAccess } from '../../components/ui/States'
+import { usePatientFlowRealtime } from '../../hooks/usePatientFlowRealtime'
 import { apiGet, apiPost, newIdempotencyKey, withIdempotency } from '../../lib/api'
 import { formatDateTime, titleCase } from '../../lib/format'
 import { usePermissions } from '../../lib/permissions'
@@ -25,6 +26,7 @@ import { patientAge, patientName } from '../hospital/api'
  * pharmacy's own machinery.
  */
 export default function PrescriptionsPage() {
+  usePatientFlowRealtime()
   const perms = usePermissions()
   const canView = perms.has('prescription.view')
 

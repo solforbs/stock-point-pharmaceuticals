@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Services\Modules\ModuleCatalogue;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
 
@@ -12,6 +13,16 @@ use Illuminate\Support\Facades\DB;
 
 /** A person's own channel: direct messages and their alerts. */
 Broadcast::channel('users.{id}', fn (User $user, string $id) => (int) $user->id === (int) $id);
+
+/**
+ * Patient-flow stage changes across the institution's healthcare modules.
+ * Anyone in the organisation who can enter at least one module may listen;
+ * the payload carries stages and identifiers only, never clinical content.
+ */
+Broadcast::channel('healthcare.{organisationId}', function (User $user, string $organisationId) {
+    return (string) $user->organisation_id === $organisationId
+        && ModuleCatalogue::accessibleTo($user) !== [];
+});
 
 /**
  * Everyone working in one branch. Only users who hold a role there may

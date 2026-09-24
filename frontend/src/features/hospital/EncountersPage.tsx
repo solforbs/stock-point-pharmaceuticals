@@ -12,6 +12,7 @@ import { Button, Field, FormSection, Input, Select, Textarea } from '../../compo
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { InlineError, NoAccess } from '../../components/ui/States'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
+import { usePatientFlowRealtime } from '../../hooks/usePatientFlowRealtime'
 import { apiPost } from '../../lib/api'
 import { formatDateTime, titleCase } from '../../lib/format'
 import { usePermissions } from '../../lib/permissions'
@@ -28,6 +29,7 @@ const STATUSES = ['OPEN', 'REGISTERED', 'WAITING', 'IN_CONSULTATION', 'AWAITING_
  * step or a prescription.
  */
 export default function EncountersPage() {
+  usePatientFlowRealtime()
   const perms = usePermissions()
   const canSee = perms.has('hospital.encounter.manage') || perms.has('hospital.consultation.manage') || perms.has('hospital.patient.view')
 

@@ -10,6 +10,7 @@ import { Pagination } from '../../components/ui/Pagination'
 import { Button, DescriptionList, Field, Input, Select, Textarea } from '../../components/ui/primitives'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { InlineError, NoAccess } from '../../components/ui/States'
+import { usePatientFlowRealtime } from '../../hooks/usePatientFlowRealtime'
 import { apiGet, apiPost } from '../../lib/api'
 import { formatDateTime, titleCase } from '../../lib/format'
 import { usePermissions } from '../../lib/permissions'
@@ -25,6 +26,7 @@ const STATUSES = ['PENDING', 'ACCEPTED', 'SAMPLE_COLLECTED', 'PROCESSING', 'COMP
  * own permission and records who did it, when.
  */
 export default function LabOrdersPage() {
+  usePatientFlowRealtime()
   const perms = usePermissions()
   const canView = perms.has('laboratory.view')
 

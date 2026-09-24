@@ -7,11 +7,13 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { NoAccess } from '../../components/ui/States'
 import { formatDateTime, titleCase } from '../../lib/format'
 import { usePermission } from '../../lib/permissions'
+import { usePatientFlowRealtime } from '../../hooks/usePatientFlowRealtime'
 import type { Encounter } from '../../lib/types'
 import { patientAge, patientName, useEncounters } from './api'
 
 /** The hospital module's landing page: today's queue at a glance. */
 export default function HospitalDashboardPage() {
+  usePatientFlowRealtime()
   const canView = usePermission('hospital.view')
   const open = useEncounters({ status: 'OPEN', per_page: 100 }, canView)
 

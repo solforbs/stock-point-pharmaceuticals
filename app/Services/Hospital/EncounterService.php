@@ -2,6 +2,7 @@
 
 namespace App\Services\Hospital;
 
+use App\Events\PatientFlowUpdated;
 use App\Models\AuditLog;
 use App\Models\Encounter;
 use App\Models\EncounterCharge;
@@ -68,6 +69,8 @@ class EncounterService
                 ]);
             }
 
+            event(PatientFlowUpdated::forEncounter($encounter->setRelation('patient', $patient)));
+
             AuditLog::record('ENCOUNTER_CREATED', 'encounter', $encounter->id, [
                 'user_id' => $user->id,
                 'reference' => $encounter->encounter_no,
@@ -87,6 +90,7 @@ class EncounterService
         $this->assertStatus($encounter, ['WAITING', 'REGISTERED', 'AWAITING_RESULTS']);
 
         $encounter->update(['status' => 'IN_CONSULTATION', 'attending_clinician_id' => $clinician->id]);
+        event(PatientFlowUpdated::forEncounter($encounter));
 
         AuditLog::record('ENCOUNTER_CONSULTATION_STARTED', 'encounter', $encounter->id, [
             'user_id' => $clinician->id,
@@ -101,6 +105,7 @@ class EncounterService
         $this->assertStatus($encounter, Encounter::OPEN_STATUSES);
 
         $encounter->update(['status' => 'COMPLETED', 'completed_at' => now()]);
+        event(PatientFlowUpdated::forEncounter($encounter));
 
         AuditLog::record('ENCOUNTER_COMPLETED', 'encounter', $encounter->id, [
             'user_id' => $user->id,
@@ -115,6 +120,7 @@ class EncounterService
         $this->assertStatus($encounter, Encounter::OPEN_STATUSES);
 
         $encounter->update(['status' => 'CANCELLED', 'completed_at' => now()]);
+        event(PatientFlowUpdated::forEncounter($encounter));
 
         AuditLog::record('ENCOUNTER_CANCELLED', 'encounter', $encounter->id, [
             'user_id' => $user->id,

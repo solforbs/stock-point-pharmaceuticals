@@ -2,6 +2,7 @@
 
 namespace App\Services\Laboratory;
 
+use App\Events\PatientFlowUpdated;
 use App\Models\AuditLog;
 use App\Models\Encounter;
 use App\Models\EncounterCharge;
@@ -87,7 +88,9 @@ class LabOrderService
 
             if ($encounter->status === 'IN_CONSULTATION') {
                 $encounter->update(['status' => 'AWAITING_RESULTS']);
+                event(PatientFlowUpdated::forEncounter($encounter));
             }
+            event(PatientFlowUpdated::forLabOrder($order));
 
             AuditLog::record('LAB_ORDER_CREATED', 'lab_order', $order->id, [
                 'user_id' => $orderedBy->id,
@@ -178,6 +181,7 @@ class LabOrderService
             // The clinician picks the visit back up once results are in.
             if ($order->encounter->status === 'AWAITING_RESULTS') {
                 $order->encounter->update(['status' => 'WAITING']);
+                event(PatientFlowUpdated::forEncounter($order->encounter));
             }
 
             return $order->fresh(['tests']);
@@ -211,6 +215,7 @@ class LabOrderService
 
         $before = $order->status;
         $order->update(['status' => $rule['to']]);
+        event(PatientFlowUpdated::forLabOrder($order));
 
         AuditLog::record('LAB_ORDER_'.strtoupper((string) preg_replace('/(?<!^)[A-Z]/', '_$0', $action)), 'lab_order', $order->id, [
             'user_id' => $user->id,

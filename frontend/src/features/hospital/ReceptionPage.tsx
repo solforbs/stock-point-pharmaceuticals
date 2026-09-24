@@ -8,6 +8,7 @@ import { Page, PageHeader } from '../../components/ui/PageHeader'
 import { DrawerFooter, Field, FormSection, Input, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
 import { EmptyState, InlineError, NoAccess } from '../../components/ui/States'
 import { apiPost } from '../../lib/api'
+import { usePatientFlowRealtime } from '../../hooks/usePatientFlowRealtime'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Encounter, Patient } from '../../lib/types'
@@ -19,6 +20,7 @@ import { PatientFormDrawer } from './PatientFormDrawer'
  * consultation fee, and the patient lands in the clinician's queue.
  */
 export default function ReceptionPage() {
+  usePatientFlowRealtime()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const canManage = usePermission('hospital.encounter.manage')
