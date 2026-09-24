@@ -35,6 +35,9 @@ class TransactionPurgeService
      * @var list<array{table: string, label: string, time: string, scope: 'branch'|'organisation'|'store'|'from_store'}>
      */
     private const DOCUMENTS = [
+        ['table' => 'lab_orders', 'label' => 'Lab orders', 'time' => 'created_at', 'scope' => 'organisation'],
+        ['table' => 'prescriptions', 'label' => 'Prescriptions', 'time' => 'created_at', 'scope' => 'organisation'],
+        ['table' => 'encounters', 'label' => 'Encounters', 'time' => 'created_at', 'scope' => 'organisation'],
         ['table' => 'delivery_notes', 'label' => 'Delivery notes', 'time' => 'created_at', 'scope' => 'branch'],
         ['table' => 'picking_lists', 'label' => 'Pick lists', 'time' => 'created_at', 'scope' => 'branch'],
         ['table' => 'sales_orders', 'label' => 'Sales orders', 'time' => 'created_at', 'scope' => 'branch'],
