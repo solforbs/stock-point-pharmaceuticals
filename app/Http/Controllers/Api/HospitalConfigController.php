@@ -33,7 +33,7 @@ class HospitalConfigController extends ApiController
             Facility::query()
                 ->accessibleTo($request->user())
                 ->when($request->boolean('hospital_only'), fn ($q) => $q->where('offers_hospital', true))
-                ->with(['hospitalLevel:id,name', 'pharmacyBranch:id,code,name', 'departments' => fn ($q) => $q->where('is_active', true)->orderBy('name')])
+                ->with(['hospitalLevel:id,name', 'pharmacyBranch:id,code,name', 'staff:users.id,name,email', 'departments' => fn ($q) => $q->where('is_active', true)->orderBy('name')])
                 ->orderBy('name')->get()
         );
     }
@@ -94,6 +94,17 @@ class HospitalConfigController extends ApiController
         ]));
 
         return response()->json($record);
+    }
+
+    /** The institution's active accounts, for the staff assignment picker. */
+    public function staffOptions(Request $request): JsonResponse
+    {
+        $this->requirePermission($request, 'hospital.manage');
+
+        return response()->json(
+            User::where('organisation_id', $this->organisationId($request))
+                ->where('is_active', true)->orderBy('name')->get(['id', 'name', 'email'])
+        );
     }
 
     /** Assign or remove staff: the facility-level access list. */

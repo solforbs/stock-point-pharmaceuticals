@@ -8,11 +8,11 @@ import { Badge } from '../../components/ui/Badge'
 import { Button, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select } from '../../components/ui/primitives'
 import { InlineError, NoAccess } from '../../components/ui/States'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
-import { apiPatch, apiPost } from '../../lib/api'
+import { apiPatch, apiPost, apiPut } from '../../lib/api'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Facility } from '../../lib/types'
-import { useFacilities, useHospitalLevels } from './api'
+import { useFacilities, useHospitalLevels, useStaffOptions } from './api'
 
 /**
  * Facilities and their service mix. A facility can offer any combination of
@@ -104,6 +104,8 @@ function FacilityDrawer({ open, facility, onClose }: { open: boolean; facility: 
   const levels = useHospitalLevels(open)
   const [form, setForm] = useState<Form>(EMPTY)
   const [newDepartment, setNewDepartment] = useState('')
+  const staffOptions = useStaffOptions(open && !!facility)
+  const [staffIds, setStaffIds] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     if (!open) return
@@ -116,6 +118,7 @@ function FacilityDrawer({ open, facility, onClose }: { open: boolean; facility: 
       is_active: facility.is_active,
     } : EMPTY)
     setNewDepartment('')
+    setStaffIds(new Set((facility?.staff ?? []).map((s) => s.id)))
   }, [open, facility])
 
   const save = useMutation({
@@ -145,6 +148,15 @@ function FacilityDrawer({ open, facility, onClose }: { open: boolean; facility: 
     mutationFn: () => apiPost(`/api/hospital/facilities/${facility!.id}/departments`, { name: newDepartment.trim() }),
     onSuccess: () => {
       setNewDepartment('')
+      queryClient.invalidateQueries({ queryKey: ['hospital', 'facilities'] })
+    },
+  })
+
+  const saveStaff = useMutation({
+    meta: { silent: true },
+    mutationFn: () => apiPut(`/api/hospital/facilities/${facility!.id}/staff`, { user_ids: [...staffIds] }),
+    onSuccess: () => {
+      toast.success('Staff assignment saved')
       queryClient.invalidateQueries({ queryKey: ['hospital', 'facilities'] })
     },
   })
@@ -231,6 +243,42 @@ function FacilityDrawer({ open, facility, onClose }: { open: boolean; facility: 
                 <Button variant="secondary" onClick={() => addDepartment.mutate()} disabled={!newDepartment.trim() || addDepartment.isPending}>Add</Button>
               </div>
               {addDepartment.isError && <InlineError error={addDepartment.error} />}
+            </div>
+          </FormSection>
+        )}
+
+        {facility && (
+          <FormSection
+            title="Staff assignment"
+            description="Assign nobody and every hospital user sees this facility; assign anyone and only assigned staff (plus managers) see it."
+          >
+            <div className="space-y-2">
+              <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+                {(staffOptions.data ?? []).map((u) => (
+                  <label key={u.id} className="flex items-center gap-3 px-3.5 py-2 cursor-pointer hover:bg-slate-50 text-sm">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-slate-300 text-blue-600"
+                      checked={staffIds.has(u.id)}
+                      onChange={(e) => setStaffIds((prev) => {
+                        const next = new Set(prev)
+                        if (e.target.checked) next.add(u.id)
+                        else next.delete(u.id)
+                        return next
+                      })}
+                    />
+                    <span className="font-medium text-slate-900">{u.name}</span>
+                    <span className="text-xs text-slate-500 ml-auto">{u.email}</span>
+                  </label>
+                ))}
+                {(staffOptions.data ?? []).length === 0 && <div className="p-3 text-sm text-slate-500">No active accounts found.</div>}
+              </div>
+              <div className="flex justify-end">
+                <Button variant="secondary" size="sm" onClick={() => saveStaff.mutate()} disabled={saveStaff.isPending}>
+                  {saveStaff.isPending ? 'Saving…' : 'Save staff assignment'}
+                </Button>
+              </div>
+              {saveStaff.isError && <InlineError error={saveStaff.error} />}
             </div>
           </FormSection>
         )}

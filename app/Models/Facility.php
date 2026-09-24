@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The umbrella for the healthcare service modules. A facility offers any
@@ -58,12 +59,19 @@ class Facility extends Model
     }
 
     /**
-     * Facility-level access: users see only facilities they are assigned to,
-     * unless they hold the module's manage permission (facility admin).
+     * Facility-level access: once a user is assigned to facilities they see
+     * only those; a user assigned to none sees them all, so a small
+     * institution works without ever touching assignments. Module managers
+     * always see everything.
      */
     public function scopeAccessibleTo(Builder $query, User $user): Builder
     {
         if ($user->can('hospital.manage') || $user->can('laboratory.manage')) {
+            return $query;
+        }
+
+        $assigned = DB::table('facility_user')->where('user_id', $user->id)->exists();
+        if (! $assigned) {
             return $query;
         }
 

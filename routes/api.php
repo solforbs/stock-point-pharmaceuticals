@@ -522,6 +522,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access', 'module.ac
         Route::post('/facilities/{facility}/departments', [HospitalConfigController::class, 'storeDepartment'])->whereUuid('facility');
         Route::patch('/departments/{department}', [HospitalConfigController::class, 'updateDepartment'])->whereUuid('department');
         Route::put('/facilities/{facility}/staff', [HospitalConfigController::class, 'syncStaff'])->whereUuid('facility');
+        Route::get('/staff-options', [HospitalConfigController::class, 'staffOptions']);
 
         Route::get('/patients', [PatientController::class, 'index']);
         Route::post('/patients', [PatientController::class, 'store']);

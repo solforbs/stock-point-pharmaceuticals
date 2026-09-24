@@ -56,6 +56,15 @@ export function useOrderableLabTests(enabled = true) {
   })
 }
 
+export function useStaffOptions(enabled = true) {
+  return useQuery({
+    queryKey: ['hospital', 'staff-options'],
+    queryFn: () => apiGet<{ id: number; name: string; email: string }[]>('/api/hospital/staff-options'),
+    enabled,
+    staleTime: 60_000,
+  })
+}
+
 export function patientName(p?: Patient | null): string {
   return p ? `${p.first_name} ${p.last_name}`.trim() : '—'
 }
