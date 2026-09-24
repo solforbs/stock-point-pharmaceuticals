@@ -36,6 +36,7 @@ export const NAV_ITEMS: NavItem[] = [
     key: 'sell', label: 'Sales', icon: ShoppingCart, path: '/sell',
     children: [
       { key: 'pos', label: 'POS', path: '/sell/pos' },
+      { key: 'prescriptions', label: 'Prescriptions', path: '/sell/prescriptions' },
       { key: 'quotations', label: 'Quotations', path: '/sell/quotations' },
       { key: 'sales-orders', label: 'Sales Orders', path: '/sell/sales-orders' },
       { key: 'invoices', label: 'Invoices', path: '/sell/invoices' },

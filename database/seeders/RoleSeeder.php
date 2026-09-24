@@ -97,6 +97,47 @@ class RoleSeeder extends Seeder
             'licence.view', 'licence.manage', 'document.manage',
             'training.manage',
         ],
+        // ——— Healthcare platform roles (hospital + laboratory modules). ———
+        // These deliberately carry no pharmacy catalogue permissions, so a
+        // clinician or lab tech never sees the Pharmacy module. `leave.request`
+        // is also left off for now because it currently counts as a pharmacy
+        // permission and would drag the whole Pharmacy module into view.
+        'Hospital Administrator' => [
+            'hospital.view', 'hospital.manage',
+            'hospital.patient.view', 'hospital.patient.manage',
+            'hospital.encounter.manage', 'hospital.consultation.manage',
+            'hospital.diagnosis.manage', 'hospital.referral.manage',
+            'hospital.prescription.create',
+            'laboratory.order.create', 'laboratory.order.view',
+        ],
+        'Receptionist' => [
+            'hospital.view', 'hospital.patient.view', 'hospital.patient.manage',
+            'hospital.encounter.manage',
+        ],
+        'Clinician' => [
+            'hospital.view', 'hospital.patient.view',
+            'hospital.encounter.manage', 'hospital.consultation.manage',
+            'hospital.diagnosis.manage', 'hospital.referral.manage',
+            'hospital.prescription.create',
+            'laboratory.order.create', 'laboratory.order.view',
+        ],
+        'Nurse' => [
+            'hospital.view', 'hospital.patient.view', 'hospital.consultation.manage',
+            'laboratory.order.view',
+        ],
+        'Laboratory Technician' => [
+            'laboratory.view',
+            'laboratory.order.accept', 'laboratory.sample.collect',
+            'laboratory.result.enter',
+        ],
+        'Laboratory Manager' => [
+            'laboratory.view', 'laboratory.manage',
+            'laboratory.category.manage', 'laboratory.test.manage',
+            'laboratory.order.accept', 'laboratory.order.cancel',
+            'laboratory.sample.collect',
+            'laboratory.result.enter', 'laboratory.result.approve',
+            'laboratory.report.view',
+        ],
     ];
 
     /** Every institution gets its own copy of the standard roles. */

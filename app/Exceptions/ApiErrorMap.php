@@ -8,12 +8,15 @@ use App\Services\Finance\InvalidPaymentStatusException;
 use App\Services\Finance\NoOpenPeriodException;
 use App\Services\Finance\PaymentPeriodClosedException;
 use App\Services\Finance\UnbalancedJournalException;
+use App\Services\Hospital\InvalidEncounterStatusException;
+use App\Services\Hospital\InvalidPrescriptionStatusException;
 use App\Services\Inventory\BatchNotSellableException;
 use App\Services\Inventory\InsufficientStockException;
 use App\Services\Inventory\InvalidBatchTransitionException;
 use App\Services\Inventory\InvalidCountStatusException;
 use App\Services\Inventory\InvalidTransferStatusException;
 use App\Services\Inventory\SecondApproverRequiredException;
+use App\Services\Laboratory\InvalidLabOrderStatusException;
 use App\Services\Payroll\InvalidPayrollStatusException;
 use App\Services\Pricing\PriceChangedException;
 use App\Services\Pricing\QuoteExpiredException;
@@ -87,7 +90,10 @@ class ApiErrorMap
             $e instanceof InvalidExcursionStatusException,
             $e instanceof InvalidWasteStatusException,
             $e instanceof InvalidReturnStatusException,
-            $e instanceof InvalidPayrollStatusException => ['INVALID_STATE', 409, []],
+            $e instanceof InvalidPayrollStatusException,
+            $e instanceof InvalidEncounterStatusException,
+            $e instanceof InvalidLabOrderStatusException,
+            $e instanceof InvalidPrescriptionStatusException => ['INVALID_STATE', 409, []],
             $e instanceof AwardJustificationRequiredException => ['JUSTIFICATION_REQUIRED', 422, []],
             $e instanceof SecondApproverRequiredException => ['SECOND_APPROVER_REQUIRED', 422, ['variance_value' => $e->varianceValue, 'threshold' => $e->threshold]],
             $e instanceof StoreNotSellableException => ['STORE_NOT_SELLABLE', 422, ['store' => $e->storeCode]],

@@ -1,8 +1,9 @@
-import { Activity, ChevronUp, ChevronsLeft, ChevronsRight, Pill, X } from 'lucide-react'
+import { Activity, ChevronUp, ChevronsLeft, ChevronsRight, LayoutGrid, Pill, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
+import { HOSPITAL_NAV, LABORATORY_NAV, moduleForPath, moduleInfo } from '../lib/modules'
 import { NAV_ITEMS, withPlatformItems, type NavItem } from '../lib/navigation'
 import { SyncStatusChip } from './SyncStatusChip'
 import { SidebarBranchSelector } from './navigation/SidebarBranchSelector'
@@ -40,8 +41,20 @@ function SidebarInner({
   const location = useLocation()
   const { data: user } = useCurrentUser()
 
+  // The sidebar shows the navigation of whichever module the URL is inside.
+  // The pharmacy keeps its existing eleven workspaces untouched; hospital and
+  // laboratory get their own, and a multi-module user can switch modules.
+  const module = moduleForPath(location.pathname)
+  const sections: { title?: string; items: NavItem[] }[] =
+    module === 'HOSPITAL'
+      ? [{ title: 'Hospital', items: HOSPITAL_NAV }]
+      : module === 'LABORATORY'
+        ? [{ title: 'Laboratory', items: LABORATORY_NAV }]
+        : SECTIONS
+  const canSwitchModules = (user?.modules?.length ?? 0) > 1
+
   const activeGroupKey =
-    NAV_ITEMS.find((item) => item.children?.length && location.pathname.startsWith(item.path))?.key ?? null
+    sections.flatMap((s) => s.items).find((item) => item.children?.length && location.pathname.startsWith(item.path))?.key ?? null
   const [openKey, setOpenKey] = useState<string | null>(activeGroupKey)
   const [seenGroupKey, setSeenGroupKey] = useState<string | null>(activeGroupKey)
 
@@ -95,7 +108,22 @@ function SidebarInner({
       </header>
 
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-2 nav-scroll">
-        {SECTIONS.map((sec) => ({ ...sec, items: withPlatformItems(sec.items, !!user?.is_platform_admin) })).map((sec, idx) => (
+        {canSwitchModules && (
+          <NavLink
+            to="/select-module"
+            onClick={onLinkClick}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+            title="Switch module"
+          >
+            <LayoutGrid size={16} className="shrink-0" />
+            {!collapsed && (
+              <span className="truncate">
+                {moduleInfo(module).label} · <span className="text-slate-400 font-medium">switch</span>
+              </span>
+            )}
+          </NavLink>
+        )}
+        {sections.map((sec) => ({ ...sec, items: withPlatformItems(sec.items, !!user?.is_platform_admin) })).map((sec, idx) => (
           <div key={sec.title ?? idx} className="space-y-0.5">
             {!collapsed && sec.title && (
               <div className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">

@@ -43,6 +43,8 @@ class DatabaseSeeder extends Seeder
             UnitOfMeasureSeeder::class,
             DosageFormSeeder::class,
             StorageConditionSeeder::class,
+            HospitalLevelSeeder::class,
+            LabTestCategorySeeder::class,
             MrlPricelistSeeder::class,
             MrlPricelistRemainderSeeder::class,
             ProductTaxDefaultSeeder::class,

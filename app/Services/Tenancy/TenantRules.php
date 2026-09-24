@@ -17,10 +17,11 @@ class TenantRules
     private const OWNED = [
         'branches', 'products', 'product_batches', 'suppliers', 'customers', 'customer_tiers', 'tax_codes',
         'price_lists', 'recalls', 'sales', 'employees', 'leave_types', 'chart_of_accounts',
+        'facilities', 'departments', 'patients', 'encounters', 'lab_tests', 'lab_orders', 'prescriptions',
     ];
 
     /** Reference lists: the shared rows plus the institution's own. */
-    private const SHARED = ['units_of_measure', 'dosage_forms', 'storage_conditions', 'product_categories', 'manufacturers'];
+    private const SHARED = ['units_of_measure', 'dosage_forms', 'storage_conditions', 'product_categories', 'manufacturers', 'hospital_levels', 'lab_test_categories'];
 
     /** Tables owned through a branch. */
     private const VIA_BRANCH = ['stores', 'purchase_orders'];

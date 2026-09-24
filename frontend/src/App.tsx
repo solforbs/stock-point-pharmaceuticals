@@ -17,6 +17,8 @@ const PricingPage = lazy(() => import('./features/site/PricingPage'))
 const AboutPage = lazy(() => import('./features/site/AboutPage'))
 const ContactPage = lazy(() => import('./features/site/ContactPage'))
 const PlatformPage = lazy(() => import('./features/platform/PlatformPage'))
+const ModuleSelectPage = lazy(() => import('./features/platform/ModuleSelectPage'))
+const NoAccessPage = lazy(() => import('./features/platform/ModuleSelectPage').then((m) => ({ default: m.NoAccessPage })))
 const BillingPage = lazy(() => import('./features/billing/BillingPage'))
 const BillingCallbackPage = lazy(() => import('./features/billing/BillingCallbackPage'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -109,6 +111,17 @@ const AlertsPage = lazy(() => import('./features/admin/AlertsPage'))
 const DeploymentsPage = lazy(() => import('./features/admin/DeploymentsPage'))
 const PayrollBandsPage = lazy(() => import('./features/admin/PayrollBandsPage'))
 const PricingRulesPage = lazy(() => import('./features/admin/pricing/PricingRulesPage'))
+
+// Healthcare platform — Hospital & Laboratory modules, plus the pharmacy's
+// prescriptions queue.
+const HospitalDashboardPage = lazy(() => import('./features/hospital/HospitalDashboardPage'))
+const ReceptionPage = lazy(() => import('./features/hospital/ReceptionPage'))
+const PatientsPage = lazy(() => import('./features/hospital/PatientsPage'))
+const EncountersPage = lazy(() => import('./features/hospital/EncountersPage'))
+const HospitalSetupPage = lazy(() => import('./features/hospital/HospitalSetupPage'))
+const LabOrdersPage = lazy(() => import('./features/laboratory/LabOrdersPage'))
+const LabTestsPage = lazy(() => import('./features/laboratory/LabTestsPage'))
+const PrescriptionsPage = lazy(() => import('./features/pos/PrescriptionsPage'))
 import { NAV_ITEMS } from './lib/navigation'
 
 function App() {
@@ -136,6 +149,10 @@ function App() {
           {/* The platform console has its own light frame: no institution chrome. */}
           <Route path="/platform" element={<ProtectedRoute><PlatformPage /></ProtectedRoute>} />
 
+          {/* The neutral module splash (2+ modules) and the no-access stop. */}
+          <Route path="/select-module" element={<ProtectedRoute><ModuleSelectPage /></ProtectedRoute>} />
+          <Route path="/no-access" element={<ProtectedRoute><NoAccessPage /></ProtectedRoute>} />
+
           <Route
             element={
               <ProtectedRoute>
@@ -145,7 +162,21 @@ function App() {
           >
             <Route path="/dashboard" element={<Dashboard />} />
 
+            {/* Hospital module */}
+            <Route path="/hospital" element={<Navigate to="/hospital/dashboard" replace />} />
+            <Route path="/hospital/dashboard" element={<HospitalDashboardPage />} />
+            <Route path="/hospital/reception" element={<ReceptionPage />} />
+            <Route path="/hospital/patients" element={<PatientsPage />} />
+            <Route path="/hospital/encounters" element={<EncountersPage />} />
+            <Route path="/hospital/setup" element={<HospitalSetupPage />} />
+
+            {/* Laboratory module */}
+            <Route path="/laboratory" element={<Navigate to="/laboratory/orders" replace />} />
+            <Route path="/laboratory/orders" element={<LabOrdersPage />} />
+            <Route path="/laboratory/tests" element={<LabTestsPage />} />
+
             <Route path="/sell/pos" element={<PosPage />} />
+            <Route path="/sell/prescriptions" element={<PrescriptionsPage />} />
             <Route path="/sell/quotations" element={<QuotationsPage />} />
             <Route path="/sell/sales-orders" element={<SalesOrdersPage />} />
             <Route path="/sell/invoices" element={<InvoicesPage />} />
