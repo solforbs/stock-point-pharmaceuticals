@@ -13,7 +13,8 @@ export function Modal({
   onClose: () => void
   title: ReactNode
   children: ReactNode
-  width?: number
+  /** Pixels, or any CSS length such as "75vw". */
+  width?: number | string
   footer?: ReactNode
 }) {
   useEffect(() => {

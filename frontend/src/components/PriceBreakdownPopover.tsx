@@ -44,6 +44,7 @@ export function PriceBreakdownPopover({ line, showCost }: { line: QuoteLine; sho
           <table className="w-full tabular mb-2">
             <tbody>
               <Row label="List price" value={formatMoney(line.list_price)} />
+              {line.landing_price && line.price_source === 'TILL_PRICE' && <Row label="Landing price" value={formatMoney(line.landing_price)} />}
               <Row label={`Break price (${line.price_source})`} value={formatMoney(line.break_price)} />
               <Row label={`Discount ${formatPct(line.discount_pct)}${line.discount_capped_by ? ` · capped by ${line.discount_capped_by}` : ''}`} value={`−${formatMoney(line.discount_amount)}`} />
               <Row label="Unit price" value={formatMoney(line.unit_price)} strong />

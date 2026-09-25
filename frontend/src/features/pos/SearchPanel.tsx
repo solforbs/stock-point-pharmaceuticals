@@ -8,8 +8,9 @@ import { findByBarcode, searchPack } from '../../lib/offline/pack'
 import { formatDate } from '../../lib/format'
 import { formatMoney, formatQty } from '../../lib/money'
 import type { Paginated, Product, StockStateRow } from '../../lib/types'
-import { useCartStore } from './cartStore'
+import { useCartStore, type AddProductOptions } from './cartStore'
 import { packToProduct } from './offlineQuote'
+import { PosAddProductDialog } from './PosAddProductDialog'
 
 export function SearchPanel({
   inputRef,
@@ -30,6 +31,7 @@ export function SearchPanel({
   const [scanError, setScanError] = useState<string | null>(null)
   const [recent, setRecent] = useState<Product[]>([])
   const [catFilter, setCatFilter] = useState<string>('ALL')
+  const [pending, setPending] = useState<Product | null>(null)
 
   const storeId = useCartStore((s) => s.storeId)
   const addProduct = useCartStore((s) => s.addProduct)
@@ -68,8 +70,20 @@ export function SearchPanel({
     ? new Map(offlineResults.map((p) => [p.id, { product_id: p.id, free_to_sell: localStock?.get(p.id) ?? p.stock?.free_to_sell ?? '0', nearest_expiry: null }]))
     : new Map((stock.data?.data ?? []).map((row) => [row.product_id, row]))
 
+  /** Every add opens the product dialog, where the quantity and selling price are settled. */
   function add(product: Product) {
-    const lineRef = addProduct(product)
+    if (posted) return
+    if (!(product.uoms ?? []).some((u) => u.is_sales || u.is_base)) {
+      setScanError(`${product.name} has no sales unit configured.`)
+      return
+    }
+    setScanError(null)
+    setPending(product)
+  }
+
+  function confirmAdd(product: Product, uomId: string, options: AddProductOptions) {
+    const lineRef = addProduct(product, uomId, options)
+    setPending(null)
     if (!lineRef) {
       setScanError(`${product.name} has no sales unit configured.`)
       return
@@ -77,7 +91,6 @@ export function SearchPanel({
     setRecent((prev) => [product, ...prev.filter((p) => p.id !== product.id)].slice(0, 5))
     setQuery('')
     setHighlight(-1)
-    setScanError(null)
     onAdded(lineRef)
   }
 
@@ -292,6 +305,16 @@ export function SearchPanel({
           </div>
         )}
       </div>
+
+      <PosAddProductDialog
+        product={pending}
+        offline={offline}
+        onClose={() => {
+          setPending(null)
+          inputRef.current?.focus()
+        }}
+        onConfirm={confirmAdd}
+      />
     </div>
   )
 }

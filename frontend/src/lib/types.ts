@@ -357,6 +357,8 @@ export type QuoteLine = {
   qty_base: Decimal
   list_price: Decimal
   break_price: Decimal
+  /** What the catalog would have charged; differs from break_price when the till set a selling price. */
+  landing_price?: Decimal
   price_source: string
   requested_discount_pct: Decimal | null
   unit_price: Decimal

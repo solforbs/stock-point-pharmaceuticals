@@ -82,7 +82,7 @@ class PriceQuoteService
      *     lines: list<array{
      *         line_ref?: string, product_id: string, uom_id: string, quantity: string,
      *         requested_discount_pct?: ?string, requested_discount_amount?: ?string, requested_discount_reason?: ?string,
-     *         batch_id?: ?string, override_reason?: ?string,
+     *         batch_id?: ?string, override_reason?: ?string, selling_price?: ?string,
      *     }>,
      * }  $request
      * @return array<string, mixed>
@@ -228,6 +228,25 @@ class PriceQuoteService
         }
         $explain[] = "Base price → {$basePrice}".($engine['rank_price'] !== $engine['list_price'] ? " (list {$engine['rank_price']} before quantity break)" : '');
 
+        // The till may sell above the landing price for this sale only; going
+        // below it is a discount, which has its own controls in step 3. Both
+        // are final prices: VAT was settled at receiving, so a till price
+        // carries its VAT inside it and the customer pays exactly that.
+        $landingPrice = Money::round(bcmul($basePrice, bcadd('1', $rateFraction, 6), 6), 2);
+        $priceSource = $engine['source'];
+        $tillPrice = null;
+        if (! empty($line['selling_price'])) {
+            $sellingPrice = Money::round((string) $line['selling_price'], 2);
+            if (bccomp($sellingPrice, $landingPrice, 4) > 0) {
+                $tillPrice = $sellingPrice;
+                $basePrice = Money::round(bcdiv($tillPrice, bcadd('1', $rateFraction, 6), 6), 2);
+                $priceSource = 'TILL_PRICE';
+                $explain[] = "Final selling price set at the till → {$tillPrice} (landing price {$landingPrice})";
+            } elseif (bccomp($sellingPrice, $landingPrice, 4) < 0) {
+                $explain[] = "Selling price {$sellingPrice} is below the landing price {$landingPrice} → sold at {$landingPrice}; use a discount to go lower";
+            }
+        }
+
         // Step 3 — discount controls: most restrictive of product, tier, user.
         $policy = ProductDiscountPolicy::where('product_id', $product->id)->first();
         $org = $request['organisation_id'];
@@ -304,7 +323,8 @@ class PriceQuoteService
         }
 
         // Step 7 — rounding, applied last; the floor is re-checked after it.
-        if (bccomp($unitPrice, '0', 4) > 0) {
+        // A price typed at the till is already the price the cashier meant.
+        if (bccomp($unitPrice, '0', 4) > 0 && $tillPrice === null) {
             $rounded = Money::roundToStep($unitPrice, $roundStep);
             if ($floorPrice !== null && ! $floorBreached && bccomp($rounded, $floorPrice, 4) < 0) {
                 $rounded = Money::ceilToStep($floorPrice, $roundStep);
@@ -340,6 +360,10 @@ class PriceQuoteService
         $discountAmount = Money::round(bcmul($discountPerUnit, $qty, 6), 2);
         $netAmount = bcsub($lineSubtotal, $discountAmount, 4);
         $taxAmount = Money::round(bcmul($netAmount, $rateFraction, 6), 2);
+        if ($tillPrice !== null && bccomp($discountAmount, '0', 4) === 0) {
+            // The VAT is whatever is left inside the final price, so the line is exactly price × quantity.
+            $taxAmount = bcsub(Money::round(bcmul($tillPrice, $qty, 6), 2), $netAmount, 4);
+        }
         $lineTotal = bcadd($netAmount, $taxAmount, 4);
         $explain[] = "Tax: {$tax['reason']} → {$taxAmount}";
 
@@ -368,7 +392,8 @@ class PriceQuoteService
             'qty_base' => bcmul($qty, $factor, 4),
             'list_price' => $engine['rank_price'],
             'break_price' => $basePrice,
-            'price_source' => $engine['source'],
+            'landing_price' => $landingPrice,
+            'price_source' => $priceSource,
             'requested_discount_pct' => $requestedPct,
             'unit_price' => $unitPrice,
             'discount_per_unit' => $discountPerUnit,

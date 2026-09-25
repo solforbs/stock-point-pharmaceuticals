@@ -1,6 +1,6 @@
 import { newIdempotencyKey } from '../../lib/api'
 import type { NormalisedApiError } from '../../lib/apiError'
-import { dAdd, dCmp, dIsPos, dMul, dRound2, dSum, isValidDecimal } from '../../lib/decimal'
+import { dAdd, dCmp, dDiv, dIsPos, dMul, dRound2, dSum, isValidDecimal } from '../../lib/decimal'
 import type { PackProduct, PricePack } from '../../lib/offline/db'
 import { isPackStale } from '../../lib/offline/pack'
 import type { Product, Quote, QuoteLine } from '../../lib/types'
@@ -81,7 +81,14 @@ export function buildOfflineQuote(
       return refuse('INSUFFICIENT_STOCK', `${line.productName}: this till believes only ${left} ${product.base_uom?.code ?? 'units'} are left.`)
     }
 
-    const net = dRound2(dMul(price.unit_price, line.qty))
+    // Same rule as the server: the till may sell above the landing price, never
+    // below it, and a till price is final — its VAT is inside it, not added on top.
+    const taxFactor = dAdd('1', dMul(price.tax_rate, '0.01'))
+    const landingPrice = dRound2(dMul(price.unit_price, taxFactor))
+    const tillPrice = line.sellingPrice && isValidDecimal(line.sellingPrice) ? dRound2(line.sellingPrice) : null
+    const raised = !!tillPrice && dCmp(tillPrice, landingPrice) > 0
+    const unitPrice = raised && tillPrice ? dRound2(dDiv(tillPrice, taxFactor)) : price.unit_price
+    const net = dRound2(dMul(unitPrice, line.qty))
     const tax = dRound2(dMul(net, dMul(price.tax_rate, '0.01')))
     lines.push({
       line_ref: line.lineRef,
@@ -94,10 +101,11 @@ export function buildOfflineQuote(
       quantity: line.qty,
       qty_base: line.qtyBase,
       list_price: price.unit_price,
-      break_price: price.unit_price,
-      price_source: 'OFFLINE_PRICE_PACK',
+      break_price: unitPrice,
+      landing_price: landingPrice,
+      price_source: raised ? 'TILL_PRICE' : 'OFFLINE_PRICE_PACK',
       requested_discount_pct: null,
-      unit_price: price.unit_price,
+      unit_price: unitPrice,
       discount_per_unit: '0.0000',
       discount_pct: '0.0000',
       discount_amount: '0.0000',
@@ -123,7 +131,10 @@ export function buildOfflineQuote(
       floor_breached: false,
       approval_required: false,
       batch_id: null,
-      explain: [`Offline price list of ${new Date(pack.generated_at).toLocaleString()}`],
+      explain: [
+        `Offline price list of ${new Date(pack.generated_at).toLocaleString()}`,
+        ...(raised ? [`Final selling price set at the till → ${tillPrice} (landing price ${landingPrice})`] : []),
+      ],
     })
   }
 

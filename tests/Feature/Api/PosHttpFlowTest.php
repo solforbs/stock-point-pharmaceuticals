@@ -179,6 +179,56 @@ class PosHttpFlowTest extends TestCase
             ->assertJsonPath('cost_total', '400.0000');
     }
 
+    public function test_a_selling_price_set_at_the_till_is_what_the_sale_posts_at(): void
+    {
+        $this->grantPermissions(['sale.create', 'sale.view', 'sale.price.override']);
+        $catalogPrice = (string) $this->amox->default_price;
+
+        $quote = $this->postJson('/api/pricing/quote', $this->quotePayload('2', ['selling_price' => '600']))
+            ->assertOk()
+            ->assertJsonPath('lines.0.landing_price', '500.0000')
+            ->assertJsonPath('lines.0.unit_price', '600.0000')
+            ->assertJsonPath('lines.0.price_source', 'TILL_PRICE')
+            ->assertJsonPath('totals.grand_total', '1200.0000')
+            ->json();
+
+        $sale = $this->postJson('/api/sales/checkout', $this->checkoutPayload($quote), ['Idempotency-Key' => 'pos-10'])
+            ->assertCreated()
+            ->assertJsonPath('grand_total', '1200.0000')
+            ->json();
+
+        $this->getJson("/api/sales/{$sale['id']}")->assertJsonPath('lines.0.unit_price', '600.0000');
+        $this->assertSame($catalogPrice, (string) $this->amox->fresh()->default_price, 'the catalog price is never changed by the till');
+    }
+
+    public function test_a_till_price_is_final_with_the_vat_inside_it_not_added_on_top(): void
+    {
+        $this->vat16();
+        $this->grantPermissions(['sale.create', 'sale.price.override']);
+
+        $this->postJson('/api/pricing/quote', $this->quotePayload('2', ['selling_price' => '700']))
+            ->assertOk()
+            ->assertJsonPath('lines.0.landing_price', '580.0000')
+            ->assertJsonPath('lines.0.unit_price', '603.4500')
+            ->assertJsonPath('lines.0.tax_amount', '193.1000')
+            ->assertJsonPath('totals.grand_total', '1400.0000');
+    }
+
+    public function test_a_selling_price_below_the_landing_price_sells_at_the_landing_price(): void
+    {
+        $this->grantPermissions(['sale.create', 'sale.price.override']);
+
+        $this->postJson('/api/pricing/quote', $this->quotePayload('2', ['selling_price' => '400']))
+            ->assertOk()
+            ->assertJsonPath('lines.0.unit_price', '500.0000')
+            ->assertJsonPath('totals.grand_total', '1000.0000');
+    }
+
+    public function test_setting_a_selling_price_needs_the_price_override_permission(): void
+    {
+        $this->postJson('/api/pricing/quote', $this->quotePayload('2', ['selling_price' => '600']))->assertStatus(403);
+    }
+
     public function test_a_wholesale_quote_needs_a_customer(): void
     {
         $this->grantPermissions(['sale.create', 'sale.mode.switch']);

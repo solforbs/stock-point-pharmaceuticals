@@ -56,7 +56,7 @@ class RoleSeeder extends Seeder
         ],
         'Pharmacist' => [
             // Selling and dispensing
-            'sale.view', 'sale.create', 'sale.void', 'sale.discount.apply', 'sale.mode.switch',
+            'sale.view', 'sale.create', 'sale.void', 'sale.discount.apply', 'sale.mode.switch', 'sale.price.override',
             'prescription.view', 'prescription.dispense',
             'payment.record',
             // Inventory

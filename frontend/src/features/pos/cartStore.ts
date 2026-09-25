@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { newIdempotencyKey } from '../../lib/api'
 import type { NormalisedApiError } from '../../lib/apiError'
-import { dAdd, dMul, dMulInt, isValidDecimal } from '../../lib/decimal'
+import { dAdd, dIsPos, dMul, dMulInt, isValidDecimal } from '../../lib/decimal'
 import type { Customer, Product, ProductUom, Quote, QuoteLine, Sale, SaleMode, TenderLine } from '../../lib/types'
 import { defaultSalesUom } from '../../components/ProductSearch'
 
@@ -29,7 +29,16 @@ export type CartLine = {
   quoted?: QuoteLine
   requestedDiscountPct?: string
   discountReason?: string
+  /**
+   * The unit price agreed at the till for this sale only (per the line's
+   * unit, before VAT). The server sells at it when it is above the landing
+   * price and ignores it otherwise; the catalog price never changes.
+   */
+  sellingPrice?: string
 }
+
+/** What the add-to-cart dialog settled on. */
+export type AddProductOptions = { qty?: string; sellingPrice?: string | null }
 
 export type CartStatus = 'BUILDING' | 'AWAITING_APPROVAL' | 'PAYING' | 'POSTING' | 'POSTED'
 
@@ -92,10 +101,11 @@ type CartState = {
   setStore: (storeId: string) => void
   setTerminal: (terminalId: string) => void
   setCustomer: (customer: Customer | null) => void
-  addProduct: (product: Product, uomId?: string) => string | null
+  addProduct: (product: Product, uomId?: string, options?: AddProductOptions) => string | null
   setQty: (lineRef: string, qty: string) => void
   setUom: (lineRef: string, uomId: string) => void
   setLineDiscount: (lineRef: string, pct: string, reason: string) => void
+  setSellingPrice: (lineRef: string, price: string | null) => void
   removeLine: (lineRef: string) => void
   selectLine: (lineRef: string | null) => void
   setHeaderDiscount: (amount: string, reason: string) => void
@@ -175,7 +185,7 @@ export function cartSignature(s: Pick<CartState, 'saleMode' | 'storeId' | 'custo
     c: s.customer?.id ?? null,
     hd: s.headerDiscount,
     hr: s.headerDiscountReason,
-    l: s.lines.map((l) => [l.lineRef, l.productId, l.uomId, l.qty, l.requestedDiscountPct ?? '', l.discountReason ?? '']),
+    l: s.lines.map((l) => [l.lineRef, l.productId, l.uomId, l.qty, l.requestedDiscountPct ?? '', l.discountReason ?? '', l.sellingPrice ?? '']),
   })
 }
 
@@ -193,6 +203,7 @@ export function quotePayload(s: Pick<CartState, 'saleMode' | 'storeId' | 'custom
       quantity: l.qty,
       requested_discount_pct: l.requestedDiscountPct && Number(l.requestedDiscountPct) > 0 ? l.requestedDiscountPct : null,
       requested_discount_reason: l.discountReason || null,
+      selling_price: l.sellingPrice && isValidDecimal(l.sellingPrice) && dIsPos(l.sellingPrice) ? l.sellingPrice : null,
     })),
   }
 }
@@ -255,16 +266,22 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
   setCustomer: (customer) => set({ customer, checkoutError: null }),
 
-  addProduct: (product, uomId) => {
+  addProduct: (product, uomId, options) => {
     const uoms = (product.uoms ?? []).filter((u) => u.is_sales || u.is_base)
     const chosen = (uomId ? uoms.find((u) => u.uom_id === uomId) : undefined) ?? defaultSalesUom(product)
     if (!chosen) return null
     const state = get()
+    const addQty = options?.qty && isValidDecimal(options.qty) && dIsPos(options.qty) ? options.qty : '1'
+    // Only the add dialog decides the selling price; a plain add keeps the line's own.
+    const priced = (l: CartLine): CartLine =>
+      options && 'sellingPrice' in options
+        ? { ...l, sellingPrice: options.sellingPrice ?? undefined, estimateUnitPrice: options.sellingPrice ?? l.estimateUnitPrice }
+        : l
     const existing = state.lines.find((l) => l.productId === product.id && l.uomId === chosen.uom_id)
     if (existing) {
-      const qty = isValidDecimal(existing.qty) ? dAdd(existing.qty, '1') : '1'
+      const qty = isValidDecimal(existing.qty) ? dAdd(existing.qty, addQty) : addQty
       set({
-        lines: state.lines.map((l) => (l.lineRef === existing.lineRef ? recompute({ ...l, qty: qty.replace(/\.0000$/, '') }) : l)),
+        lines: state.lines.map((l) => (l.lineRef === existing.lineRef ? recompute(priced({ ...l, qty: qty.replace(/\.0000$/, '') })) : l)),
         selectedLineRef: existing.lineRef,
         status: 'BUILDING',
       })
@@ -272,7 +289,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
     const counter = state.lineCounter + 1
     const lineRef = `L${counter}`
-    const line = recompute({
+    const line = recompute(priced({
       lineRef,
       productId: product.id,
       productCode: product.code,
@@ -284,11 +301,11 @@ export const useCartStore = create<CartState>((set, get) => ({
       uomId: chosen.uom_id,
       uomCode: chosen.uom?.code ?? '',
       factorToBase: chosen.factor_to_base,
-      qty: '1',
+      qty: addQty.replace(/\.0000$/, ''),
       qtyBase: '0',
       estimateUnitPrice: product.default_price ? dMulInt(product.default_price, chosen.factor_to_base) : null,
       localEstimate: '0.0000',
-    })
+    }))
     set({ lines: [...state.lines, line], lineCounter: counter, selectedLineRef: lineRef, status: 'BUILDING', checkoutError: null })
     return lineRef
   },
@@ -309,6 +326,8 @@ export const useCartStore = create<CartState>((set, get) => ({
           uomCode: uom.uom?.code ?? '',
           factorToBase: uom.factor_to_base,
           estimateUnitPrice: perBase ? dMulInt(perBase, uom.factor_to_base) : null,
+          // A price agreed per unit means nothing in another unit.
+          sellingPrice: undefined,
         })
       }),
       status: s.status === 'POSTED' ? s.status : 'BUILDING',
@@ -317,6 +336,16 @@ export const useCartStore = create<CartState>((set, get) => ({
   setLineDiscount: (lineRef, pct, reason) =>
     set((s) => ({
       lines: s.lines.map((l) => (l.lineRef === lineRef ? { ...l, requestedDiscountPct: pct, discountReason: reason } : l)),
+      status: s.status === 'POSTED' ? s.status : 'BUILDING',
+    })),
+
+  setSellingPrice: (lineRef, price) =>
+    set((s) => ({
+      lines: s.lines.map((l) =>
+        l.lineRef === lineRef
+          ? recompute({ ...l, sellingPrice: price ?? undefined, estimateUnitPrice: price ?? l.quoted?.landing_price ?? l.estimateUnitPrice })
+          : l,
+      ),
       status: s.status === 'POSTED' ? s.status : 'BUILDING',
     })),
 

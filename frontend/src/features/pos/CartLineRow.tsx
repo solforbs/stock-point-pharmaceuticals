@@ -38,6 +38,7 @@ export function CartLineRow({
   const setQty = useCartStore((s) => s.setQty)
   const setUom = useCartStore((s) => s.setUom)
   const setLineDiscount = useCartStore((s) => s.setLineDiscount)
+  const setSellingPrice = useCartStore((s) => s.setSellingPrice)
   const storeId = useCartStore((s) => s.storeId)
   const customerId = useCartStore((s) => s.customer?.id ?? null)
   const addProduct = useCartStore((s) => s.addProduct)
@@ -212,6 +213,27 @@ export function CartLineRow({
               </>
             ) : (
               <span className="italic text-slate-500">{line.estimateUnitPrice ? `${formatMoney(line.estimateUnitPrice)} est.` : 'pricing…'}</span>
+            )}
+            {line.sellingPrice && (
+              <span
+                className="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold whitespace-nowrap"
+                title="Selling price set at the till for this sale only; the catalog price is unchanged"
+              >
+                Till price
+                {showQuoted && quoted.landing_price && <span className="font-medium"> · landing {formatMoney(quoted.landing_price)}</span>}
+                {!disabled && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSellingPrice(line.lineRef, null)
+                    }}
+                    className="ml-1 underline hover:text-emerald-900 cursor-pointer"
+                  >
+                    reset
+                  </button>
+                )}
+              </span>
             )}
           </div>
         </div>

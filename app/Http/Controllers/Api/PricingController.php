@@ -36,6 +36,7 @@ class PricingController extends ApiController
             'lines.*.requested_discount_reason' => ['nullable', 'string', 'max:255'],
             'lines.*.batch_id' => ['nullable', 'uuid', TenantRules::exists('product_batches')],
             'lines.*.override_reason' => ['nullable', 'string', 'max:255'],
+            'lines.*.selling_price' => ['nullable', 'numeric', 'gt:0'],
         ]);
 
         // V6 Part 10.1 / Part 24.2 — the branch decides which modes exist;
@@ -60,6 +61,10 @@ class PricingController extends ApiController
                 if (empty($line['override_reason'])) {
                     return $this->error('OVERRIDE_REASON_REQUIRED', 'A FEFO override needs a reason (Part 7.4).', 422);
                 }
+            }
+            // A selling price set at the till prices this sale only; the catalog is untouched.
+            if (! empty($line['selling_price'])) {
+                $this->requirePermission($request, 'sale.price.override');
             }
         }
 
