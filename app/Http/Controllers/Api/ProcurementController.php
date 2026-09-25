@@ -179,6 +179,58 @@ class ProcurementController extends ApiController
     }
 
     /**
+     * PATCH /api/purchase-orders/{po} — a draft (keyed by hand or
+     * imported) can be amended in full before it is approved: supplier,
+     * expected date and lines. After approval the order is a commitment
+     * and only the approve → send flow may touch it.
+     */
+    public function updatePurchaseOrder(Request $request, string $po): JsonResponse
+    {
+        $this->requirePermission($request, 'po.create');
+
+        $order = $this->findPo($request, $po);
+        if (! in_array($order->status, ['DRAFT', 'PENDING_APPROVAL'], true)) {
+            return $this->error('INVALID_STATE', "Purchase order {$order->doc_number} is {$order->status}; only a draft may be edited.", 409);
+        }
+
+        $data = $request->validate([
+            'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
+            'expected_date' => ['nullable', 'date'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
+            'lines.*.qty_ordered' => ['required', 'numeric', 'gt:0'],
+            'lines.*.unit_price' => ['nullable', 'required_without:lines.*.trade_price', 'numeric', 'min:0'],
+            'lines.*.trade_price' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'lines.*.tax_code_id' => ['nullable', 'uuid', TenantRules::exists('tax_codes')],
+        ]);
+        $data['lines'] = array_map(fn (array $line) => TradeTerms::applyTo($line, 'unit_price'), $data['lines']);
+
+        $supplier = Supplier::findOrFail($data['supplier_id']);
+        if ($supplier->status !== 'ACTIVE' || ! $supplier->is_active) {
+            return $this->error('SUPPLIER_BLOCKED', "Supplier {$supplier->name} is {$supplier->status}; no purchase order may be raised.", 422);
+        }
+        if ($supplier->licence_expiry && $supplier->licence_expiry->isPast()) {
+            return $this->error('SUPPLIER_LICENCE_EXPIRED', "Supplier {$supplier->name}'s licence expired on {$supplier->licence_expiry->toDateString()}.", 422, ['expiry_date' => $supplier->licence_expiry->toDateString()]);
+        }
+
+        DB::transaction(function () use ($order, $data) {
+            $order->update([
+                'supplier_id' => $data['supplier_id'],
+                'expected_date' => $data['expected_date'] ?? null,
+            ]);
+            $order->lines()->delete();
+            foreach ($data['lines'] as $line) {
+                PurchaseOrderLine::create(['purchase_order_id' => $order->id] + collect($line)->only(['product_id', 'uom_id', 'qty_ordered', 'unit_price', 'trade_price', 'discount_pct', 'tax_code_id'])->all());
+            }
+            AuditLog::record('PO_UPDATED', 'purchase_order', $order->id, ['reference' => $order->doc_number]);
+        });
+
+        return response()->json($order->fresh('lines'));
+    }
+
+    /**
      * POST /api/purchase-orders/import — draft purchase orders from a
      * spreadsheet, one PO per supplier_code in the file. All-or-nothing;
      * errors come back per row like the product import.
@@ -191,6 +243,9 @@ class ProcurementController extends ApiController
             'rows' => ['required', 'array', 'min:1', 'max:2000'],
             'rows.*' => ['array'],
             'dry_run' => ['sometimes', 'boolean'],
+            // A file without supplier_code columns is fine: this supplier
+            // takes every row that names none.
+            'supplier_id' => ['nullable', 'uuid', TenantRules::exists('suppliers')],
         ]);
 
         try {
@@ -200,6 +255,7 @@ class ProcurementController extends ApiController
                 $request->user()->id,
                 array_values($data['rows']),
                 $request->boolean('dry_run'),
+                $data['supplier_id'] ?? null,
             );
         } catch (PurchaseOrderImportValidationException $e) {
             return $this->error('PO_IMPORT_INVALID', $e->getMessage(), 422, ['rows' => $e->rowErrors]);

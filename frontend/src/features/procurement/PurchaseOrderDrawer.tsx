@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { Drawer } from '../../components/ui/Drawer'
@@ -6,14 +7,18 @@ import { MoneyCell, QtyCell } from '../../components/ui/MoneyCell'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList } from '../../components/ui/primitives'
-import { apiPost } from '../../lib/api'
+import { apiPatch, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime } from '../../lib/format'
-import { usePurchaseOrder } from '../../lib/hooks'
+import { usePurchaseOrder, useSuppliers } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
-import type { PurchaseOrder } from '../../lib/types'
+import type { Product, PurchaseOrder } from '../../lib/types'
 import { ExpiryBadge } from '../inventory/ExpiryBadge'
+import { NewPurchaseOrderDrawer, type PoLine } from './NewPurchaseOrderDrawer'
 import { tradeTermsLabel } from './tradeTerms'
+
+/** '10.0000' → '10', '418.5000' → '418.5' — decimals read like the user typed them. */
+const plain = (v: string | null | undefined) => (v == null || v === '' ? '' : String(Number(v)))
 
 export interface PurchaseOrderDrawerProps {
   id: string | null
@@ -25,6 +30,14 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
   const canApprove = usePermission('po.approve')
   const canSend = usePermission('po.create')
   const po = usePurchaseOrder(id)
+  const suppliers = useSuppliers()
+
+  // Editing a draft (keyed or imported) before it is approved: supplier,
+  // date and lines, through the same form that creates one.
+  const [editing, setEditing] = useState(false)
+  const [supplierId, setSupplierId] = useState('')
+  const [expectedDate, setExpectedDate] = useState('')
+  const [lines, setLines] = useState<PoLine[]>([])
 
   const act = useMutation({
     mutationFn: (kind: 'approve' | 'send') => apiPost<PurchaseOrder>(`/api/purchase-orders/${id}/${kind}`),
@@ -33,6 +46,46 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
     },
   })
+
+  const save = useMutation({
+    meta: { silent: true },
+    mutationFn: () =>
+      apiPatch<PurchaseOrder>(`/api/purchase-orders/${id}`, {
+        supplier_id: supplierId,
+        expected_date: expectedDate || null,
+        lines: lines.map((l) => ({
+          product_id: l.product.id,
+          uom_id: l.uom_id,
+          qty_ordered: l.qty_ordered,
+          unit_price: l.unit_price,
+          trade_price: l.trade_price || null,
+          discount_pct: l.trade_price ? l.discount_pct || '0' : null,
+        })),
+      }),
+    onSuccess: (updated) => {
+      toast.success(`${updated.doc_number} updated`)
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      setEditing(false)
+    },
+  })
+
+  function startEditing(p: PurchaseOrder) {
+    setSupplierId(p.supplier_id)
+    setExpectedDate(p.expected_date ?? '')
+    setLines(
+      (p.lines ?? []).map((l) => ({
+        key: l.id,
+        product: { id: l.product_id, code: l.product?.code ?? '', name: l.product?.name ?? l.product_id, uoms: l.product?.uoms } as Product,
+        uom_id: l.uom_id,
+        qty_ordered: plain(l.qty_ordered),
+        unit_price: plain(l.unit_price),
+        trade_price: plain(l.trade_price),
+        discount_pct: plain(l.discount_pct),
+      })),
+    )
+    save.reset()
+    setEditing(true)
+  }
 
   const p = po.data
   const total = (p?.lines ?? []).reduce((s, l) => s + Number(l.qty_ordered) * Number(l.unit_price), 0)
@@ -52,6 +105,11 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
               <Link to={`/buy/supplier-quotes?rfq=${p.rfq_id}`} className="text-xs font-semibold text-blue-600 hover:underline">
                 Bid analysis
               </Link>
+            )}
+            {canSend && (p.status === 'DRAFT' || p.status === 'PENDING_APPROVAL') && (
+              <Button size="sm" disabled={act.isPending} onClick={() => startEditing(p)}>
+                Edit
+              </Button>
             )}
             {canApprove && (p.status === 'DRAFT' || p.status === 'PENDING_APPROVAL') && (
               <Button size="sm" variant="success" disabled={act.isPending} onClick={() => act.mutate('approve')}>
@@ -140,6 +198,24 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
           )}
         </div>
       )}
+
+      <NewPurchaseOrderDrawer
+        open={editing}
+        onClose={() => setEditing(false)}
+        suppliers={suppliers.data?.data ?? []}
+        supplierId={supplierId}
+        setSupplierId={setSupplierId}
+        expectedDate={expectedDate}
+        setExpectedDate={setExpectedDate}
+        lines={lines}
+        setLines={setLines}
+        onSubmit={() => save.mutate()}
+        isSubmitting={save.isPending}
+        error={save.error}
+        title={`Edit ${p?.doc_number ?? 'Purchase Order'}`}
+        subtitle="Amend the draft — supplier, date and lines — before it is approved and sent"
+        submitLabel="Save Changes"
+      />
     </Drawer>
   )
 }

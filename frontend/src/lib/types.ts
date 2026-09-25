@@ -634,8 +634,8 @@ export type PurchaseOrderLine = {
   trade_price: Decimal | null
   discount_pct: Decimal | null
   tax_code_id: string | null
-  /** tax_code_id comes with it so a goods receipt can show the product's VAT treatment. */
-  product?: (NamedRef & { tax_code_id?: string | null }) | null
+  /** tax_code_id comes with it so a goods receipt can show the product's VAT treatment; uoms so a draft can be edited into another pack. */
+  product?: (NamedRef & { tax_code_id?: string | null; uoms?: ProductUom[] }) | null
   uom?: Uom | null
 }
 

@@ -3,9 +3,10 @@ import { Download, Upload } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { InlineError } from '../../components/ui/States'
 import { Drawer } from '../../components/ui/Drawer'
-import { Button, Card, Field, FileDropzone } from '../../components/ui/primitives'
+import { Button, Card, Field, FileDropzone, Select } from '../../components/ui/primitives'
 import { apiPost, getApiError } from '../../lib/api'
 import { csvToObjects, downloadBlob } from '../../lib/csv'
+import { useSuppliers } from '../../lib/hooks'
 import { formatMoney } from '../../lib/money'
 import { toast } from '../../lib/toast'
 
@@ -26,24 +27,27 @@ const TEMPLATE =
  */
 export function PurchaseOrderImportDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const suppliers = useSuppliers()
   const [fileName, setFileName] = useState('')
   const [text, setText] = useState('')
+  const [supplierId, setSupplierId] = useState('')
   const [checked, setChecked] = useState<ImportSummary | null>(null)
   const [applied, setApplied] = useState<ImportSummary | null>(null)
 
-  const parsed = useMemo(() => (text ? csvToObjects(text, ['supplier_code', 'product_code', 'qty']) : null), [text])
+  const parsed = useMemo(() => (text ? csvToObjects(text, ['product_code', 'qty']) : null), [text])
   const usedColumns = useMemo(() => IMPORT_COLUMNS.filter((c) => parsed?.keys.includes(c)), [parsed])
   const rows = useMemo(() => (parsed?.rows ?? []).map((r) => Object.fromEntries(usedColumns.map((c) => [c, r[c] ?? '']))), [parsed, usedColumns])
 
+  const payload = (dryRun: boolean) => ({ rows, dry_run: dryRun, supplier_id: supplierId || null })
   const check = useMutation({
     meta: { silent: true },
-    mutationFn: () => apiPost<ImportSummary>('/api/purchase-orders/import', { rows, dry_run: true }),
+    mutationFn: () => apiPost<ImportSummary>('/api/purchase-orders/import', payload(true)),
     onSuccess: (s) => { setChecked(s); toast.success(`${s.rows} row(s) are valid — ${s.purchase_orders.length} purchase order(s) would be created`) },
     onError: () => setChecked(null),
   })
   const apply = useMutation({
     meta: { silent: true },
-    mutationFn: () => apiPost<ImportSummary>('/api/purchase-orders/import', { rows, dry_run: false }),
+    mutationFn: () => apiPost<ImportSummary>('/api/purchase-orders/import', payload(false)),
     onSuccess: (s) => {
       setApplied(s)
       setChecked(null)
@@ -87,6 +91,7 @@ export function PurchaseOrderImportDrawer({ open, onClose }: { open: boolean; on
           <div className="space-y-4">
             <div className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
               Fill the order book in Excel and save as standard CSV format. Each row is one line of an order; rows sharing a supplier_code become one purchase order.
+              Every order arrives as a draft you can still open, edit and re-assign before approving and sending.
               <span className="block text-slate-500 mt-1">
                 Columns: {IMPORT_COLUMNS.join(', ')}. Give a unit_price, or a trade_price with an optional discount_pct.
                 uom_code left blank uses the product's purchase unit. Prices are per the unit ordered.
@@ -96,14 +101,24 @@ export function PurchaseOrderImportDrawer({ open, onClose }: { open: boolean; on
                 <Download size={12} /> Download template
               </button>
             </div>
-            <Field label="CSV file" required hint="Max size 10MB · UTF-8 CSV format">
-              <FileDropzone
-                fileName={fileName}
-                onFileSelect={(file) => void onFile(file)}
-                onClear={() => { setFileName(''); setText(''); reset() }}
-                hint="Click to browse or drop your CSV file"
-              />
-            </Field>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+              <Field label="CSV file" required hint="Max size 10MB · UTF-8 CSV format">
+                <FileDropzone
+                  fileName={fileName}
+                  onFileSelect={(file) => void onFile(file)}
+                  onClear={() => { setFileName(''); setText(''); reset() }}
+                  hint="Click to browse or drop your CSV file"
+                />
+              </Field>
+              <Field label="Supplier for rows without a supplier_code" hint="Optional — lets a plain product/qty/price file come in as one order. A supplier_code in the file always wins.">
+                <Select value={supplierId} onChange={(e) => { setSupplierId(e.target.value); reset() }}>
+                  <option value="">None — every row names its supplier</option>
+                  {(suppliers.data?.data ?? []).map((s) => (
+                    <option key={s.id} value={s.id} disabled={s.status !== 'ACTIVE' || !s.is_active}>{s.name}{s.status !== 'ACTIVE' ? ` (${s.status})` : ''}</option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
             {parsed && parsed.missing.length > 0 && (
               <div className="text-xs text-rose-600 font-medium">The file is missing the {parsed.missing.join(', ')} column(s).</div>
             )}

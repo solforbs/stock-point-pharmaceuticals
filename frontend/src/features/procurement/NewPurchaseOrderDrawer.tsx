@@ -30,6 +30,10 @@ export interface NewPurchaseOrderDrawerProps {
   onSubmit: () => void
   isSubmitting: boolean
   error?: unknown
+  /** Editing an existing draft reuses this form under its own name. */
+  title?: string
+  subtitle?: string
+  submitLabel?: string
 }
 
 export function NewPurchaseOrderDrawer({
@@ -45,6 +49,9 @@ export function NewPurchaseOrderDrawer({
   onSubmit,
   isSubmitting,
   error,
+  title = 'Create Purchase Order',
+  subtitle = 'Issue formal supplier order with locked purchase prices and UOM conversion',
+  submitLabel = 'Create Purchase Order',
 }: NewPurchaseOrderDrawerProps) {
   const validLines =
     lines.length > 0 &&
@@ -54,8 +61,8 @@ export function NewPurchaseOrderDrawer({
     <Drawer
       open={open}
       onClose={onClose}
-      title="Create Purchase Order"
-      subtitle="Issue formal supplier order with locked purchase prices and UOM conversion"
+      title={title}
+      subtitle={subtitle}
       width={840}
     >
       <div className="space-y-4">
@@ -220,7 +227,7 @@ export function NewPurchaseOrderDrawer({
         <DrawerFooter
           onCancel={onClose}
           onSubmit={onSubmit}
-          submitLabel="Create Purchase Order"
+          submitLabel={submitLabel}
           isSubmitting={isSubmitting}
           disabled={!supplierId || !validLines}
         />

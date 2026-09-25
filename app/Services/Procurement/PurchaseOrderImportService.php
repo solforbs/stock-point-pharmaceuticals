@@ -35,9 +35,9 @@ class PurchaseOrderImportService
      *
      * @throws PurchaseOrderImportValidationException
      */
-    public function import(string $organisationId, string $branchId, int $userId, array $rows, bool $dryRun): array
+    public function import(string $organisationId, string $branchId, int $userId, array $rows, bool $dryRun, ?string $fallbackSupplierId = null): array
     {
-        [$orders, $errors] = $this->validate($organisationId, $rows);
+        [$orders, $errors] = $this->validate($organisationId, $rows, $fallbackSupplierId);
         if ($errors !== []) {
             throw new PurchaseOrderImportValidationException($errors);
         }
@@ -101,9 +101,10 @@ class PurchaseOrderImportService
      * @param  list<array<string, mixed>>  $rows
      * @return array{0: list<array{supplier: Supplier, expected_date: string|null, lines: list<array<string, mixed>>}>, 1: array<int, list<string>>}
      */
-    private function validate(string $organisationId, array $rows): array
+    private function validate(string $organisationId, array $rows, ?string $fallbackSupplierId): array
     {
         $suppliers = $this->lookup($rows, 'supplier_code', Supplier::where('organisation_id', $organisationId));
+        $fallback = $fallbackSupplierId ? Supplier::where('organisation_id', $organisationId)->find($fallbackSupplierId) : null;
         $products = $this->lookup($rows, 'product_code', Product::where('organisation_id', $organisationId));
         $uoms = UnitOfMeasure::all()->keyBy(fn (UnitOfMeasure $u) => Str::upper($u->code));
         $productUoms = ProductUom::whereIn('product_id', $products->pluck('id'))->get()->groupBy('product_id');
@@ -121,14 +122,21 @@ class PurchaseOrderImportService
 
             $supplier = null;
             if (($supplierCode = $cell('supplier_code')) === '') {
-                $messages[] = 'supplier_code is required';
+                $supplier = $fallback;
+                if (! $supplier) {
+                    $messages[] = 'supplier_code is required (or choose a supplier for the whole file)';
+                }
             } elseif (! ($supplier = $suppliers->get(Str::upper($supplierCode)))) {
                 $messages[] = "unknown supplier code {$supplierCode}";
-            } elseif ($supplier->status !== 'ACTIVE' || ! $supplier->is_active) {
-                $messages[] = "supplier {$supplier->name} is {$supplier->status}; no purchase order may be raised";
-            } elseif ($supplier->licence_expiry && $supplier->licence_expiry->isPast()) {
-                $messages[] = "supplier {$supplier->name}'s licence expired on {$supplier->licence_expiry->toDateString()}";
             }
+            if ($supplier && ($supplier->status !== 'ACTIVE' || ! $supplier->is_active)) {
+                $messages[] = "supplier {$supplier->name} is {$supplier->status}; no purchase order may be raised";
+                $supplier = null;
+            } elseif ($supplier && $supplier->licence_expiry && $supplier->licence_expiry->isPast()) {
+                $messages[] = "supplier {$supplier->name}'s licence expired on {$supplier->licence_expiry->toDateString()}";
+                $supplier = null;
+            }
+            $supplierKey = $supplier ? Str::upper((string) $supplier->code) : null;
 
             $product = null;
             if (($productCode = $cell('product_code')) === '') {
@@ -194,9 +202,9 @@ class PurchaseOrderImportService
                 }
             }
 
-            $key = $supplier && $product ? Str::upper($supplierCode).'|'.Str::upper($productCode).'|'.$uomId : null;
+            $key = $supplier && $product ? $supplierKey.'|'.Str::upper($productCode).'|'.$uomId : null;
             if ($key !== null && isset($seen[$key])) {
-                $messages[] = "product {$productCode} appears twice for supplier {$supplierCode} (row {$seen[$key]})";
+                $messages[] = "product {$productCode} appears twice for supplier {$supplier->code} (row {$seen[$key]})";
             } elseif ($key !== null) {
                 $seen[$key] = $line;
             }
@@ -207,7 +215,7 @@ class PurchaseOrderImportService
                 continue;
             }
 
-            $orderKey = Str::upper($supplierCode);
+            $orderKey = $supplierKey;
             $orders[$orderKey] ??= ['supplier' => $supplier, 'expected_date' => null, 'lines' => []];
             $orders[$orderKey]['expected_date'] ??= $expected;
             $orders[$orderKey]['lines'][] = collect(TradeTerms::applyTo([

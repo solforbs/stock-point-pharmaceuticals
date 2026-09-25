@@ -223,6 +223,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/purchase-orders', [ProcurementController::class, 'purchaseOrders']);
     Route::post('/purchase-orders', [ProcurementController::class, 'storePurchaseOrder']);
     Route::post('/purchase-orders/import', [ProcurementController::class, 'importPurchaseOrders']);
+    Route::patch('/purchase-orders/{po}', [ProcurementController::class, 'updatePurchaseOrder'])->whereUuid('po');
     Route::post('/purchase-orders/{po}/approve', [ProcurementController::class, 'approvePurchaseOrder']);
     Route::post('/purchase-orders/{po}/send', [ProcurementController::class, 'sendPurchaseOrder']);
     Route::post('/goods-receipts', [ProcurementController::class, 'storeGoodsReceipt']);
