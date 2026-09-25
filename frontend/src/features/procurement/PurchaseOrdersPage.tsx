@@ -14,6 +14,7 @@ import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Paginated, PurchaseOrder } from '../../lib/types'
 import { NewPurchaseOrderDrawer, type PoLine } from './NewPurchaseOrderDrawer'
+import { ImportPurchaseOrdersButton } from './PurchaseOrderImport'
 import { PurchaseOrderDrawer } from './PurchaseOrderDrawer'
 
 const STATUSES = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SENT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CLOSED', 'CANCELLED']
@@ -88,7 +89,8 @@ export default function PurchaseOrdersPage() {
         subtitle="DRAFT → APPROVED → SENT. Goods receipting completes procurement."
         actions={
           canCreate ? (
-            <div id="tour-po-new">
+            <div id="tour-po-new" className="flex items-center gap-2">
+              <ImportPurchaseOrdersButton />
               <PrimaryAction onClick={() => setCreating(true)}>
                 New Purchase Order
               </PrimaryAction>

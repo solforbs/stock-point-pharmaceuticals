@@ -21,6 +21,8 @@ use App\Models\TaxCode;
 use App\Services\Notifications\Notifier;
 use App\Services\Pricing\PriceListWriter;
 use App\Services\Procurement\GoodsReceiptService;
+use App\Services\Procurement\PurchaseOrderImportService;
+use App\Services\Procurement\PurchaseOrderImportValidationException;
 use App\Services\Procurement\SupplierPaymentService;
 use App\Services\Procurement\ThreeWayMatchService;
 use App\Services\Procurement\TradeTerms;
@@ -173,6 +175,36 @@ class ProcurementController extends ApiController
         });
 
         return response()->json($po->load('lines'), 201);
+    }
+
+    /**
+     * POST /api/purchase-orders/import — draft purchase orders from a
+     * spreadsheet, one PO per supplier_code in the file. All-or-nothing;
+     * errors come back per row like the product import.
+     */
+    public function importPurchaseOrders(Request $request, PurchaseOrderImportService $importer): JsonResponse
+    {
+        $this->requirePermission($request, 'po.create');
+
+        $data = $request->validate([
+            'rows' => ['required', 'array', 'min:1', 'max:2000'],
+            'rows.*' => ['array'],
+            'dry_run' => ['sometimes', 'boolean'],
+        ]);
+
+        try {
+            $summary = $importer->import(
+                $this->organisationId($request),
+                $this->branchId($request),
+                $request->user()->id,
+                array_values($data['rows']),
+                $request->boolean('dry_run'),
+            );
+        } catch (PurchaseOrderImportValidationException $e) {
+            return $this->error('PO_IMPORT_INVALID', $e->getMessage(), 422, ['rows' => $e->rowErrors]);
+        }
+
+        return response()->json($summary, $summary['dry_run'] ? 200 : 201);
     }
 
     public function approvePurchaseOrder(Request $request, string $po): JsonResponse
