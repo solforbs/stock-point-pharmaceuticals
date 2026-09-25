@@ -1,80 +1,38 @@
-import { ChevronDown, ChevronRight, Minus, Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
-import { PriceBreakdownPopover } from '../../components/PriceBreakdownPopover'
+import { Minus, Plus, Trash2 } from 'lucide-react'
 import { MoneyCell } from '../../components/ui/MoneyCell'
 import { QuantityInput } from '../../components/ui/QuantityInput'
-import { dAdd, dCmp, dIsPos, dSub, isValidDecimal } from '../../lib/decimal'
-import { formatDate } from '../../lib/format'
-import { useProductStock, useStores } from '../../lib/hooks'
-import { formatMoney, formatQty } from '../../lib/money'
-import { useIsOffline } from '../../lib/offline/connectivity'
-import { CartLineInsight } from './CartLineInsight'
-import { previewFefo } from './fefo'
+import { dAdd, dSub } from '../../lib/decimal'
+import { useProductStock } from '../../lib/hooks'
+import { formatMoney } from '../../lib/money'
 import { useCartStore, type CartLine } from './cartStore'
 
 export interface CartLineRowProps {
   line: CartLine
   selected: boolean
   quoteFresh: boolean
-  canDiscount: boolean
-  showCost: boolean
   disabled: boolean
   onSelect: () => void
   onRemove: () => void
   onQtyEnter: () => void
 }
 
-export function CartLineRow({
-  line,
-  selected,
-  quoteFresh,
-  canDiscount,
-  showCost,
-  disabled,
-  onSelect,
-  onRemove,
-  onQtyEnter,
-}: CartLineRowProps) {
+/**
+ * One line of the cart, kept to a single row — name, quantity, final price
+ * and remove — so ten products fit on screen at once. Everything else about
+ * the line (stock, batches, the price decision) lives in the add-product
+ * dialog; adding the product again reopens it for the same line.
+ */
+export function CartLineRow({ line, selected, quoteFresh, disabled, onSelect, onRemove, onQtyEnter }: CartLineRowProps) {
   const setQty = useCartStore((s) => s.setQty)
-  const setUom = useCartStore((s) => s.setUom)
-  const setLineDiscount = useCartStore((s) => s.setLineDiscount)
-  const setSellingPrice = useCartStore((s) => s.setSellingPrice)
   const storeId = useCartStore((s) => s.storeId)
-  const customerId = useCartStore((s) => s.customer?.id ?? null)
-  const addProduct = useCartStore((s) => s.addProduct)
-  const [targetPrice, setTargetPrice] = useState('')
-  const [fefoOpen, setFefoOpen] = useState(false)
-  const [discountOpen, setDiscountOpen] = useState(!!line.requestedDiscountPct)
 
   const { data: stock } = useProductStock(line.productId)
-  const offline = useIsOffline()
-  const { data: stores } = useStores()
-  const storeRow = stock?.stores.find((row) => row.store_id === storeId)
-  const freeToSell = storeRow?.free_to_sell ?? null
-  const fefo = previewFefo(storeRow, line.qtyBase)
-
-  // A released batch sitting in the warehouse looks to the cashier exactly
-  // like a batch that was never released, so name the store that holds it.
-  const sellingStoreCode = storeRow?.store_code ?? stores?.find((s) => s.id === storeId)?.code ?? 'this store'
-  const heldElsewhere = (stock?.stores ?? [])
-    .filter((row) => row.store_id !== storeId && dIsPos(row.free_to_sell))
-    .sort((a, b) => dCmp(b.free_to_sell, a.free_to_sell))
+  const freeToSell = stock?.stores.find((row) => row.store_id === storeId)?.free_to_sell ?? null
 
   const quoted = line.quoted
   const showQuoted = !!quoted && quoteFresh
   const lineTotal = showQuoted ? quoted.line_total : line.localEstimate
-  const hasBonus = !!quoted && dIsPos(quoted.bonus_qty)
-
-  // The price before any discount: what a typed target price is measured against.
-  const basePrice = showQuoted ? dAdd(quoted.unit_price, quoted.discount_per_unit) : null
-
-  /** Turns a price the cashier agreed with the customer into the discount % the quote understands. */
-  function applyTargetPrice(target: string, reason: string) {
-    if (!basePrice || !isValidDecimal(target) || Number(basePrice) <= 0) return
-    const pct = Math.max(0, ((Number(basePrice) - Number(target)) / Number(basePrice)) * 100)
-    setLineDiscount(line.lineRef, pct > 0 ? pct.toFixed(3) : '', pct > 0 ? line.discountReason || reason : '')
-    setDiscountOpen(true)
-  }
+  const unitPrice = showQuoted ? quoted.unit_price : (line.sellingPrice ?? line.estimateUnitPrice)
 
   function stepQty(delta: 1 | -1) {
     if (disabled) return
@@ -91,296 +49,81 @@ export function CartLineRow({
     <div
       onClick={onSelect}
       data-line-ref={line.lineRef}
-      className={`rounded-2xl border transition-all p-3.5 cursor-default text-xs ${
+      className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 cursor-default transition-all ${
         selected
-          ? 'bg-blue-50/30 border-blue-400 shadow-xs ring-1 ring-blue-400/20'
+          ? 'bg-blue-50/30 border-blue-400 ring-1 ring-blue-400/20'
           : 'bg-white border-slate-200/70 hover:border-slate-300/80 shadow-2xs'
       }`}
     >
-      {/* Product Title & Code Header */}
-      <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-100">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <h4 className="font-bold text-slate-900 text-sm leading-snug break-words line-clamp-2">
-              {line.productName}
-            </h4>
-            {line.strength && (
-              <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs shrink-0">
-                {line.strength}
-              </span>
-            )}
-            <span className="text-slate-500 font-mono text-xs font-medium shrink-0">#{line.productCode}</span>
-          </div>
-        </div>
+      <span
+        className="flex-1 min-w-0 truncate text-xs font-bold text-slate-900"
+        title={`${line.productName}${line.strength ? ` ${line.strength}` : ''} · #${line.productCode}`}
+      >
+        {line.productName}
+        {line.strength && <span className="ml-1.5 font-semibold text-slate-500">{line.strength}</span>}
+      </span>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          {quoted?.approval_required && showQuoted && (
-            <span className="text-xs font-bold uppercase text-amber-800 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200">
-              Needs approval
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onRemove()
-            }}
-            disabled={disabled}
-            aria-label="Remove item"
-            title="Remove item (Ctrl+Del)"
-            className="group/trash p-2 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-all disabled:opacity-40 cursor-pointer"
-          >
-            <Trash2 size={15} className="transition-transform duration-200 group-hover/trash:scale-115 group-hover/trash:-rotate-12" />
-          </button>
-        </div>
-      </div>
-
-      {/* Stepper, UOM, Unit Price & Line Total */}
-      <div className="flex items-center justify-between gap-2 pt-2.5">
-        <div className="flex items-center gap-2">
-          {/* Quantity Stepper */}
-          <div className="flex items-center bg-slate-100/90 border border-slate-200/60 rounded-full p-0.5 shadow-2xs">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                stepQty(-1)
-              }}
-              disabled={disabled}
-              className="w-6 h-6 rounded-full flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-900 shadow-2xs disabled:opacity-40 transition-all cursor-pointer"
-              title="Decrease (or remove if 1)"
-            >
-              <Minus size={11} />
-            </button>
-
-            <QuantityInput
-              value={line.qty}
-              onChange={(qty) => setQty(line.lineRef, qty)}
-              uomCode=""
-              factorToBase={line.factorToBase}
-              baseUomCode={line.baseUomCode}
-              isDiscrete={line.isDiscrete}
-              max={freeToSell}
-              compact
-              disabled={disabled}
-              onEnter={onQtyEnter}
-              inputRef={(el) => {
-                if (el) el.dataset.qtyFor = line.lineRef
-              }}
-              className="!text-center font-bold text-xs !border-0 !bg-transparent"
-            />
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                stepQty(1)
-              }}
-              disabled={disabled}
-              className="w-6 h-6 rounded-full flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-900 shadow-2xs disabled:opacity-40 transition-all cursor-pointer"
-              title="Increase quantity"
-            >
-              <Plus size={11} />
-            </button>
-          </div>
-
-          {/* Unit of measure */}
-          <select
-            value={line.uomId}
-            disabled={disabled || line.uoms.length <= 1}
-            onChange={(e) => setUom(line.lineRef, e.target.value)}
-            data-uom-for={line.lineRef}
-            className="h-7 px-2.5 rounded-xl bg-slate-100/80 border border-slate-200/60 text-slate-700 text-xs font-bold focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
-            aria-label="Unit of measure"
-          >
-            {line.uoms.map((u) => (
-              <option key={u.uom_id} value={u.uom_id}>
-                {u.uom?.code ?? u.uom_id} {u.factor_to_base !== 1 ? `(×${u.factor_to_base})` : ''}
-              </option>
-            ))}
-          </select>
-
-          {/* Unit price */}
-          <div className="text-xs tabular text-slate-600 pl-0.5 font-medium">
-            <span>@</span>{' '}
-            {showQuoted ? (
-              <>
-                <span className="font-bold text-slate-900">{formatMoney(quoted.unit_price)}</span>
-                {hasBonus && <span className="ml-1 text-emerald-600 font-bold">+{formatQty(quoted.bonus_qty)} FREE</span>}
-                <span className="ml-1 inline-block align-middle">
-                  <PriceBreakdownPopover line={quoted} showCost={showCost} />
-                </span>
-              </>
-            ) : (
-              <span className="italic text-slate-500">{line.estimateUnitPrice ? `${formatMoney(line.estimateUnitPrice)} est.` : 'pricing…'}</span>
-            )}
-            {line.sellingPrice && (
-              <span
-                className="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold whitespace-nowrap"
-                title="Selling price set at the till for this sale only; the catalog price is unchanged"
-              >
-                Till price
-                {showQuoted && quoted.landing_price && <span className="font-medium"> · landing {formatMoney(quoted.landing_price)}</span>}
-                {!disabled && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSellingPrice(line.lineRef, null)
-                    }}
-                    className="ml-1 underline hover:text-emerald-900 cursor-pointer"
-                  >
-                    reset
-                  </button>
-                )}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Line Total */}
-        <div className="text-right shrink-0">
-          <MoneyCell
-            value={lineTotal}
-            className={`text-base font-bold tracking-tight text-slate-900 ${showQuoted ? '' : 'opacity-60 italic'}`}
-          />
-        </div>
-      </div>
-
-      {/* Batch & Expiry strip & Line discount trigger */}
-      <div className="flex items-center justify-between mt-2 pt-1.5 text-xs text-slate-600 font-medium border-t border-slate-100/80">
+      <div className="flex items-center gap-1 shrink-0">
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation()
-            setFefoOpen((v) => !v)
+            stepQty(-1)
           }}
-          className="hover:text-slate-900 inline-flex items-center gap-1 cursor-pointer font-semibold"
+          disabled={disabled}
+          title="Decrease (or remove if 1)"
+          className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 disabled:opacity-40 transition-all cursor-pointer"
         >
-          {fefoOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <span>Batch: </span>
-          {!stock ? (
-            // Not loaded (or offline): say nothing about stock rather than "none".
-            <span className="text-slate-500">{offline ? 'allocated when the sale syncs' : 'checking…'}</span>
-          ) : fefo.allocations.length === 0 ? (
-            <span className="text-amber-800 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
-              No released stock in {sellingStoreCode}
-              {heldElsewhere.length > 0 && (
-                <span className="font-medium">
-                  {' '}· {heldElsewhere.map((row) => `${formatQty(row.free_to_sell)} in ${row.store_code}`).join(', ')} — transfer it first
-                </span>
-              )}
-            </span>
-          ) : (
-            <span className="text-slate-700 font-mono">
-              {fefo.allocations.map((a) => `${a.batch_number} (×${formatQty(a.qty_base)})`).join(', ')}
-            </span>
-          )}
-          {stock && dIsPos(fefo.shortfall) && (
-            <span className="text-rose-700 font-bold bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200/80 ml-1">
-              Short by {formatQty(fefo.shortfall)}
-            </span>
-          )}
+          <Minus size={11} />
         </button>
-
-        {canDiscount && !discountOpen && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              setDiscountOpen(true)
-            }}
-            data-discount-toggle={line.lineRef}
-            className="text-blue-600 hover:text-blue-700 font-bold hover:underline cursor-pointer"
-          >
-            + Discount (F6)
-          </button>
-        )}
+        <QuantityInput
+          value={line.qty}
+          onChange={(qty) => setQty(line.lineRef, qty)}
+          uomCode={line.uoms.find((u) => u.uom_id === line.uomId)?.uom?.code ?? ''}
+          factorToBase={line.factorToBase}
+          baseUomCode={line.baseUomCode}
+          isDiscrete={line.isDiscrete}
+          max={freeToSell}
+          compact
+          disabled={disabled}
+          onEnter={onQtyEnter}
+          inputRef={(el) => {
+            if (el) el.dataset.qtyFor = line.lineRef
+          }}
+        />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            stepQty(1)
+          }}
+          disabled={disabled}
+          title="Increase quantity"
+          className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 disabled:opacity-40 transition-all cursor-pointer"
+        >
+          <Plus size={11} />
+        </button>
       </div>
 
-      {/* Expanded FEFO info */}
-      {fefoOpen && fefo.allocations.length > 0 && (
-        <ul className="mt-2 p-2.5 bg-slate-50/80 rounded-xl text-xs space-y-1 text-slate-600 border border-slate-200/50">
-          {fefo.allocations.map((a) => (
-            <li key={a.batch_id} className="flex justify-between font-mono">
-              <span>{a.batch_number} · exp {formatDate(a.expiry_date)}</span>
-              <span>{formatQty(a.qty_base)} {line.baseUomCode}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <CartLineInsight
-        line={line}
-        storeId={storeId}
-        customerId={customerId}
-        stock={stock}
-        short={!!stock && (fefo.allocations.length === 0 || dIsPos(fefo.shortfall))}
-        offline={offline}
-        canUsePrice={canDiscount && !disabled && showQuoted}
-        onUsePrice={(price, reason) => applyTargetPrice(price, reason)}
-        onAddAlternative={(product) => {
-          if (!disabled) addProduct(product)
-        }}
+      <MoneyCell
+        value={lineTotal}
+        title={unitPrice ? `@ ${formatMoney(unitPrice)}${line.sellingPrice ? ' · till price for this sale' : ''}` : undefined}
+        className={`w-24 shrink-0 text-right text-sm font-bold tracking-tight text-slate-900 ${showQuoted ? '' : 'opacity-60 italic'}`}
       />
 
-      {/* Expanded Line Discount Inputs */}
-      {discountOpen && canDiscount && (
-        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
-          <span className="text-xs text-slate-500 font-bold">Disc %:</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder="0"
-            value={line.requestedDiscountPct ?? ''}
-            disabled={disabled}
-            onChange={(e) => setLineDiscount(line.lineRef, e.target.value.replace(/[^\d.]/g, ''), line.discountReason ?? '')}
-            data-discount-for={line.lineRef}
-            className="w-14 h-7 px-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 text-right focus:outline-none focus:border-blue-500 shadow-2xs"
-          />
-          <span className="text-[10.5px] text-slate-500 font-semibold">or price:</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder={basePrice ? formatMoney(basePrice) : '—'}
-            value={targetPrice}
-            disabled={disabled || !basePrice}
-            onChange={(e) => setTargetPrice(e.target.value.replace(/[^\d.]/g, ''))}
-            onBlur={() => {
-              if (targetPrice) applyTargetPrice(targetPrice, 'Negotiated price')
-              setTargetPrice('')
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-            }}
-            title="Type the price agreed with the customer; it becomes the discount %. The margin floor still applies."
-            className="w-20 h-6 px-1 rounded bg-white border border-slate-200 text-xs font-bold text-slate-800 text-right focus:outline-none focus:border-blue-500"
-          />
-          {showQuoted && dIsPos(quoted.discount_per_unit) && (
-            <span className="text-[10.5px] text-emerald-700 font-bold tabular whitespace-nowrap" title="Unit price after the discount">
-              = {formatMoney(quoted.unit_price)}
-            </span>
-          )}
-          <input
-            type="text"
-            placeholder="Reason (required)…"
-            value={line.discountReason ?? ''}
-            disabled={disabled}
-            onChange={(e) => setLineDiscount(line.lineRef, line.requestedDiscountPct ?? '', e.target.value)}
-            className="flex-1 h-7 px-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-blue-500 shadow-2xs"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setLineDiscount(line.lineRef, '', '')
-              setDiscountOpen(false)
-            }}
-            className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
-          >
-            Clear
-          </button>
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onRemove()
+        }}
+        disabled={disabled}
+        aria-label="Remove item"
+        title="Remove item (Ctrl+Del)"
+        className="shrink-0 p-1.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-all disabled:opacity-40 cursor-pointer"
+      >
+        <Trash2 size={14} />
+      </button>
     </div>
   )
 }

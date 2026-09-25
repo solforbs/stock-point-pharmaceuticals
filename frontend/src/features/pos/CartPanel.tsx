@@ -204,8 +204,6 @@ export function CartPanel({
               line={line}
               selected={selectedLineRef === line.lineRef}
               quoteFresh={isFresh || (!!quote && !expired && !isQuoting)}
-              canDiscount={canDiscount}
-              showCost={showCost}
               disabled={disabled}
               onSelect={() => selectLine(line.lineRef)}
               onRemove={() => setRemoving(line.lineRef)}

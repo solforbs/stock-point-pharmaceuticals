@@ -10,9 +10,8 @@ export interface PosShortcutsModalProps {
 export const POS_SHORTCUTS = [
   { key: 'F2', label: 'Search' },
   { key: 'F3', label: 'Quantity' },
-  { key: 'F4', label: 'UOM' },
   { key: 'F5', label: 'Customer' },
-  { key: 'F6', label: 'Discount' },
+  { key: 'F6', label: 'Cart discount' },
   { key: 'F8', label: 'Hold' },
   { key: 'F9', label: 'Resume' },
   { key: 'F10', label: 'Pay' },

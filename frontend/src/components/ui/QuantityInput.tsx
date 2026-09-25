@@ -44,6 +44,13 @@ export function QuantityInput({
   const qtyBase = valid ? dMulInt(value, factorToBase) : null
   const overMax = qtyBase !== null && max !== null && max !== undefined && dCmp(qtyBase, max) > 0
   const showConversion = factorToBase !== 1 && qtyBase !== null
+  const hint = integerViolation
+    ? 'Whole units only'
+    : overMax
+      ? `Only ${formatQty(max)} ${baseUomCode} free to sell`
+      : showConversion
+        ? `${formatQty(value)} ${uomCode} = ${formatQty(qtyBase)} ${baseUomCode}`
+        : null
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
@@ -69,24 +76,28 @@ export function QuantityInput({
           onKeyDown={onKeyDown}
           onFocus={(e) => e.target.select()}
           aria-invalid={!valid || integerViolation || overMax}
+          title={compact ? hint ?? undefined : undefined}
           className={`ui-input tabular text-right ${compact ? 'h-7 text-xs' : ''} ${!valid || integerViolation ? '!border-rose-500' : overMax ? '!border-amber-500' : ''}`}
           style={{ width: compact ? 64 : undefined }}
         />
         <span className="text-xs text-slate-500 shrink-0">{uomCode}</span>
       </div>
-      <div className="text-xs mt-0.5 leading-tight min-h-[16px]">
-        {integerViolation ? (
-          <span className="text-rose-600 font-medium">Whole units only</span>
-        ) : overMax ? (
-          <span className="text-amber-700 font-medium">
-            Only {formatQty(max)} {baseUomCode} free to sell
-          </span>
-        ) : showConversion ? (
-          <span className="text-slate-500 tabular">
-            {formatQty(value)} {uomCode} = {formatQty(qtyBase)} {baseUomCode}
-          </span>
-        ) : null}
-      </div>
+      {/* Compact fields keep to one line; the hint travels as the input's tooltip instead. */}
+      {!compact && (
+        <div className="text-xs mt-0.5 leading-tight min-h-[16px]">
+          {integerViolation ? (
+            <span className="text-rose-600 font-medium">Whole units only</span>
+          ) : overMax ? (
+            <span className="text-amber-700 font-medium">
+              Only {formatQty(max)} {baseUomCode} free to sell
+            </span>
+          ) : showConversion ? (
+            <span className="text-slate-500 tabular">
+              {formatQty(value)} {uomCode} = {formatQty(qtyBase)} {baseUomCode}
+            </span>
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }

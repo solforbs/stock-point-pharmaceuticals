@@ -113,19 +113,21 @@ function PosPageInner() {
     setPaymentOpen(true)
   }
 
-  function focusSelected(attr: 'data-qty-for' | 'data-uom-for' | 'data-discount-for' | 'data-discount-toggle') {
+  function focusSelectedQty() {
     const ref = selectedLineRef ?? lines[lines.length - 1]?.lineRef
     if (!ref) return
-    const el = document.querySelector<HTMLElement>(`[${attr}="${ref}"]`)
-    if (el) {
-      el.focus()
-      if (attr === 'data-discount-toggle') el.click()
+    document.querySelector<HTMLElement>(`[data-qty-for="${ref}"]`)?.focus()
+  }
+
+  /** The only discount left lives on the cart header; open it if it is closed. */
+  function focusHeaderDiscount() {
+    const input = document.querySelector<HTMLElement>('[data-header-discount]')
+    if (input) {
+      input.focus()
       return
     }
-    if (attr === 'data-discount-for') {
-      document.querySelector<HTMLElement>(`[data-discount-toggle="${ref}"]`)?.click()
-      window.setTimeout(() => document.querySelector<HTMLElement>(`[data-discount-for="${ref}"]`)?.focus(), 0)
-    }
+    document.querySelector<HTMLElement>('[data-header-discount-toggle]')?.click()
+    window.setTimeout(() => document.querySelector<HTMLElement>('[data-header-discount]')?.focus(), 0)
   }
 
   function newSale() {
@@ -149,11 +151,7 @@ function PosPageInner() {
           break
         case 'F3':
           e.preventDefault()
-          focusSelected('data-qty-for')
-          break
-        case 'F4':
-          e.preventDefault()
-          focusSelected('data-uom-for')
+          focusSelectedQty()
           break
         case 'F5':
           e.preventDefault()
@@ -161,7 +159,7 @@ function PosPageInner() {
           break
         case 'F6':
           e.preventDefault()
-          if (canDiscount) focusSelected('data-discount-for')
+          if (canDiscount) focusHeaderDiscount()
           break
         case 'F8':
           e.preventDefault()

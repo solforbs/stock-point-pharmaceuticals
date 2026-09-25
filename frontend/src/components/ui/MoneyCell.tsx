@@ -6,15 +6,18 @@ export function MoneyCell({
   symbol = false,
   className = '',
   muted,
+  title,
 }: {
   value: string | number | null | undefined
   symbol?: boolean
   className?: string
   muted?: boolean
+  title?: string
 }) {
   const negative = isNegative(value)
   return (
     <span
+      title={title}
       className={`tabular whitespace-nowrap ${negative ? 'text-rose-600' : muted ? 'text-slate-400' : ''} ${className}`}
     >
       {symbol ? formatKes(value) : formatMoney(value)}

@@ -77,8 +77,9 @@ export function CartTotalsCard({
                 type="button"
                 className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1 cursor-pointer"
                 onClick={() => setHeaderOpen(true)}
+                data-header-discount-toggle
               >
-                <Tag size={11} /> + Discount
+                <Tag size={11} /> + Discount (F6)
               </button>
             )}
             {Number(discount) > 0 && (
@@ -111,6 +112,7 @@ export function CartTotalsCard({
                   value={headerDiscount}
                   disabled={disabled}
                   onChange={(e) => onSetHeaderDiscount(e.target.value.replace(/[^\d.]/g, ''), headerDiscountReason)}
+                  data-header-discount
                   className="w-full h-8 pl-10 pr-2 rounded-lg bg-white border border-slate-300 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 text-right"
                 />
               </div>
