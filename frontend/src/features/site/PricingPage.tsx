@@ -92,13 +92,13 @@ function PlanCard({ plan, interval, featured }: { plan: Plan; interval: Interval
       <h2 className="font-display text-xl font-bold tracking-tight text-slate-900">{plan.name}</h2>
       {plan.description && <p className="mt-1.5 text-slate-500">{plan.description}</p>}
 
-      <motion.div key={interval} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="mt-6 flex items-baseline gap-1.5">
+      <motion.div key={interval} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="mt-6 flex flex-wrap items-baseline gap-1.5">
         {unavailable ? (
           <span className="text-sm font-medium text-slate-500">Offered monthly only</span>
         ) : (
           <>
             <span className="text-sm font-semibold text-slate-500">{plan.currency}</span>
-            <span className="font-display text-5xl font-extrabold tracking-tight text-slate-900">{formatMoney(price ?? '0')}</span>
+            <span className="font-display text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">{formatMoney(price ?? '0')}</span>
             <span className="text-sm text-slate-500">/{interval === 'YEARLY' ? 'year' : 'month'}</span>
           </>
         )}

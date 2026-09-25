@@ -93,7 +93,7 @@ export function AppPreview({
                     ))}
                 </nav>
 
-                <div className="min-w-0 flex-1 bg-white p-4">
+                <div className="@container min-w-0 flex-1 bg-white p-4">
                     {screen === "dashboard" && (
                         <DashboardScreen quiet={quiet} />
                     )}
@@ -117,7 +117,9 @@ function DashboardScreen({ quiet }: { quiet: boolean | null }) {
                 <span className="text-[10px] text-slate-400">Today</span>
             </div>
 
-            <div className="mt-3 grid grid-cols-3 gap-2.5">
+            {/* Three cards where the frame is wide, one stat per row where it is not —
+                the hero's small product shot has a sidebar eating half its width. */}
+            <div className="mt-3 grid gap-2 @[18rem]:grid-cols-3 @[18rem]:gap-2.5">
                 {[
                     {
                         label: "Sales today",
@@ -140,16 +142,16 @@ function DashboardScreen({ quiet }: { quiet: boolean | null }) {
                 ].map((card) => (
                     <div
                         key={card.label}
-                        className="rounded-xl border border-slate-200 p-2.5"
+                        className="flex min-w-0 items-baseline justify-between gap-2 rounded-xl border border-slate-200 p-2 @[18rem]:block @[18rem]:p-2.5"
                     >
                         <div className="text-[9px] uppercase tracking-wide text-slate-400">
                             {card.label}
                         </div>
-                        <div className="mt-1 text-[13px] font-bold tabular-nums text-slate-900">
+                        <div className="whitespace-nowrap text-[13px] font-bold tabular-nums text-slate-900 @[18rem]:mt-1">
                             {card.value}
                         </div>
                         <div
-                            className={`mt-0.5 flex items-center gap-0.5 text-[9px] font-semibold ${card.tone}`}
+                            className={`hidden items-center gap-0.5 text-[9px] font-semibold @[18rem]:mt-0.5 @[18rem]:flex ${card.tone}`}
                         >
                             {card.delta === "+12%" && (
                                 <ArrowUpRight
