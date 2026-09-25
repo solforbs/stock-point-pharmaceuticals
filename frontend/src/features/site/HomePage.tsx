@@ -14,6 +14,7 @@ export default function HomePage() {
       <TrustStrip />
       <Coverage />
       <ModuleShelf />
+      <ClinicFloor />
       <SellingFloor />
       <Warehouse />
       <HowItWorks />
@@ -194,7 +195,7 @@ function Coverage() {
           Set up and supported in every county in Kenya
         </p>
         <p className="mt-1.5 text-center text-slate-500">
-          Remotely as standard, on site when it is worth the journey — from a single counter to a national distributor.
+          Remotely as standard, on site when it is worth the journey — from a single counter to a full hospital.
         </p>
       </div>
 
@@ -219,7 +220,7 @@ function ModuleShelf() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">What is inside</h2>
-          <p className="mt-2 text-lg text-slate-500">Eight modules, one product list, one ledger.</p>
+          <p className="mt-2 text-lg text-slate-500">Ten modules, one patient record, one ledger.</p>
         </div>
         <span className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700">
           <span className="h-2 w-2 animate-pulse rounded-full bg-blue-600" aria-hidden />
@@ -246,6 +247,65 @@ function ModuleShelf() {
           </RevealItem>
         ))}
       </Reveal>
+    </section>
+  )
+}
+
+/** The patient journey: the hospital and laboratory side of the platform. */
+function ClinicFloor() {
+  return (
+    <section className="border-t border-slate-100 bg-white">
+      <div className="mx-auto grid w-full max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2">
+        <Reveal>
+          <RevealItem>
+            <span className="text-sm font-bold uppercase tracking-[0.18em] text-blue-600">In the clinic</span>
+          </RevealItem>
+          <RevealItem>
+            <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              From reception to results, without paper
+            </h2>
+          </RevealItem>
+          <RevealItem>
+            <p className="mt-4 text-lg leading-relaxed text-slate-600">
+              The patient is registered once. Reception opens the visit and takes the fee, the clinician records the
+              consultation and diagnosis, the laboratory receives the order the moment it is written, and the prescription
+              reaches the pharmacy already priced. Every department watches the same live patient flow.
+            </p>
+          </RevealItem>
+          <RevealItem as="div">
+            <ul className="mt-6 space-y-3">
+              {[
+                'Consultations with vitals, ICD-coded diagnoses and a treatment plan',
+                'Lab results entered by one person and approved by another',
+                'The prescription arrives at the till priced and ready to dispense',
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3 text-slate-700">
+                  <Check className="mt-1 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </RevealItem>
+          <RevealItem as="div">
+            <dl className="mt-8 grid max-w-md grid-cols-3 gap-6 border-t border-slate-200 pt-6">
+              {[
+                ['1 record', 'per patient, forever'],
+                ['Live', 'flow across departments'],
+                ['2 signatures', 'on every lab report'],
+              ].map(([figure, label]) => (
+                <div key={label}>
+                  <dt className="font-display text-xl font-bold text-slate-900 sm:text-2xl">{figure}</dt>
+                  <dd className="mt-1 text-sm text-slate-500">{label}</dd>
+                </div>
+              ))}
+            </dl>
+          </RevealItem>
+        </Reveal>
+
+        <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.6 }}>
+          <AppPreview screen="hospital" />
+        </motion.div>
+      </div>
     </section>
   )
 }
@@ -286,7 +346,7 @@ function SellingFloor() {
           <RevealItem as="div">
             <dl className="mt-8 grid max-w-md grid-cols-3 gap-6 border-t border-slate-200 pt-6">
               {[
-                ['8', 'modules, one login'],
+                ['10', 'modules, one login'],
                 ['60+', 'reports ready to run'],
                 ['0', 'sales lost offline'],
               ].map(([figure, label]) => (

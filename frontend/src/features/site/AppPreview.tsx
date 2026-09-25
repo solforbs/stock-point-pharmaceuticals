@@ -4,14 +4,18 @@ import {
     ArrowUpRight,
     BarChart3,
     Boxes,
+    ClipboardList,
     CreditCard,
     LayoutDashboard,
+    Microscope,
     Package,
     Receipt,
     ScanLine,
     Search,
     ShieldCheck,
+    Stethoscope,
     Truck,
+    Users,
 } from "lucide-react";
 
 /**
@@ -22,14 +26,23 @@ import {
  * the way a screenshot does.
  */
 
-type Screen = "dashboard" | "pos" | "stock";
+type Screen = "dashboard" | "pos" | "stock" | "hospital";
 
-const SIDEBAR: { icon: typeof LayoutDashboard; label: string }[] = [
+const PHARMACY_SIDEBAR: { icon: typeof LayoutDashboard; label: string }[] = [
     { icon: LayoutDashboard, label: "Dashboard" },
     { icon: Receipt, label: "Sales" },
     { icon: Boxes, label: "Stock" },
     { icon: Package, label: "Procurement" },
     { icon: Truck, label: "Warehouse" },
+    { icon: BarChart3, label: "Reports" },
+];
+
+const HOSPITAL_SIDEBAR: typeof PHARMACY_SIDEBAR = [
+    { icon: LayoutDashboard, label: "Dashboard" },
+    { icon: ClipboardList, label: "Reception" },
+    { icon: Users, label: "Patients" },
+    { icon: Stethoscope, label: "Encounters" },
+    { icon: Microscope, label: "Laboratory" },
     { icon: BarChart3, label: "Reports" },
 ];
 
@@ -41,8 +54,16 @@ export function AppPreview({
     className?: string;
 }) {
     const quiet = useReducedMotion();
+    const sidebar =
+        screen === "hospital" ? HOSPITAL_SIDEBAR : PHARMACY_SIDEBAR;
     const active =
-        screen === "pos" ? "Sales" : screen === "stock" ? "Stock" : "Dashboard";
+        screen === "pos"
+            ? "Sales"
+            : screen === "stock"
+              ? "Stock"
+              : screen === "hospital"
+                ? "Encounters"
+                : "Dashboard";
 
     return (
         <div
@@ -75,10 +96,10 @@ export function AppPreview({
                             />
                         </span>
                         <span className="text-[11px] font-bold tracking-tight text-slate-900">
-                            PharmaPoint
+                            Stockpoint
                         </span>
                     </div>
-                    {SIDEBAR.map((item) => (
+                    {sidebar.map((item) => (
                         <span
                             key={item.label}
                             className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium ${
@@ -99,6 +120,7 @@ export function AppPreview({
                     )}
                     {screen === "pos" && <PosScreen />}
                     {screen === "stock" && <StockScreen quiet={quiet} />}
+                    {screen === "hospital" && <HospitalScreen quiet={quiet} />}
                 </div>
             </div>
         </div>
@@ -297,6 +319,73 @@ function PosScreen() {
                 </div>
             </div>
         </div>
+    );
+}
+
+function HospitalScreen({ quiet }: { quiet: boolean | null }) {
+    const rows: [string, string, string, string][] = [
+        ["Grace W.", "ENC-0142", "In consultation", "bg-blue-50 text-blue-700"],
+        [
+            "Daniel K.",
+            "ENC-0141",
+            "Awaiting results",
+            "bg-amber-50 text-amber-700",
+        ],
+        ["Amina H.", "ENC-0140", "At the pharmacy", "bg-sky-50 text-sky-700"],
+        [
+            "Peter N.",
+            "ENC-0139",
+            "Completed",
+            "bg-emerald-50 text-emerald-700",
+        ],
+    ];
+
+    return (
+        <>
+            <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-900">
+                    Patient flow
+                </h3>
+                <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[9px] font-semibold text-blue-700">
+                    Live · Today
+                </span>
+            </div>
+
+            <div className="mt-2.5 space-y-1.5">
+                {rows.map(([name, encounter, status, tone], index) => (
+                    <motion.div
+                        key={encounter}
+                        initial={quiet ? undefined : { opacity: 0, x: -8 }}
+                        whileInView={quiet ? undefined : { opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.35, delay: index * 0.07 }}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-2.5 py-1.5"
+                    >
+                        <span className="min-w-0 truncate text-[10px] font-semibold text-slate-800">
+                            {name}
+                        </span>
+                        <span className="hidden font-mono text-[9px] text-slate-400 @[16rem]:inline">
+                            {encounter}
+                        </span>
+                        <span
+                            className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-semibold ${tone}`}
+                        >
+                            {status}
+                        </span>
+                    </motion.div>
+                ))}
+            </div>
+
+            <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2">
+                <Stethoscope
+                    className="h-3.5 w-3.5 shrink-0 text-blue-600"
+                    aria-hidden
+                />
+                <span className="text-[10px] font-medium text-blue-800">
+                    RX-0287 priced and waiting at the till · KES 1,240
+                </span>
+            </div>
+        </>
     );
 }
 

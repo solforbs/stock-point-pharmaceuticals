@@ -31,8 +31,8 @@ export default function AboutPage() {
     <>
       <PageIntro
         eyebrow="About"
-        title="Software for the pharmacy business, written where pharmacies work"
-        body="Stockpoint Solforbs builds the system a Kenyan pharmacy actually needs — the counter, the store, the supplier, the regulator and the books, in one place. It is used by pharmacies, wholesalers and hospital pharmacies across the country, wherever they trade."
+        title="Software for the healthcare business, written where it works"
+        body="Stockpoint Solforbs builds the system a Kenyan facility actually needs — the patient, the counter, the laboratory, the store, the supplier, the regulator and the books, in one place. It is used by hospitals, clinics, laboratories, pharmacies and wholesalers across the country."
         image="pharmacy-counter.jpg"
       />
 
@@ -75,7 +75,7 @@ export default function AboutPage() {
           </div>
           <Reveal as="div" className="grid grid-cols-2 gap-5 self-start">
             {[
-              ['Retail & wholesale', 'One system, both trades'],
+              ['Hospital · Lab · Pharmacy', 'Three doors, one system'],
               ['Countrywide', 'Every county, set up remotely'],
               ['Offline-capable', 'The till never stops'],
               ['KRA-ready', 'eTIMS when you are'],

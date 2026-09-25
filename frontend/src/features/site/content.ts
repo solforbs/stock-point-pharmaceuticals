@@ -7,10 +7,11 @@ import {
   FileText,
   GraduationCap,
   Landmark,
+  Microscope,
   PackageSearch,
   Receipt,
   ShieldCheck,
-  Snowflake,
+  Stethoscope,
   Store,
   Truck,
   Users,
@@ -26,22 +27,22 @@ import { FacebookIcon, InstagramIcon, TikTokIcon, WhatsAppIcon, XIcon, YouTubeIc
 
 export type Highlight = { icon: LucideIcon; title: string; body: string }
 
-/** The four things a pharmacy owner cares about before anything else. */
+/** The four things a facility owner cares about before anything else. */
 export const HEADLINE_POINTS: Highlight[] = [
+  {
+    icon: Stethoscope,
+    title: 'One patient record, the whole visit',
+    body: 'Registered at reception, seen in consultation, tested in the laboratory, dispensed at the pharmacy — one record and one bill, no paper in between.',
+  },
   {
     icon: Store,
     title: 'Sell at the counter and to the trade',
-    body: 'One till for retail walk-ins and wholesale invoices, with tiered price lists, discount approval and M-Pesa or cash settlement.',
+    body: 'One till for retail walk-ins, wholesale invoices and hospital dispensing, with tiered price lists, discount approval and M-Pesa or cash settlement.',
   },
   {
     icon: WifiOff,
     title: 'Keeps selling when the internet does not',
     body: 'The till holds a price pack and takes sales offline, then syncs every receipt the moment the line comes back. Nothing is lost.',
-  },
-  {
-    icon: Snowflake,
-    title: 'Batch, expiry and cold chain, properly',
-    body: 'Every unit carries its batch and expiry. FEFO is enforced on picking, quarantine is real, and cold-chain excursions are recorded.',
   },
   {
     icon: BadgeCheck,
@@ -55,12 +56,38 @@ export type Module = { key: string; icon: LucideIcon; name: string; summary: str
 /** What is inside, grouped the way the software is grouped. */
 export const MODULES: Module[] = [
   {
+    key: 'hospital',
+    icon: Stethoscope,
+    name: 'Hospital',
+    summary: 'The patient journey from the front desk to discharge.',
+    points: [
+      'A patient registry where every visit builds one continuous history',
+      'Reception opens the encounter, takes the consultation fee and queues the patient',
+      'Consultations with vitals, examination, ICD-coded diagnoses and a treatment plan',
+      'Lab orders and prescriptions leave the consulting room electronically — no paper chits',
+      'Referrals, follow-ups and a live patient-flow board across every department',
+    ],
+  },
+  {
+    key: 'laboratory',
+    icon: Microscope,
+    name: 'Laboratory',
+    summary: 'From the clinician’s order to an approved, printed report.',
+    points: [
+      'A test catalogue with categories, prices, sample types, units and normal ranges',
+      'Orders arrive on the bench the moment the clinician sends them',
+      'Samples logged with their number and condition; out-of-range results flagged',
+      'Results entered by one person and approved by another before the report goes out',
+    ],
+  },
+  {
     key: 'sales',
     icon: Receipt,
     name: 'Sales',
     summary: 'The counter, the trade desk and everything the customer signs.',
     points: [
       'Touch point of sale with holds, shortcuts and offline selling',
+      'Prescriptions from the hospital arrive priced and waiting at the till',
       'Quotations that convert to sales orders and invoices',
       'Customer tiers, price lists, promotions and credit limits',
       'Returns, voids and credit notes with a reason on every one',
@@ -155,7 +182,7 @@ export const MODULES: Module[] = [
 export type Step = { number: string; title: string; body: string }
 
 export const HOW_IT_WORKS: Step[] = [
-  { number: '01', title: 'We set up your institution', body: 'Branches, stores, users and roles, your product list loaded with its opening stock, and your prices as they stand today.' },
+  { number: '01', title: 'We set up your institution', body: 'Facilities, branches, stores, users and roles, your product and test lists loaded with opening stock, and your prices as they stand today.' },
   { number: '02', title: 'Your team is trained inside the system', body: 'Each person works through the courses for their role and practises on real screens before the doors open.' },
   { number: '03', title: 'You go live', body: 'Sell, receive, transfer and bank as normal. The books post themselves and the reports arrive without being asked for.' },
   { number: '04', title: 'You grow', body: 'Add a branch, a store or a till and everything — stock, prices, permissions, reports — separates and consolidates on its own.' },
@@ -164,6 +191,11 @@ export const HOW_IT_WORKS: Step[] = [
 export type Faq = { question: string; answer: string }
 
 export const FAQS: Faq[] = [
+  {
+    question: 'Do I need the hospital and laboratory modules?',
+    answer:
+      'Only if you run a clinic or a lab. Each module stands on its own: a standalone pharmacy uses the pharmacy module alone, and a facility with consulting rooms and a bench switches the others on. Everyone signs in at the same door and sees only the modules their permissions open.',
+  },
   {
     question: 'What happens when the internet goes down?',
     answer:
@@ -231,20 +263,20 @@ export type Slide = {
 
 export const SLIDES: Slide[] = [
   {
-    badge: 'Sells offline · syncs later',
-    title: 'The counter never',
-    highlight: 'stops trading',
-    body: 'Retail and wholesale on one till, with batch, expiry and M-PESA handled behind the scenes — and every receipt kept when the line drops.',
+    badge: 'Hospital · Laboratory · Pharmacy',
+    title: 'One system from the',
+    highlight: 'door to the dispensary',
+    body: 'The patient is registered once, seen in consultation, tested in the laboratory and dispensed at the pharmacy — one record, one bill, no paper in between.',
     priceLabel: 'Plans from',
     price: 'KES 2,500',
     image: 'hero-pharmacist.jpg',
     cta: 'Request a demo',
   },
   {
-    badge: 'Batch · expiry · FEFO',
-    title: 'Know every unit you',
-    highlight: 'hold and owe',
-    body: 'From the goods receipt to the customer’s hand, each pack carries its batch and expiry. Quarantine is real and the cold chain is logged.',
+    badge: 'Sells offline · batch · FEFO',
+    title: 'The counter never',
+    highlight: 'stops trading',
+    body: 'Retail, wholesale and hospital dispensing on one till, batch and expiry behind every pack — and every receipt kept when the line drops.',
     priceLabel: 'Ready for',
     price: 'eTIMS & KRA',
     image: 'pills.jpg',
