@@ -372,7 +372,7 @@ function CategoryBar({ scrolled, progress }: { scrolled: boolean; progress: Retu
           </AnimatePresence>
         </div>
 
-        <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
+        <nav className="flex flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden">
           {SITE_NAV.map((item) => (
             <NavLink key={item.to} to={item.to} className="group relative shrink-0 rounded-lg px-4 py-2.5 font-semibold">
               {({ isActive }) => (
@@ -383,7 +383,7 @@ function CategoryBar({ scrolled, progress }: { scrolled: boolean; progress: Retu
                   {isActive && (
                     <motion.span
                       layoutId="site-nav-active"
-                      className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-blue-600"
+                      className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-blue-600"
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     />
                   )}
