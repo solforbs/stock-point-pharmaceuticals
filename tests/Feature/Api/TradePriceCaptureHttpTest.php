@@ -99,10 +99,46 @@ class TradePriceCaptureHttpTest extends TestCase
             'the old retail price is closed, not overwritten',
         );
 
-        $audit = AuditLog::where('action', 'PRICE_CHANGED')->where('reference', 'RETAIL')->sole();
+        $audits = AuditLog::where('action', 'PRICE_CHANGED')->where('reference', 'RETAIL')->get();
+        $this->assertCount(4, $audits, 'one audited row per selling unit of the product');
+        $audit = $audits->first(fn (AuditLog $a) => $a->after_json['unit_price'] === '560.0000');
         $this->assertSame('goods_receipt', $audit->after_json['source']);
         $this->assertSame($grn['doc_number'], $audit->after_json['goods_receipt']);
         $this->assertSame('418.5000', $audit->after_json['buying_cost']);
+    }
+
+    /**
+     * The price set at receiving IS the price at the till, whatever unit
+     * the sale is rung up in: the received-unit price is written pro-rata
+     * for every selling unit, and the product's fallback default price
+     * follows, so no stale number can undercut or overcharge it.
+     */
+    public function test_the_receipt_price_carries_to_every_selling_unit_and_the_fallback(): void
+    {
+        $this->grantPermissions(['po.create', 'po.approve', 'grn.create', 'price.manage']);
+        $this->amox->update(['default_price' => '9.9900']);
+        $po = $this->approvedPo();
+
+        $this->postJson('/api/goods-receipts', $this->grnPayload($po, [
+            'trade_price' => '450', 'discount_pct' => '7',
+            'selling_prices' => [
+                ['price_list_id' => $this->retail->id, 'unit_price' => '560'],
+                ['price_list_id' => $this->wholesale->id, 'unit_price' => '495'],
+            ],
+        ]))->assertCreated();
+
+        // 560 a box of 200: 2.80 a tablet, 28 a strip of 10, 5,600 a carton.
+        foreach (['TAB' => '2.8000', 'STR' => '28.0000', 'BOX' => '560.0000', 'CTN' => '5600.0000'] as $uom => $price) {
+            $row = ProductPrice::where('price_list_id', $this->retail->id)
+                ->where('uom_id', $this->uoms[$uom]->id)->whereNull('effective_to')->orderByDesc('effective_from')->firstOrFail();
+            $this->assertSame($price, (string) $row->unit_price, "the {$uom} retail price follows the receipt");
+        }
+
+        // The fallback follows the cheapest priced list (wholesale 495 a
+        // box = 2.475 a tablet), so rank 6 can never overcharge a walk-in.
+        $this->assertSame('2.4750', (string) $this->amox->fresh()->default_price);
+        $audit = AuditLog::where('action', 'PRODUCT_DEFAULT_PRICE_SET_ON_RECEIPT')->sole();
+        $this->assertSame('9.9900', $audit->before_json['default_price']);
     }
 
     public function test_selling_prices_need_the_price_permission(): void

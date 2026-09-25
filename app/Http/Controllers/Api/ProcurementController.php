@@ -12,6 +12,7 @@ use App\Models\NumberSequence;
 use App\Models\Organisation;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\ProductUom;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
 use App\Models\Supplier;
@@ -451,9 +452,13 @@ class ProcurementController extends ApiController
     }
 
     /**
-     * Writes the selling prices keyed on the receipt as fixed prices in the
-     * received unit, one effective-dated row per price list, inside the
-     * receipt's own transaction — the stock and its new price land together.
+     * Writes the selling prices keyed on the receipt as fixed prices,
+     * inside the receipt's own transaction — the stock and its new price
+     * land together. The price is given in the received unit, but the till
+     * may sell in any unit, so the same per-base-unit rate is written for
+     * every sellable unit of the product; the product's default (fallback)
+     * price follows too. The price defined at receiving IS the price
+     * everywhere until someone deliberately changes it.
      *
      * @param  list<array<string, mixed>>  $lines
      */
@@ -462,20 +467,75 @@ class ProcurementController extends ApiController
         $organisationId = $this->organisationId($request);
 
         foreach ($lines as $line) {
-            foreach ($line['selling_prices'] ?? [] as $entry) {
+            if (empty($line['selling_prices'])) {
+                continue;
+            }
+
+            $uoms = ProductUom::where('product_id', $line['product_id'])->get();
+            $received = $uoms->firstWhere('uom_id', $line['uom_id']);
+            $targets = $received
+                ? $uoms->filter(fn (ProductUom $u) => $u->is_sales || $u->is_base || $u->uom_id === $line['uom_id'])
+                : $uoms->where('uom_id', $line['uom_id']);
+
+            foreach ($line['selling_prices'] as $entry) {
                 $list = PriceList::where('organisation_id', $organisationId)->where('is_active', true)->find($entry['price_list_id']);
                 if (! $list) {
                     throw ValidationException::withMessages(['selling_prices' => 'A price list chosen for the new selling prices is no longer active.']);
                 }
 
-                $prices->write($list, [
-                    'product_id' => $line['product_id'],
-                    'uom_id' => $line['uom_id'],
-                    'factor_type' => 'FIXED',
-                    'unit_price' => (string) $entry['unit_price'],
-                ], ['source' => 'goods_receipt', 'goods_receipt' => $receipt->doc_number, 'buying_cost' => (string) $line['unit_cost']]);
+                $perBase = $received
+                    ? bcdiv((string) $entry['unit_price'], (string) $received->factor_to_base, 8)
+                    : null;
+
+                foreach ($targets as $target) {
+                    $prices->write($list, [
+                        'product_id' => $line['product_id'],
+                        'uom_id' => $target->uom_id,
+                        'factor_type' => 'FIXED',
+                        'unit_price' => $perBase !== null
+                            ? bcadd(bcmul($perBase, (string) $target->factor_to_base, 8), '0', 4)
+                            : (string) $entry['unit_price'],
+                    ], ['source' => 'goods_receipt', 'goods_receipt' => $receipt->doc_number, 'buying_cost' => (string) $line['unit_cost']]);
+                }
             }
+
+            $this->syncDefaultPrice($line, $received, $receipt);
         }
+    }
+
+    /**
+     * The product's default price is the last-resort fallback when no list
+     * matches a sale; left stale it quotes a different number than the one
+     * just set at receiving. It follows the receipt's price, per base unit.
+     *
+     * @param  array<string, mixed>  $line
+     */
+    private function syncDefaultPrice(array $line, ?ProductUom $received, GoodsReceipt $receipt): void
+    {
+        if (! $received) {
+            return;
+        }
+
+        // Several lists may be priced on one line; the fallback follows the
+        // cheapest, so a forgotten list can never overcharge a walk-in.
+        $perBase = collect($line['selling_prices'])
+            ->map(fn (array $entry) => bcdiv((string) $entry['unit_price'], (string) $received->factor_to_base, 8))
+            ->sort(fn (string $a, string $b) => bccomp($a, $b, 8))
+            ->first();
+        $perBase = bcadd($perBase, '0', 4);
+
+        $product = Product::findOrFail($line['product_id']);
+        if (bccomp((string) ($product->default_price ?? '0'), $perBase, 4) === 0) {
+            return;
+        }
+
+        $before = $product->default_price;
+        $product->update(['default_price' => $perBase]);
+        AuditLog::record('PRODUCT_DEFAULT_PRICE_SET_ON_RECEIPT', 'product', $product->id, [
+            'reference' => $product->code,
+            'before_json' => ['default_price' => $before],
+            'after_json' => ['default_price' => $perBase, 'goods_receipt' => $receipt->doc_number],
+        ]);
     }
 
     public function goodsReceipt(Request $request, string $receipt): JsonResponse

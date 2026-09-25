@@ -55,7 +55,7 @@ export function SellingPricesPanel({ productId, uomId, uomCode, buyingCost, valu
   return (
     <div className="py-2 space-y-2">
       <div className="text-xs text-slate-600">
-        Selling prices per <strong>{uomCode || 'unit'}</strong>. Buying cost <strong className="tabular">KES {cost > 0 ? cost.toFixed(2) : '—'}</strong>. New prices are saved when the receipt posts; leave a box blank to keep the current price. The +18% and +20% buttons price off the landed cost.
+        Selling prices per <strong>{uomCode || 'unit'}</strong>. Buying cost <strong className="tabular">KES {cost > 0 ? cost.toFixed(2) : '—'}</strong>. New prices are saved when the receipt posts and carry through to every selling unit of this product (pro-rata) and the fallback price, so the till charges exactly what is set here. Leave a box blank to keep the current price. The +18% and +20% buttons price off the landed cost.
       </div>
       {data.lists.length === 0 ? (
         <p className="text-xs text-slate-500">There are no active price lists. Set them up under Pricing first.</p>
