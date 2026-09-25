@@ -77,6 +77,15 @@ class RoleSeeder extends Seeder
             'report.view', 'price.simulate', 'leave.request',
         ],
         'Patient' => [],
+        // Part 18.3 — the bootstrap/IT role `user:create-admin` grants:
+        // users, settings and the audit log, no clinical or financial
+        // posting rights. It sat in RETIRED_ROLES for a while, which broke
+        // the console command that every fresh install starts from.
+        'System Administrator' => [
+            'admin.users', 'admin.settings', 'audit.view', 'record.delete',
+            'licence.view', 'licence.manage', 'document.manage',
+            'training.manage',
+        ],
     ];
 
     /**
@@ -85,7 +94,7 @@ class RoleSeeder extends Seeder
      * people in Users & Roles, then reseed to complete the clean-up).
      */
     public const RETIRED_ROLES = [
-        'Super Administrator', 'System Administrator',
+        'Super Administrator',
         'Operations Manager', 'Senior Cashier', 'Cashier', 'Storekeeper', 'Wholesale Rep',
         'Procurement Officer', 'Finance Officer', 'Auditor',
         'Hospital Administrator', 'Receptionist', 'Nurse',

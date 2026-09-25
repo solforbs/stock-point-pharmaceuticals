@@ -2,9 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Branch;
 use App\Models\Customer;
-use App\Models\Organisation;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductBatch;
@@ -23,14 +21,16 @@ use RuntimeException;
 
 class KenyanPharmaSalesSeeder extends Seeder
 {
+    use ResolvesSeedTargets;
+
     public function run(): void
     {
-        $org = Organisation::first();
+        $org = $this->seedOrganisation();
         if (! $org) {
             throw new RuntimeException('Organisation not found. Run OrganisationSeeder first.');
         }
 
-        $branch = Branch::where('organisation_id', $org->id)->first();
+        $branch = $this->seedBranch($org);
         $admin = User::where('email', 'admin@example.com')->first();
         $userId = $admin->id ?? 1;
 
@@ -155,7 +155,6 @@ class KenyanPharmaSalesSeeder extends Seeder
                 $sale = Sale::updateOrCreate(
                     ['doc_number' => $ws['doc_number']],
                     [
-                        'id' => (string) Str::uuid(),
                         'organisation_id' => $org->id,
                         'branch_id' => $branch->id,
                         'store_id' => $ws['store']->id,
@@ -184,7 +183,6 @@ class KenyanPharmaSalesSeeder extends Seeder
                 $lineNo = 1;
                 foreach ($lines as $lineData) {
                     $saleLine = SaleLine::create([
-                        'id' => (string) Str::uuid(),
                         'sale_id' => $sale->id,
                         'line_number' => $lineNo++,
                         'product_id' => $lineData['product']->id,
@@ -204,7 +202,6 @@ class KenyanPharmaSalesSeeder extends Seeder
                     ]);
 
                     SaleLineBatchAllocation::create([
-                        'id' => (string) Str::uuid(),
                         'sale_line_id' => $saleLine->id,
                         'batch_id' => $lineData['batch']->id,
                         'store_id' => $ws['store']->id,
@@ -220,7 +217,6 @@ class KenyanPharmaSalesSeeder extends Seeder
 
                     // Post negative stock movement
                     StockLedger::create([
-                        'id' => (string) Str::uuid(),
                         'organisation_id' => $org->id,
                         'branch_id' => $branch->id,
                         'store_id' => $ws['store']->id,
@@ -326,7 +322,6 @@ class KenyanPharmaSalesSeeder extends Seeder
                 $sale = Sale::updateOrCreate(
                     ['doc_number' => $rs['doc_number']],
                     [
-                        'id' => (string) Str::uuid(),
                         'organisation_id' => $org->id,
                         'branch_id' => $branch->id,
                         'store_id' => $retailStore->id,
@@ -355,7 +350,6 @@ class KenyanPharmaSalesSeeder extends Seeder
                 $lineNo = 1;
                 foreach ($lines as $lineData) {
                     $saleLine = SaleLine::create([
-                        'id' => (string) Str::uuid(),
                         'sale_id' => $sale->id,
                         'line_number' => $lineNo++,
                         'product_id' => $lineData['product']->id,
@@ -375,7 +369,6 @@ class KenyanPharmaSalesSeeder extends Seeder
                     ]);
 
                     SaleLineBatchAllocation::create([
-                        'id' => (string) Str::uuid(),
                         'sale_line_id' => $saleLine->id,
                         'batch_id' => $lineData['batch']->id,
                         'store_id' => $retailStore->id,
@@ -391,7 +384,6 @@ class KenyanPharmaSalesSeeder extends Seeder
 
                     // Post negative stock movement
                     StockLedger::create([
-                        'id' => (string) Str::uuid(),
                         'organisation_id' => $org->id,
                         'branch_id' => $branch->id,
                         'store_id' => $retailStore->id,
@@ -412,7 +404,6 @@ class KenyanPharmaSalesSeeder extends Seeder
 
                 // Create paid receipt record
                 Payment::create([
-                    'id' => (string) Str::uuid(),
                     'organisation_id' => $org->id,
                     'branch_id' => $branch->id,
                     'customer_id' => null,
@@ -432,7 +423,6 @@ class KenyanPharmaSalesSeeder extends Seeder
             Sale::updateOrCreate(
                 ['doc_number' => 'RCP-2026-0006'],
                 [
-                    'id' => (string) Str::uuid(),
                     'organisation_id' => $org->id,
                     'branch_id' => $branch->id,
                     'store_id' => $retailStore->id,

@@ -3,10 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\AccountsReceivable;
-use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\CustomerCredit;
-use App\Models\Organisation;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductBatch;
@@ -23,14 +21,16 @@ use RuntimeException;
 
 class KenyanPharmaFinanceSeeder extends Seeder
 {
+    use ResolvesSeedTargets;
+
     public function run(): void
     {
-        $org = Organisation::first();
+        $org = $this->seedOrganisation();
         if (! $org) {
             throw new RuntimeException('Organisation not found. Run OrganisationSeeder first.');
         }
 
-        $branch = Branch::where('organisation_id', $org->id)->first();
+        $branch = $this->seedBranch($org);
         $admin = User::where('email', 'admin@example.com')->first();
         $userId = $admin->id ?? 1;
 
@@ -73,7 +73,6 @@ class KenyanPharmaFinanceSeeder extends Seeder
                 $arExists = AccountsReceivable::where('sale_id', $inv->id)->exists();
                 if (! $arExists && $inv->customer_id) {
                     AccountsReceivable::create([
-                        'id' => (string) Str::uuid(),
                         'organisation_id' => $org->id,
                         'customer_id' => $inv->customer_id,
                         'txn_type' => 'INVOICE',
@@ -148,7 +147,6 @@ class KenyanPharmaFinanceSeeder extends Seeder
                 $sale = Sale::updateOrCreate(
                     ['doc_number' => $cs['doc_number']],
                     [
-                        'id' => (string) Str::uuid(),
                         'organisation_id' => $org->id,
                         'branch_id' => $branch->id,
                         'store_id' => $mainStore->id,
@@ -175,7 +173,6 @@ class KenyanPharmaFinanceSeeder extends Seeder
 
                 // Add realistic invoice line
                 $saleLine = SaleLine::create([
-                    'id' => (string) Str::uuid(),
                     'sale_id' => $sale->id,
                     'line_number' => 1,
                     'product_id' => $productAction->id,
@@ -195,7 +192,6 @@ class KenyanPharmaFinanceSeeder extends Seeder
                 ]);
 
                 SaleLineBatchAllocation::create([
-                    'id' => (string) Str::uuid(),
                     'sale_line_id' => $saleLine->id,
                     'batch_id' => $batchAction->id,
                     'store_id' => $mainStore->id,
@@ -207,7 +203,6 @@ class KenyanPharmaFinanceSeeder extends Seeder
                 AccountsReceivable::where('sale_id', $sale->id)->delete();
 
                 AccountsReceivable::create([
-                    'id' => (string) Str::uuid(),
                     'organisation_id' => $org->id,
                     'customer_id' => $customer->id,
                     'txn_type' => 'INVOICE',
@@ -221,7 +216,6 @@ class KenyanPharmaFinanceSeeder extends Seeder
                 // Post Credit for partial payment if applicable
                 if (bccomp($cs['paid_amount'], '0.0000', 4) > 0) {
                     $payment = Payment::create([
-                        'id' => (string) Str::uuid(),
                         'organisation_id' => $org->id,
                         'branch_id' => $branch->id,
                         'customer_id' => $customer->id,
@@ -237,7 +231,6 @@ class KenyanPharmaFinanceSeeder extends Seeder
                     $remBal = bcsub($cs['total'], $cs['paid_amount'], 4);
 
                     AccountsReceivable::create([
-                        'id' => (string) Str::uuid(),
                         'organisation_id' => $org->id,
                         'customer_id' => $customer->id,
                         'txn_type' => 'PAYMENT',

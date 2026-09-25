@@ -58,12 +58,15 @@ class OrganisationSeeder extends Seeder
         }
 
         // Give the seeded test user full access to this branch for local dev.
+        // Director is the owner role and carries every institution permission
+        // (the old System Administrator role is retired — see RoleSeeder).
         $testUser = User::where('email', 'test@example.com')->first();
         if ($testUser) {
             RoleSeeder::provision($org->id);
             $testUser->forceFill(['organisation_id' => $org->id])->save();
             app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
-            $testUser->assignRole('Director', 'System Administrator');
+            $testUser->assignRole('Director');
+            app(PermissionRegistrar::class)->setPermissionsTeamId(null);
         }
     }
 }

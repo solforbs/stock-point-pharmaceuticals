@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Branch;
-use App\Models\Organisation;
 use App\Models\Product;
 use App\Models\ProductBatch;
 use App\Models\StockBalance;
@@ -19,14 +17,16 @@ use RuntimeException;
 
 class KenyanPharmaStockSeeder extends Seeder
 {
+    use ResolvesSeedTargets;
+
     public function run(): void
     {
-        $org = Organisation::first();
+        $org = $this->seedOrganisation();
         if (! $org) {
             throw new RuntimeException('Organisation not found. Run OrganisationSeeder first.');
         }
 
-        $branch = Branch::where('organisation_id', $org->id)->first();
+        $branch = $this->seedBranch($org);
         $admin = User::where('email', 'admin@example.com')->first();
         $userId = $admin->id ?? 1;
 
@@ -307,7 +307,6 @@ class KenyanPharmaStockSeeder extends Seeder
 
                         if (! $ledgerExists) {
                             StockLedger::create([
-                                'id' => (string) Str::uuid(),
                                 'organisation_id' => $org->id,
                                 'branch_id' => $branch->id,
                                 'store_id' => $store->id,

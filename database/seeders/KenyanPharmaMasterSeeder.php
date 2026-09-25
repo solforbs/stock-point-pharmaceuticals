@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Customer;
 use App\Models\CustomerCredit;
 use App\Models\CustomerTier;
-use App\Models\Organisation;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\User;
@@ -16,9 +15,11 @@ use RuntimeException;
 
 class KenyanPharmaMasterSeeder extends Seeder
 {
+    use ResolvesSeedTargets;
+
     public function run(): void
     {
-        $org = Organisation::first();
+        $org = $this->seedOrganisation();
         if (! $org) {
             throw new RuntimeException('Organisation not found. Run OrganisationSeeder first.');
         }

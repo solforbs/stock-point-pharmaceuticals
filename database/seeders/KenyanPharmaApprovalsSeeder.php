@@ -2,11 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\CustomerReturn;
 use App\Models\CustomerReturnLine;
-use App\Models\Organisation;
 use App\Models\Product;
 use App\Models\ProductBatch;
 use App\Models\PurchaseOrder;
@@ -28,19 +26,20 @@ use App\Models\UnitOfMeasure;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use RuntimeException;
 
 class KenyanPharmaApprovalsSeeder extends Seeder
 {
+    use ResolvesSeedTargets;
+
     public function run(): void
     {
-        $org = Organisation::first();
+        $org = $this->seedOrganisation();
         if (! $org) {
             throw new RuntimeException('Organisation not found. Run OrganisationSeeder first.');
         }
 
-        $branch = Branch::where('organisation_id', $org->id)->first();
+        $branch = $this->seedBranch($org);
         $admin = User::where('email', 'admin@example.com')->first();
         $userId = $admin->id ?? 1;
 
@@ -78,7 +77,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             $req1 = Requisition::updateOrCreate(
                 ['doc_number' => 'REQ-2026-0001'],
                 [
-                    'id' => (string) Str::uuid(),
                     'branch_id' => $branch->id,
                     'status' => 'PENDING_APPROVAL',
                     'requested_by' => $userId,
@@ -89,14 +87,12 @@ class KenyanPharmaApprovalsSeeder extends Seeder
 
             RequisitionLine::where('requisition_id', $req1->id)->delete();
             RequisitionLine::create([
-                'id' => (string) Str::uuid(),
                 'requisition_id' => $req1->id,
                 'product_id' => $productAcinet->id,
                 'qty_requested' => 100,
                 'notes' => 'Stock depleted below minimum',
             ]);
             RequisitionLine::create([
-                'id' => (string) Str::uuid(),
                 'requisition_id' => $req1->id,
                 'product_id' => $productAlbendazole->id,
                 'qty_requested' => 200,
@@ -106,7 +102,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             $req2 = Requisition::updateOrCreate(
                 ['doc_number' => 'REQ-2026-0002'],
                 [
-                    'id' => (string) Str::uuid(),
                     'branch_id' => $branch->id,
                     'status' => 'PENDING_APPROVAL',
                     'requested_by' => $userId,
@@ -117,7 +112,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
 
             RequisitionLine::where('requisition_id', $req2->id)->delete();
             RequisitionLine::create([
-                'id' => (string) Str::uuid(),
                 'requisition_id' => $req2->id,
                 'product_id' => $productAction->id,
                 'qty_requested' => 300,
@@ -130,7 +124,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             $po1 = PurchaseOrder::updateOrCreate(
                 ['doc_number' => 'PO-2026-0001'],
                 [
-                    'id' => (string) Str::uuid(),
                     'supplier_id' => $cosmos->id,
                     'branch_id' => $branch->id,
                     'requisition_id' => $req1->id,
@@ -142,7 +135,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
 
             PurchaseOrderLine::where('purchase_order_id', $po1->id)->delete();
             PurchaseOrderLine::create([
-                'id' => (string) Str::uuid(),
                 'purchase_order_id' => $po1->id,
                 'product_id' => $productAcinet->id,
                 'uom_id' => $eaUom->id,
@@ -154,7 +146,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             $po2 = PurchaseOrder::updateOrCreate(
                 ['doc_number' => 'PO-2026-0002'],
                 [
-                    'id' => (string) Str::uuid(),
                     'supplier_id' => $laballied->id,
                     'branch_id' => $branch->id,
                     'status' => 'PENDING_APPROVAL',
@@ -165,7 +156,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
 
             PurchaseOrderLine::where('purchase_order_id', $po2->id)->delete();
             PurchaseOrderLine::create([
-                'id' => (string) Str::uuid(),
                 'purchase_order_id' => $po2->id,
                 'product_id' => $productAction->id,
                 'uom_id' => $eaUom->id,
@@ -178,7 +168,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             PurchaseOrder::updateOrCreate(
                 ['doc_number' => 'PO-2026-0003'],
                 [
-                    'id' => (string) Str::uuid(),
                     'supplier_id' => $dawa->id,
                     'branch_id' => $branch->id,
                     'status' => 'SENT',
@@ -192,7 +181,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             PurchaseOrder::updateOrCreate(
                 ['doc_number' => 'PO-2026-0004'],
                 [
-                    'id' => (string) Str::uuid(),
                     'supplier_id' => $cosmos->id,
                     'branch_id' => $branch->id,
                     'status' => 'PARTIALLY_RECEIVED',
@@ -209,7 +197,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             $adj1 = StockAdjustment::updateOrCreate(
                 ['doc_number' => 'ADJ-2026-0001'],
                 [
-                    'id' => (string) Str::uuid(),
                     'store_id' => $mainStore->id,
                     'reason_code' => 'BREAKAGE',
                     'approval_status' => 'PENDING',
@@ -220,7 +207,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
 
             StockAdjustmentLine::where('stock_adjustment_id', $adj1->id)->delete();
             StockAdjustmentLine::create([
-                'id' => (string) Str::uuid(),
                 'stock_adjustment_id' => $adj1->id,
                 'product_id' => $productActifed->id,
                 'batch_id' => $batchActifed->id,
@@ -232,7 +218,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             $adj2 = StockAdjustment::updateOrCreate(
                 ['doc_number' => 'ADJ-2026-0002'],
                 [
-                    'id' => (string) Str::uuid(),
                     'store_id' => $mainStore->id,
                     'reason_code' => 'SAMPLING',
                     'approval_status' => 'PENDING',
@@ -243,7 +228,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
 
             StockAdjustmentLine::where('stock_adjustment_id', $adj2->id)->delete();
             StockAdjustmentLine::create([
-                'id' => (string) Str::uuid(),
                 'stock_adjustment_id' => $adj2->id,
                 'product_id' => $productAcinet->id,
                 'batch_id' => $batchAcinet->id,
@@ -259,7 +243,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             $trDraft = StockTransfer::updateOrCreate(
                 ['doc_number' => 'TR-2026-0001'],
                 [
-                    'id' => (string) Str::uuid(),
                     'from_store_id' => $mainStore->id,
                     'to_store_id' => $retailStore->id,
                     'status' => 'DRAFT',
@@ -269,7 +252,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
 
             StockTransferLine::where('stock_transfer_id', $trDraft->id)->delete();
             StockTransferLine::create([
-                'id' => (string) Str::uuid(),
                 'stock_transfer_id' => $trDraft->id,
                 'product_id' => $productAcinet->id,
                 'batch_id' => $batchAcinet->id,
@@ -280,7 +262,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             $trTransit = StockTransfer::updateOrCreate(
                 ['doc_number' => 'TR-2026-0002'],
                 [
-                    'id' => (string) Str::uuid(),
                     'from_store_id' => $mainStore->id,
                     'to_store_id' => $retailStore->id,
                     'status' => 'DISPATCHED',
@@ -292,7 +273,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
 
             StockTransferLine::where('stock_transfer_id', $trTransit->id)->delete();
             StockTransferLine::create([
-                'id' => (string) Str::uuid(),
                 'stock_transfer_id' => $trTransit->id,
                 'product_id' => $productAction->id,
                 'batch_id' => $batchAction->id,
@@ -305,7 +285,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
             $sc = StockCount::updateOrCreate(
                 ['doc_number' => 'SC-2026-0001'],
                 [
-                    'id' => (string) Str::uuid(),
                     'store_id' => $mainStore->id,
                     'status' => 'REVIEW',
                     'created_by' => $userId,
@@ -314,7 +293,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
 
             StockCountLine::where('stock_count_id', $sc->id)->delete();
             StockCountLine::create([
-                'id' => (string) Str::uuid(),
                 'stock_count_id' => $sc->id,
                 'product_id' => $productAction->id,
                 'batch_id' => $batchAction->id,
@@ -336,7 +314,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
                 $cr = CustomerReturn::updateOrCreate(
                     ['doc_number' => 'RET-2026-0001'],
                     [
-                        'id' => (string) Str::uuid(),
                         'organisation_id' => $org->id,
                         'branch_id' => $branch->id,
                         'store_id' => $mainStore->id,
@@ -355,7 +332,6 @@ class KenyanPharmaApprovalsSeeder extends Seeder
 
                 CustomerReturnLine::where('customer_return_id', $cr->id)->delete();
                 CustomerReturnLine::create([
-                    'id' => (string) Str::uuid(),
                     'customer_return_id' => $cr->id,
                     'sale_line_id' => $sampleSaleLine->id,
                     'product_id' => $sampleSaleLine->product_id,
