@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PostingImpact } from '../../components/PostingImpact'
 import { Drawer } from '../../components/ui/Drawer'
 import { ConfirmDialog } from '../../components/ui/Modal'
 import { MoneyCell, QtyCell } from '../../components/ui/MoneyCell'
@@ -140,6 +141,7 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
               </>
             )}
           </div>
+          <PostingImpact sourceId={s.id} />
         </div>
       )}
       <ConfirmDialog

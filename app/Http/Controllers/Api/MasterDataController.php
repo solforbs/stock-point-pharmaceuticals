@@ -73,6 +73,10 @@ class MasterDataController extends ApiController
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:150'],
             'address' => ['nullable', 'string', 'max:255'],
+            'bank_name' => ['nullable', 'string', 'max:100'],
+            'bank_account_name' => ['nullable', 'string', 'max:150'],
+            'bank_account_number' => ['nullable', 'string', 'max:60'],
+            'mpesa_phone' => ['nullable', 'string', 'max:30'],
             'credit_limit' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -109,13 +113,18 @@ class MasterDataController extends ApiController
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:150'],
             'address' => ['nullable', 'string', 'max:255'],
+            'bank_name' => ['nullable', 'string', 'max:100'],
+            'bank_account_name' => ['nullable', 'string', 'max:150'],
+            'bank_account_number' => ['nullable', 'string', 'max:60'],
+            'mpesa_phone' => ['nullable', 'string', 'max:30'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $before = $customer->only([
             'code', 'name', 'customer_type', 'tier_id', 'tax_status',
             'exemption_ref', 'exemption_expiry', 'payment_terms_days',
-            'fulfilment_policy', 'phone', 'email', 'address', 'is_active',
+            'fulfilment_policy', 'phone', 'email', 'address', 'bank_name', 'bank_account_name',
+            'bank_account_number', 'mpesa_phone', 'is_active',
         ]);
 
         $updateData = $data;

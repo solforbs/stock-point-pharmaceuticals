@@ -81,6 +81,7 @@ class FinanceController extends ApiController
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
             'source_doc_type' => ['nullable', 'string', 'max:40'],
+            'source_doc_id' => ['nullable', 'string', 'max:64'],
             'period_id' => ['nullable', 'uuid'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
@@ -101,6 +102,7 @@ class FinanceController extends ApiController
                     });
                 })
                 ->when($filters['source_doc_type'] ?? null, fn ($q, $v) => $q->where('source_doc_type', $v))
+                ->when($filters['source_doc_id'] ?? null, fn ($q, $v) => $q->where('source_doc_id', $v))
                 ->when($filters['period_id'] ?? null, fn ($q, $v) => $q->where('period_id', $v))
                 ->when($filters['from'] ?? null, fn ($q, $v) => $q->whereDate('entry_date', '>=', $v))
                 ->when($filters['to'] ?? null, fn ($q, $v) => $q->whereDate('entry_date', '<=', $v))

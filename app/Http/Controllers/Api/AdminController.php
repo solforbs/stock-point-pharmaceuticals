@@ -37,6 +37,8 @@ class AdminController extends ApiController
         ['scope' => 'sales', 'key' => 'min_shelf_life_days', 'type' => 'integer', 'default' => 90, 'description' => 'FEFO will not allocate a batch expiring sooner than this.'],
         ['scope' => 'sales', 'key' => 'min_shelf_life_days_institutional', 'type' => 'integer', 'default' => 180, 'description' => 'Shelf-life floor for hospital, tender and institutional customers.'],
         ['scope' => 'alerts', 'key' => 'email_digest_enabled', 'type' => 'boolean', 'default' => true, 'description' => 'Email the morning alert digest to everyone who may see the alerts; turning it off leaves the in-app alert centre working.'],
+        ['scope' => 'finance', 'key' => 'posting_alert_threshold', 'type' => 'decimal', 'default' => '0', 'description' => 'Alert everyone who can post journals whenever a journal of at least this amount is posted. 0 turns posting alerts off.'],
+        ['scope' => 'finance', 'key' => 'posting_alert_email', 'type' => 'boolean', 'default' => false, 'description' => 'Also email the posting alert (needs the alert threshold above to be set).'],
         ['scope' => 'inventory', 'key' => 'adjustment_approval_threshold', 'type' => 'decimal', 'default' => '10000', 'description' => 'Adjustment value (at cost) above which a second approver is required.'],
         ['scope' => 'inventory', 'key' => 'count_variance_approval_threshold', 'type' => 'decimal', 'default' => '10000', 'description' => 'Stock-count variance value above which a second approver is required.'],
     ];

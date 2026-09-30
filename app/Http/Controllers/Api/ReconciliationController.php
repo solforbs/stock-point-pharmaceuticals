@@ -42,7 +42,7 @@ class ReconciliationController extends ApiController
         $payments = $window()
             ->when($request->input('status') === 'reconciled', fn ($q) => $q->whereNotNull('reconciled_at'))
             ->when($request->input('status') === 'unreconciled', fn ($q) => $q->whereNull('reconciled_at')->where('status', 'CLEARED'))
-            ->with(['customer:id,code,name', 'receiver:id,name', 'reconciler:id,name'])
+            ->with(['customer:id,code,name', 'receiver:id,name', 'reconciler:id,name', 'bankAccount:id,name,bank_name,account_number'])
             ->orderByDesc('received_at')
             ->paginate($request->integer('per_page', 50));
 

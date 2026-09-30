@@ -25,6 +25,10 @@ type ReconciliationPayment = {
   reconciliation_ref: string | null
   statement_date: string | null
   statement_amount: string | null
+  payer_name?: string | null
+  payer_bank?: string | null
+  payer_account?: string | null
+  bank_account?: { id: string; name: string; bank_name: string; account_number: string } | null
   customer?: { id: string; code: string; name: string } | null
   receiver?: { id: number; name: string } | null
   reconciler?: { id: number; name: string } | null
@@ -97,6 +101,16 @@ export default function ReconciliationPage() {
     { key: 'customer', header: 'Customer', render: (p) => <>{p.customer?.name ?? '—'}<div className="text-xs text-slate-500 font-mono tabular">{p.customer?.code}</div></>, sortValue: (p) => p.customer?.name ?? '' },
     { key: 'method', header: 'Method', render: (p) => titleCase(p.method), sortValue: (p) => p.method },
     { key: 'reference', header: 'Reference', render: (p) => <span className="tabular">{p.reference ?? '—'}</span> },
+    {
+      key: 'bank',
+      header: 'Paid into / by',
+      sortable: false,
+      render: (p) => {
+        const payer = [p.payer_name, p.payer_bank, p.payer_account].filter(Boolean).join(' · ')
+        if (!p.bank_account && !payer) return '—'
+        return <>{p.bank_account && <div className="text-xs font-medium">{p.bank_account.name} <span className="text-slate-500 tabular">{p.bank_account.account_number}</span></div>}{payer && <div className="text-xs text-slate-500">{payer}</div>}</>
+      },
+    },
     { key: 'amount', header: 'Amount', align: 'right', render: (p) => <MoneyCell value={p.amount} />, sortValue: (p) => Number(p.amount) },
     { key: 'by', header: 'Received by', render: (p) => p.receiver?.name ?? '—' },
     {

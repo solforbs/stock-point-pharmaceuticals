@@ -33,7 +33,8 @@ class ReceiptService
     /**
      * @param  array{
      *     organisation_id: string, branch_id: string, customer_id: string, method: string,
-     *     reference?: ?string, amount: string, received_by: int,
+     *     reference?: ?string, bank_account_id?: ?string, payer_name?: ?string, payer_bank?: ?string, payer_account?: ?string,
+     *     amount: string, received_by: int,
      *     allocations?: list<array{sale_id: string, amount: string}>,
      * }  $data
      */
@@ -46,6 +47,10 @@ class ReceiptService
                 'customer_id' => $data['customer_id'],
                 'method' => $data['method'],
                 'reference' => $data['reference'] ?? null,
+                'bank_account_id' => $data['bank_account_id'] ?? null,
+                'payer_name' => $data['payer_name'] ?? null,
+                'payer_bank' => $data['payer_bank'] ?? null,
+                'payer_account' => $data['payer_account'] ?? null,
                 'amount' => $data['amount'],
                 'received_by' => $data['received_by'],
                 'received_at' => now(),

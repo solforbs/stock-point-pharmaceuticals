@@ -337,6 +337,10 @@ export type Customer = {
   phone: string | null
   email: string | null
   address: string | null
+  bank_name?: string | null
+  bank_account_name?: string | null
+  bank_account_number?: string | null
+  mpesa_phone?: string | null
   is_active: boolean
   tier?: CustomerTier | null
   credit?: CustomerCredit | null
@@ -760,6 +764,10 @@ export type Payment = {
   method: PaymentMethod
   reference: string | null
   amount: Decimal
+  bank_account_id?: string | null
+  payer_name?: string | null
+  payer_bank?: string | null
+  payer_account?: string | null
   status: string
   received_at: string | null
   allocations?: { id: string; sale_id: string; amount: Decimal }[]
@@ -2030,3 +2038,67 @@ export type PrescriptionEstimate = {
   grand_total: Decimal
 }
 
+
+/** One of the institution's own bank accounts: where bank, cheque and card receipts are paid in. */
+export type BankAccount = {
+  id: string
+  name: string
+  bank_name: string
+  account_number: string
+  account_name: string | null
+  branch_name: string | null
+  is_active: boolean
+}
+
+export type PettyCashVoucher = {
+  id: string
+  doc_number: string
+  voucher_type: 'TOPUP' | 'EXPENSE'
+  voucher_date: string
+  funding_source: 'CASH' | 'BANK' | null
+  amount: Decimal
+  payee: string | null
+  description: string
+  receipt_ref: string | null
+  status: 'POSTED' | 'VOID'
+  void_reason: string | null
+  account?: { id: string; code: string; name: string } | null
+  creator?: { id: number; name: string } | null
+}
+
+export type PettyCashSummary = Paginated<PettyCashVoucher> & {
+  balance: Decimal
+  float_limit: Decimal
+  to_restore: Decimal
+  expense_accounts: { id: string; code: string; name: string }[]
+}
+
+export type SupplyRequestStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'PURCHASED' | 'REJECTED'
+
+export type SupplyRequestLine = {
+  id: string
+  item: string
+  category: string
+  qty: Decimal
+  unit: string
+  est_unit_cost: Decimal
+  actual_unit_cost: Decimal | null
+}
+
+export type SupplyRequest = {
+  id: string
+  doc_number: string
+  status: SupplyRequestStatus
+  needed_by: string | null
+  notes: string | null
+  supplier_name: string | null
+  paid_from: string | null
+  payment_reference: string | null
+  total_cost: Decimal
+  reject_reason: string | null
+  purchased_at: string | null
+  lines_count?: number
+  lines?: SupplyRequestLine[]
+  requester?: { id: number; name: string } | null
+  created_at: string
+}

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Building2, MapPin, Pencil, UserSquare2, Wallet } from 'lucide-react'
+import { Building2, Landmark, MapPin, Pencil, UserSquare2, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { DeleteRecordButton } from '../../components/DeleteRecordButton'
@@ -168,6 +168,17 @@ function CustomerDetailDrawer({ id, onClose }: { id: string | null; onClose: () 
             />
           </FormSection>
 
+          <FormSection title="Payment Details" description="How this customer pays: used to recognise a deposit or M-PESA message" icon={Landmark}>
+            <DescriptionList
+              items={[
+                { label: 'Bank', value: c.bank_name ?? '—' },
+                { label: 'Account name', value: c.bank_account_name ?? '—' },
+                { label: 'Account number', value: c.bank_account_number ? <span className="tabular font-mono">{c.bank_account_number}</span> : '—' },
+                { label: 'M-PESA phone', value: c.mpesa_phone ?? '—' },
+              ]}
+            />
+          </FormSection>
+
           <div className="flex items-center justify-end pt-2">
             <Link
               to={`/sell/statements?customer=${c.id}`}
@@ -210,6 +221,10 @@ function CustomerEditForm({
     phone: customer.phone ?? '',
     email: customer.email ?? '',
     address: customer.address ?? '',
+    bank_name: customer.bank_name ?? '',
+    bank_account_name: customer.bank_account_name ?? '',
+    bank_account_number: customer.bank_account_number ?? '',
+    mpesa_phone: customer.mpesa_phone ?? '',
     is_active: customer.is_active,
   })
   const set = (patch: Partial<typeof form>) => setForm({ ...form, ...patch })
@@ -223,6 +238,10 @@ function CustomerEditForm({
         phone: form.phone || null,
         email: form.email || null,
         address: form.address || null,
+        bank_name: form.bank_name || null,
+        bank_account_name: form.bank_account_name || null,
+        bank_account_number: form.bank_account_number || null,
+        mpesa_phone: form.mpesa_phone || null,
         payment_terms_days: Number(form.payment_terms_days || 0),
       }),
     onSuccess: (updated) => {
@@ -317,6 +336,8 @@ function CustomerEditForm({
         </div>
       </FormSection>
 
+      <PaymentDetailsSection form={form} set={set} />
+
       {err && !Object.keys(err.errors).length && <InlineError error={update.error} />}
 
       <DrawerFooter
@@ -344,6 +365,10 @@ function CustomerCreateDrawer({ open, onClose, onCreated }: { open: boolean; onC
     phone: '',
     email: '',
     address: '',
+    bank_name: '',
+    bank_account_name: '',
+    bank_account_number: '',
+    mpesa_phone: '',
     credit_limit: '100000',
   })
   const set = (patch: Partial<typeof form>) => setForm({ ...form, ...patch })
@@ -357,6 +382,10 @@ function CustomerCreateDrawer({ open, onClose, onCreated }: { open: boolean; onC
         phone: form.phone || null,
         email: form.email || null,
         address: form.address || null,
+        bank_name: form.bank_name || null,
+        bank_account_name: form.bank_account_name || null,
+        bank_account_number: form.bank_account_number || null,
+        mpesa_phone: form.mpesa_phone || null,
         payment_terms_days: Number(form.payment_terms_days || 0),
       }),
     onSuccess: (c) => {
@@ -415,7 +444,7 @@ function CustomerCreateDrawer({ open, onClose, onCreated }: { open: boolean; onC
           icon={Wallet}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Credit Limit (KES)" hint="Maximum allowed unpaid debt">
+            <Field label="Credit Limit (KES)" hint="This is what makes a credit customer: any limit above 0 lets them buy on account (up to the limit, for the payment terms below). 0 means cash only.">
               <Input inputMode="decimal" className="tabular font-bold" value={form.credit_limit} onChange={(e) => set({ credit_limit: e.target.value.replace(/[^\d.]/g, '') })} />
             </Field>
             <Field label="Payment Terms (Days)" hint="Net days before invoice becomes overdue">
@@ -457,6 +486,8 @@ function CustomerCreateDrawer({ open, onClose, onCreated }: { open: boolean; onC
           </div>
         </FormSection>
 
+        <PaymentDetailsSection form={form} set={set} />
+
         {err && !Object.keys(err.errors).length && <InlineError error={create.error} />}
 
         <DrawerFooter
@@ -468,5 +499,29 @@ function CustomerCreateDrawer({ open, onClose, onCreated }: { open: boolean; onC
         />
       </div>
     </Drawer>
+  )
+}
+
+type PaymentDetailsForm = { bank_name: string; bank_account_name: string; bank_account_number: string; mpesa_phone: string }
+
+/** Where this customer's money comes from: the bank account it pays from and the phone it pays M-PESA with. */
+function PaymentDetailsSection<T extends PaymentDetailsForm>({ form, set }: { form: T; set: (patch: Partial<PaymentDetailsForm>) => void }) {
+  return (
+    <FormSection title="Payment Details" description="The bank account and M-PESA number this customer pays from (optional)" icon={Landmark}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Field label="Bank Name">
+          <Input placeholder="e.g. Equity Bank" value={form.bank_name} onChange={(e) => set({ bank_name: e.target.value })} />
+        </Field>
+        <Field label="Account Name">
+          <Input value={form.bank_account_name} onChange={(e) => set({ bank_account_name: e.target.value })} />
+        </Field>
+        <Field label="Account Number">
+          <Input className="tabular" value={form.bank_account_number} onChange={(e) => set({ bank_account_number: e.target.value })} />
+        </Field>
+        <Field label="M-PESA Phone" hint="The number that pays M-PESA for this account">
+          <Input placeholder="+254 7..." value={form.mpesa_phone} onChange={(e) => set({ mpesa_phone: e.target.value })} />
+        </Field>
+      </div>
+    </FormSection>
   )
 }

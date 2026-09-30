@@ -585,6 +585,22 @@ final class TrainingCatalogue
                     'route_label' => 'Supplier Invoices',
                     'tour' => 'supplier-invoices',
                 ],
+                [
+                    'key' => 'supplies',
+                    'title' => 'Ordering non-pharmaceutical supplies',
+                    'summary' => 'Brooms, mops, cleaning products and stationery are bought through Supplies, not as stock.',
+                    'body' => [
+                        'Items that are not medicines (brooms, mops, cleaning supplies, stationery) have no batch, expiry or stock count, so they do not go through requisitions and purchase orders. Buy → Supplies is where they are requested: list each item, the quantity and an estimated cost, then "Submit for approval". Someone other than you approves it; the system refuses self-approval.',
+                        'Once approved, "Record purchase" captures what each item really cost, who it was bought from and where the money came from (petty cash, cash, bank or M-PESA). The cost is posted to Cleaning and office supplies at once (Dr Cleaning and office supplies / Cr the source) and no stock is created. Buying from petty cash cannot exceed the float.',
+                    ],
+                    'steps' => [
+                        'Open Buy → Supplies and press "New supply request".',
+                        'Add the items with quantities and estimated costs, save, then submit it.',
+                        'Ask a manager to approve it, then record the purchase.',
+                    ],
+                    'route' => '/buy/supplies',
+                    'route_label' => 'Supplies',
+                ],
             ],
             'tasks' => [
                 [
@@ -835,6 +851,140 @@ final class TrainingCatalogue
                     'route_label' => 'Periods',
                     'tour' => 'periods',
                 ],
+                [
+                    'key' => 'bank-payments',
+                    'title' => 'Bank payments and who paid',
+                    'summary' => 'Recording a bank, cheque or card receipt with the account it was paid into and the payer\'s details.',
+                    'body' => [
+                        'Our own bank accounts are set up once under Finance → Bank Accounts (bank, account number, a nickname). A Director adds them; everyone who records receipts then picks from the list.',
+                        'A customer\'s own details (their bank, account name and number, and the phone they pay M-PESA from) live on the customer record: Customers → Customers → Edit → Payment Details.',
+                        'When you receive a bank, cheque or card payment in Finance → Receivables → "Receive", choose "Paid into our account", and record who paid: the account holder, their bank and account or cheque number. The ledger posts it to Bank (Dr Bank / Cr Accounts receivable); the bank account and payer are kept on the receipt so it can be ticked off against the statement. "Bank, cheque and card receipts" in Reports lists them all.',
+                    ],
+                    'steps' => [
+                        'A Director opens Finance → Bank Accounts and adds each account customers pay into.',
+                        'Open Finance → Receivables, press "Receive" and choose Bank as the method.',
+                        'Choose the bank account paid into and enter the payer\'s name, bank and account number.',
+                        'Enter the bank reference and the amount and post the receipt.',
+                    ],
+                    'route' => '/finance/bank-accounts',
+                    'route_label' => 'Bank Accounts',
+                ],
+                [
+                    'key' => 'credit-customers',
+                    'title' => 'Setting up a customer who buys on credit',
+                    'summary' => 'A credit customer is a customer with a credit limit and payment terms.',
+                    'body' => [
+                        'Customers → Customers → "New customer". Give the account a code and name, choose the type and tier, then set the Credit Limit (any amount above 0 lets them buy on account, up to that amount) and the Payment Terms in days (30 means an invoice falls due 30 days after it is posted). A limit of 0 means cash only.',
+                        'Change the limit or place a hold later under Customers → Credit Control (needs the credit override permission; every change is audited). The server checks the limit at order confirmation and dispatch, and refuses a credit sale that would exceed it or that is on hold.',
+                    ],
+                    'steps' => [
+                        'Open Customers → Customers and press "New customer".',
+                        'Enter the code, name and type, then a credit limit above 0 and the payment terms.',
+                        'Create the account, then raise a sales order for them on credit.',
+                    ],
+                    'route' => '/customers/list',
+                    'route_label' => 'Customers',
+                ],
+                [
+                    'key' => 'order-to-cash',
+                    'title' => 'From sales order to invoice to money in',
+                    'summary' => 'The whole sales trail, and every section it touches.',
+                    'body' => [
+                        'Sell → Quotations (optional) → "Accept → sales order" confirms an order and reserves stock under the credit check. Warehouse → Pick Lists → Packing → Dispatch fulfils it. Dispatch posts the invoice: stock leaves the store, and in one step the ledger records the sale.',
+                        'What an invoice on credit touches: Sales (revenue), VAT payable, Accounts receivable (the customer now owes), Cost of goods sold and Inventory (stock value goes down at batch cost). The customer\'s balance rises in Finance → Receivables and on their statement, and the payment deadline alert starts counting.',
+                        'When the customer pays, Finance → Receivables → "Receive" posts Dr Cash, Bank or M-PESA / Cr Accounts receivable; the receipt settles the oldest invoices first (or the ones you choose), the balance falls and the alert clears. Open any invoice under Sell → Invoices to see "Accounting entries posted" with every account it moved.',
+                    ],
+                    'steps' => [
+                        'Open Sell → Invoices and open a posted invoice.',
+                        'Read "Accounting entries posted" at the bottom: each debit, credit and the sections updated.',
+                        'Open Finance → Receivables and find the same customer\'s balance.',
+                    ],
+                    'route' => '/sell/invoices',
+                    'route_label' => 'Invoices',
+                ],
+                [
+                    'key' => 'journals-explained',
+                    'title' => 'What journals are and why they matter',
+                    'summary' => 'Every shilling that moves is written twice, once as a debit and once as a credit.',
+                    'body' => [
+                        'A journal entry is the ledger\'s record of a transaction: the debits equal the credits, always. Selling for cash is Dr Cash / Cr Sales; receiving a customer\'s payment is Dr Bank / Cr Accounts receivable. Journals are how the Trial Balance, Profit and Loss, Balance Sheet and VAT return are produced: reports are only ever read from posted journals, so a figure can always be traced to the transactions behind it.',
+                        'You do not create journals for normal work: sales, receipts, goods receipts, supplier payments, payroll, petty cash and supplies each post their own the moment you complete them. Finance → Journals lists them all (filter by source). A manual journal is only for something the system does not do itself, such as an accrual, and needs a narration; a mistake is corrected by reversing, never by editing.',
+                        'Finance → Periods closes a month once every journal balances, so the numbers cannot change after they were reported.',
+                    ],
+                    'steps' => [
+                        'Open Finance → Journals and filter by source "sale".',
+                        'Open one and read the lines: debits on the left, credits on the right, equal totals.',
+                        'Open the same sale under Sell → Invoices and compare its "Accounting entries posted".',
+                    ],
+                    'route' => '/finance/journals',
+                    'route_label' => 'Journals',
+                    'tour' => 'journals',
+                ],
+                [
+                    'key' => 'posting-alerts',
+                    'title' => 'Being told when accounts are updated',
+                    'summary' => 'Postings are automatic; alerts about them are optional.',
+                    'body' => [
+                        'Accounting entries are created automatically by the transaction, with no manual step: when a sale is posted the ledger already holds its entries. You do not chase them by hand, and the screen shows what was posted (a message on completion, and "Accounting entries posted" on the document).',
+                        'To be told: a Director opens Admin → Settings and sets "posting_alert_threshold" to an amount, for example 50,000. From then on every journal of at least that amount raises a message (bell, live) for everyone who can post journals in the branch, and setting "posting_alert_email" to on also emails them. Zero, the default, turns it off. The person who made the posting is not told about their own work. SMS is not built in.',
+                    ],
+                    'steps' => [
+                        'A Director opens Admin → Settings and finds the Finance section.',
+                        'Set the alert amount and, if wanted, switch on the email.',
+                        'Post a top-up above the amount and watch the bell of another finance user.',
+                    ],
+                    'route' => '/admin/settings',
+                    'route_label' => 'Settings',
+                ],
+                [
+                    'key' => 'mpesa-and-mismatches',
+                    'title' => 'M-PESA receipts, short payments and over-payments',
+                    'summary' => 'Recording M-PESA in order, and what happens when the customer pays the wrong amount.',
+                    'body' => [
+                        'Record each M-PESA payment in Finance → Receivables → "Receive": method M-PESA, the transaction code (required, and a repeated code is recognised as the same payment) and the phone it came from. Receipts are stamped with the time they are recorded, so the record is in order.',
+                        'If the customer pays less than the invoice (1,800 against 2,000) the receipt is posted exactly as received and 200 stays owing on that invoice. If they pay more (20,000 against 2,000) the invoice is settled and 18,000 is kept as an unallocated receipt on their account, to apply to the next invoice or refund. The receipt form says which will happen before you post. Nothing is written off or lost.',
+                        'Reports → "M-PESA transactions" lists every receipt in date order with its code, payer, how it was applied and a result of Exact, Short paid or Over paid, with a running total: work from it when the day\'s figure disagrees with the M-PESA statement. Then tick the receipts off in Finance → Payments & Reconciliation with the statement reference. "Unallocated receipts" lists the over-payments still to apply.',
+                    ],
+                    'steps' => [
+                        'Open Reports → M-PESA transactions and run it for yesterday.',
+                        'Look for Short paid and Over paid results.',
+                        'Reconcile the receipts against the M-PESA statement.',
+                    ],
+                    'route' => '/reports?report=finance.mpesa_log',
+                    'route_label' => 'M-PESA transactions',
+                ],
+                [
+                    'key' => 'petty-cash',
+                    'title' => 'Petty cash',
+                    'summary' => 'The branch float, its top-ups and the vouchers spent from it.',
+                    'body' => [
+                        'Finance → Petty Cash shows the float held now, the agreed float (set by a Director) and how much is needed to restore it. "Top up float" moves money in from the cash till or the bank (Dr Petty cash / Cr Cash or Bank). "New voucher" records a cost: what it was for (an expense account), the amount, who was paid and the receipt number (Dr the expense / Cr Petty cash). A voucher cannot be more than the float holds.',
+                        'A wrong voucher is voided with a reason, which posts a reversing journal and puts the money back; nothing is deleted. Reports → "Petty cash book" gives the opening float, top-ups, vouchers and closing float for any dates.',
+                    ],
+                    'steps' => [
+                        'Open Finance → Petty Cash and press "Top up float".',
+                        'Press "New voucher" and record a small cost with its receipt number.',
+                        'Open Reports → Petty cash book for today.',
+                    ],
+                    'route' => '/finance/petty-cash',
+                    'route_label' => 'Petty Cash',
+                ],
+                [
+                    'key' => 'cash-forecast',
+                    'title' => 'The 13-week cash-flow forecast',
+                    'summary' => 'Cash we expect in and out, week by week.',
+                    'body' => [
+                        'Reports → Finance → "13-week cash-flow forecast" starts from the cash the ledger holds (cash, bank, M-PESA and petty cash) and projects 13 weeks: customer receipts on the day each open invoice falls due, supplier payments on the due date of each matched supplier invoice, and payroll at month end (from the last posted payroll run, or the monthly figure you type). Anything already overdue is assumed to move in week 1.',
+                        'It is a plan, not a promise: lower "Collect % of receivables" to see the effect of late payers, and read "Lowest closing cash" and "Weeks below zero" to see where cash gets tight. Payments not yet invoiced by suppliers and other costs such as rent are not in it. Export to CSV to add your own lines.',
+                    ],
+                    'steps' => [
+                        'Open Reports and choose 13-week cash-flow forecast.',
+                        'Run it, then set "Collect % of receivables" to 80 and run it again.',
+                        'Note the week the closing cash is lowest.',
+                    ],
+                    'route' => '/reports?report=finance.cashflow_13_week',
+                    'route_label' => '13-week forecast',
+                ],
             ],
             'tasks' => [
                 [
@@ -869,6 +1019,10 @@ final class TrainingCatalogue
                 ['id' => 'f4', 'lesson' => 'reconciliation', 'question' => 'What do you need to reconcile selected receipts?', 'options' => ['The customer\'s phone number', 'A statement reference and statement date', 'The director\'s password', 'Nothing'], 'answer' => 1],
                 ['id' => 'f5', 'lesson' => 'journals-periods', 'question' => 'A manual journal was posted with the wrong account. How do you correct it?', 'options' => ['Edit the journal', 'Delete it', 'Reverse it (an opposite journal is posted) and post the correct one', 'Close the period'], 'answer' => 2],
                 ['id' => 'f6', 'lesson' => 'journals-periods', 'question' => 'What happens after a period is closed?', 'options' => ['Nothing more can be posted into it', 'It reopens next day', 'Sales are deleted', 'Stock is recounted'], 'answer' => 0],
+                ['id' => 'f7', 'lesson' => 'mpesa-and-mismatches', 'question' => 'A customer owes 2,000 and pays 1,800 by M-PESA. What does the system do?', 'options' => ['Refuses the receipt', 'Posts the 1,800 and leaves 200 owing on the invoice', 'Writes off 200', 'Rounds up to 2,000'], 'answer' => 1],
+                ['id' => 'f8', 'lesson' => 'mpesa-and-mismatches', 'question' => 'The same customer pays 20,000 against a 2,000 invoice. What happens to the extra?', 'options' => ['It is lost', 'It is kept as an unallocated receipt on their account', 'It is refunded automatically', 'It is added to the invoice'], 'answer' => 1],
+                ['id' => 'f9', 'lesson' => 'petty-cash', 'question' => 'A petty cash voucher was recorded against the wrong expense. What do you do?', 'options' => ['Edit the voucher', 'Delete it', 'Void it with a reason and record a new one', 'Ignore it'], 'answer' => 2],
+                ['id' => 'f10', 'lesson' => 'credit-customers', 'question' => 'What makes a customer able to buy on credit?', 'options' => ['Their type is Hospital', 'A credit limit above 0 (and payment terms)', 'They are on the mailing list', 'Nothing, everyone can'], 'answer' => 1],
             ],
         ];
     }

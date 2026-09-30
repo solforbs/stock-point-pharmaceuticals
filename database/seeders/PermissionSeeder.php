@@ -27,7 +27,7 @@ class PermissionSeeder extends Seeder
         'po.create', 'po.approve', 'grn.create', 'grn.qc.release', 'invoice.match',
         'rfq.view', 'rfq.manage', 'rfq.award',
         'return.create', 'return.post', 'supplier.return',
-        'payment.record',
+        'payment.record', 'petty.cash.manage',
         'journal.post', 'journal.reverse', 'period.close', 'tax.etims.manage',
         'quality.release', 'recall.initiate', 'waste.approve',
         'coldchain.record', 'coldchain.review', 'adr.report', 'adr.manage', 'licence.view', 'licence.manage', 'document.manage',

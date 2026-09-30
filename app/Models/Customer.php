@@ -22,7 +22,8 @@ class Customer extends Model
     protected $fillable = [
         'organisation_id', 'code', 'name', 'customer_type', 'tier_id', 'tax_status',
         'exemption_ref', 'exemption_expiry', 'payment_terms_days',
-        'fulfilment_policy', 'price_list_id', 'email', 'phone', 'address', 'is_active', 'created_by',
+        'fulfilment_policy', 'price_list_id', 'email', 'phone', 'address', 'bank_name', 'bank_account_name', 'bank_account_number', 'mpesa_phone',
+        'is_active', 'created_by',
     ];
 
     protected function casts(): array

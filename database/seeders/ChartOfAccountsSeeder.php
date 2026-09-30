@@ -14,6 +14,7 @@ class ChartOfAccountsSeeder extends Seeder
     public const ACCOUNTS = [
         ['1010', 'Cash in till', 'ASSET', 'CASH'],
         ['1020', 'Bank', 'ASSET', 'BANK'],
+        ['1015', 'Petty cash', 'ASSET', 'PETTY_CASH'],
         ['1030', 'M-PESA clearing', 'ASSET', 'MPESA_CLEARING'],
         ['1100', 'Accounts receivable', 'ASSET', 'AR_CONTROL'],
         ['1200', 'Inventory', 'ASSET', 'INVENTORY'],
@@ -43,6 +44,13 @@ class ChartOfAccountsSeeder extends Seeder
         ['5120', 'Stock variance', 'EXPENSE', 'STOCK_VARIANCE'],
         ['5130', 'Bonus goods cost', 'EXPENSE', 'BONUS_GOODS_COST'],
         ['6010', 'Salaries and wages', 'EXPENSE', 'SALARIES_EXPENSE'],
+        ['6100', 'Cleaning and office supplies', 'EXPENSE', 'SUPPLIES_EXPENSE'],
+        ['6110', 'Transport and travel', 'EXPENSE', null],
+        ['6120', 'Utilities', 'EXPENSE', null],
+        ['6130', 'Refreshments and welfare', 'EXPENSE', null],
+        ['6140', 'Postage and courier', 'EXPENSE', null],
+        ['6150', 'Repairs and maintenance', 'EXPENSE', null],
+        ['6190', 'Miscellaneous expenses', 'EXPENSE', null],
     ];
 
     /** Every institution gets the standard chart and an open current period. */
@@ -55,12 +63,7 @@ class ChartOfAccountsSeeder extends Seeder
 
     public static function provision(string $organisationId): void
     {
-        foreach (self::ACCOUNTS as [$code, $name, $type, $role]) {
-            ChartOfAccount::withoutGlobalScopes()->firstOrCreate(
-                ['organisation_id' => $organisationId, 'code' => $code],
-                ['name' => $name, 'account_type' => $type, 'system_role' => $role, 'is_postable' => true]
-            );
-        }
+        self::provisionAccounts($organisationId);
 
         $year = (int) now()->format('Y');
         FinancialPeriod::withoutGlobalScopes()->firstOrCreate(
@@ -71,5 +74,16 @@ class ChartOfAccountsSeeder extends Seeder
                 'status' => 'OPEN',
             ]
         );
+    }
+
+    /** Adds any standard account the institution lacks; safe to call on every use. */
+    public static function provisionAccounts(string $organisationId): void
+    {
+        foreach (self::ACCOUNTS as [$code, $name, $type, $role]) {
+            ChartOfAccount::withoutGlobalScopes()->firstOrCreate(
+                ['organisation_id' => $organisationId, 'code' => $code],
+                ['name' => $name, 'account_type' => $type, 'system_role' => $role, 'is_postable' => true]
+            );
+        }
     }
 }

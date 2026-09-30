@@ -24,7 +24,7 @@ class ReportRunner
             if (! $this->allowed($user, $def['permissions'])) {
                 continue;
             }
-            $out[] = ['key' => $key, 'title' => $def['title'], 'group' => $def['group'], 'description' => $def['description'], 'filters' => array_merge(['from', 'to'], $def['filters'])];
+            $out[] = ['key' => $key, 'title' => $def['title'], 'group' => $def['group'], 'description' => $def['description'], 'filters' => ($def['no_range'] ?? false) ? $def['filters'] : array_merge(['from', 'to'], $def['filters'])];
         }
 
         return $out;
@@ -47,7 +47,8 @@ class ReportRunner
         $ctx = ReportContext::make($organisationId, $branchId, $filters);
         $result = app($def['class'])->{$def['method']}($ctx);
 
-        return ['key' => $key, 'title' => $def['title'], 'group' => $def['group'], 'generated_at' => now()->toIso8601String(), 'from' => $ctx->from, 'to' => $ctx->to, 'filters' => $filters] + $result;
+        // A report may set its own from/to (a forecast spans the weeks ahead, not the default month).
+        return array_merge(['key' => $key, 'title' => $def['title'], 'group' => $def['group'], 'generated_at' => now()->toIso8601String(), 'from' => $ctx->from, 'to' => $ctx->to, 'filters' => $filters], $result);
     }
 
     /**

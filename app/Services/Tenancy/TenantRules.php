@@ -17,7 +17,7 @@ class TenantRules
     private const OWNED = [
         'branches', 'products', 'product_batches', 'suppliers', 'customers', 'customer_tiers', 'tax_codes',
         'price_lists', 'recalls', 'sales', 'employees', 'leave_types', 'chart_of_accounts',
-        'facilities', 'departments', 'patients', 'encounters', 'lab_tests', 'lab_orders', 'prescriptions',
+        'bank_accounts', 'facilities', 'departments', 'patients', 'encounters', 'lab_tests', 'lab_orders', 'prescriptions',
     ];
 
     /** Reference lists: the shared rows plus the institution's own. */

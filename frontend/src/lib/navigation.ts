@@ -79,6 +79,7 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'supplier-invoices', label: 'Supplier Invoices', path: '/buy/supplier-invoices' },
       { key: 'three-way-match', label: 'Three-Way Match', path: '/buy/three-way-match' },
       { key: 'suppliers', label: 'Suppliers', path: '/buy/suppliers' },
+      { key: 'supplies', label: 'Supplies (non-drug)', path: '/buy/supplies' },
     ],
   },
   {
@@ -106,6 +107,8 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'receivables', label: 'Receivables', path: '/finance/receivables' },
       { key: 'payables', label: 'Payables', path: '/finance/payables' },
       { key: 'reconciliation', label: 'Payments & Reconciliation', path: '/finance/reconciliation' },
+      { key: 'petty-cash', label: 'Petty Cash', path: '/finance/petty-cash', permission: 'petty.cash.manage' },
+      { key: 'bank-accounts', label: 'Bank Accounts', path: '/finance/bank-accounts' },
       { key: 'journals', label: 'Journals', path: '/finance/journals' },
       { key: 'chart-of-accounts', label: 'Chart of Accounts', path: '/finance/chart-of-accounts' },
       { key: 'tax-centre', label: 'Tax Centre', path: '/finance/tax-centre' },

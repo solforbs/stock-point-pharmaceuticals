@@ -45,7 +45,7 @@ class JournalPoster
             throw new UnbalancedJournalException($totalDebit, $totalCredit);
         }
 
-        return DB::transaction(function () use ($header, $lines) {
+        return DB::transaction(function () use ($header, $lines, $totalDebit) {
             $period = FinancialPeriod::openPeriodFor($header['organisation_id'], $header['entry_date']);
             if (! $period) {
                 throw new NoOpenPeriodException("No open financial period covers {$header['entry_date']->format('Y-m-d')}.");
@@ -95,6 +95,8 @@ class JournalPoster
                     'narration' => $line['narration'] ?? null,
                 ]);
             }
+
+            app(PostingAlerts::class)->journalPosted($journal, $totalDebit);
 
             return $journal;
         });

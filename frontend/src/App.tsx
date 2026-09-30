@@ -74,6 +74,9 @@ const StatementsPage = lazy(() => import('./features/finance/StatementsPage'))
 const TaxCentrePage = lazy(() => import('./features/finance/TaxCentrePage'))
 const PeriodsPage = lazy(() => import('./features/finance/PeriodsPage'))
 const ReconciliationPage = lazy(() => import('./features/finance/ReconciliationPage'))
+const PettyCashPage = lazy(() => import('./features/finance/PettyCashPage'))
+const BankAccountsPage = lazy(() => import('./features/finance/BankAccountsPage'))
+const SupplyRequestsPage = lazy(() => import('./features/procurement/SupplyRequestsPage'))
 
 // Quality
 const QuarantinePage = lazy(() => import('./features/quality/QuarantinePage'))
@@ -199,6 +202,7 @@ function App() {
             <Route path="/buy/supplier-invoices" element={<SupplierInvoicesPage />} />
             <Route path="/buy/three-way-match" element={<ThreeWayMatchPage />} />
             <Route path="/buy/suppliers" element={<SuppliersPage />} />
+            <Route path="/buy/supplies" element={<SupplyRequestsPage />} />
 
             <Route path="/warehouse/pick-lists" element={<PickListsPage />} />
             <Route path="/warehouse/dispatch" element={<DispatchPage />} />
@@ -238,6 +242,8 @@ function App() {
             <Route path="/warehouse/packing" element={<PackingPage />} />
             <Route path="/customers/contacts" element={<ContactsPage />} />
             <Route path="/finance/reconciliation" element={<ReconciliationPage />} />
+            <Route path="/finance/petty-cash" element={<PettyCashPage />} />
+            <Route path="/finance/bank-accounts" element={<BankAccountsPage />} />
             <Route path="/sell/statements" element={<CustomerStatementsPage />} />
             <Route path="/admin/system-health" element={<SystemHealthPage />} />
             <Route path="/admin/backup" element={<BackupPage />} />

@@ -9,9 +9,10 @@ import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Field, Input, Select } from '../../components/ui/primitives'
 import { apiGet, apiPost } from '../../lib/api'
-import { dEq, dSum, isValidDecimal } from '../../lib/decimal'
+import { dEq, dIsPos, dSub, dSum, isValidDecimal } from '../../lib/decimal'
 import { formatDate } from '../../lib/format'
 import { formatMoney } from '../../lib/money'
+import { useBankAccounts } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import { PAYMENT_METHODS, type ArAgeing, type ArAgeingRow, type Customer, type Paginated, type Payment, type Sale } from '../../lib/types'
@@ -75,9 +76,26 @@ function ReceiptModal({ row, onClose, onDone }: { row: ArAgeingRow | null; onClo
   const [method, setMethod] = useState('MPESA')
   const [reference, setReference] = useState('')
   const [amount, setAmount] = useState('')
+  const [bankAccountId, setBankAccountId] = useState('')
+  const [payerName, setPayerName] = useState('')
+  const [payerBank, setPayerBank] = useState('')
+  const [payerAccount, setPayerAccount] = useState('')
   const [allocate, setAllocate] = useState(false)
   const [allocations, setAllocations] = useState<Record<string, string>>({})
   const customerId = row?.customer_id ?? customer?.id
+  const isBankMethod = method === 'BANK' || method === 'CHEQUE' || method === 'CARD'
+  const bankAccounts = useBankAccounts(row !== null && isBankMethod)
+  const accounts = bankAccounts.data ?? []
+
+  // What the customer owes right now, to say plainly what a short or an over payment will do.
+  const owing = useQuery({
+    queryKey: ['finance', 'ar-ageing', 'customer', customerId],
+    queryFn: () => apiGet<ArAgeing>('/api/finance/ar-ageing', { customer_id: customerId }),
+    enabled: !!customerId && !row?.total,
+  })
+  const outstanding = row?.total ?? owing.data?.data[0]?.total ?? null
+  const amountOk = isValidDecimal(amount) && Number(amount) > 0
+  const variance = outstanding !== null && amountOk ? dSub(amount, outstanding) : null
 
   // The customer's posted invoices, for explicit allocation. Left unallocated,
   // the server applies the receipt to the oldest invoices first.
@@ -98,12 +116,19 @@ function ReceiptModal({ row, onClose, onDone }: { row: ArAgeingRow | null; onClo
         method,
         reference: reference || null,
         amount,
+        bank_account_id: isBankMethod ? bankAccountId || null : null,
+        payer_name: payerName || null,
+        payer_bank: isBankMethod ? payerBank || null : null,
+        payer_account: payerAccount || null,
         allocations: allocate ? allocationRows.map(([sale_id, amt]) => ({ sale_id, amount: amt })) : null,
       }),
     onSuccess: (p) => {
-      toast.success(`Receipt of ${formatMoney(p.amount)} recorded`, p.allocations?.length ? `Allocated to ${p.allocations.length} invoice${p.allocations.length === 1 ? '' : 's'}.` : 'Applied to the oldest invoices first.')
+      toast.success(`Receipt of ${formatMoney(p.amount)} recorded`, `${p.allocations?.length ? `Allocated to ${p.allocations.length} invoice${p.allocations.length === 1 ? '' : 's'}.` : 'Applied to the oldest invoices first.'} Ledger: Dr ${p.method === 'CASH' ? 'Cash in till' : p.method === 'MPESA' ? 'M-PESA clearing' : 'Bank'} / Cr Accounts receivable.`)
       setAmount('')
       setReference('')
+      setPayerName('')
+      setPayerBank('')
+      setPayerAccount('')
       setAllocations({})
       onDone()
     },
@@ -118,7 +143,7 @@ function ReceiptModal({ row, onClose, onDone }: { row: ArAgeingRow | null; onClo
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" disabled={!customerId || !/^\d+(\.\d+)?$/.test(amount) || Number(amount) <= 0 || (method === 'MPESA' && !reference.trim()) || !allocationOk || record.isPending} onClick={() => record.mutate()}>
+          <Button variant="primary" disabled={!customerId || !/^\d+(\.\d+)?$/.test(amount) || Number(amount) <= 0 || (method === 'MPESA' && !reference.trim()) || (isBankMethod && accounts.length > 0 && !bankAccountId) || !allocationOk || record.isPending} onClick={() => record.mutate()}>
             {record.isPending ? 'Posting…' : 'Post receipt'}
           </Button>
         </>
@@ -133,12 +158,39 @@ function ReceiptModal({ row, onClose, onDone }: { row: ArAgeingRow | null; onClo
         <Field label="Reference" required={method === 'MPESA'} hint={method === 'MPESA' ? 'An M-PESA receipt must carry the transaction code; a repeated reference is treated as the same receipt.' : undefined}>
           <Input value={reference} onChange={(e) => setReference(e.target.value)} />
         </Field>
+        {isBankMethod && (
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <Field label="Paid into our account" required={accounts.length > 0} hint={accounts.length === 0 && !bankAccounts.isLoading ? 'No bank account is set up yet: add one under Finance → Bank Accounts.' : undefined}>
+              <Select value={bankAccountId} onChange={(e) => setBankAccountId(e.target.value)}>
+                <option value="">Choose the bank account…</option>
+                {accounts.map((a) => (<option key={a.id} value={a.id}>{a.name} · {a.bank_name} {a.account_number}</option>))}
+              </Select>
+            </Field>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Field label="Paid by"><Input placeholder="Account holder" value={payerName} onChange={(e) => setPayerName(e.target.value)} /></Field>
+              <Field label="Payer's bank"><Input placeholder="e.g. Equity Bank" value={payerBank} onChange={(e) => setPayerBank(e.target.value)} /></Field>
+              <Field label={method === 'CHEQUE' ? 'Cheque / account no.' : 'Payer account no.'}><Input className="tabular" value={payerAccount} onChange={(e) => setPayerAccount(e.target.value)} /></Field>
+            </div>
+          </div>
+        )}
+        {method === 'MPESA' && (
+          <Field label="Paid from phone" hint="The number on the M-PESA message, so an odd amount can be traced to who sent it">
+            <Input placeholder="+254 7..." value={payerAccount} onChange={(e) => setPayerAccount(e.target.value)} />
+          </Field>
+        )}
         <Field label="Amount (KES)" required>
           <div className="flex gap-2">
             <Input inputMode="decimal" className="tabular text-right" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ''))} />
-            {row?.total && <Button size="sm" onClick={() => setAmount(String(Number(row.total)))}>Full</Button>}
+            {outstanding && <Button size="sm" onClick={() => setAmount(String(Number(outstanding)))}>Full</Button>}
           </div>
         </Field>
+        {variance !== null && (
+          <div className={`rounded-lg border px-3 py-2 text-xs ${dEq(variance, '0') ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+            {dEq(variance, '0') && 'Matches the balance exactly: the invoices will be settled.'}
+            {!dEq(variance, '0') && !dIsPos(variance) && <>Short by <b className="tabular">{formatMoney(dSub('0', variance))}</b>. The receipt is posted as paid, and <b className="tabular">{formatMoney(dSub('0', variance))}</b> stays owing on the oldest invoice, so nothing is lost or double counted.</>}
+            {dIsPos(variance) && <>Over by <b className="tabular">{formatMoney(variance)}</b>. The invoices are settled and the excess is held as an unallocated receipt on this customer, to be applied to their next invoice or refunded. It shows on the Unallocated receipts report.</>}
+          </div>
+        )}
         <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
           <input type="checkbox" checked={allocate} disabled={!customerId} onChange={(e) => setAllocate(e.target.checked)} /> Allocate to specific invoices (otherwise oldest first)
         </label>

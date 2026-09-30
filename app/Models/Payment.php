@@ -20,7 +20,7 @@ class Payment extends Model
 
     protected $fillable = [
         'organisation_id', 'branch_id', 'customer_id', 'method', 'reference',
-        'amount', 'received_by', 'received_at', 'reconciled_at',
+        'bank_account_id', 'payer_name', 'payer_bank', 'payer_account', 'amount', 'received_by', 'received_at', 'reconciled_at',
         'reconciled_by', 'reconciliation_ref', 'statement_date', 'statement_amount',
         'status', 'voided_by', 'void_reason', 'voided_at',
     ];
@@ -59,6 +59,14 @@ class Payment extends Model
     public function reconciler(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reconciled_by');
+    }
+
+    /**
+     * @return BelongsTo<BankAccount, $this>
+     */
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
     }
 
     /**

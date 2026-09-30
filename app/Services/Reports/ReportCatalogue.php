@@ -11,7 +11,7 @@ namespace App\Services\Reports;
 class ReportCatalogue
 {
     /**
-     * @return array<string, array{title: string, group: string, class: class-string, method: string, permissions: list<string>, filters: list<string>, description: string}>
+     * @return array<string, array{title: string, group: string, class: class-string, method: string, permissions: list<string>, filters: list<string>, description: string, no_range?: bool}>
      */
     public static function all(): array
     {
@@ -23,11 +23,15 @@ class ReportCatalogue
         $qual = fn (string $m) => [QualityReports::class, $m];
         $mgmt = fn (string $m) => [ManagementReports::class, $m];
         $exc = fn (string $m) => [ExceptionReports::class, $m];
+        $cash = fn (string $m) => [CashReports::class, $m];
 
         $def = fn (string $title, string $group, array $target, array $permissions, array $filters, string $description) => [
             'title' => $title, 'group' => $group, 'class' => $target[0], 'method' => $target[1],
             'permissions' => $permissions, 'filters' => $filters, 'description' => $description,
         ];
+
+        // A forecast looks forward from a start date, so From / To would only mislead.
+        $forecast = fn (array $d) => $d + ['no_range' => true];
 
         $view = ['report.view'];
         $cost = ['report.view', 'product.cost.view'];
@@ -75,6 +79,10 @@ class ReportCatalogue
             'finance.ap_ageing' => $def('AP ageing', 'finance', $fin('apAgeing'), $finance, [], 'What is owed to each supplier by age of invoice.'),
             'finance.customer_statement' => $def('Customer statement', 'finance', $fin('customerStatement'), $finance, ['customer_id'], 'Every invoice, receipt and credit note with a running balance.'),
             'finance.unallocated_receipts' => $def('Unallocated receipts', 'finance', $fin('unallocatedReceipts'), $finance, [], 'Receipts not yet applied to an invoice.'),
+            'finance.cashflow_13_week' => $forecast($def('13-week cash-flow forecast', 'finance', $cash('cashflowForecast'), $finance, ['as_of', 'collection_pct', 'payroll_monthly'], 'Week by week for 13 weeks: opening cash, customer receipts on invoice due dates, supplier payments and payroll, closing cash.')),
+            'finance.mpesa_log' => $def('M-PESA transactions', 'finance', $cash('mpesaLog'), $finance, ['method'], 'Every receipt in date order with the code, payer, how it was applied and whether it was exact, short-paid or over-paid.'),
+            'finance.bank_receipts' => $def('Bank, cheque and card receipts', 'finance', $cash('bankReceipts'), $finance, ['method'], 'Receipts with the bank account paid into and the payer bank details, ready to tick off against the statement.'),
+            'finance.petty_cash_book' => $def('Petty cash book', 'finance', $cash('pettyCashBook'), $finance, [], 'Opening float, top-ups, vouchers and the closing float for this branch.'),
             'finance.vat_return' => $def('VAT return', 'finance', $fin('vatReturn'), $finance, [], 'Output VAT less input VAT for the period.'),
             'finance.till_summary' => $def('Till and M-PESA summary', 'finance', $fin('tillSummary'), $finance, [], 'Receipts by method and day, with reconciliation status.'),
             'finance.period_close_checklist' => $def('Period close checklist', 'finance', $fin('periodCloseChecklist'), $finance, [], 'The checks that must pass before the open period closes.'),

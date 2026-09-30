@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from './api'
-import type { AdminBranch, AdminRole, AdminUser, ChartAccount, CustomerTier, DashboardSummary, DosageForm, JournalEntry, Paginated, PermissionGroup, PriceList, Product, ProductCategory, ProductInsight, ProductStock, PurchaseOrder, StorageCondition, Store, Supplier, TaxCode, Uom, UserRef } from './types'
+import type { AdminBranch, AdminRole, AdminUser, BankAccount, ChartAccount, CustomerTier, DashboardSummary, DosageForm, JournalEntry, Paginated, PermissionGroup, PriceList, Product, ProductCategory, ProductInsight, ProductStock, PurchaseOrder, StorageCondition, Store, Supplier, TaxCode, Uom, UserRef } from './types'
 
 export function useUsers(q = '') {
   return useQuery({ queryKey: ['users', q], queryFn: () => apiGet<UserRef[]>('/api/users', { q }), staleTime: 60_000 })
@@ -16,6 +16,11 @@ export function usePurchaseOrder(id: string | null | undefined) {
 
 export function useStores() {
   return useQuery({ queryKey: ['stores'], queryFn: () => apiGet<Store[]>('/api/stores'), staleTime: 5 * 60_000 })
+}
+
+/** The institution's own bank accounts, for choosing where a receipt was paid in. */
+export function useBankAccounts(enabled = true) {
+  return useQuery({ queryKey: ['bank-accounts'], queryFn: () => apiGet<{ data: BankAccount[] }>('/api/bank-accounts').then((r) => r.data), staleTime: 60_000, enabled })
 }
 
 export function useDosageForms() {

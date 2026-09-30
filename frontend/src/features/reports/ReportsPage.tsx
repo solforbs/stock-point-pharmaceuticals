@@ -16,7 +16,7 @@ import {
   Truck,
   X,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CustomerPicker } from '../../components/CustomerPicker'
 import { ProductSearch } from '../../components/ProductSearch'
@@ -32,6 +32,12 @@ import type { Customer, Product, ReportDef, ReportResult } from '../../lib/types
 import { formatCell, isNumericType } from './reportCells'
 
 type Filters = Record<string, string>
+
+const NUMBER_FILTER_LABELS: Record<string, string> = { collection_pct: 'Collect % of receivables', payroll_monthly: 'Monthly payroll (KES)' }
+const NUMBER_FILTER_HINTS: Record<string, string> = {
+  collection_pct: 'Blank = 100%. Lower it to plan for late payers.',
+  payroll_monthly: 'Blank = the last posted payroll run.',
+}
 
 function getGroupIcon(groupName: string) {
   switch (groupName.toLowerCase()) {
@@ -77,6 +83,11 @@ export default function ReportsPage() {
   const activeKey = rawKey || (defs[0]?.key ?? '')
   const def = defs.find((d) => d.key === activeKey) ?? defs[0] ?? null
 
+  // Keep the chosen report visible inside its own scrolling list, however far down it sits.
+  useEffect(() => {
+    document.querySelector<HTMLElement>('[data-report-active="true"]')?.scrollIntoView({ block: 'nearest' })
+  }, [activeKey, chosenGroup, search, defs.length])
+
   const [filters, setFilters] = useState<Filters>({ from: addDaysIso(-30), to: todayIso() })
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [product, setProduct] = useState<Product | null>(null)
@@ -106,6 +117,8 @@ export default function ReportsPage() {
   function choose(d: ReportDef) {
     setParams({ report: d.key })
     setResult(null)
+    // Filters that belong to one report (method, start date, percentages) must not leak into the next.
+    setFilters((f) => ({ from: f.from, to: f.to }))
   }
 
   // Filter definitions based on category and search query
@@ -151,7 +164,7 @@ export default function ReportsPage() {
       {defs.length > 0 && (
         <div className="grid gap-5 lg:grid-cols-[300px_1fr] items-start">
           {/* LEFT SIDEBAR: Clean Report Navigation */}
-          <div id="tour-reports-catalogue" className="space-y-3">
+          <div id="tour-reports-catalogue" className="space-y-3 lg:sticky lg:top-4 lg:self-start">
             {/* Simple Search Input */}
             <div className="relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
@@ -208,7 +221,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Reports List */}
-            <div className="ui-card divide-y divide-slate-100 max-h-[calc(100vh-230px)] overflow-y-auto">
+            <div className="ui-card divide-y divide-slate-100 max-h-[60vh] lg:max-h-[calc(100vh-13rem)] overflow-y-auto overscroll-contain">
               {filteredDefs.length === 0 ? (
                 <div className="p-4 text-center text-xs text-slate-600">No reports match "{search}"</div>
               ) : (
@@ -219,6 +232,7 @@ export default function ReportsPage() {
                     <button
                       key={d.key}
                       type="button"
+                      data-report-active={isSelected ? 'true' : undefined}
                       onClick={() => choose(d)}
                       className={`w-full text-left p-3 transition-colors flex items-start justify-between gap-2 group ${
                         isSelected
@@ -312,7 +326,7 @@ export default function ReportsPage() {
                     </Field>
                   )}
                   {def.filters.includes('as_of') && (
-                    <Field label="As of">
+                    <Field label={def.key === 'finance.cashflow_13_week' ? 'Week 1 starts' : 'As of'}>
                       <Input
                         type="date"
                         value={filters.as_of ?? ''}
@@ -354,10 +368,18 @@ export default function ReportsPage() {
                       </Select>
                     </Field>
                   )}
-                  {['threshold_pct', 'threshold', 'dead_days', 'open_hour', 'close_hour']
+                  {def.filters.includes('method') && (
+                    <Field label="Method">
+                      <Select value={filters.method ?? ''} onChange={(e) => setFilters({ ...filters, method: e.target.value })}>
+                        <option value="">{def.key === 'finance.mpesa_log' ? 'M-PESA' : 'Bank, cheque and card'}</option>
+                        {['MPESA', 'BANK', 'CHEQUE', 'CARD', 'CASH'].map((m) => (<option key={m} value={m}>{titleCase(m)}</option>))}
+                      </Select>
+                    </Field>
+                  )}
+                  {['threshold_pct', 'threshold', 'dead_days', 'open_hour', 'close_hour', 'collection_pct', 'payroll_monthly']
                     .filter((f) => def.filters.includes(f))
                     .map((f) => (
-                      <Field key={f} label={titleCase(f)}>
+                      <Field key={f} label={NUMBER_FILTER_LABELS[f] ?? titleCase(f)} hint={NUMBER_FILTER_HINTS[f]}>
                         <Input
                           inputMode="decimal"
                           className="tabular w-28"
