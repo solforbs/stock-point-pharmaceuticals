@@ -45,6 +45,20 @@ class RequisitionHttpTest extends TestCase
         $this->postJson("/api/requisitions/{$req['id']}/convert", ['supplier_id' => $this->supplier->id, 'lines' => []])->assertStatus(422);
     }
 
+    public function test_a_requisition_can_be_converted_to_a_purchase_order_with_a_null_unit_price(): void
+    {
+        $req = $this->postJson('/api/requisitions', ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '100']]])->assertCreated()->json();
+        $this->postJson("/api/requisitions/{$req['id']}/submit")->assertOk();
+        $this->postJson("/api/requisitions/{$req['id']}/approve")->assertOk();
+
+        $po = $this->postJson("/api/requisitions/{$req['id']}/convert", [
+            'supplier_id' => $this->supplier->id,
+            'lines' => [['requisition_line_id' => $req['lines'][0]['id'], 'uom_id' => $this->uoms['BOX']->id, 'qty_ordered' => '10', 'unit_price' => null]],
+        ])->assertCreated()->assertJsonPath('status', 'DRAFT')->json();
+
+        $this->assertNull(PurchaseOrder::findOrFail($po['id'])->lines()->first()->unit_price);
+    }
+
     public function test_a_requisition_can_be_rejected_with_a_reason_and_selling_units_cannot_be_purchased(): void
     {
         $req = $this->postJson('/api/requisitions', ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '100']]])->assertCreated()->json();

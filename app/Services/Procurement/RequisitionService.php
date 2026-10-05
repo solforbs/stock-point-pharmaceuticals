@@ -125,12 +125,15 @@ class RequisitionService
                 if (! $product->uoms()->where('uom_id', $line['uom_id'])->where('is_purchase', true)->exists()) {
                     throw new \InvalidArgumentException("{$product->name} cannot be purchased in that unit (Part 5.3).");
                 }
+
+                $unitPrice = $line['unit_price'] === null ? null : bcadd((string) $line['unit_price'], '0', 4);
+
                 PurchaseOrderLine::create([
                     'purchase_order_id' => $po->id,
                     'product_id' => $product->id,
                     'uom_id' => $line['uom_id'],
                     'qty_ordered' => bcadd((string) $line['qty_ordered'], '0', 4),
-                    'unit_price' => bcadd((string) $line['unit_price'], '0', 4),
+                    'unit_price' => $unitPrice,
                     'tax_code_id' => $line['tax_code_id'] ?? null,
                 ]);
             }

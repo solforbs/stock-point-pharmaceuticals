@@ -115,7 +115,7 @@ class RequisitionController extends ApiController
             'lines.*.requisition_line_id' => ['required', 'uuid'],
             'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'lines.*.qty_ordered' => ['required', 'numeric', 'gt:0'],
-            'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'lines.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'lines.*.tax_code_id' => ['nullable', 'uuid', TenantRules::exists('tax_codes')],
         ]);
 
