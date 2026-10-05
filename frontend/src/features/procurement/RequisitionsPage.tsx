@@ -278,7 +278,7 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
     setConvertLines((r?.lines ?? []).map((l) => ({ requisition_line_id: l.id, product_name: l.product?.name ?? l.product_id.slice(0, 8), base_qty: l.qty_requested, uom_id: l.product?.base_uom_id ?? '', qty_ordered: String(Number(l.qty_requested)), unit_price: '' })))
     setConverting(true)
   }
-  const convertValid = !!supplierId && convertLines.length > 0 && convertLines.every((l) => l.uom_id && Number(l.qty_ordered) > 0 && /^\d+(\.\d+)?$/.test(l.unit_price))
+  const convertValid = !!supplierId && convertLines.length > 0 && convertLines.every((l) => l.uom_id && Number(l.qty_ordered) > 0 && (l.unit_price === '' || /^\d+(\.\d+)?$/.test(l.unit_price)))
 
   return (
     <Drawer
