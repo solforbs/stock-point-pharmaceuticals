@@ -6,8 +6,9 @@
 # Order matters and is deliberate:
 #   1. back up, so a bad migration is never the end of the story
 #   2. fetch the code and its PHP dependencies (artisan cannot run without them)
-#   3. show what the database is about to do, then migrate and seed
-#   4. build the SPA, re-cache, restart the workers
+#   3. build the SPA while the shop is still up (it only writes static files)
+#   4. show what the database is about to do, then migrate and seed
+#   5. re-cache, restart the workers
 # The shop is in maintenance mode only from the migration to the last cache,
 # so it is down for seconds rather than for the whole build.
 #
@@ -52,6 +53,11 @@ git log --oneline "${BEFORE}..HEAD" | head -20 || true
 echo "    now at $(git describe --tags --always)"
 composer install --no-dev --optimize-autoloader --no-interaction
 
+# Before `down`: npm ci and the build take minutes, and none of it needs the
+# database, so the shop keeps trading while it runs.
+echo "==> Frontend"
+(cd frontend && npm ci --no-audit --no-fund && npm run build)
+
 echo "==> Database"
 # What is about to change, named before it happens — a deploy that silently
 # migrates is a deploy nobody can review afterwards.
@@ -68,9 +74,6 @@ for seeder in PermissionSeeder RoleSeeder TaxCodeSeeder UnitOfMeasureSeeder Dosa
   artisan db:seed --class="$seeder" --force --no-interaction
 done
 artisan finance:open-periods
-
-echo "==> Frontend"
-(cd frontend && npm ci --no-audit --no-fund && npm run build)
 
 chown -R www-data:www-data "$APP_DIR"
 chmod -R ug+rwX storage bootstrap/cache
