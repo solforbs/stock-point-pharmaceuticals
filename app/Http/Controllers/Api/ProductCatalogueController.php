@@ -24,7 +24,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ProductCatalogueController extends ApiController
 {
     /** The CSV columns, in order; the import reads the ones listed in ProductImportService::COLUMNS. */
-    private const EXPORT_COLUMNS = ['code', 'name', 'category_code', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'generic_name', 'strength', 'description', 'is_active'];
+    private const EXPORT_COLUMNS = [
+        'code', 'name', 'sku', 'gtin', 'generic_name', 'strength', 'description', 'category_code', 'dosage_form_code', 'storage_condition_code',
+        'base_uom', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active',
+    ];
 
     /** What the caller must send to clear the catalogue, so it is never one stray click. */
     public const DELETE_ALL_CONFIRMATION = 'DELETE ALL PRODUCTS';
@@ -96,15 +99,17 @@ class ProductCatalogueController extends ApiController
     }
 
     /**
-     * POST /api/products/import — bulk attribute update from a spreadsheet.
-     * All-or-nothing; errors come back per row like the opening-stock import.
+     * POST /api/products/import — bulk create and update from a spreadsheet
+     * (CSV or .xlsx, read in the browser into rows). New codes need
+     * `product.create`. All-or-nothing; errors come back per row like the
+     * opening-stock import.
      */
     public function import(Request $request, ProductImportService $importer): JsonResponse
     {
         $this->requirePermission($request, 'product.edit');
 
         $data = $request->validate([
-            'rows' => ['required', 'array', 'min:1', 'max:10000'],
+            'rows' => ['required', 'array', 'min:1', 'max:20000'],
             'rows.*' => ['array'],
             'dry_run' => ['nullable', 'boolean'],
             'create_missing_categories' => ['nullable', 'boolean'],
@@ -117,6 +122,7 @@ class ProductCatalogueController extends ApiController
                 $request->boolean('dry_run'),
                 $request->boolean('create_missing_categories'),
                 $request->user()->id,
+                $request->user()->can('product.create'),
             );
         } catch (ProductImportValidationException $e) {
             return $this->error('PRODUCT_IMPORT_INVALID', $e->getMessage(), 422, ['rows' => $e->rowErrors]);
@@ -167,16 +173,22 @@ class ProductCatalogueController extends ApiController
             DB::table('products as p')
                 ->leftJoin('product_categories as c', 'c.id', '=', 'p.category_id')
                 ->leftJoin('tax_codes as t', 't.id', '=', 'p.tax_code_id')
+                ->leftJoin('dosage_forms as d', 'd.id', '=', 'p.dosage_form_id')
+                ->leftJoin('storage_conditions as s', 's.id', '=', 'p.storage_condition_id')
+                ->leftJoin('units_of_measure as u', 'u.id', '=', 'p.base_uom_id')
                 ->where('p.organisation_id', $organisationId)
                 ->orderBy('p.code')
-                ->select('p.id', 'p.code', 'p.name', 'c.code as category_code', 't.code as tax_code', 'p.default_price', 'p.reorder_point', 'p.safety_stock', 'p.lead_time_days', 'p.generic_name', 'p.strength', 'p.description', 'p.is_active')
+                ->select('p.id', 'p.code', 'p.name', 'p.sku', 'p.gtin', 'p.generic_name', 'p.strength', 'p.description',
+                    'c.code as category_code', 'd.code as dosage_form_code', 's.code as storage_condition_code', 'u.code as base_uom', 't.code as tax_code',
+                    'p.default_price', 'p.reorder_point', 'p.safety_stock', 'p.lead_time_days', 'p.requires_batch', 'p.is_active')
                 ->chunk(500, function ($products) use ($out) {
                     foreach ($products as $p) {
                         fputcsv($out, [
-                            $p->code, $this->safeCell((string) $p->name), $p->category_code, $p->tax_code,
+                            $p->code, $this->safeCell((string) $p->name), $p->sku, $p->gtin, $this->safeCell((string) $p->generic_name), $p->strength,
+                            $this->safeCell((string) $p->description), $p->category_code, $p->dosage_form_code, $p->storage_condition_code, $p->base_uom, $p->tax_code,
                             $p->default_price === null ? '' : $this->number((string) $p->default_price),
                             $this->number((string) $p->reorder_point), $this->number((string) $p->safety_stock),
-                            $p->lead_time_days, $p->generic_name, $p->strength, $this->safeCell((string) $p->description), $p->is_active ? '1' : '0',
+                            $p->lead_time_days, $p->requires_batch ? '1' : '0', $p->is_active ? '1' : '0',
                         ], ',', '"', '');
                     }
                 });
@@ -214,7 +226,7 @@ class ProductCatalogueController extends ApiController
         return str_contains($value, '.') ? rtrim(rtrim($value, '0'), '.') : $value;
     }
 
-    /** A product name is never imported, so neutralising a leading formula character is safe. */
+    /** Stops Excel running a cell as a formula; the import strips the apostrophe again. */
     private function safeCell(string $value): string
     {
         return preg_match('/^[=+\-@]/', $value) === 1 ? "'".$value : $value;

@@ -30,7 +30,13 @@ export function parseCsv(text: string): string[][] {
  * `missing` lists required columns the header does not have.
  */
 export function csvToObjects(text: string, required: readonly string[] = []): { keys: string[]; rows: Record<string, string>[]; missing: string[] } {
-  const [header = [], ...body] = parseCsv(text)
+  return tableToObjects(parseCsv(text), required)
+}
+
+/** csvToObjects for rows already split into cells (an .xlsx sheet); wholly blank rows are dropped. */
+export function tableToObjects(table: string[][], required: readonly string[] = []): { keys: string[]; rows: Record<string, string>[]; missing: string[] } {
+  const [header = [], ...rest] = table
+  const body = rest.filter((cells) => cells.some((c) => (c ?? '').trim() !== ''))
   const keys = header.map((h) => h.trim().toLowerCase())
   const missing = required.filter((k) => !keys.includes(k))
   const rows = body.map((cells) => Object.fromEntries(keys.map((k, i) => [k, (cells[i] ?? '').trim()])))

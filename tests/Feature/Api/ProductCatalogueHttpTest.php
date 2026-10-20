@@ -152,6 +152,73 @@ class ProductCatalogueHttpTest extends TestCase
         $this->assertSame($otc->id, $this->amox->fresh()->category_id);
     }
 
+    public function test_new_codes_create_products_with_their_base_unit_and_category_tree(): void
+    {
+        $this->grantPermissions(['product.create'], 'Creator');
+        $this->seed([DosageFormSeeder::class, StorageConditionSeeder::class]);
+
+        $rows = [
+            [
+                'code' => 'ACE003', 'name' => 'Acetazolamide Tablets 250mg, 30 Pack', 'sku' => 'ACE-30', 'description' => 'Rx',
+                'category_code' => '1.1', 'category_name' => 'Oral Solid Preparations', 'parent_category_code' => '1.0', 'parent_category_name' => 'Medicines',
+                'dosage_form_code' => 'tab', 'storage_condition_code' => 'ROOM', 'base_uom' => 'box', 'tax_code' => 'VAT_STD',
+                'default_price' => '820', 'requires_batch' => 'yes',
+            ],
+            ['code' => 'ABD001', 'name' => 'Abdominal Pack, Sterile, 5 Pack', 'category_code' => '1.1', 'base_uom' => 'BOX', 'default_price' => '362', 'requires_batch' => 'no'],
+            ['code' => 'PARA500', 'name' => 'Paracetamol 500mg Tablets', 'default_price' => '5'],
+        ];
+
+        $this->postJson('/api/products/import', ['rows' => $rows, 'create_missing_categories' => true, 'dry_run' => true])->assertOk()
+            ->assertJsonPath('created', 2)->assertJsonPath('updated', 1)
+            ->assertJsonPath('created_codes', ['ACE003', 'ABD001'])
+            ->assertJsonPath('categories_created', ['1.0', '1.1'])
+            ->assertJsonPath('changes.0.fields.default_price.to', '5.0000');
+        $this->assertFalse(Product::where('code', 'ACE003')->exists(), 'a dry run writes nothing');
+
+        $this->postJson('/api/products/import', ['rows' => $rows, 'create_missing_categories' => true])->assertCreated()->assertJsonPath('created', 2);
+
+        $ace = Product::where('code', 'ACE003')->with(['uoms', 'category'])->sole();
+        $this->assertSame('Acetazolamide Tablets 250mg, 30 Pack', $ace->name);
+        $this->assertSame('ACE-30', $ace->sku);
+        $this->assertSame('820.0000', $ace->default_price);
+        $this->assertSame('TAB', $ace->dosageForm->code);
+        $this->assertSame('BOX', $ace->baseUom->code);
+        $this->assertSame($this->vat->id, $ace->tax_code_id);
+        $this->assertSame('Oral Solid Preparations', $ace->category->name);
+        $this->assertSame('Medicines', $ace->category->parent?->name);
+        $this->assertCount(1, $ace->uoms);
+        $this->assertTrue($ace->uoms->first()->is_base);
+        $this->assertFalse(Product::where('code', 'ABD001')->sole()->requires_batch);
+        $this->assertSame('5.0000', $this->para->fresh()->default_price);
+
+        // The same file again creates nothing new.
+        $this->postJson('/api/products/import', ['rows' => $rows, 'create_missing_categories' => true])->assertCreated()
+            ->assertJsonPath('created', 0)->assertJsonPath('updated', 0)->assertJsonPath('unchanged', 3);
+    }
+
+    public function test_a_new_code_needs_a_name_a_known_unit_and_the_create_permission(): void
+    {
+        $rows = [['code' => 'NEW1', 'name' => 'New thing', 'base_uom' => 'BOX']];
+        $errors = $this->postJson('/api/products/import', ['rows' => $rows])->assertStatus(422)->json('error.details.rows');
+        $this->assertStringContainsString('product.create permission', $errors['1'][0]);
+
+        $this->grantPermissions(['product.create'], 'Creator');
+        $rows = [
+            ['code' => 'NEW1', 'base_uom' => 'BOX'],
+            ['code' => 'NEW2', 'name' => 'Box', 'base_uom' => 'CRATE'],
+            ['code' => 'PARA500', 'base_uom' => 'BOX'],
+            ['code' => 'NEW3', 'name' => 'Fine', 'base_uom' => 'BOX', 'sku' => 'S1'],
+            ['code' => 'NEW4', 'name' => 'Clash', 'base_uom' => 'BOX', 'sku' => 's1'],
+        ];
+        $errors = $this->postJson('/api/products/import', ['rows' => $rows])->assertStatus(422)->json('error.details.rows');
+        $this->assertStringContainsString('give a name and base_uom', $errors['1'][0]);
+        $this->assertStringContainsString('unknown unit of measure CRATE', $errors['2'][0]);
+        $this->assertStringContainsString('base_uom cannot be changed', $errors['3'][0]);
+        $this->assertArrayNotHasKey('4', $errors);
+        $this->assertStringContainsString('appears twice', $errors['5'][0]);
+        $this->assertFalse(Product::where('code', 'NEW3')->exists());
+    }
+
     public function test_export_is_a_csv_that_re_imports_unchanged(): void
     {
         $this->para->update(['category_id' => ProductCategory::create(['code' => 'ANALG', 'name' => 'Analgesics'])->id, 'tax_code_id' => $this->vat->id]);
@@ -159,9 +226,9 @@ class ProductCatalogueHttpTest extends TestCase
         $csv = $this->get('/api/products/export')->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8')->streamedContent();
         $lines = array_map(fn (string $l) => str_getcsv($l, ',', '"', ''), preg_split('/\r?\n/', trim(ltrim($csv, "\xEF\xBB\xBF"))));
 
-        $this->assertSame(['code', 'name', 'category_code', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'generic_name', 'strength', 'description', 'is_active'], $lines[0]);
-        $this->assertSame(['AMOX500', 'Amoxicillin 500mg Capsules', '', '', '2.5', '0', '0', '0', 'Amoxicillin', '500mg', '', '1'], $lines[1]);
-        $this->assertSame(['PARA500', 'Paracetamol 500mg Tablets', 'ANALG', 'VAT_STD', '', '100', '0', '7', '', '', '', '1'], $lines[2]);
+        $this->assertSame(['code', 'name', 'sku', 'gtin', 'generic_name', 'strength', 'description', 'category_code', 'dosage_form_code', 'storage_condition_code', 'base_uom', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active'], $lines[0]);
+        $this->assertSame(['AMOX500', 'Amoxicillin 500mg Capsules', '', '', 'Amoxicillin', '500mg', '', '', '', '', 'TAB', '', '2.5', '0', '0', '0', '1', '1'], $lines[1]);
+        $this->assertSame(['PARA500', 'Paracetamol 500mg Tablets', '', '', '', '', '', 'ANALG', '', '', 'TAB', 'VAT_STD', '', '100', '0', '7', '1', '1'], $lines[2]);
 
         $rows = array_map(fn (array $cells) => array_combine($lines[0], $cells), array_slice($lines, 1));
         $this->postJson('/api/products/import', ['rows' => $rows])->assertCreated()->assertJsonPath('updated', 0)->assertJsonPath('unchanged', 2);

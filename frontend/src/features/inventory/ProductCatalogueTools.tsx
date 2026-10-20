@@ -9,7 +9,8 @@ import { InlineError } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Card, Field, FileDropzone, Input, Select } from '../../components/ui/primitives'
 import { api, apiGet, apiPatch, apiPost, ensureCsrfCookie, getApiError } from '../../lib/api'
-import { csvToObjects, downloadBlob } from '../../lib/csv'
+import { downloadBlob, parseCsv, tableToObjects } from '../../lib/csv'
+import { readXlsxRows } from '../../lib/xlsx'
 import { usePermission } from '../../lib/permissions'
 import { toast, toastApiError } from '../../lib/toast'
 
@@ -24,10 +25,15 @@ type CategoryRow = {
 }
 
 type ImportChange = { code: string; fields: Record<string, { from: unknown; to: unknown }> }
-type ImportSummary = { rows: number; updated: number; unchanged: number; categories_created: string[]; dry_run: boolean; changes: ImportChange[] }
+type ImportSummary = { rows: number; created: number; updated: number; unchanged: number; categories_created: string[]; dry_run: boolean; created_codes: string[]; changes: ImportChange[] }
 
-/** The columns the import reads; any others in the file (name, default_price) are ignored. */
-const IMPORT_COLUMNS = ['code', 'category_code', 'tax_code', 'reorder_point', 'safety_stock', 'lead_time_days', 'generic_name', 'strength', 'is_active'] as const
+/** The columns the import reads; any others in the file are ignored. */
+const IMPORT_COLUMNS = [
+  'code', 'name', 'sku', 'gtin', 'generic_name', 'strength', 'description',
+  'category_code', 'category_name', 'parent_category_code', 'parent_category_name',
+  'dosage_form_code', 'storage_condition_code', 'base_uom', 'tax_code', 'default_price',
+  'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active',
+] as const
 
 /**
  * Part 5 — catalogue maintenance from the Products header: the category
@@ -223,12 +229,13 @@ function CategoriesDrawer({ open, onClose, canEdit }: { open: boolean; onClose: 
 function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClose: () => void; onExport: () => void }) {
   const queryClient = useQueryClient()
   const [fileName, setFileName] = useState('')
-  const [text, setText] = useState('')
+  const [table, setTable] = useState<string[][] | null>(null)
+  const [readError, setReadError] = useState('')
   const [createCategories, setCreateCategories] = useState(false)
   const [checked, setChecked] = useState<ImportSummary | null>(null)
   const [applied, setApplied] = useState<ImportSummary | null>(null)
 
-  const parsed = useMemo(() => (text ? csvToObjects(text, ['code']) : null), [text])
+  const parsed = useMemo(() => (table ? tableToObjects(table, ['code']) : null), [table])
   const usedColumns = useMemo(() => IMPORT_COLUMNS.filter((c) => parsed?.keys.includes(c)), [parsed])
   const rows = useMemo(() => (parsed?.rows ?? []).map((r) => Object.fromEntries(usedColumns.map((c) => [c, r[c] ?? '']))), [parsed, usedColumns])
 
@@ -236,7 +243,7 @@ function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClo
   const check = useMutation({
     meta: { silent: true },
     mutationFn: () => apiPost<ImportSummary>('/api/products/import', payload(true)),
-    onSuccess: (s) => { setChecked(s); toast.success(`${s.rows} row(s) are valid — ${s.updated} product(s) would change`) },
+    onSuccess: (s) => { setChecked(s); toast.success(`${s.rows} row(s) are valid — ${s.created} new, ${s.updated} would change`) },
     onError: () => setChecked(null),
   })
   const apply = useMutation({
@@ -245,9 +252,9 @@ function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClo
     onSuccess: (s) => {
       setApplied(s)
       setChecked(null)
-      setText('')
+      setTable(null)
       setFileName('')
-      toast.success(`${s.updated} product(s) updated`)
+      toast.success(`${s.created} product(s) created, ${s.updated} updated`)
       queryClient.invalidateQueries({ queryKey: ['products'] })
       queryClient.invalidateQueries({ queryKey: ['product-categories'] })
     },
@@ -260,41 +267,50 @@ function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClo
   const onFile = async (file: File | undefined) => {
     if (!file) return
     setFileName(file.name)
-    setText(await file.text())
     setApplied(null)
+    setReadError('')
     reset()
+    try {
+      setTable(/\.xlsx$/i.test(file.name) ? await readXlsxRows(file) : parseCsv(await file.text()))
+    } catch (e) {
+      setTable(null)
+      setReadError(e instanceof Error ? e.message : 'The file could not be read.')
+    }
   }
-  const close = () => { setText(''); setFileName(''); setApplied(null); reset(); onClose() }
+  const close = () => { setTable(null); setFileName(''); setReadError(''); setApplied(null); reset(); onClose() }
+  const pending = (checked?.created ?? 0) + (checked?.updated ?? 0)
 
   return (
-    <Drawer open={open} onClose={close} title="Import product attributes" subtitle="Updates existing products only. A blank cell leaves that value unchanged; one bad row changes nothing." width={980}>
+    <Drawer open={open} onClose={close} title="Import products" subtitle="New codes create products; existing codes are updated. A blank cell leaves that value unchanged; one bad row changes nothing." width={980}>
       <div className="space-y-4">
         {applied && (
           <Card title="Imported">
             <div className="p-4 text-sm">
-              {applied.updated} product(s) updated, {applied.unchanged} already matched the file.
+              {applied.created} product(s) created, {applied.updated} updated, {applied.unchanged} already matched the file.
               {applied.categories_created.length > 0 && <> Created categories: {applied.categories_created.join(', ')}.</>}
             </div>
           </Card>
         )}
 
-        <Card padded title="1. Choose the CSV file">
+        <Card padded title="1. Choose the Excel or CSV file">
           <div className="space-y-4">
             <div className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-              Start by downloading the catalogue template via <button type="button" className="text-blue-600 hover:text-blue-700 hover:underline font-semibold" onClick={onExport}>Export CSV</button>, edit it in Excel and save as standard CSV format.
-              <span className="block text-slate-500 mt-1">Columns parsed: {IMPORT_COLUMNS.join(', ')}. Others (name, default_price) are ignored. is_active takes 1/0 or yes/no.</span>
+              Start from <button type="button" className="text-blue-600 hover:text-blue-700 hover:underline font-semibold" onClick={onExport}>Export CSV</button>, edit it in Excel and import it back as .xlsx or .csv (the first sheet is read; row 1 holds the column names).
+              <span className="block text-slate-500 mt-1">Columns read: {IMPORT_COLUMNS.join(', ')}. A new code needs name and base_uom. requires_batch and is_active take 1/0 or yes/no.</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-              <Field label="CSV file" required hint="Max size 10MB · UTF-8 CSV format">
+              <Field label="Product file" required hint="Excel .xlsx, or UTF-8 CSV">
                 <FileDropzone
+                  accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   fileName={fileName}
                   onFileSelect={(file) => void onFile(file)}
                   onClear={() => {
                     setFileName('')
-                    setText('')
+                    setTable(null)
+                    setReadError('')
                     reset()
                   }}
-                  hint="Click to browse or drop your CSV file"
+                  hint="Click to browse or drop your .xlsx or .csv file"
                 />
               </Field>
               <div className="pt-2 sm:pt-6">
@@ -311,6 +327,7 @@ function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClo
                 </label>
               </div>
             </div>
+            {readError && <div className="text-xs text-rose-600 font-medium">{readError}</div>}
             {parsed && parsed.missing.length > 0 && <div className="text-xs text-rose-600 font-medium">The file has no “code” column, so no product can be matched.</div>}
             {parsed && parsed.missing.length === 0 && rows.length === 0 && <div className="text-xs text-rose-600 font-medium">The file has a header but no rows.</div>}
           </div>
@@ -344,8 +361,8 @@ function ProductImportDrawer({ open, onClose, onExport }: { open: boolean; onClo
               {checked && <ChangePreview summary={checked} />}
               <div className="flex justify-end gap-2">
                 <Button disabled={check.isPending} onClick={() => check.mutate()}>{check.isPending ? 'Checking…' : 'Check file'}</Button>
-                <Button variant="primary" disabled={!checked || checked.updated === 0 || apply.isPending} onClick={() => apply.mutate()}>
-                  {apply.isPending ? 'Applying…' : `Apply (${checked?.updated ?? 0} product${checked?.updated === 1 ? '' : 's'})`}
+                <Button variant="primary" disabled={!checked || pending === 0 || apply.isPending} onClick={() => apply.mutate()}>
+                  {apply.isPending ? 'Applying…' : `Apply (${pending} product${pending === 1 ? '' : 's'})`}
                 </Button>
               </div>
             </div>
@@ -361,7 +378,7 @@ function ChangePreview({ summary }: { summary: ImportSummary }) {
   return (
     <div className="rounded-md border border-slate-200 p-3 text-xs space-y-2">
       <div className="font-semibold">
-        {summary.updated} product(s) will change, {summary.unchanged} already match.
+        {summary.created} new product(s), {summary.updated} will change, {summary.unchanged} already match.
         {summary.categories_created.length > 0 && <span className="font-normal"> New categories: {summary.categories_created.join(', ')}.</span>}
       </div>
       {summary.changes.length > 0 && (
