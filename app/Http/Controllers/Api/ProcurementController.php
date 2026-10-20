@@ -140,7 +140,17 @@ class ProcurementController extends ApiController
             'expected_date' => ['nullable', 'date'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
-            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
+            'lines.*.uom_id' => ['required', 'uuid', function (string $attribute, mixed $value, \Closure $fail) {
+                preg_match('/lines\.(\d+)\.uom_id$/', $attribute, $matches);
+                if (! isset($matches[1])) {
+                    return;
+                }
+
+                $productId = request()->input('lines.'.$matches[1].'.product_id');
+                if (! $productId || ! Product::whereKey($productId)->whereHas('uoms', fn ($query) => $query->where('uom_id', $value))->exists()) {
+                    $fail('The selected UOM is not available for this product.');
+                }
+            }, TenantRules::exists('units_of_measure')],
             'lines.*.qty_ordered' => ['required', 'numeric', 'gt:0'],
             'lines.*.unit_price' => ['nullable', 'required_without:lines.*.trade_price', 'numeric', 'min:0'],
             'lines.*.trade_price' => ['nullable', 'numeric', 'min:0'],
@@ -198,7 +208,17 @@ class ProcurementController extends ApiController
             'expected_date' => ['nullable', 'date'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
-            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
+            'lines.*.uom_id' => ['required', 'uuid', function (string $attribute, mixed $value, \Closure $fail) {
+                preg_match('/lines\.(\d+)\.uom_id$/', $attribute, $matches);
+                if (! isset($matches[1])) {
+                    return;
+                }
+
+                $productId = request()->input('lines.'.$matches[1].'.product_id');
+                if (! $productId || ! Product::whereKey($productId)->whereHas('uoms', fn ($query) => $query->where('uom_id', $value))->exists()) {
+                    $fail('The selected UOM is not available for this product.');
+                }
+            }, TenantRules::exists('units_of_measure')],
             'lines.*.qty_ordered' => ['required', 'numeric', 'gt:0'],
             'lines.*.unit_price' => ['nullable', 'required_without:lines.*.trade_price', 'numeric', 'min:0'],
             'lines.*.trade_price' => ['nullable', 'numeric', 'min:0'],

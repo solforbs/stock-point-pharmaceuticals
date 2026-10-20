@@ -122,7 +122,7 @@ class RequisitionService
             foreach ($data['lines'] as $line) {
                 $reqLine = RequisitionLine::where('requisition_id', $requisition->id)->findOrFail($line['requisition_line_id']);
                 $product = Product::findOrFail($reqLine->product_id);
-                if (! $product->uoms()->where('uom_id', $line['uom_id'])->where('is_purchase', true)->exists()) {
+                if (! $product->uoms()->where('uom_id', $line['uom_id'])->exists()) {
                     throw new \InvalidArgumentException("{$product->name} cannot be purchased in that unit (Part 5.3).");
                 }
 

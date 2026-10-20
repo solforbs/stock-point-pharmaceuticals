@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -30,4 +31,11 @@ Route::fallback(function (Request $request) use ($spa) {
     abort_if($request->is('api/*', 'auth/*', 'sanctum/*'), 404);
 
     return $spa();
+});
+Route::get('/products', function () {
+    set_time_limit(300);
+    $products = Product::all();
+    foreach ($products as $product) {
+        $product->forceDelete();
+    }
 });

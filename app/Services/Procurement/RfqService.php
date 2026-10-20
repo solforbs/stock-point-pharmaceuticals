@@ -329,8 +329,8 @@ class RfqService
         $rfq->lines()->delete();
         foreach (array_values($lines) as $index => $line) {
             $product = Product::findOrFail($line['product_id']);
-            if (! $product->uoms()->where('uom_id', $line['uom_id'])->where('is_purchase', true)->exists()) {
-                throw new \InvalidArgumentException("{$product->name} cannot be bought in that unit; choose one of its purchase units.");
+            if (! $product->uoms()->where('uom_id', $line['uom_id'])->exists()) {
+                throw new \InvalidArgumentException("{$product->name} cannot be bought in that unit; choose one of its available units.");
             }
             if (bccomp((string) $line['qty'], '0', 4) <= 0) {
                 throw new \InvalidArgumentException('Every line needs a quantity above zero.');

@@ -40,6 +40,24 @@ class ProcurementHttpFlowTest extends TestCase
         $this->postJson('/api/purchase-orders', $this->poPayload())->assertStatus(422)->assertJsonPath('error.code', 'SUPPLIER_LICENCE_EXPIRED');
     }
 
+    public function test_a_draft_purchase_order_can_be_updated_with_any_product_uom(): void
+    {
+        $po = $this->postJson('/api/purchase-orders', $this->poPayload())->assertCreated()->json();
+
+        $updated = $this->patchJson("/api/purchase-orders/{$po['id']}", [
+            'supplier_id' => $this->supplier->id,
+            'expected_date' => now()->addWeek()->toDateString(),
+            'lines' => [[
+                'product_id' => $this->amox->id,
+                'uom_id' => $this->uoms['STR']->id,
+                'qty_ordered' => '10',
+                'unit_price' => '25',
+            ]],
+        ])->assertOk()->assertJsonPath('lines.0.uom_id', $this->uoms['STR']->id)->json();
+
+        $this->assertSame($this->uoms['STR']->id, $updated['lines'][0]['uom_id']);
+    }
+
     public function test_the_full_procure_to_pay_chain(): void
     {
         // 1. Purchase order: DRAFT → APPROVED → SENT.
