@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\AuditLog;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Services\Admin\RecordDeletionService;
 use App\Services\Inventory\ProductImportService;
 use App\Services\Inventory\ProductImportValidationException;
 use App\Services\Tenancy\TenantContext;
@@ -24,6 +25,9 @@ class ProductCatalogueController extends ApiController
 {
     /** The CSV columns, in order; the import reads the ones listed in ProductImportService::COLUMNS. */
     private const EXPORT_COLUMNS = ['code', 'name', 'category_code', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'generic_name', 'strength', 'description', 'is_active'];
+
+    /** What the caller must send to clear the catalogue, so it is never one stray click. */
+    public const DELETE_ALL_CONFIRMATION = 'DELETE ALL PRODUCTS';
 
     /** GET /api/product-categories/all — every category, inactive included, with its product count. */
     public function categories(Request $request): JsonResponse
@@ -119,6 +123,34 @@ class ProductCatalogueController extends ApiController
         }
 
         return response()->json($summary, $summary['dry_run'] ? 200 : 201);
+    }
+
+    /**
+     * DELETE /api/products — clears the catalogue before a fresh import. Only
+     * products nothing points at go: anything received, counted, sold or
+     * prescribed is kept (and counted in the reply), because its history
+     * would otherwise vanish with it. Units, prices and promotion lines
+     * belong to the product and are removed along with it.
+     */
+    public function destroyAll(Request $request, RecordDeletionService $deletions): JsonResponse
+    {
+        $this->requirePermission($request, 'record.delete');
+        $this->requirePermission($request, 'product.edit');
+
+        $request->validate(['confirm' => ['required', Rule::in([self::DELETE_ALL_CONFIRMATION])]], [
+            'confirm.in' => 'Type '.self::DELETE_ALL_CONFIRMATION.' to confirm.',
+        ]);
+
+        set_time_limit(300);
+
+        $result = $deletions->deleteUnreferenced(
+            Product::query(),
+            ['product_uoms', 'product_prices', 'customer_prices', 'promotion_lines', 'product_discount_policies'],
+            'code',
+            $request->user()->id,
+        );
+
+        return response()->json($result);
     }
 
     /** GET /api/products/export — the organisation's products as CSV, ready to edit and re-import. */

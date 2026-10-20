@@ -79,6 +79,35 @@ class RecordDeletionHttpTest extends TestCase
         $this->assertNotNull(Product::find($this->amox->id));
     }
 
+    public function test_delete_all_products_clears_the_catalogue_but_keeps_products_with_history(): void
+    {
+        $spare = Product::create([
+            'organisation_id' => $this->org->id, 'code' => 'SPARE', 'name' => 'Never traded',
+            'base_uom_id' => $this->uoms['TAB']->id, 'is_active' => true,
+        ]);
+        $this->receive('B-KEEP', now()->addYear()->toDateString(), '100', '2.0000');
+
+        $this->deleteJson('/api/products', ['confirm' => 'yes'])->assertUnprocessable()->assertJsonValidationErrors('confirm');
+        $this->assertNotNull(Product::find($spare->id));
+
+        $this->deleteJson('/api/products', ['confirm' => 'DELETE ALL PRODUCTS'])->assertOk()
+            ->assertJsonPath('kept', 1);
+
+        $this->assertNull(Product::find($spare->id));
+        $this->assertNotNull(Product::find($this->amox->id), 'a product with stock behind it is kept');
+        $this->assertSame(1, Product::count());
+        $this->assertTrue(AuditLog::where('action', 'RECORD_DELETED')->where('entity_id', $spare->id)->exists());
+    }
+
+    public function test_delete_all_products_needs_the_delete_permission(): void
+    {
+        $this->revokeAllRoles();
+        $this->grantPermissions(['product.edit'], 'Editor without delete');
+
+        $this->deleteJson('/api/products', ['confirm' => 'DELETE ALL PRODUCTS'])->assertForbidden();
+        $this->assertNotNull(Product::find($this->amox->id));
+    }
+
     public function test_transactions_are_not_a_deletable_type_at_all(): void
     {
         foreach (['sales', 'journal-entries', 'stock-ledgers', 'payments'] as $type) {

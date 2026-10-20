@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\AuditLog;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -65,6 +66,56 @@ class RecordDeletionService
 
             $model->delete();
         });
+    }
+
+    /**
+     * The bulk form of delete(): removes every row the query matches that
+     * nothing points at, and keeps the rest. Rows in $ownedTables belong to
+     * the record (a product's units and prices) and go with it by cascade, so
+     * they never hold it. Each deleted row is written to the audit log first.
+     *
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
+     * @param  list<string>  $ownedTables
+     * @return array{deleted: int, kept: int}
+     */
+    public function deleteUnreferenced(Builder $query, array $ownedTables, string $labelAttribute, ?int $userId = null): array
+    {
+        $model = $query->getModel();
+        $table = $model->getTable();
+        $key = $model->getQualifiedKeyName();
+
+        $total = (clone $query)->count();
+        $deletable = clone $query;
+        foreach ($this->foreignKeysTo($table) as $fk) {
+            if (in_array($fk['table'], $ownedTables, true)) {
+                continue;
+            }
+
+            // Aliased so a self-reference (a parent column) works the same way.
+            $deletable->whereNotExists(fn ($sub) => $sub->selectRaw('1')
+                ->from($fk['table'].' as referrer')
+                ->whereColumn('referrer.'.$fk['column'], $key));
+        }
+
+        $deleted = 0;
+        foreach ($deletable->get()->chunk(500) as $chunk) {
+            DB::transaction(function () use ($chunk, $model, $table, $labelAttribute, $userId): void {
+                foreach ($chunk as $record) {
+                    AuditLog::record('RECORD_DELETED', $table, (string) $record->getKey(), [
+                        'user_id' => $userId,
+                        'reference' => (string) ($record->getAttribute($labelAttribute) ?? $record->getKey()),
+                        'before_json' => $record->attributesToArray(),
+                    ]);
+                }
+
+                $model->newQuery()->whereKey($chunk->modelKeys())->delete();
+            });
+            $deleted += $chunk->count();
+        }
+
+        return ['deleted' => $deleted, 'kept' => $total - $deleted];
     }
 
     /**

@@ -410,6 +410,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/product-categories', [ProductCatalogueController::class, 'storeCategory']);
     Route::patch('/product-categories/{category}', [ProductCatalogueController::class, 'updateCategory']);
     Route::post('/products/import', [ProductCatalogueController::class, 'import']);
+    Route::delete('/products', [ProductCatalogueController::class, 'destroyAll']);
     Route::get('/products/export', [ProductCatalogueController::class, 'export']);
 
     // People, reports and pricing rules — leave (21.16), scheduled reports (20.3), pricing rules (Part 6)

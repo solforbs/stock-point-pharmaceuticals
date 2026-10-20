@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, FolderTree, Upload } from 'lucide-react'
+import { Download, FolderTree, Trash2, Upload } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { DeleteRecordButton } from '../../components/DeleteRecordButton'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
+import { Modal } from '../../components/ui/Modal'
 import { InlineError } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Card, Field, FileDropzone, Input, Select } from '../../components/ui/primitives'
-import { api, apiGet, apiPatch, apiPost, getApiError } from '../../lib/api'
+import { api, apiGet, apiPatch, apiPost, ensureCsrfCookie, getApiError } from '../../lib/api'
 import { csvToObjects, downloadBlob } from '../../lib/csv'
 import { usePermission } from '../../lib/permissions'
 import { toast, toastApiError } from '../../lib/toast'
@@ -35,6 +36,8 @@ const IMPORT_COLUMNS = ['code', 'category_code', 'tax_code', 'reorder_point', 's
 export function ProductCatalogueActions() {
   const canView = usePermission('product.view')
   const canEdit = usePermission('product.edit')
+  const canDelete = usePermission('record.delete') && canEdit
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false)
   const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -58,9 +61,67 @@ export function ProductCatalogueActions() {
       <Button onClick={() => setCategoriesOpen(true)}><FolderTree size={13} /> Categories</Button>
       <Button onClick={exportCsv} disabled={exporting}><Download size={13} /> {exporting ? 'Exporting…' : 'Export CSV'}</Button>
       {canEdit && <Button onClick={() => setImportOpen(true)}><Upload size={13} /> Import CSV</Button>}
+      {canDelete && <Button variant="danger" onClick={() => setDeleteAllOpen(true)}><Trash2 size={13} /> Delete all</Button>}
       <CategoriesDrawer open={categoriesOpen} onClose={() => setCategoriesOpen(false)} canEdit={canEdit} />
       {canEdit && <ProductImportDrawer open={importOpen} onClose={() => setImportOpen(false)} onExport={exportCsv} />}
+      {canDelete && <DeleteAllProductsModal open={deleteAllOpen} onClose={() => setDeleteAllOpen(false)} />}
     </>
+  )
+}
+
+const DELETE_ALL_CONFIRMATION = 'DELETE ALL PRODUCTS'
+
+/**
+ * Clears the catalogue before a fresh import. The server keeps any product
+ * with stock, purchase or sales history behind it and says how many.
+ */
+function DeleteAllProductsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient()
+  const [typed, setTyped] = useState('')
+
+  const remove = useMutation({
+    meta: { silent: true },
+    mutationFn: async () => {
+      await ensureCsrfCookie()
+      const { data } = await api.delete<{ deleted: number; kept: number }>('/api/products', { data: { confirm: DELETE_ALL_CONFIRMATION } })
+      return data
+    },
+    onSuccess: (r) => {
+      toast.success(r.kept > 0
+        ? `${r.deleted} products deleted; ${r.kept} kept because they have stock, purchase or sales history`
+        : `${r.deleted} products deleted`)
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      close()
+    },
+    onError: (e) => toast.error(getApiError(e).message),
+  })
+
+  const close = () => { setTyped(''); remove.reset(); onClose() }
+
+  return (
+    <Modal
+      open={open}
+      onClose={close}
+      title="Delete all products?"
+      footer={
+        <>
+          <Button onClick={close}>Cancel</Button>
+          <Button variant="danger" disabled={typed !== DELETE_ALL_CONFIRMATION || remove.isPending} onClick={() => remove.mutate()}>
+            {remove.isPending ? 'Deleting…' : 'Delete permanently'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-sm text-slate-700 leading-relaxed">
+          Every product with no history is removed, along with its units and prices, so the catalogue can be imported clean. Products
+          that have been received, counted, sold or prescribed are kept — deactivate those instead. Each deleted row is written to the audit log.
+        </p>
+        <Field label={`Type ${DELETE_ALL_CONFIRMATION} to confirm`}>
+          <Input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={DELETE_ALL_CONFIRMATION} autoFocus />
+        </Field>
+      </div>
+    </Modal>
   )
 }
 
