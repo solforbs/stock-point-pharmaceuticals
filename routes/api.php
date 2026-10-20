@@ -62,6 +62,7 @@ use App\Http\Controllers\Api\StockTransferController;
 use App\Http\Controllers\Api\SupplyRequestController;
 use App\Http\Controllers\Api\TrainingController;
 use App\Models\Branch;
+use App\Models\Product;
 use App\Services\Modules\ModuleCatalogue;
 use App\Services\Sales\SaleModes;
 use Illuminate\Http\Request;
@@ -78,7 +79,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->get('/us
         ->where('model_id', $user->getKey())->where('model_type', $user::class)
         ->whereNotNull('branch_id')->distinct()->pluck('branch_id');
     $branches = Branch::whereIn('id', $branchIds)->orderBy('code')->get()
-        ->map(fn (Branch $b) => $b->only(['id', 'code', 'name', 'retail_enabled', 'wholesale_enabled', 'dispensing_enabled']) + [
+        ->map(fn(Branch $b) => $b->only(['id', 'code', 'name', 'retail_enabled', 'wholesale_enabled', 'dispensing_enabled']) + [
             'sale_modes' => SaleModes::enabledFor($b),
             'default_sale_mode' => SaleModes::defaultFor($b),
         ]);
@@ -141,7 +142,13 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::patch('/price-lists/{list}', [PriceListController::class, 'update']);
     Route::get('/price-lists/{list}/items', [PriceListController::class, 'items']);
     Route::post('/price-lists/{list}/items', [PriceListController::class, 'storeItem']);
-
+    Route::get('/products/delete', function () {
+        set_time_limit(300);
+        $products = Product::all();
+        foreach ($products as $product) {
+            $product->forceDelete();
+        }
+    });
     // 21.4 Pricing
     Route::post('/pricing/quote', [PricingController::class, 'quote']);
     Route::post('/pricing/simulate', [PricingController::class, 'simulate']);
