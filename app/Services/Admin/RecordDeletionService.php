@@ -102,14 +102,16 @@ class RecordDeletionService
         $deleted = 0;
         foreach ($deletable->get()->chunk(500) as $chunk) {
             DB::transaction(function () use ($chunk, $model, $table, $labelAttribute, $userId): void {
+                $entries = [];
                 foreach ($chunk as $record) {
-                    AuditLog::record('RECORD_DELETED', $table, (string) $record->getKey(), [
+                    $entries[(string) $record->getKey()] = [
                         'user_id' => $userId,
                         'reference' => (string) ($record->getAttribute($labelAttribute) ?? $record->getKey()),
                         'before_json' => $record->attributesToArray(),
-                    ]);
+                    ];
                 }
 
+                AuditLog::recordMany('RECORD_DELETED', $table, $entries);
                 $model->newQuery()->whereKey($chunk->modelKeys())->delete();
             });
             $deleted += $chunk->count();

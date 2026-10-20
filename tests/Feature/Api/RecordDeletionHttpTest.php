@@ -96,7 +96,10 @@ class RecordDeletionHttpTest extends TestCase
         $this->assertNull(Product::find($spare->id));
         $this->assertNotNull(Product::find($this->amox->id), 'a product with stock behind it is kept');
         $this->assertSame(1, Product::count());
-        $this->assertTrue(AuditLog::where('action', 'RECORD_DELETED')->where('entity_id', $spare->id)->exists());
+        $audit = AuditLog::where('action', 'RECORD_DELETED')->where('entity_id', $spare->id)->firstOrFail();
+        $this->assertSame('SPARE', $audit->reference);
+        $this->assertSame('Never traded', $audit->before_json['name'], 'the deleted row is readable afterwards');
+        $this->assertSame($this->org->id, $audit->organisation_id);
     }
 
     public function test_delete_all_products_needs_the_delete_permission(): void
