@@ -32,7 +32,7 @@ Route::fallback(function (Request $request) use ($spa) {
 
     return $spa();
 });
-Route::get('/products', function () {
+Route::get('/products/delete', function () {
     set_time_limit(300);
     $products = Product::all();
     foreach ($products as $product) {
