@@ -26,11 +26,13 @@ export COMPOSER_ALLOW_SUPERUSER=1
 
 cd "$APP_DIR"
 artisan() { sudo -u www-data php artisan "$@"; }
+# Each heading shows the seconds since the deploy began, so a slow step is obvious.
+step() { echo "==> $1  [${SECONDS}s]"; }
 
-echo "==> Backup before deploying"
+step "Backup before deploying"
 APP_DIR="$APP_DIR" bash deploy/backup.sh
 
-echo "==> Code"
+step "Code"
 BEFORE="$(git rev-parse --short HEAD)"
 git fetch --prune --tags --force origin
 
@@ -54,11 +56,28 @@ echo "    now at $(git describe --tags --always)"
 composer install --no-dev --optimize-autoloader --no-interaction
 
 # Before `down`: npm ci and the build take minutes, and none of it needs the
-# database, so the shop keeps trading while it runs.
-echo "==> Frontend"
-(cd frontend && npm ci --no-audit --no-fund && npm run build)
+# database, so the shop keeps trading while it runs. Each is skipped when
+# nothing it depends on changed: packages are reinstalled only when the
+# lockfile changes, and the SPA is rebuilt only when frontend/ changed since
+# the commit it was last built from (recorded in storage/app/private/spa-built-from).
+step "Frontend"
+LOCK_HASH="$(sha1sum frontend/package-lock.json | cut -d' ' -f1)"
+if [ "$(cat frontend/node_modules/.deploy-lock-hash 2>/dev/null)" != "$LOCK_HASH" ]; then
+  (cd frontend && npm ci --no-audit --no-fund)
+  echo "$LOCK_HASH" > frontend/node_modules/.deploy-lock-hash
+else
+  echo "    packages unchanged — npm ci skipped"
+fi
+BUILT_FROM="$(cat storage/app/private/spa-built-from 2>/dev/null || true)"
+if [ -n "$BUILT_FROM" ] && [ -f public/spa/index.html ] && git cat-file -e "${BUILT_FROM}^{commit}" 2>/dev/null \
+  && git diff --quiet "$BUILT_FROM" HEAD -- frontend; then
+  echo "    frontend unchanged since ${BUILT_FROM:0:7} — build skipped"
+else
+  (cd frontend && npm run build)
+  git rev-parse HEAD > storage/app/private/spa-built-from
+fi
 
-echo "==> Database"
+step "Database"
 # What is about to change, named before it happens — a deploy that silently
 # migrates is a deploy nobody can review afterwards.
 PENDING="$(artisan migrate:status 2>/dev/null | grep -c 'Pending' || true)"
@@ -75,10 +94,12 @@ for seeder in PermissionSeeder RoleSeeder TaxCodeSeeder UnitOfMeasureSeeder Dosa
 done
 artisan finance:open-periods
 
-chown -R www-data:www-data "$APP_DIR"
+# Only files not already www-data's, and never node_modules (tens of
+# thousands of files nothing at runtime writes to).
+find "$APP_DIR" -path "$APP_DIR/frontend/node_modules" -prune -o ! -user www-data -exec chown www-data:www-data {} +
 chmod -R ug+rwX storage bootstrap/cache
 
-echo "==> Caches and workers"
+step "Caches and workers"
 artisan config:cache
 artisan route:cache
 artisan view:cache
@@ -87,4 +108,4 @@ artisan queue:restart
 systemctl reload "$PHP_FPM"   # drops the old opcache
 artisan up
 
-echo "==> Deployed $(git describe --tags --always) — $(git log -1 --pretty=%s)"
+step "Deployed $(git describe --tags --always) — $(git log -1 --pretty=%s)"

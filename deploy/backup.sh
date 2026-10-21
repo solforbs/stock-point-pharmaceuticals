@@ -17,9 +17,14 @@ DB_PASS="$(env_value DB_PASSWORD)"
 mkdir -p "$DEST"
 chmod 700 "$DEST"
 
+# gzip -6: nearly the size of -9 at a fraction of the time on a large dump.
 MYSQL_PWD="$DB_PASS" mysqldump --user="$DB_USER" --single-transaction --quick --routines --triggers \
-  --no-tablespaces "$DB_NAME" | gzip -9 > "$DEST/db-$STAMP.sql.gz"
-tar -czf "$DEST/files-$STAMP.tar.gz" -C "$APP_DIR" storage/app .env
+  --no-tablespaces "$DB_NAME" | gzip -6 > "$DEST/db-$STAMP.sql.gz"
+# The in-app backup folder holds earlier database dumps; archiving it again
+# made every backup bigger and slower than the last.
+tar -czf "$DEST/files-$STAMP.tar.gz" -C "$APP_DIR" \
+  --exclude=storage/app/private/backups --exclude=storage/app/backups \
+  storage/app .env
 
 find "$DEST" -type f -mtime +"$KEEP_DAYS" -delete
 echo "Backup written to $DEST/db-$STAMP.sql.gz"
