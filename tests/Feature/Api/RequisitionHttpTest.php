@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\AuditLog;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
+use App\Models\UnitOfMeasure;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -118,7 +119,7 @@ class RequisitionHttpTest extends TestCase
         $this->assertNull(PurchaseOrder::findOrFail($po['id'])->lines()->first()->unit_price);
     }
 
-    public function test_a_requisition_can_be_rejected_with_a_reason_and_selling_units_cannot_be_purchased(): void
+    public function test_a_requisition_can_be_rejected_with_a_reason_and_only_the_products_own_units_can_be_purchased(): void
     {
         $req = $this->postJson('/api/requisitions', ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '100']]])->assertCreated()->json();
         $this->postJson("/api/requisitions/{$req['id']}/submit")->assertOk();
@@ -128,10 +129,18 @@ class RequisitionHttpTest extends TestCase
         $req2 = $this->postJson('/api/requisitions', ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '100']]])->assertCreated()->json();
         $this->postJson("/api/requisitions/{$req2['id']}/submit")->assertOk();
         $this->postJson("/api/requisitions/{$req2['id']}/approve")->assertOk();
+        // A unit the product does not have at all is refused…
+        $drum = UnitOfMeasure::create(['code' => 'DRUM', 'name' => 'Drum', 'is_base_candidate' => false]);
+        $this->postJson("/api/requisitions/{$req2['id']}/convert", [
+            'supplier_id' => $this->supplier->id,
+            'lines' => [['requisition_line_id' => $req2['lines'][0]['id'], 'uom_id' => $drum->id, 'qty_ordered' => '10', 'unit_price' => '25']],
+        ])->assertStatus(422)->assertJsonPath('error.code', 'INVALID_INPUT');
+
+        // …but any of its own units can be bought, a selling unit (strips) included.
         $this->postJson("/api/requisitions/{$req2['id']}/convert", [
             'supplier_id' => $this->supplier->id,
             'lines' => [['requisition_line_id' => $req2['lines'][0]['id'], 'uom_id' => $this->uoms['STR']->id, 'qty_ordered' => '10', 'unit_price' => '25']],
-        ])->assertStatus(422)->assertJsonPath('error.code', 'INVALID_INPUT');
+        ])->assertCreated();
     }
 
     public function test_the_reorder_advisor_applies_the_preserved_v5_arithmetic(): void
