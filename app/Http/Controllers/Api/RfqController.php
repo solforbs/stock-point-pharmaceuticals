@@ -181,6 +181,8 @@ class RfqController extends ApiController
 
         $rfq = $this->find($request, $rfq)->load(['lines.product:id,code,name,strength', 'lines.uom:id,code', 'branch', 'creator:id,name']);
         $invite = $rfq->suppliers()->with('supplier')->where('supplier_id', $supplier)->firstOrFail();
+        // Each supplier's copy lists only what that supplier is asked for.
+        $rfq->setRelation('lines', $rfq->lines->filter(fn ($line) => $invite->asksFor((string) $line->product_id))->values());
 
         AuditLog::record('RFQ_PRINTED', 'rfq', $rfq->id, ['reference' => $rfq->doc_number, 'after_json' => ['supplier' => $invite->supplier?->code]]);
 
@@ -239,6 +241,10 @@ class RfqController extends ApiController
             'lines.*.notes' => ['nullable', 'string', 'max:255'],
             'supplier_ids' => [$required, 'array', 'min:1'],
             'supplier_ids.*' => ['required', 'uuid', 'distinct', TenantRules::exists('suppliers')],
+            // supplier_id => the product ids that supplier is asked for (omitted = the whole list)
+            'supplier_products' => ['sometimes', 'array'],
+            'supplier_products.*' => ['nullable', 'array'],
+            'supplier_products.*.*' => ['uuid'],
         ];
     }
 

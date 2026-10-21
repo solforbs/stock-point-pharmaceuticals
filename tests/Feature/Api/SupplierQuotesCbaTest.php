@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\PurchaseOrder;
 use App\Models\Rfq;
+use App\Models\RfqSupplier;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\UnitOfMeasure;
@@ -213,6 +214,31 @@ class SupplierQuotesCbaTest extends TestCase
             ->assertJsonPath("overall.plan.{$rfq['lines'][0]['id']}", $this->supplierB->id);
 
         $this->assertStringContainsString('costs KES 400.00 less than splitting', $analysis->json('overall.summary'));
+    }
+
+    public function test_each_supplier_is_asked_only_for_the_products_assigned_to_it(): void
+    {
+        $payload = $this->rfqPayload(twoLines: true);
+        // Alpha gets both products (no entry = whole list); Beta only paracetamol.
+        $payload['supplier_products'] = [$this->supplierB->id => [$this->paracetamol->id]];
+        $rfq = $this->postJson('/api/rfqs', $payload)->assertCreated()->json();
+        $rfq = $this->getJson("/api/rfqs/{$rfq['id']}")->assertOk()->json();
+        $invites = collect($rfq['suppliers'])->keyBy('supplier_id');
+        $this->assertNull($invites[$this->supplierA->id]['product_ids']);
+        $this->assertSame([$this->paracetamol->id], $invites[$this->supplierB->id]['product_ids']);
+
+        $this->postJson("/api/rfqs/{$rfq['id']}/send")->assertOk();
+        $this->get("/api/rfqs/{$rfq['id']}/suppliers/{$this->supplierB->id}/pdf")->assertOk();
+
+        // Beta cannot quote the amoxicillin it was never asked for.
+        $this->putJson("/api/rfqs/{$rfq['id']}/quotes/{$this->supplierB->id}", ['lines' => [$this->line($rfq, 0, '400', 5)]])
+            ->assertStatus(422);
+        $this->quote($rfq, $this->supplierB, [$this->line($rfq, 1, '200', 5)]);
+
+        // Asking a supplier for nothing is refused; ticking everything clears the list.
+        $this->patchJson("/api/rfqs/{$rfq['id']}", ['supplier_products' => [$this->supplierA->id => []]])->assertStatus(422);
+        $this->patchJson("/api/rfqs/{$rfq['id']}", ['supplier_products' => [$this->supplierB->id => [$this->amox->id, $this->paracetamol->id]]])->assertOk();
+        $this->assertNull(RfqSupplier::where('rfq_id', $rfq['id'])->where('supplier_id', $this->supplierB->id)->sole()->product_ids);
     }
 
     public function test_any_unit_can_be_requested_and_a_new_one_is_added_with_its_pack_size(): void

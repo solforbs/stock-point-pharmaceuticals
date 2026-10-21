@@ -1542,6 +1542,8 @@ export type RfqQuoteLine = {
 export type RfqInvite = {
   id: string
   supplier_id: string
+  /** The products this supplier is asked to quote; null = the whole request. */
+  product_ids?: string[] | null
   quote_status: 'AWAITING' | 'RECEIVED' | 'DECLINED'
   quote_reference: string | null
   quote_date: string | null

@@ -137,7 +137,7 @@ class RequisitionService
      * prices are recorded against it, and its award raises the purchase
      * order, which still points back to this requisition.
      *
-     * @param  array{supplier_ids: list<string>, user_id: int, title?: ?string, needed_by?: ?string, notes?: ?string}  $data
+     * @param  array{supplier_ids: list<string>, user_id: int, title?: ?string, needed_by?: ?string, notes?: ?string, supplier_products?: array<string, list<string>|null>}  $data
      */
     public function requestQuotation(Requisition $requisition, array $data, RfqService $rfqs): Rfq
     {
@@ -160,6 +160,7 @@ class RequisitionService
                     'notes' => $line->notes,
                 ])->all(),
                 'supplier_ids' => $data['supplier_ids'],
+                'supplier_products' => $data['supplier_products'] ?? [],
             ]);
 
             $requisition->update(['status' => 'CONVERTED']);

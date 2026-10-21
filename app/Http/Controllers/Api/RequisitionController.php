@@ -134,6 +134,9 @@ class RequisitionController extends ApiController
         $data = $request->validate([
             'supplier_ids' => ['required', 'array', 'min:1'],
             'supplier_ids.*' => ['uuid', 'distinct', TenantRules::exists('suppliers')],
+            'supplier_products' => ['sometimes', 'array'],
+            'supplier_products.*' => ['nullable', 'array'],
+            'supplier_products.*.*' => ['uuid'],
             'title' => ['nullable', 'string', 'max:255'],
             'needed_by' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],

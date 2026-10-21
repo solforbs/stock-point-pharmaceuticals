@@ -19,7 +19,7 @@ class RfqSupplier extends Model
     use HasUuids;
 
     protected $fillable = [
-        'rfq_id', 'supplier_id', 'quote_status', 'quote_reference', 'quote_date', 'valid_until',
+        'rfq_id', 'supplier_id', 'product_ids', 'quote_status', 'quote_reference', 'quote_date', 'valid_until',
         'payment_terms_days', 'delivery_charge', 'notes', 'entered_by', 'received_at',
     ];
 
@@ -31,7 +31,14 @@ class RfqSupplier extends Model
             'received_at' => 'datetime',
             'payment_terms_days' => 'integer',
             'delivery_charge' => 'decimal:4',
+            'product_ids' => 'array',
         ];
+    }
+
+    /** Whether this supplier is asked to quote the product (no list means the whole request). */
+    public function asksFor(string $productId): bool
+    {
+        return $this->product_ids === null || in_array($productId, $this->product_ids, true);
     }
 
     /**

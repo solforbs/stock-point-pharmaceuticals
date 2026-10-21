@@ -54,7 +54,7 @@ class RfqService
             ] + $this->weightColumns($data['weights'] ?? []));
 
             $this->replaceLines($rfq, $data['lines']);
-            $this->inviteSuppliers($rfq, $data['supplier_ids']);
+            $this->inviteSuppliers($rfq, $data['supplier_ids'], $data['supplier_products'] ?? []);
 
             AuditLog::record('RFQ_CREATED', 'rfq', $rfq->id, ['user_id' => $data['user_id'], 'branch_id' => $rfq->branch_id, 'reference' => $rfq->doc_number]);
 
@@ -86,7 +86,13 @@ class RfqService
                 } else {
                     $this->assertStatus($rfq, ['SENT']);
                 }
-                $this->inviteSuppliers($rfq, $data['supplier_ids']);
+                $this->inviteSuppliers($rfq, $data['supplier_ids'], $data['supplier_products'] ?? []);
+            } elseif (array_key_exists('supplier_products', $data)) {
+                $this->assertStatus($rfq, ['DRAFT', 'SENT']);
+                $this->inviteSuppliers($rfq, $rfq->suppliers()->pluck('supplier_id')->all(), $data['supplier_products']);
+            } elseif (array_key_exists('lines', $data)) {
+                // Drop products no longer on the request from each supplier's list.
+                $this->inviteSuppliers($rfq, $rfq->suppliers()->pluck('supplier_id')->all(), []);
             }
 
             AuditLog::record('RFQ_UPDATED', 'rfq', $rfq->id, ['user_id' => $userId, 'reference' => $rfq->doc_number, 'after_json' => ['changed_fields' => array_keys($data)]]);
@@ -129,7 +135,14 @@ class RfqService
             throw new \DomainException('Enter a price for at least one line, or record that the supplier declined.');
         }
 
-        $lineIds = $rfq->lines()->pluck('id')->map(fn ($id) => (string) $id)->all();
+        $lineProducts = $rfq->lines()->pluck('product_id', 'id')->map(fn ($id) => (string) $id)->all();
+        $lineIds = array_map('strval', array_keys($lineProducts));
+        foreach ($lines as $line) {
+            $productId = $lineProducts[$line['rfq_line_id']] ?? null;
+            if ($productId !== null && ! $invite->asksFor($productId)) {
+                throw new \DomainException('That supplier was not asked to quote '.(Product::whereKey($productId)->value('name') ?? 'one of these products').'.');
+            }
+        }
 
         return DB::transaction(function () use ($rfq, $invite, $data, $declined, $lines, $lineIds, $userId) {
             $invite->update([
@@ -412,14 +425,39 @@ class RfqService
     /**
      * @param  list<string>  $supplierIds
      */
-    private function inviteSuppliers(Rfq $rfq, array $supplierIds): void
+    /**
+     * Invites the suppliers, each to quote the products given for them in
+     * $assignments (supplier_id => product ids). A supplier with no entry
+     * keeps what it was asked before, or the whole list when new.
+     *
+     * @param  list<string>  $supplierIds
+     * @param  array<string, list<string>|null>  $assignments
+     */
+    private function inviteSuppliers(Rfq $rfq, array $supplierIds, array $assignments = []): void
     {
         if ($supplierIds === []) {
             throw new \InvalidArgumentException('Invite at least one supplier.');
         }
 
+        $onRequest = $rfq->lines()->pluck('product_id')->map(fn ($id) => (string) $id)->unique()->values()->all();
+
         foreach (array_unique($supplierIds) as $supplierId) {
-            RfqSupplier::firstOrCreate(['rfq_id' => $rfq->id, 'supplier_id' => $supplierId]);
+            $invite = RfqSupplier::firstOrCreate(['rfq_id' => $rfq->id, 'supplier_id' => $supplierId]);
+
+            $products = array_key_exists($supplierId, $assignments) ? $assignments[$supplierId] : $invite->product_ids;
+            if ($products !== null) {
+                $products = array_values(array_intersect(array_map('strval', $products), $onRequest));
+                if ($products === []) {
+                    $name = Supplier::whereKey($supplierId)->value('name') ?? 'A supplier';
+                    throw new \InvalidArgumentException("{$name} is not asked for any product on this request; tick at least one, or remove the supplier.");
+                }
+                // Asked for everything is the same as no list.
+                if (count($products) === count($onRequest)) {
+                    $products = null;
+                }
+            }
+
+            $invite->update(['product_ids' => $products]);
         }
     }
 

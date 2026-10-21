@@ -96,12 +96,14 @@ function NewRfqDrawer({ open, onClose, onCreated }: { open: boolean; onClose: ()
   const [notes, setNotes] = useState('')
   const [lines, setLines] = useState<DraftLine[]>([])
   const [supplierIds, setSupplierIds] = useState<string[]>([])
+  const [assignments, setAssignments] = useState<Assignments>({})
 
   const create = useMutation({
     meta: { silent: true },
     mutationFn: () => apiPost<Rfq>('/api/rfqs', {
       title, needed_by: neededBy || null, notes: notes || null,
       lines: lines.map((l) => ({ product_id: l.product.id, uom_id: l.uom_id, qty: l.qty, notes: l.notes || null, ...(needsFactor(l) ? { factor_to_base: Number(l.factor) } : {}) })),
+      supplier_products: assignmentPayload(assignments, supplierIds),
       supplier_ids: supplierIds,
     }),
     onSuccess: (r) => {
@@ -113,7 +115,7 @@ function NewRfqDrawer({ open, onClose, onCreated }: { open: boolean; onClose: ()
   })
 
   const usable = (suppliers.data?.data ?? []).filter((s) => s.status === 'ACTIVE' && s.is_active)
-  const valid = title.trim() !== '' && lines.length > 0 && lines.every((l) => l.uom_id && Number(l.qty) > 0 && (!needsFactor(l) || (/^\d+$/.test(l.factor) && Number(l.factor) >= 2))) && supplierIds.length > 0
+  const valid = title.trim() !== '' && lines.length > 0 && lines.every((l) => l.uom_id && Number(l.qty) > 0 && (!needsFactor(l) || (/^\d+$/.test(l.factor) && Number(l.factor) >= 2))) && supplierIds.length > 0 && matrixValid(assignments, supplierIds)
 
   return (
     <Drawer
@@ -193,6 +195,18 @@ function NewRfqDrawer({ open, onClose, onCreated }: { open: boolean; onClose: ()
             })}
             {usable.length === 0 && <p className="text-xs text-slate-500">No active suppliers. Add one under Suppliers first.</p>}
           </div>
+          {supplierIds.length > 0 && lines.length > 0 && (
+            <div className="mt-3 space-y-1">
+              <h4 className="text-xs font-bold text-slate-700">Which products to ask each supplier for</h4>
+              <p className="text-xs text-slate-500">Everyone is asked for the whole list unless you untick. Each supplier's PDF lists only their ticked products.</p>
+              <SupplierProductMatrix
+                products={[...new Map(lines.map((l) => [l.product.id, { id: l.product.id, name: l.product.name }])).values()]}
+                suppliers={usable.filter((s) => supplierIds.includes(s.id)).map((s) => ({ id: s.id, name: s.name }))}
+                value={assignments}
+                onChange={setAssignments}
+              />
+            </div>
+          )}
         </FormSection>
 
         {create.isError && <InlineError error={create.error} />}
@@ -203,6 +217,7 @@ function NewRfqDrawer({ open, onClose, onCreated }: { open: boolean; onClose: ()
 
 function RfqDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
   const queryClient = useQueryClient()
+  const [editingAssignments, setEditingAssignments] = useState<Assignments | null>(null)
   const perms = usePermissions()
   const [tab, setTab] = useState<'request' | 'quotes' | 'analysis'>('request')
   const [cancelling, setCancelling] = useState(false)
@@ -279,7 +294,10 @@ function RfqDrawer({ id, onClose }: { id: string | null; onClose: () => void }) 
                     {(r.suppliers ?? []).map((s) => (
                       <tr key={s.id}>
                         <td className="font-semibold">{s.supplier?.name}</td>
-                        <td>{s.supplier?.email ?? <span className="text-amber-700">no email</span>}</td>
+                        <td>
+                          {s.supplier?.email ?? <span className="text-amber-700">no email</span>}
+                          <div className="text-xs text-slate-500">{s.product_ids == null ? `Asked for all ${r.lines?.length ?? 0} products` : `Asked for ${s.product_ids.length} of ${r.lines?.length ?? 0} products`}</div>
+                        </td>
                         <td><StatusBadge status={s.quote_status} tone={s.quote_status === 'RECEIVED' ? 'green' : s.quote_status === 'DECLINED' ? 'slate' : 'amber'} /></td>
                         <td className="text-right"><PdfDownloadButton url={`/api/rfqs/${r.id}/suppliers/${s.supplier_id}/pdf`} filename={`${r.doc_number}-${s.supplier?.code ?? ''}`} label="RFQ PDF" /></td>
                       </tr>
@@ -288,6 +306,7 @@ function RfqDrawer({ id, onClose }: { id: string | null; onClose: () => void }) 
                 </table>
                 <p className="text-xs text-slate-500 mt-2">Download each supplier's request and send it to them. Enter their reply under Quotes.</p>
               </div>
+              <AssignmentsSection rfq={r} editing={editingAssignments} setEditing={setEditingAssignments} />
             </div>
           )}
 
@@ -305,7 +324,7 @@ function RfqDrawer({ id, onClose }: { id: string | null; onClose: () => void }) 
                       <td>{formatDate(s.valid_until)}</td>
                       <td className="text-right tabular">{s.payment_terms_days != null ? `${s.payment_terms_days} d` : '—'}</td>
                       <td className="text-right tabular">{s.quote_status === 'RECEIVED' ? formatKes(s.delivery_charge) : '—'}</td>
-                      <td className="text-right tabular">{s.quote_lines?.length ?? 0} of {r.lines?.length ?? 0}</td>
+                      <td className="text-right tabular">{s.quote_lines?.length ?? 0} of {s.product_ids?.length ?? r.lines?.length ?? 0}</td>
                       <td className="text-right">{canManage && ['SENT', 'CLOSED'].includes(r.status) && <Button size="xs" variant="primary" onClick={() => setQuoting(s)}>{s.quote_status === 'AWAITING' ? 'Enter quote' : 'Edit quote'}</Button>}</td>
                     </tr>
                   ))}
@@ -323,6 +342,118 @@ function RfqDrawer({ id, onClose }: { id: string | null; onClose: () => void }) 
   )
 }
 
+
+/** supplier_id → the product ids that supplier is asked for; a missing entry (or null) is the whole list. */
+type Assignments = Record<string, string[] | null>
+
+/**
+ * Who is asked for what: one row per product, one column per supplier. Each
+ * supplier's PDF and quote cover only the products ticked in its column.
+ */
+function SupplierProductMatrix({ products, suppliers, value, onChange, disabled = false }: {
+  products: { id: string; name: string }[]
+  suppliers: { id: string; name: string }[]
+  value: Assignments
+  onChange: (next: Assignments) => void
+  disabled?: boolean
+}) {
+  const asked = (supplierId: string, productId: string) => { const list = value[supplierId]; return list == null || list.includes(productId) }
+  const toggle = (supplierId: string, productId: string, on: boolean) => {
+    const current = value[supplierId] ?? products.map((p) => p.id)
+    const next = on ? [...new Set([...current, productId])] : current.filter((id) => id !== productId)
+    onChange({ ...value, [supplierId]: next.length === products.length ? null : next })
+  }
+  const setColumn = (supplierId: string, on: boolean) => onChange({ ...value, [supplierId]: on ? null : [] })
+  const nobody = products.filter((p) => !suppliers.some((s) => asked(s.id, p.id)))
+  const empty = suppliers.filter((s) => !products.some((p) => asked(s.id, p.id)))
+
+  if (products.length === 0 || suppliers.length === 0) return null
+  return (
+    <div className="space-y-2">
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="ui-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              {suppliers.map((s) => (
+                <th key={s.id} className="text-center whitespace-nowrap">
+                  <div>{s.name}</div>
+                  {!disabled && (
+                    <div className="text-[10px] font-normal space-x-1">
+                      <button type="button" className="text-blue-600 hover:underline" onClick={() => setColumn(s.id, true)}>all</button>
+                      <button type="button" className="text-blue-600 hover:underline" onClick={() => setColumn(s.id, false)}>none</button>
+                    </div>
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((p) => (
+              <tr key={p.id}>
+                <td className="font-medium">{p.name}</td>
+                {suppliers.map((s) => (
+                  <td key={s.id} className="text-center">
+                    <input type="checkbox" disabled={disabled} checked={asked(s.id, p.id)} onChange={(e) => toggle(s.id, p.id, e.target.checked)} aria-label={`Ask ${s.name} for ${p.name}`} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {nobody.length > 0 && <p className="text-xs text-amber-700">No supplier is asked for: {nobody.map((p) => p.name).join(', ')}.</p>}
+      {empty.length > 0 && <p className="text-xs text-rose-600">{empty.map((s) => s.name).join(', ')} {empty.length === 1 ? 'is' : 'are'} not asked for anything — tick at least one product or remove the supplier.</p>}
+    </div>
+  )
+}
+
+/** Only the explicit lists are sent; a supplier asked for everything needs no entry. */
+const assignmentPayload = (value: Assignments, supplierIds: string[]) =>
+  Object.fromEntries(supplierIds.filter((id) => value[id] != null).map((id) => [id, value[id]]))
+
+const matrixValid = (value: Assignments, supplierIds: string[]) => supplierIds.every((id) => value[id] == null || (value[id] ?? []).length > 0)
+
+/** Each supplier's products, editable until quotes start coming in. */
+function AssignmentsSection({ rfq, editing, setEditing }: { rfq: Rfq; editing: Assignments | null; setEditing: (v: Assignments | null) => void }) {
+  const queryClient = useQueryClient()
+  const perms = usePermissions()
+  const invites = rfq.suppliers ?? []
+  const current: Assignments = Object.fromEntries(invites.map((s) => [s.supplier_id, s.product_ids ?? null]))
+  const supplierIds = invites.map((s) => s.supplier_id)
+  const products = [...new Map((rfq.lines ?? []).map((l) => [l.product_id, { id: l.product_id, name: l.product?.name ?? l.product_id.slice(0, 8) }])).values()]
+  const canEdit = perms.has('rfq.manage') && ['DRAFT', 'SENT'].includes(rfq.status)
+  const save = useMutation({
+    meta: { silent: true },
+    mutationFn: () => apiPatch<Rfq>(`/api/rfqs/${rfq.id}`, { supplier_products: Object.fromEntries(supplierIds.map((id) => [id, editing?.[id] ?? null])) }),
+    onSuccess: () => { toast.success('Supplier products saved', 'Download the PDFs again: each lists only that supplier\'s products.'); setEditing(null); queryClient.invalidateQueries({ queryKey: ['rfqs'] }) },
+  })
+  if (invites.length === 0) return null
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-bold text-slate-900">Which products each supplier is asked for</h3>
+        {canEdit && !editing && <Button size="sm" className="ml-auto" onClick={() => { save.reset(); setEditing(current) }}>Change</Button>}
+      </div>
+      <SupplierProductMatrix
+        products={products}
+        suppliers={invites.map((s) => ({ id: s.supplier_id, name: s.supplier?.name ?? s.supplier_id.slice(0, 8) }))}
+        value={editing ?? current}
+        onChange={setEditing}
+        disabled={!editing}
+      />
+      {editing && (
+        <div className="flex justify-end gap-2">
+          {save.isError && <InlineError error={save.error} />}
+          <Button onClick={() => setEditing(null)}>Cancel</Button>
+          <Button variant="primary" disabled={!matrixValid(editing, supplierIds) || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : 'Save'}</Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 type QuoteRow = { rfq_line_id: string; unit_price: string; qty_available: string; lead_time_days: string; shelf_life_months: string; notes: string }
 
 function QuoteModal({ rfq, invite, onClose }: { rfq: Rfq; invite: RfqInvite; onClose: () => void }) {
@@ -335,7 +466,8 @@ function QuoteModal({ rfq, invite, onClose }: { rfq: Rfq; invite: RfqInvite; onC
   const [terms, setTerms] = useState(invite.payment_terms_days != null ? String(invite.payment_terms_days) : invite.supplier?.payment_terms_days != null ? String(invite.supplier.payment_terms_days) : '')
   const [delivery, setDelivery] = useState(invite.quote_status === 'RECEIVED' ? String(Number(invite.delivery_charge)) : '')
   const [notes, setNotes] = useState(invite.notes ?? '')
-  const [rows, setRows] = useState<QuoteRow[]>(() => (rfq.lines ?? []).map((l) => {
+  const askedLines = (rfq.lines ?? []).filter((l) => invite.product_ids == null || invite.product_ids.includes(l.product_id))
+  const [rows, setRows] = useState<QuoteRow[]>(() => askedLines.map((l) => {
     const existing = invite.quote_lines?.find((q) => q.rfq_line_id === l.id)
     return {
       rfq_line_id: l.id,
@@ -399,7 +531,7 @@ function QuoteModal({ rfq, invite, onClose }: { rfq: Rfq; invite: RfqInvite; onC
             <table className="ui-table">
               <thead><tr><th>Product</th><th className="text-right">Qty needed</th><th className="text-right">Unit price (KES)</th><th className="text-right">Qty they can supply</th><th className="text-right">Lead time (days)</th><th className="text-right">Shelf life (months)</th><th>Notes</th></tr></thead>
               <tbody>
-                {(rfq.lines ?? []).map((l, i) => (
+                {askedLines.map((l, i) => (
                   <tr key={l.id}>
                     <td><div className="font-semibold">{l.product?.name}</div><div className="text-xs text-slate-500">{l.uom?.code}</div></td>
                     <td className="text-right tabular">{formatQty(l.qty)}</td>
