@@ -59,6 +59,46 @@ class RequisitionService
         });
     }
 
+    /**
+     * Replaces the header and lines of a requisition nobody has approved yet:
+     * a product swapped for another, a line dropped, a quantity corrected.
+     *
+     * @param  array{needed_by?: ?string, notes?: ?string, lines: list<array{product_id: string, qty_base: string|int|float, notes?: ?string}>}  $data
+     */
+    public function update(Requisition $requisition, array $data, int $userId): Requisition
+    {
+        $this->assertStatus($requisition, ['DRAFT', 'PENDING_APPROVAL']);
+
+        return DB::transaction(function () use ($requisition, $data, $userId) {
+            $before = $requisition->lines()->get(['product_id', 'qty_requested', 'notes'])->toArray();
+
+            $requisition->update([
+                'needed_by' => $data['needed_by'] ?? null,
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            $requisition->lines()->delete();
+            foreach ($data['lines'] as $line) {
+                if (bccomp((string) $line['qty_base'], '0', 4) <= 0) {
+                    throw new \InvalidArgumentException('A requisition line quantity must be positive.');
+                }
+                RequisitionLine::create([
+                    'requisition_id' => $requisition->id,
+                    'product_id' => $line['product_id'],
+                    'qty_requested' => bcadd((string) $line['qty_base'], '0', 4),
+                    'notes' => $line['notes'] ?? null,
+                ]);
+            }
+
+            AuditLog::record('REQUISITION_UPDATED', 'requisition', $requisition->id, [
+                'user_id' => $userId, 'reference' => $requisition->doc_number,
+                'before_json' => ['lines' => $before], 'after_json' => ['lines' => $data['lines']],
+            ]);
+
+            return $requisition->fresh(['lines']);
+        });
+    }
+
     public function submit(Requisition $requisition, int $userId): Requisition
     {
         $this->assertStatus($requisition, ['DRAFT']);

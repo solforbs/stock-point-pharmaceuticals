@@ -215,6 +215,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/requisitions', [RequisitionController::class, 'index']);
     Route::post('/requisitions', [RequisitionController::class, 'store']);
     Route::get('/requisitions/{requisition}', [RequisitionController::class, 'show']);
+    Route::put('/requisitions/{requisition}', [RequisitionController::class, 'update']);
     Route::post('/requisitions/{requisition}/submit', [RequisitionController::class, 'submit']);
     Route::post('/requisitions/{requisition}/approve', [RequisitionController::class, 'approve']);
     Route::post('/requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);

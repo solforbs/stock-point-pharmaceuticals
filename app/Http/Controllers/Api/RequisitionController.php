@@ -48,6 +48,23 @@ class RequisitionController extends ApiController
         return response()->json($requisitions->create($data + ['branch_id' => $this->branchId($request), 'user_id' => $request->user()->id]), 201);
     }
 
+    /** PUT /api/requisitions/{id} — change, add or remove lines before approval. */
+    public function update(Request $request, string $requisition, RequisitionService $requisitions): JsonResponse
+    {
+        $this->requirePermission($request, 'requisition.create');
+
+        $data = $request->validate([
+            'needed_by' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.qty_base' => ['required', 'numeric', 'gt:0'],
+            'lines.*.notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        return response()->json($requisitions->update($this->find($request, $requisition), $data, $request->user()->id));
+    }
+
     public function submit(Request $request, string $requisition, RequisitionService $requisitions, Notifier $notifier): JsonResponse
     {
         $this->requirePermission($request, 'requisition.create');

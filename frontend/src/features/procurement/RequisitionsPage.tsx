@@ -12,7 +12,7 @@ import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
-import { apiGet, apiPost } from '../../lib/api'
+import { apiGet, apiPost, apiPut } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { useSuppliers, useUoms } from '../../lib/hooks'
 import { formatQty } from '../../lib/money'
@@ -23,6 +23,7 @@ import { ExpiryBadge } from '../inventory/StockOnHandPage'
 
 const STATUSES = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'CONVERTED']
 type ReqLine = { key: string; product: Product; qty_base: string; notes: string }
+type EditLine = { key: string; product_id: string; product_name: string; unit?: string; qty_base: string; notes: string }
 
 /** Part 9.1 — requisition → approval → supplier selection → purchase order; plus the reorder advisor (Part 22.1). */
 export default function RequisitionsPage() {
@@ -252,6 +253,8 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
   const [expectedDate, setExpectedDate] = useState('')
   const [convertLines, setConvertLines] = useState<ConvertLine[]>([])
   const [po, setPo] = useState<PurchaseOrder | null>(null)
+  const [editLines, setEditLines] = useState<EditLine[] | null>(null)
+  const [replacing, setReplacing] = useState<string | null>(null)
   const req = useQuery({ queryKey: ['requisitions', id], queryFn: () => apiGet<Requisition>(`/api/requisitions/${id}`), enabled: !!id })
 
   function refresh(r: Requisition, msg: string) {
@@ -273,7 +276,31 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
     },
   })
 
+  const save = useMutation({
+    mutationFn: () => apiPut<Requisition>(`/api/requisitions/${id}`, {
+      needed_by: r?.needed_by ?? null,
+      notes: r?.notes ?? null,
+      lines: (editLines ?? []).map((l) => ({ product_id: l.product_id, qty_base: l.qty_base, notes: l.notes || null })),
+    }),
+    onSuccess: (saved) => { setEditLines(null); setReplacing(null); refresh(saved, 'updated') },
+  })
+
   const r = req.data
+  const canEdit = !!r && (r.status === 'DRAFT' || r.status === 'PENDING_APPROVAL') && perms.has('requisition.create')
+  function startEdit() {
+    setEditLines((r?.lines ?? []).map((l) => ({ key: l.id, product_id: l.product_id, product_name: l.product?.name ?? l.product_id.slice(0, 8), unit: l.product?.base_uom?.code, qty_base: String(Number(l.qty_requested)), notes: l.notes ?? '' })))
+    setReplacing(null)
+  }
+  function pickProduct(p: Product) {
+    const picked = { product_id: p.id, product_name: p.name, unit: p.base_uom?.code }
+    if (replacing) {
+      setEditLines((editLines ?? []).map((l) => (l.key === replacing ? { ...l, ...picked } : l)))
+      setReplacing(null)
+    } else {
+      setEditLines([...(editLines ?? []), { key: `${p.id}-${Date.now()}`, ...picked, qty_base: '', notes: '' }])
+    }
+  }
+  const editValid = !!editLines && editLines.length > 0 && editLines.every((l) => Number(l.qty_base) > 0)
   function openConvert() {
     setConvertLines((r?.lines ?? []).map((l) => ({ requisition_line_id: l.id, product_name: l.product?.name ?? l.product_id.slice(0, 8), base_qty: l.qty_requested, uom_id: l.product?.base_uom_id ?? '', qty_ordered: String(Number(l.qty_requested)), unit_price: '' })))
     setConverting(true)
@@ -290,7 +317,8 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
       actions={
         r ? (
           <div className="flex gap-2">
-            {r.status === 'DRAFT' && perms.has('requisition.create') && <Button size="sm" variant="primary" disabled={submit.isPending} onClick={() => submit.mutate()}>Submit</Button>}
+            {canEdit && !editLines && <Button size="sm" onClick={startEdit}>Edit lines</Button>}
+            {r.status === 'DRAFT' && perms.has('requisition.create') && !editLines && <Button size="sm" variant="primary" disabled={submit.isPending} onClick={() => submit.mutate()}>Submit</Button>}
             {r.status === 'PENDING_APPROVAL' && perms.has('requisition.approve') && <><Button size="sm" variant="success" disabled={approve.isPending} onClick={() => approve.mutate()}>Approve</Button><Button size="sm" variant="danger" onClick={() => setRejecting(true)}>Reject</Button></>}
             {r.status === 'APPROVED' && perms.has('po.create') && <Button size="sm" variant="primary" onClick={openConvert}>Convert to PO</Button>}
           </div>
@@ -303,14 +331,48 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
         <div className="space-y-4">
           <div className="flex items-center gap-2"><StatusBadge status={r.status} />{po && <Link to={`/buy/purchase-orders?po=${po.id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open PO {po.doc_number}</Link>}</div>
           <DescriptionList items={[{ label: 'Notes', value: r.notes ?? '—' }, { label: 'Created', value: formatDateTime(r.created_at) }]} />
-          <table className="ui-table">
-            <thead><tr><th>Product</th><th className="text-right">Qty (base)</th><th>Notes</th></tr></thead>
-            <tbody>
-              {(r.lines ?? []).map((l) => (
-                <tr key={l.id}><td>{l.product?.name ?? l.product_id.slice(0, 8)}</td><td className="text-right"><QtyCell value={l.qty_requested} unit={l.product?.base_uom?.code} /></td><td>{l.notes ?? '—'}</td></tr>
-              ))}
-            </tbody>
-          </table>
+          {editLines ? (
+            <div className="space-y-3">
+              <div>
+                <div className="text-xs font-semibold text-slate-600 mb-1">
+                  {replacing ? `Choose the product to replace ${editLines.find((l) => l.key === replacing)?.product_name ?? ''}` : 'Add a product'}
+                  {replacing && <button type="button" className="ml-2 text-blue-600 hover:underline" onClick={() => setReplacing(null)}>cancel</button>}
+                </div>
+                <ProductSearch key={replacing ?? 'add'} onSelect={pickProduct} />
+              </div>
+              <table className="ui-table">
+                <thead><tr><th>Product</th><th className="text-right">Qty (base)</th><th>Notes</th><th></th></tr></thead>
+                <tbody>
+                  {editLines.map((l) => (
+                    <tr key={l.key} className={replacing === l.key ? 'bg-blue-50/60' : ''}>
+                      <td>{l.product_name}</td>
+                      <td className="text-right"><input value={l.qty_base} onChange={(e) => setEditLines(editLines.map((x) => (x.key === l.key ? { ...x, qty_base: e.target.value.replace(/[^\d.]/g, '') } : x)))} className="ui-input h-7 w-24 tabular text-right font-bold" /></td>
+                      <td><input value={l.notes} onChange={(e) => setEditLines(editLines.map((x) => (x.key === l.key ? { ...x, notes: e.target.value } : x)))} className="ui-input h-7" placeholder="Line notes..." /></td>
+                      <td className="text-right whitespace-nowrap">
+                        <Button size="sm" variant="ghost" onClick={() => setReplacing(l.key)}>Change</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditLines(editLines.filter((x) => x.key !== l.key))} aria-label="Remove"><Trash2 size={13} /></Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {editLines.length === 0 && <p className="text-xs text-rose-600 font-medium">A requisition needs at least one line.</p>}
+              {save.isError && <InlineError error={save.error} />}
+              <div className="flex justify-end gap-2">
+                <Button onClick={() => { setEditLines(null); setReplacing(null); save.reset() }}>Cancel</Button>
+                <Button variant="primary" disabled={!editValid || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : 'Save changes'}</Button>
+              </div>
+            </div>
+          ) : (
+            <table className="ui-table">
+              <thead><tr><th>Product</th><th className="text-right">Qty (base)</th><th>Notes</th></tr></thead>
+              <tbody>
+                {(r.lines ?? []).map((l) => (
+                  <tr key={l.id}><td>{l.product?.name ?? l.product_id.slice(0, 8)}</td><td className="text-right"><QtyCell value={l.qty_requested} unit={l.product?.base_uom?.code} /></td><td>{l.notes ?? '—'}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
       <ConfirmDialog open={rejecting} title="Reject requisition" confirmLabel="Reject" danger requireReason="Reason" isPending={reject.isPending} onCancel={() => setRejecting(false)} onConfirm={(reason) => reject.mutate(reason)} />

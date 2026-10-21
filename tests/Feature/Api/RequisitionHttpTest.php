@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\AuditLog;
+use App\Models\Product;
 use App\Models\PurchaseOrder;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsBlueprintWorld;
@@ -43,6 +45,33 @@ class RequisitionHttpTest extends TestCase
         $this->getJson("/api/requisitions/{$req['id']}")->assertOk()->assertJsonPath('status', 'CONVERTED');
 
         $this->postJson("/api/requisitions/{$req['id']}/convert", ['supplier_id' => $this->supplier->id, 'lines' => []])->assertStatus(422);
+    }
+
+    public function test_lines_can_be_changed_or_removed_until_the_requisition_is_approved(): void
+    {
+        $other = Product::create([
+            'organisation_id' => $this->org->id, 'code' => 'SWAP1', 'name' => 'Replacement',
+            'base_uom_id' => $this->uoms['TAB']->id, 'is_active' => true,
+        ]);
+        $req = $this->postJson('/api/requisitions', ['lines' => [
+            ['product_id' => $this->amox->id, 'qty_base' => '100'],
+            ['product_id' => $this->amox->id, 'qty_base' => '50'],
+        ]])->assertCreated()->json();
+        $this->postJson("/api/requisitions/{$req['id']}/submit")->assertOk();
+
+        // One line swapped to another product, the other removed.
+        $this->putJson("/api/requisitions/{$req['id']}", ['lines' => [['product_id' => $other->id, 'qty_base' => '80']]])->assertOk()
+            ->assertJsonPath('status', 'PENDING_APPROVAL')
+            ->assertJsonCount(1, 'lines')
+            ->assertJsonPath('lines.0.product_id', $other->id)
+            ->assertJsonPath('lines.0.qty_requested', '80.0000');
+        $this->assertTrue(AuditLog::where('action', 'REQUISITION_UPDATED')->where('entity_id', $req['id'])->exists());
+
+        $this->putJson("/api/requisitions/{$req['id']}", ['lines' => []])->assertStatus(422);
+
+        $this->postJson("/api/requisitions/{$req['id']}/approve")->assertOk();
+        $this->putJson("/api/requisitions/{$req['id']}", ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '1']]])
+            ->assertStatus(409)->assertJsonPath('error.code', 'INVALID_STATE');
     }
 
     public function test_a_requisition_can_be_converted_to_a_purchase_order_with_a_null_unit_price(): void
