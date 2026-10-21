@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\AuditLog;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Payment;
@@ -98,6 +99,34 @@ class FinanceCashHttpTest extends TestCase
 
         $book = $this->getJson('/api/reports/finance.petty_cash_book?from='.now()->toDateString().'&to='.now()->toDateString())->assertOk();
         $book->assertJsonPath('totals.topped_up', '5000.0000')->assertJsonPath('totals.closing_float', '5000.0000');
+    }
+
+    public function test_a_petty_cash_voucher_is_corrected_or_deleted_through_reversing_journals(): void
+    {
+        $this->grantPermissions(['record.delete'], 'Deleter');
+        $expense = ChartOfAccount::where('organisation_id', $this->org->id)->where('code', '6110')->firstOrFail();
+        $topUp = $this->postJson('/api/finance/petty-cash/top-up', ['voucher_date' => now()->toDateString(), 'funding_source' => 'CASH', 'amount' => '5000', 'description' => 'Float'])->assertCreated()->json();
+        $spent = $this->postJson('/api/finance/petty-cash/vouchers', ['voucher_date' => now()->toDateString(), 'account_id' => $expense->id, 'amount' => '1200', 'description' => 'Courier'])->assertCreated()->json();
+
+        // The voucher's own 1,200 returns before the corrected amount is spent: 5,000 is the most it can be.
+        $this->putJson("/api/finance/petty-cash/vouchers/{$spent['id']}", ['voucher_date' => now()->toDateString(), 'account_id' => $expense->id, 'amount' => '5001', 'description' => 'Courier'])->assertStatus(422);
+        $this->putJson("/api/finance/petty-cash/vouchers/{$spent['id']}", ['voucher_date' => now()->toDateString(), 'account_id' => $expense->id, 'amount' => '800', 'payee' => 'Rider', 'description' => 'Courier, corrected'])->assertOk()
+            ->assertJsonPath('doc_number', $spent['doc_number'])
+            ->assertJsonPath('amount', '800.0000')
+            ->assertJsonPath('description', 'Courier, corrected');
+        $this->assertSame('4200.0000', $this->accountBalance('PETTY_CASH'));
+
+        // A top-up whose money has been spent cannot be taken back out.
+        $this->deleteJson("/api/finance/petty-cash/vouchers/{$topUp['id']}", ['reason' => 'Typed twice'])->assertStatus(422);
+
+        $this->deleteJson("/api/finance/petty-cash/vouchers/{$spent['id']}", ['reason' => 'Duplicate'])->assertOk()->assertJsonPath('deleted', true);
+        $this->assertSame('5000.0000', $this->accountBalance('PETTY_CASH'));
+        $this->getJson('/api/finance/petty-cash')->assertJsonCount(1, 'data');
+        $audit = AuditLog::where('action', 'PETTY_CASH_DELETED')->where('entity_id', $spent['id'])->firstOrFail();
+        $this->assertSame('800.0000', $audit->before_json['amount']);
+
+        $this->deleteJson("/api/finance/petty-cash/vouchers/{$topUp['id']}", ['reason' => 'Typed twice'])->assertOk();
+        $this->assertSame('0.0000', $this->accountBalance('PETTY_CASH'));
     }
 
     public function test_supplies_are_requested_approved_by_someone_else_then_expensed(): void

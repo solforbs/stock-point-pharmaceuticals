@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\Notifications\Notifier;
 use App\Services\Procurement\ReorderAdvisor;
 use App\Services\Procurement\RequisitionService;
+use App\Services\Procurement\RfqService;
 use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class RequisitionController extends ApiController
     {
         $this->requirePermission($request, 'requisition.view');
 
-        return response()->json($this->find($request, $requisition)->load(['lines.product:id,code,name,base_uom_id', 'lines.product.baseUom:id,code']));
+        return response()->json($this->find($request, $requisition)->load(['lines.product:id,code,name,base_uom_id', 'lines.product.baseUom:id,code', 'rfqs:id,requisition_id,doc_number,status']));
     }
 
     public function store(Request $request, RequisitionService $requisitions): JsonResponse
@@ -121,6 +122,26 @@ class RequisitionController extends ApiController
     }
 
     /** POST /api/requisitions/{id}/convert — supplier selection; the PO still needs its own approval. */
+    /**
+     * POST /api/requisitions/{id}/request-quotation — send an approved
+     * requisition out for supplier quotes; the purchase order comes from
+     * the quotation's award, not from the requisition directly.
+     */
+    public function requestQuotation(Request $request, string $requisition, RequisitionService $requisitions, RfqService $rfqs): JsonResponse
+    {
+        $this->requirePermission($request, 'rfq.manage');
+
+        $data = $request->validate([
+            'supplier_ids' => ['required', 'array', 'min:1'],
+            'supplier_ids.*' => ['uuid', 'distinct', TenantRules::exists('suppliers')],
+            'title' => ['nullable', 'string', 'max:255'],
+            'needed_by' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        return response()->json($requisitions->requestQuotation($this->find($request, $requisition), $data + ['user_id' => $request->user()->id], $rfqs), 201);
+    }
+
     public function convert(Request $request, string $requisition, RequisitionService $requisitions): JsonResponse
     {
         $this->requirePermission($request, 'po.create');

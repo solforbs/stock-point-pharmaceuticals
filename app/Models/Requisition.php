@@ -41,4 +41,10 @@ class Requisition extends Model
     {
         return $this->hasMany(RequisitionLine::class);
     }
+
+    /** The quotation requests raised from this requisition. */
+    public function rfqs(): HasMany
+    {
+        return $this->hasMany(Rfq::class);
+    }
 }

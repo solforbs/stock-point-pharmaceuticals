@@ -47,6 +47,36 @@ class RequisitionHttpTest extends TestCase
         $this->postJson("/api/requisitions/{$req['id']}/convert", ['supplier_id' => $this->supplier->id, 'lines' => []])->assertStatus(422);
     }
 
+    public function test_an_approved_requisition_goes_out_for_quotation_and_the_award_raises_its_purchase_order(): void
+    {
+        $this->grantPermissions(['rfq.view', 'rfq.manage', 'rfq.award'], 'Buyer');
+        $req = $this->postJson('/api/requisitions', ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '500', 'notes' => 'Ward stock']]])->assertCreated()->json();
+
+        $this->postJson("/api/requisitions/{$req['id']}/request-quotation", ['supplier_ids' => [$this->supplier->id]])
+            ->assertStatus(409)->assertJsonPath('error.code', 'INVALID_STATE');
+        $this->postJson("/api/requisitions/{$req['id']}/submit")->assertOk();
+        $this->postJson("/api/requisitions/{$req['id']}/approve")->assertOk();
+
+        $rfq = $this->postJson("/api/requisitions/{$req['id']}/request-quotation", ['supplier_ids' => [$this->supplier->id]])->assertCreated()
+            ->assertJsonPath('status', 'DRAFT')
+            ->assertJsonPath('requisition_id', $req['id'])
+            ->assertJsonPath('title', "Quotation for {$req['doc_number']}")
+            ->json();
+        $this->getJson("/api/requisitions/{$req['id']}")->assertJsonPath('status', 'CONVERTED')->assertJsonPath('rfqs.0.id', $rfq['id']);
+
+        $rfq = $this->getJson("/api/rfqs/{$rfq['id']}")->assertOk()->assertJsonPath('lines.0.qty', '500.0000')->assertJsonPath('lines.0.uom_id', $this->amox->base_uom_id)->json();
+        $this->postJson("/api/rfqs/{$rfq['id']}/send")->assertOk();
+        $this->assertStringStartsWith('%PDF-', (string) $this->get("/api/rfqs/{$rfq['id']}/suppliers/{$this->supplier->id}/pdf")->assertOk()->getContent());
+
+        $this->putJson("/api/rfqs/{$rfq['id']}/quotes/{$this->supplier->id}", ['lines' => [['rfq_line_id' => $rfq['lines'][0]['id'], 'unit_price' => '4.20', 'lead_time_days' => 5]]])->assertOk();
+        $this->postJson("/api/rfqs/{$rfq['id']}/close")->assertOk();
+        $this->postJson("/api/rfqs/{$rfq['id']}/award")->assertOk()->assertJsonPath('status', 'AWARDED');
+
+        $po = PurchaseOrder::where('rfq_id', $rfq['id'])->sole();
+        $this->assertSame($req['id'], $po->requisition_id, 'the purchase order still points back to the requisition');
+        $this->assertSame('4.2000', (string) $po->lines()->first()->unit_price);
+    }
+
     public function test_lines_can_be_changed_or_removed_until_the_requisition_is_approved(): void
     {
         $other = Product::create([

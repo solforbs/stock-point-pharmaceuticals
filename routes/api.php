@@ -220,6 +220,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/requisitions/{requisition}/approve', [RequisitionController::class, 'approve']);
     Route::post('/requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);
     Route::post('/requisitions/{requisition}/convert', [RequisitionController::class, 'convert']);
+    Route::post('/requisitions/{requisition}/request-quotation', [RequisitionController::class, 'requestQuotation']);
     Route::get('/suppliers', [ProcurementController::class, 'suppliers']);
     Route::get('/suppliers/{supplier}', [ProcurementController::class, 'supplier'])->whereUuid('supplier');
     Route::post('/suppliers', [ProcurementController::class, 'storeSupplier']);
@@ -283,6 +284,8 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/finance/petty-cash/top-up', [PettyCashController::class, 'topUp']);
     Route::post('/finance/petty-cash/vouchers', [PettyCashController::class, 'spend']);
     Route::post('/finance/petty-cash/vouchers/{voucher}/void', [PettyCashController::class, 'void'])->whereUuid('voucher');
+    Route::put('/finance/petty-cash/vouchers/{voucher}', [PettyCashController::class, 'update'])->whereUuid('voucher');
+    Route::delete('/finance/petty-cash/vouchers/{voucher}', [PettyCashController::class, 'destroy'])->whereUuid('voucher');
     Route::get('/supply-requests', [SupplyRequestController::class, 'index']);
     Route::post('/supply-requests', [SupplyRequestController::class, 'store']);
     Route::get('/supply-requests/{supplyRequest}', [SupplyRequestController::class, 'show'])->whereUuid('supplyRequest');

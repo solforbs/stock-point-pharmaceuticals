@@ -24,7 +24,7 @@ class Rfq extends Model
     public const DEFAULT_WEIGHTS = ['price' => 60, 'lead_time' => 15, 'payment_terms' => 10, 'supplier_record' => 15];
 
     protected $fillable = [
-        'doc_number', 'branch_id', 'title', 'needed_by', 'notes', 'status',
+        'doc_number', 'branch_id', 'requisition_id', 'title', 'needed_by', 'notes', 'status',
         'weight_price', 'weight_lead_time', 'weight_payment_terms', 'weight_supplier_record',
         'created_by', 'sent_at', 'closed_at',
         'award_mode', 'award_followed_recommendation', 'award_justification', 'awarded_by', 'awarded_at',

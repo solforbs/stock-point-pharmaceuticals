@@ -43,6 +43,7 @@ class RfqService
             $rfq = Rfq::create([
                 'doc_number' => NumberSequence::next($organisationId, 'RFQ', $data['branch_id'], 'RFQ'),
                 'branch_id' => $data['branch_id'],
+                'requisition_id' => $data['requisition_id'] ?? null,
                 'title' => $data['title'],
                 'needed_by' => $data['needed_by'] ?? null,
                 'notes' => $data['notes'] ?? null,
@@ -264,6 +265,7 @@ class RfqService
                     'doc_number' => NumberSequence::next($organisationId, 'PO', $rfq->branch_id, 'PO'),
                     'supplier_id' => $supplierId,
                     'branch_id' => $rfq->branch_id,
+                    'requisition_id' => $rfq->requisition_id,
                     'rfq_id' => $rfq->id,
                     'status' => 'DRAFT',
                     'created_by' => $userId,

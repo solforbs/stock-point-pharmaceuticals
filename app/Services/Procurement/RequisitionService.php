@@ -10,6 +10,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
 use App\Models\Requisition;
 use App\Models\RequisitionLine;
+use App\Models\Rfq;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\DB;
 
@@ -127,6 +128,47 @@ class RequisitionService
         AuditLog::record('REQUISITION_REJECTED', 'requisition', $requisition->id, ['user_id' => $approverId, 'reference' => $requisition->doc_number, 'reason' => $reason]);
 
         return $requisition->fresh(['lines']);
+    }
+
+    /**
+     * The approved requisition goes out for quotation: its lines become a
+     * request for quotation (in each product's base unit) addressed to the
+     * chosen suppliers. The RFQ's PDF goes to the supplier, their confirmed
+     * prices are recorded against it, and its award raises the purchase
+     * order, which still points back to this requisition.
+     *
+     * @param  array{supplier_ids: list<string>, user_id: int, title?: ?string, needed_by?: ?string, notes?: ?string}  $data
+     */
+    public function requestQuotation(Requisition $requisition, array $data, RfqService $rfqs): Rfq
+    {
+        $this->assertStatus($requisition, ['APPROVED']);
+
+        return DB::transaction(function () use ($requisition, $data, $rfqs) {
+            $requisition->load('lines.product');
+
+            $rfq = $rfqs->create([
+                'branch_id' => $requisition->branch_id,
+                'requisition_id' => $requisition->id,
+                'user_id' => $data['user_id'],
+                'title' => $data['title'] ?? "Quotation for {$requisition->doc_number}",
+                'needed_by' => $data['needed_by'] ?? $requisition->needed_by?->toDateString(),
+                'notes' => $data['notes'] ?? $requisition->notes,
+                'lines' => $requisition->lines->map(fn (RequisitionLine $line) => [
+                    'product_id' => $line->product_id,
+                    'uom_id' => $line->product->base_uom_id,
+                    'qty' => (string) $line->qty_requested,
+                    'notes' => $line->notes,
+                ])->all(),
+                'supplier_ids' => $data['supplier_ids'],
+            ]);
+
+            $requisition->update(['status' => 'CONVERTED']);
+            AuditLog::record('REQUISITION_SENT_FOR_QUOTATION', 'requisition', $requisition->id, [
+                'user_id' => $data['user_id'], 'reference' => $requisition->doc_number, 'after_json' => ['rfq' => $rfq->doc_number],
+            ]);
+
+            return $rfq;
+        });
     }
 
     /**

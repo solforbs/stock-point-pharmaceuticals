@@ -10,7 +10,7 @@ import { InlineError } from '../../components/ui/States'
 import { StatCard } from '../../components/ui/StatCard'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Field, Input, Select } from '../../components/ui/primitives'
-import { apiGet, apiPost, apiPut, getApiError } from '../../lib/api'
+import { api, apiGet, apiPost, apiPut, ensureCsrfCookie, getApiError } from '../../lib/api'
 import { dIsPos } from '../../lib/decimal'
 import { formatDate, todayIso } from '../../lib/format'
 import { formatMoney } from '../../lib/money'
@@ -27,6 +27,9 @@ export default function PettyCashPage() {
   const canSetFloat = usePermission('admin.settings')
   const [modal, setModal] = useState<'topup' | 'spend' | 'float' | null>(null)
   const [voiding, setVoiding] = useState<PettyCashVoucher | null>(null)
+  const [editing, setEditing] = useState<PettyCashVoucher | null>(null)
+  const [deleting, setDeleting] = useState<PettyCashVoucher | null>(null)
+  const canDelete = usePermission('record.delete')
 
   const summary = useQuery({ queryKey: ['finance', 'petty-cash'], queryFn: () => apiGet<PettyCashSummary>('/api/finance/petty-cash', { per_page: 50 }), enabled: canManage })
   const refresh = () => {
@@ -45,6 +48,19 @@ export default function PettyCashPage() {
     },
   })
 
+  const deleteVoucher = useMutation({
+    meta: { silent: true },
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      await ensureCsrfCookie()
+      return (await api.delete<{ doc_number: string }>(`/api/finance/petty-cash/vouchers/${id}`, { data: { reason } })).data
+    },
+    onSuccess: (r) => {
+      toast.success(`${r.doc_number} deleted`, 'Its journal was reversed, so the float and the books stay right.')
+      setDeleting(null)
+      refresh()
+    },
+  })
+
   const columns: Column<PettyCashVoucher>[] = [
     { key: 'date', header: 'Date', render: (v) => <span className="tabular">{formatDate(v.voucher_date)}</span>, sortValue: (v) => v.voucher_date },
     { key: 'doc', header: 'Voucher', render: (v) => <span className="tabular font-mono font-semibold">{v.doc_number}</span> },
@@ -53,7 +69,18 @@ export default function PettyCashPage() {
     { key: 'amount', header: 'Amount', align: 'right', render: (v) => <MoneyCell value={v.amount} className={v.status === 'VOID' ? 'line-through text-slate-400' : v.voucher_type === 'TOPUP' ? 'text-emerald-700 font-semibold' : ''} />, sortValue: (v) => Number(v.amount) },
     { key: 'status', header: 'Status', render: (v) => <StatusBadge status={v.status === 'VOID' ? 'VOIDED' : 'POSTED'} label={v.status === 'VOID' ? 'Void' : 'Posted'} /> },
     { key: 'by', header: 'By', render: (v) => v.creator?.name ?? '—' },
-    { key: 'act', header: '', align: 'right', render: (v) => (canManage && v.status === 'POSTED' ? <Button size="sm" variant="danger" onClick={() => setVoiding(v)}>Void</Button> : null) },
+    {
+      key: 'act',
+      header: '',
+      align: 'right',
+      render: (v) => (canManage ? (
+        <div className="flex justify-end gap-1 whitespace-nowrap">
+          {v.status === 'POSTED' && <Button size="sm" onClick={() => setEditing(v)}>Edit</Button>}
+          {v.status === 'POSTED' && <Button size="sm" variant="danger" onClick={() => setVoiding(v)}>Void</Button>}
+          {canDelete && <Button size="sm" variant="danger" onClick={() => { deleteVoucher.reset(); setDeleting(v) }}>Delete</Button>}
+        </div>
+      ) : null),
+    },
   ]
 
   return (
@@ -107,6 +134,21 @@ export default function PettyCashPage() {
         onConfirm={(reason) => voiding && voidVoucher.mutate({ id: voiding.id, reason })}
       />
       {voidVoucher.isError && <InlineError error={voidVoucher.error} />}
+      <ConfirmDialog
+        open={deleting !== null}
+        title={deleting ? `Delete ${deleting.doc_number}?` : ''}
+        message={deleting?.status === 'POSTED'
+          ? 'Its journal is reversed (the money goes back where it came from) and the voucher is removed from this list. The full voucher is kept in the audit log.'
+          : 'The voucher is removed from this list. It was already void, so the books do not change. The full voucher is kept in the audit log.'}
+        confirmLabel="Delete voucher"
+        danger
+        requireReason="Reason for deleting"
+        isPending={deleteVoucher.isPending}
+        onCancel={() => setDeleting(null)}
+        onConfirm={(reason) => deleting && deleteVoucher.mutate({ id: deleting.id, reason })}
+      />
+      {deleteVoucher.isError && <InlineError error={deleteVoucher.error} />}
+      {editing && <EditVoucherModal voucher={editing} accounts={s?.expense_accounts ?? []} balance={s?.balance ?? '0'} onClose={() => setEditing(null)} onDone={() => { setEditing(null); refresh() }} />}
     </Page>
   )
 }
@@ -224,6 +266,65 @@ function FloatModal({ open, onClose, onDone, current }: { open: boolean; onClose
           <Input inputMode="decimal" className="tabular text-right" value={value} onChange={(e) => setValue(e.target.value.replace(/[^\d.]/g, ''))} />
         </Field>
         {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
+      </div>
+    </Modal>
+  )
+}
+
+/** Corrects a posted voucher: the server reverses its journal and posts the corrected one under the same number. */
+function EditVoucherModal({ voucher, accounts, balance, onClose, onDone }: { voucher: PettyCashVoucher; accounts: { id: string; code: string; name: string }[]; balance: string; onClose: () => void; onDone: () => void }) {
+  const isExpense = voucher.voucher_type === 'EXPENSE'
+  const [accountId, setAccountId] = useState(voucher.account?.id ?? '')
+  const [source, setSource] = useState<'CASH' | 'BANK'>(voucher.funding_source === 'BANK' ? 'BANK' : 'CASH')
+  const [amount, setAmount] = useState(String(Number(voucher.amount)))
+  const [payee, setPayee] = useState(voucher.payee ?? '')
+  const [description, setDescription] = useState(voucher.description)
+  const [receipt, setReceipt] = useState(voucher.receipt_ref ?? '')
+  const [date, setDate] = useState(voucher.voucher_date.slice(0, 10))
+  const save = useMutation({
+    meta: { silent: true },
+    mutationFn: () => apiPut<PettyCashVoucher>(`/api/finance/petty-cash/vouchers/${voucher.id}`, {
+      voucher_date: date, amount, description, payee: payee || null, receipt_ref: receipt || null,
+      ...(isExpense ? { account_id: accountId } : { funding_source: source }),
+    }),
+    onSuccess: (v) => { toast.success(`${v.doc_number} corrected`, 'The old journal was reversed and the corrected one posted.'); onDone() },
+  })
+  // The voucher's own amount returns to the float before the corrected amount is spent.
+  const available = Number(balance) + Number(voucher.amount)
+  const tooMuch = isExpense && MONEY.test(amount) && Number(amount) > available
+  const valid = MONEY.test(amount) && Number(amount) > 0 && description.trim() !== '' && (!isExpense || accountId !== '') && !tooMuch
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Edit ${voucher.doc_number}`}
+      footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!valid || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : 'Save changes'}</Button></>}
+    >
+      <div className="space-y-3">
+        {isExpense ? (
+          <Field label="What was it for" required>
+            <Select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+              <option value="">Choose an expense account…</option>
+              {accounts.map((a) => (<option key={a.id} value={a.id}>{a.code} · {a.name}</option>))}
+            </Select>
+          </Field>
+        ) : (
+          <Field label="Funded from" required>
+            <Select value={source} onChange={(e) => setSource(e.target.value as 'CASH' | 'BANK')}>
+              <option value="CASH">Cash</option>
+              <option value="BANK">Bank</option>
+            </Select>
+          </Field>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Amount (KES)" required error={tooMuch ? `The float can cover at most ${formatMoney(String(available))}` : null}><Input inputMode="decimal" className="tabular text-right" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ''))} /></Field>
+          <Field label="Date" required><Input type="date" max={todayIso()} value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+          {isExpense && <Field label="Paid to"><Input value={payee} onChange={(e) => setPayee(e.target.value)} /></Field>}
+          <Field label="Receipt no."><Input value={receipt} onChange={(e) => setReceipt(e.target.value)} /></Field>
+        </div>
+        <Field label="Description" required><Input value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+        {save.isError && <InlineError error={save.error} />}
       </div>
     </Modal>
   )

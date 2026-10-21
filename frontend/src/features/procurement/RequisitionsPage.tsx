@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Calendar, Package, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ProductSearch } from '../../components/ProductSearch'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
@@ -14,11 +14,11 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
 import { apiGet, apiPost, apiPut } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
-import { useSuppliers, useUoms } from '../../lib/hooks'
+import { useSuppliers } from '../../lib/hooks'
 import { formatQty } from '../../lib/money'
 import { usePermissions } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
-import type { Paginated, Product, PurchaseOrder, ReorderSuggestion, Requisition } from '../../lib/types'
+import type { Paginated, Product, ReorderSuggestion, Requisition, Rfq } from '../../lib/types'
 import { ExpiryBadge } from '../inventory/StockOnHandPage'
 
 const STATUSES = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'CONVERTED']
@@ -240,20 +240,15 @@ function ReorderSuggestions({ canCreate, isCreating, onCreate }: { canCreate: bo
   )
 }
 
-type ConvertLine = { requisition_line_id: string; product_name: string; base_qty: string; uom_id: string; qty_ordered: string; unit_price: string }
-
 function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
   const queryClient = useQueryClient()
   const perms = usePermissions()
   const suppliers = useSuppliers()
-  const uoms = useUoms()
   const [rejecting, setRejecting] = useState(false)
-  const [converting, setConverting] = useState(false)
-  const [supplierId, setSupplierId] = useState('')
-  const [expectedDate, setExpectedDate] = useState('')
-  const [convertLines, setConvertLines] = useState<ConvertLine[]>([])
-  const [po, setPo] = useState<PurchaseOrder | null>(null)
   const [editLines, setEditLines] = useState<EditLine[] | null>(null)
+  const [quoting, setQuoting] = useState(false)
+  const [quoteSupplierIds, setQuoteSupplierIds] = useState<string[]>([])
+  const navigate = useNavigate()
   const [replacing, setReplacing] = useState<string | null>(null)
   const req = useQuery({ queryKey: ['requisitions', id], queryFn: () => apiGet<Requisition>(`/api/requisitions/${id}`), enabled: !!id })
 
@@ -264,15 +259,15 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
   const submit = useMutation({ mutationFn: () => apiPost<Requisition>(`/api/requisitions/${id}/submit`), onSuccess: (r) => refresh(r, 'submitted for approval') })
   const approve = useMutation({ mutationFn: () => apiPost<Requisition>(`/api/requisitions/${id}/approve`), onSuccess: (r) => refresh(r, 'approved') })
   const reject = useMutation({ mutationFn: (reason: string) => apiPost<Requisition>(`/api/requisitions/${id}/reject`, { reason }), onSuccess: (r) => { setRejecting(false); refresh(r, 'rejected') } })
-  const convert = useMutation({
+  const requestQuotation = useMutation({
     meta: { silent: true },
-    mutationFn: () => apiPost<PurchaseOrder>(`/api/requisitions/${id}/convert`, { supplier_id: supplierId, expected_date: expectedDate || null, lines: convertLines.map((l) => ({ requisition_line_id: l.requisition_line_id, uom_id: l.uom_id, qty_ordered: l.qty_ordered, unit_price: l.unit_price })) }),
-    onSuccess: (created) => {
-      setPo(created)
-      setConverting(false)
-      toast.success(`Purchase order ${created.doc_number} created`, 'It still needs its own approval.')
+    mutationFn: () => apiPost<Rfq>(`/api/requisitions/${id}/request-quotation`, { supplier_ids: quoteSupplierIds }),
+    onSuccess: (rfq) => {
+      setQuoting(false)
+      toast.success(`Quotation ${rfq.doc_number} created`, 'Download its PDF for the supplier, record their confirmed prices, then award it to raise the purchase order.')
       queryClient.invalidateQueries({ queryKey: ['requisitions'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['rfqs'] })
+      navigate(`/buy/supplier-quotes?rfq=${rfq.id}`)
     },
   })
 
@@ -301,11 +296,6 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
     }
   }
   const editValid = !!editLines && editLines.length > 0 && editLines.every((l) => Number(l.qty_base) > 0)
-  function openConvert() {
-    setConvertLines((r?.lines ?? []).map((l) => ({ requisition_line_id: l.id, product_name: l.product?.name ?? l.product_id.slice(0, 8), base_qty: l.qty_requested, uom_id: l.product?.base_uom_id ?? '', qty_ordered: String(Number(l.qty_requested)), unit_price: '' })))
-    setConverting(true)
-  }
-  const convertValid = !!supplierId && convertLines.length > 0 && convertLines.every((l) => l.uom_id && Number(l.qty_ordered) > 0 && (l.unit_price === '' || /^\d+(\.\d+)?$/.test(l.unit_price)))
 
   return (
     <Drawer
@@ -320,7 +310,7 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
             {canEdit && !editLines && <Button size="sm" onClick={startEdit}>Edit lines</Button>}
             {r.status === 'DRAFT' && perms.has('requisition.create') && !editLines && <Button size="sm" variant="primary" disabled={submit.isPending} onClick={() => submit.mutate()}>Submit</Button>}
             {r.status === 'PENDING_APPROVAL' && perms.has('requisition.approve') && <><Button size="sm" variant="success" disabled={approve.isPending} onClick={() => approve.mutate()}>Approve</Button><Button size="sm" variant="danger" onClick={() => setRejecting(true)}>Reject</Button></>}
-            {r.status === 'APPROVED' && perms.has('po.create') && <Button size="sm" variant="primary" onClick={openConvert}>Convert to PO</Button>}
+            {r.status === 'APPROVED' && perms.has('rfq.manage') && <Button size="sm" variant="primary" onClick={() => { setQuoteSupplierIds([]); requestQuotation.reset(); setQuoting(true) }}>Request quotation</Button>}
           </div>
         ) : null
       }
@@ -329,7 +319,8 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
       {req.isError && <InlineError error={req.error} />}
       {r && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={r.status} />{po && <Link to={`/buy/purchase-orders?po=${po.id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open PO {po.doc_number}</Link>}</div>
+          <div className="flex items-center gap-2"><StatusBadge status={r.status} />
+            {(r.rfqs ?? []).map((q) => <Link key={q.id} to={`/buy/supplier-quotes?rfq=${q.id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Quotation {q.doc_number} · {titleCase(q.status)}</Link>)}</div>
           <DescriptionList items={[{ label: 'Notes', value: r.notes ?? '—' }, { label: 'Created', value: formatDateTime(r.created_at) }]} />
           {editLines ? (
             <div className="space-y-3">
@@ -375,47 +366,30 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
           )}
         </div>
       )}
-      <ConfirmDialog open={rejecting} title="Reject requisition" confirmLabel="Reject" danger requireReason="Reason" isPending={reject.isPending} onCancel={() => setRejecting(false)} onConfirm={(reason) => reject.mutate(reason)} />
       <Modal
-        open={converting}
-        onClose={() => setConverting(false)}
-        title="Convert to purchase order"
-        width={760}
-        footer={<><Button onClick={() => setConverting(false)}>Cancel</Button><Button variant="primary" disabled={!convertValid || convert.isPending} onClick={() => convert.mutate()}>{convert.isPending ? 'Creating…' : 'Create purchase order'}</Button></>}
+        open={quoting}
+        onClose={() => setQuoting(false)}
+        title="Request quotation"
+        width={560}
+        footer={<><Button onClick={() => setQuoting(false)}>Cancel</Button><Button variant="primary" disabled={quoteSupplierIds.length === 0 || requestQuotation.isPending} onClick={() => requestQuotation.mutate()}>{requestQuotation.isPending ? 'Creating…' : 'Create quotation'}</Button></>}
       >
         <div className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Supplier" required>
-              <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
-                <option value="">Choose…</option>
-                {(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id} disabled={s.status !== 'ACTIVE'}>{s.name}{s.status !== 'ACTIVE' ? ` (${s.status})` : ''}</option>))}
-              </Select>
-            </Field>
-            <Field label="Expected date"><Input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} /></Field>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            The requisition's lines go to the suppliers you tick as a quotation request, with a PDF for each. Once a supplier confirms
+            prices, record them on the quotation and award it — that raises the purchase order.
+          </p>
+          <div className="max-h-[300px] overflow-auto rounded-md border border-slate-200 divide-y divide-slate-100">
+            {(suppliers.data?.data ?? []).filter((s) => s.status === 'ACTIVE').map((s) => (
+              <label key={s.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50">
+                <input type="checkbox" checked={quoteSupplierIds.includes(s.id)} onChange={(e) => setQuoteSupplierIds(e.target.checked ? [...quoteSupplierIds, s.id] : quoteSupplierIds.filter((x) => x !== s.id))} />
+                {s.name}
+              </label>
+            ))}
           </div>
-          <table className="ui-table">
-            <thead><tr><th>Product</th><th className="text-right">Requested (base)</th><th>Purchase UOM</th><th className="text-right">Qty ordered</th><th className="text-right">Unit price</th></tr></thead>
-            <tbody>
-              {convertLines.map((l, i) => (
-                <tr key={l.requisition_line_id}>
-                  <td>{l.product_name}</td>
-                  <td className="text-right"><QtyCell value={l.base_qty} /></td>
-                  <td>
-                    <select value={l.uom_id} onChange={(e) => setConvertLines(convertLines.map((x, j) => (j === i ? { ...x, uom_id: e.target.value } : x)))} className="ui-input h-7">
-                      <option value="">UOM…</option>
-                      {(uoms.data ?? []).map((u) => (<option key={u.id} value={u.id}>{u.code}</option>))}
-                    </select>
-                  </td>
-                  <td><input value={l.qty_ordered} onChange={(e) => setConvertLines(convertLines.map((x, j) => (j === i ? { ...x, qty_ordered: e.target.value.replace(/[^\d.]/g, '') } : x)))} className="ui-input h-7 w-20 tabular text-right" /></td>
-                  <td><input value={l.unit_price} onChange={(e) => setConvertLines(convertLines.map((x, j) => (j === i ? { ...x, unit_price: e.target.value.replace(/[^\d.]/g, '') } : x)))} className="ui-input h-7 w-24 tabular text-right" /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="text-xs text-slate-500">The UOM must be a purchase unit for the product; a selling-only unit is refused (INVALID_INPUT).</p>
-          {convert.isError && <InlineError error={convert.error} />}
+          {requestQuotation.isError && <InlineError error={requestQuotation.error} />}
         </div>
       </Modal>
+      <ConfirmDialog open={rejecting} title="Reject requisition" confirmLabel="Reject" danger requireReason="Reason" isPending={reject.isPending} onCancel={() => setRejecting(false)} onConfirm={(reason) => reject.mutate(reason)} />
     </Drawer>
   )
 }

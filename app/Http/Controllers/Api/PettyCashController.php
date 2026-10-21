@@ -90,6 +90,39 @@ class PettyCashController extends ApiController
         return response()->json($pettyCash->spend($this->organisationId($request), $this->branchId($request), $request->user()->id, $data), 201);
     }
 
+    /** PUT /api/finance/petty-cash/vouchers/{id} — correct a posted voucher (reversal + new journal). */
+    public function update(Request $request, string $voucher, PettyCashService $pettyCash): JsonResponse
+    {
+        $this->requirePermission($request, 'petty.cash.manage');
+
+        $data = $request->validate([
+            'voucher_date' => ['required', 'date', 'before_or_equal:today'],
+            'amount' => ['required', 'numeric', 'gt:0', 'max:100000000'],
+            'description' => ['required', 'string', 'max:255'],
+            'account_id' => ['nullable', 'uuid', TenantRules::exists('chart_of_accounts')],
+            'funding_source' => ['nullable', 'in:CASH,BANK'],
+            'payee' => ['nullable', 'string', 'max:150'],
+            'receipt_ref' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $voucher = PettyCashVoucher::where('branch_id', $this->branchId($request))->findOrFail($voucher);
+
+        return response()->json($pettyCash->update($voucher, $data, $request->user()->id));
+    }
+
+    /** DELETE /api/finance/petty-cash/vouchers/{id} — reversed if still posted, then removed. */
+    public function destroy(Request $request, string $voucher, PettyCashService $pettyCash): JsonResponse
+    {
+        $this->requirePermission($request, 'petty.cash.manage');
+        $this->requirePermission($request, 'record.delete');
+        $data = $request->validate(['reason' => ['required', 'string', 'min:3', 'max:255']]);
+
+        $voucher = PettyCashVoucher::where('branch_id', $this->branchId($request))->findOrFail($voucher);
+        $pettyCash->delete($voucher, $data['reason'], $request->user()->id);
+
+        return response()->json(['deleted' => true, 'doc_number' => $voucher->doc_number]);
+    }
+
     public function void(Request $request, string $voucher, PettyCashService $pettyCash): JsonResponse
     {
         $this->requirePermission($request, 'petty.cash.manage');

@@ -908,6 +908,7 @@ export type Requisition = {
   created_at?: string
   lines_count?: number
   lines?: RequisitionLine[]
+  rfqs?: { id: string; doc_number: string; status: string }[]
 }
 
 export type ReorderSuggestion = {
