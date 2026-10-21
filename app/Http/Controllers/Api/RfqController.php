@@ -148,14 +148,16 @@ class RfqController extends ApiController
             'lines' => ['sometimes', 'array', 'min:1'],
             'lines.*.rfq_line_id' => ['required', 'uuid'],
             'lines.*.supplier_id' => ['nullable', 'uuid', TenantRules::exists('suppliers')],
+            'lines.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'justification' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $choices = isset($data['lines'])
             ? collect($data['lines'])->mapWithKeys(fn ($line) => [$line['rfq_line_id'] => $line['supplier_id'] ?? null])->all()
             : null;
+        $prices = collect($data['lines'] ?? [])->mapWithKeys(fn ($line) => [$line['rfq_line_id'] => isset($line['unit_price']) ? (string) $line['unit_price'] : null])->all();
 
-        $result = $rfqs->award($this->find($request, $rfq), $choices, $data['justification'] ?? null, $request->user()->id);
+        $result = $rfqs->award($this->find($request, $rfq), $choices, $data['justification'] ?? null, $request->user()->id, $prices);
         $awarded = $result['rfq'];
 
         $notifier->toPermission(
@@ -233,6 +235,7 @@ class RfqController extends ApiController
             'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
             'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
             'lines.*.qty' => ['required', 'numeric', 'gt:0'],
+            'lines.*.factor_to_base' => ['nullable', 'integer', 'min:2'],
             'lines.*.notes' => ['nullable', 'string', 'max:255'],
             'supplier_ids' => [$required, 'array', 'min:1'],
             'supplier_ids.*' => ['required', 'uuid', 'distinct', TenantRules::exists('suppliers')],

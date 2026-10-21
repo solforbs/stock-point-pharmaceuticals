@@ -104,6 +104,7 @@ export type Product = {
   sku: string | null
   gtin: string | null
   name: string
+  brand_name?: string | null
   generic_name: string | null
   strength: string | null
   /** Key features, for non-pharma items that have no strength. */

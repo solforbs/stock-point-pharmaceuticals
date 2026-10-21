@@ -159,7 +159,7 @@ class ProductCatalogueHttpTest extends TestCase
 
         $rows = [
             [
-                'code' => 'ACE003', 'name' => 'Acetazolamide Tablets 250mg, 30 Pack', 'sku' => 'ACE-30', 'description' => 'Rx',
+                'code' => 'ACE003', 'name' => 'Acetazolamide Tablets 250mg, 30 Pack', 'brand_name' => 'Diamox', 'sku' => 'ACE-30', 'description' => 'Rx',
                 'category_code' => '1.1', 'category_name' => 'Oral Solid Preparations', 'parent_category_code' => '1.0', 'parent_category_name' => 'Medicines',
                 'dosage_form_code' => 'tab', 'storage_condition_code' => 'ROOM', 'base_uom' => 'box', 'tax_code' => 'VAT_STD',
                 'default_price' => '820', 'requires_batch' => 'yes',
@@ -180,6 +180,7 @@ class ProductCatalogueHttpTest extends TestCase
         $ace = Product::where('code', 'ACE003')->with(['uoms', 'category'])->sole();
         $this->assertSame('Acetazolamide Tablets 250mg, 30 Pack', $ace->name);
         $this->assertSame('ACE-30', $ace->sku);
+        $this->assertSame('Diamox', $ace->brand_name);
         $this->assertSame('820.0000', $ace->default_price);
         $this->assertSame('TAB', $ace->dosageForm->code);
         $this->assertSame('BOX', $ace->baseUom->code);
@@ -226,9 +227,9 @@ class ProductCatalogueHttpTest extends TestCase
         $csv = $this->get('/api/products/export')->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8')->streamedContent();
         $lines = array_map(fn (string $l) => str_getcsv($l, ',', '"', ''), preg_split('/\r?\n/', trim(ltrim($csv, "\xEF\xBB\xBF"))));
 
-        $this->assertSame(['code', 'name', 'sku', 'gtin', 'generic_name', 'strength', 'description', 'category_code', 'dosage_form_code', 'storage_condition_code', 'base_uom', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active'], $lines[0]);
-        $this->assertSame(['AMOX500', 'Amoxicillin 500mg Capsules', '', '', 'Amoxicillin', '500mg', '', '', '', '', 'TAB', '', '2.5', '0', '0', '0', '1', '1'], $lines[1]);
-        $this->assertSame(['PARA500', 'Paracetamol 500mg Tablets', '', '', '', '', '', 'ANALG', '', '', 'TAB', 'VAT_STD', '', '100', '0', '7', '1', '1'], $lines[2]);
+        $this->assertSame(['code', 'name', 'brand_name', 'sku', 'gtin', 'generic_name', 'strength', 'description', 'category_code', 'dosage_form_code', 'storage_condition_code', 'base_uom', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active'], $lines[0]);
+        $this->assertSame(['AMOX500', 'Amoxicillin 500mg Capsules', '', '', '', 'Amoxicillin', '500mg', '', '', '', '', 'TAB', '', '2.5', '0', '0', '0', '1', '1'], $lines[1]);
+        $this->assertSame(['PARA500', 'Paracetamol 500mg Tablets', '', '', '', '', '', '', 'ANALG', '', '', 'TAB', 'VAT_STD', '', '100', '0', '7', '1', '1'], $lines[2]);
 
         $rows = array_map(fn (array $cells) => array_combine($lines[0], $cells), array_slice($lines, 1));
         $this->postJson('/api/products/import', ['rows' => $rows])->assertCreated()->assertJsonPath('updated', 0)->assertJsonPath('unchanged', 2);

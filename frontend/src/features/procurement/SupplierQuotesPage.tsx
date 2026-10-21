@@ -14,7 +14,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
 import { apiGet, apiPatch, apiPost, apiPut } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
-import { useSuppliers } from '../../lib/hooks'
+import { useSuppliers, useUoms } from '../../lib/hooks'
 import { formatKes, formatQty } from '../../lib/money'
 import { usePermissions } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
@@ -22,7 +22,10 @@ import type { CbaAnalysis, CbaRisk, Paginated, Product, Rfq, RfqInvite } from '.
 
 const STATUSES = ['DRAFT', 'SENT', 'CLOSED', 'AWARDED', 'CANCELLED']
 
-type DraftLine = { key: string; product: Product; uom_id: string; qty: string; notes: string }
+type DraftLine = { key: string; product: Product; uom_id: string; qty: string; notes: string; factor: string }
+
+/** A unit the product is not set up with yet (other than its base unit) needs its pack size. */
+const needsFactor = (l: DraftLine) => !!l.uom_id && l.uom_id !== l.product.base_uom_id && !(l.product.uoms ?? []).some((u) => u.uom_id === l.uom_id)
 
 /** Client item 19 — requests for quotation, supplier quotes, the competitive bid analysis and the award. */
 export default function SupplierQuotesPage() {
@@ -87,6 +90,7 @@ export default function SupplierQuotesPage() {
 function NewRfqDrawer({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (r: Rfq) => void }) {
   const queryClient = useQueryClient()
   const suppliers = useSuppliers()
+  const allUoms = useUoms()
   const [title, setTitle] = useState('')
   const [neededBy, setNeededBy] = useState('')
   const [notes, setNotes] = useState('')
@@ -97,7 +101,7 @@ function NewRfqDrawer({ open, onClose, onCreated }: { open: boolean; onClose: ()
     meta: { silent: true },
     mutationFn: () => apiPost<Rfq>('/api/rfqs', {
       title, needed_by: neededBy || null, notes: notes || null,
-      lines: lines.map((l) => ({ product_id: l.product.id, uom_id: l.uom_id, qty: l.qty, notes: l.notes || null })),
+      lines: lines.map((l) => ({ product_id: l.product.id, uom_id: l.uom_id, qty: l.qty, notes: l.notes || null, ...(needsFactor(l) ? { factor_to_base: Number(l.factor) } : {}) })),
       supplier_ids: supplierIds,
     }),
     onSuccess: (r) => {
@@ -109,7 +113,7 @@ function NewRfqDrawer({ open, onClose, onCreated }: { open: boolean; onClose: ()
   })
 
   const usable = (suppliers.data?.data ?? []).filter((s) => s.status === 'ACTIVE' && s.is_active)
-  const valid = title.trim() !== '' && lines.length > 0 && lines.every((l) => l.uom_id && Number(l.qty) > 0) && supplierIds.length > 0
+  const valid = title.trim() !== '' && lines.length > 0 && lines.every((l) => l.uom_id && Number(l.qty) > 0 && (!needsFactor(l) || (/^\d+$/.test(l.factor) && Number(l.factor) >= 2))) && supplierIds.length > 0
 
   return (
     <Drawer
@@ -133,7 +137,7 @@ function NewRfqDrawer({ open, onClose, onCreated }: { open: boolean; onClose: ()
           <ProductSearch onSelect={(p) => {
             const uoms = (p.uoms ?? []).filter((u) => u.is_purchase)
             const uom = uoms.find((u) => !u.is_base) ?? uoms[0]
-            setLines([...lines, { key: `${p.id}-${Date.now()}`, product: p, uom_id: uom?.uom_id ?? '', qty: '1', notes: '' }])
+            setLines([...lines, { key: `${p.id}-${Date.now()}`, product: p, uom_id: uom?.uom_id ?? p.base_uom_id ?? '', qty: '1', notes: '', factor: '' }])
           }} />
           {lines.length > 0 && (
             <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -146,8 +150,21 @@ function NewRfqDrawer({ open, onClose, onCreated }: { open: boolean; onClose: ()
                       <td>
                         <select value={l.uom_id} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, uom_id: e.target.value } : x)))} className="ui-input h-7 w-auto">
                           <option value="">Unit…</option>
-                          {(l.product.uoms ?? []).filter((u) => u.is_purchase).map((u) => (<option key={u.uom_id} value={u.uom_id}>{u.uom?.code} {u.factor_to_base !== 1 ? `(×${u.factor_to_base})` : ''}</option>))}
+                          <optgroup label="This product's units">
+                            {(l.product.uoms ?? []).map((u) => (<option key={u.uom_id} value={u.uom_id}>{u.uom?.code} {u.factor_to_base !== 1 ? `(×${u.factor_to_base})` : ''}</option>))}
+                            {!(l.product.uoms ?? []).some((u) => u.uom_id === l.product.base_uom_id) && l.product.base_uom_id && (
+                              <option value={l.product.base_uom_id}>{l.product.base_uom?.code ?? 'Base unit'}</option>
+                            )}
+                          </optgroup>
+                          <optgroup label="Other units (give the pack size)">
+                            {(allUoms.data ?? []).filter((u) => u.id !== l.product.base_uom_id && !(l.product.uoms ?? []).some((x) => x.uom_id === u.id)).map((u) => (<option key={u.id} value={u.id}>{u.code}</option>))}
+                          </optgroup>
                         </select>
+                        {needsFactor(l) && (
+                          <div className="mt-1 flex items-center gap-1 text-xs text-slate-600">
+                            1 = <input value={l.factor} inputMode="numeric" onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, factor: e.target.value.replace(/\D/g, '') } : x)))} className="ui-input h-7 w-16 tabular text-right" placeholder="30" /> {l.product.base_uom?.code ?? 'base units'}
+                          </div>
+                        )}
                       </td>
                       <td><input value={l.qty} inputMode="decimal" onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, qty: e.target.value.replace(/[^\d.]/g, '') } : x)))} className="ui-input h-7 w-20 tabular text-right font-bold" /></td>
                       <td><input value={l.notes} onChange={(e) => setLines(lines.map((x) => (x.key === l.key ? { ...x, notes: e.target.value } : x)))} className="ui-input h-7" /></td>
@@ -158,7 +175,8 @@ function NewRfqDrawer({ open, onClose, onCreated }: { open: boolean; onClose: ()
               </table>
             </div>
           )}
-          {lines.some((l) => !l.uom_id) && <p className="text-xs text-amber-700">A product with no purchase unit cannot be requested. Set one on the product first.</p>}
+          {lines.some((l) => !l.uom_id) && <p className="text-xs text-amber-700">Choose a unit for every product.</p>}
+          {lines.some(needsFactor) && <p className="text-xs text-slate-500">A unit the product does not have yet is added to it with the pack size you give, so it can be ordered and received in that unit.</p>}
         </FormSection>
 
         <FormSection title="Suppliers to ask" description="Only active suppliers can be invited" icon={Users} badge={`${supplierIds.length} chosen`}>
@@ -421,7 +439,9 @@ function AnalysisPanel({ rfq }: { rfq: Rfq }) {
   const analysis = useQuery({ queryKey: ['rfqs', rfq.id, 'analysis', rfq.status], queryFn: () => apiGet<CbaAnalysis>(`/api/rfqs/${rfq.id}/analysis`) })
   const [weights, setWeights] = useState({ price: '', lead_time: '', payment_terms: '', supplier_record: '' })
   const [choices, setChoices] = useState<Record<string, string>>({})
+  const [manualPrices, setManualPrices] = useState<Record<string, string>>({})
   const [justification, setJustification] = useState('')
+  const allSuppliers = useSuppliers()
 
   const a = analysis.data
   const plan = useMemo<Record<string, string>>(() => (a && !Array.isArray(a.overall.plan) ? a.overall.plan : {}), [a])
@@ -438,7 +458,7 @@ function AnalysisPanel({ rfq }: { rfq: Rfq }) {
   const award = useMutation({
     meta: { silent: true },
     mutationFn: (followRecommendation: boolean) => apiPost<Rfq>(`/api/rfqs/${rfq.id}/award`, followRecommendation ? {} : {
-      lines: (a?.lines ?? []).map((l) => ({ rfq_line_id: l.rfq_line_id, supplier_id: choices[l.rfq_line_id] || null })),
+      lines: (a?.lines ?? []).map((l) => ({ rfq_line_id: l.rfq_line_id, supplier_id: choices[l.rfq_line_id] || null, unit_price: manualPrices[l.rfq_line_id] || null })),
       justification: justification || null,
     }),
     onSuccess: (r) => {
@@ -453,8 +473,13 @@ function AnalysisPanel({ rfq }: { rfq: Rfq }) {
   if (!a) return null
 
   const weightSum = Object.values(weights).reduce((sum, v) => sum + (Number(v) || 0), 0)
-  const departs = a.lines.some((l) => (choices[l.rfq_line_id] || '') !== (plan[l.rfq_line_id] ?? ''))
-  const canAward = perms.has('rfq.award') && ['SENT', 'CLOSED'].includes(rfq.status) && a.overall.mode !== 'NONE'
+  // Any change from the plan is sent as explicit choices; only overriding a real recommendation needs a reason.
+  const custom = a.lines.some((l) => (choices[l.rfq_line_id] || '') !== (plan[l.rfq_line_id] ?? ''))
+  const departs = a.lines.some((l) => !!plan[l.rfq_line_id] && (choices[l.rfq_line_id] || '') !== plan[l.rfq_line_id])
+  const anyAwarded = a.lines.some((l) => !!choices[l.rfq_line_id])
+  const canAward = perms.has('rfq.award') && ['SENT', 'CLOSED'].includes(rfq.status)
+  const activeSuppliers = (allSuppliers.data?.data ?? []).filter((s) => s.status === 'ACTIVE')
+  const quotedBy = (lineId: string, supplierId: string) => !!a.lines.find((l) => l.rfq_line_id === lineId)?.quotes.some((q) => q.supplier_id === supplierId)
   const quoted = a.suppliers.filter((s) => s.quote_status === 'RECEIVED')
   const nameOf = (supplierId: string | undefined) => a.suppliers.find((s) => s.supplier_id === supplierId)?.name ?? '—'
 
@@ -559,22 +584,38 @@ function AnalysisPanel({ rfq }: { rfq: Rfq }) {
 
       {canAward && (
         <div className="rounded-xl border border-blue-200 p-4 space-y-3">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2"><Award size={15} />Award</h3>
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2"><Award size={15} />Assign suppliers and convert to purchase orders</h3>
+          <p className="text-xs text-slate-600">Choose who supplies each product. If a supplier does not have an item, give it to another one — any active supplier can be picked, even one that did not quote it; enter the agreed price, or leave it blank for the supplier to confirm.</p>
           <table className="ui-table">
-            <thead><tr><th>Item</th><th>Recommended</th><th>Award to</th></tr></thead>
+            <thead><tr><th>Item</th><th>Recommended</th><th>Supplier</th><th className="text-right">Unit price</th></tr></thead>
             <tbody>
               {a.lines.map((l) => {
-                const differs = (choices[l.rfq_line_id] || '') !== (plan[l.rfq_line_id] ?? '')
+                const differs = !!plan[l.rfq_line_id] && (choices[l.rfq_line_id] || '') !== plan[l.rfq_line_id]
+                const chosen = choices[l.rfq_line_id] ?? ''
+                const quotedIds = new Set(l.quotes.map((x) => x.supplier_id))
+                const chosenQuote = l.quotes.find((x) => x.supplier_id === chosen)
                 return (
                   <tr key={l.rfq_line_id}>
                     <td className="font-semibold">{l.product.name}</td>
                     <td>{plan[l.rfq_line_id] ? nameOf(plan[l.rfq_line_id]) : '—'}</td>
                     <td>
                       <select value={choices[l.rfq_line_id] ?? ''} onChange={(e) => setChoices({ ...choices, [l.rfq_line_id]: e.target.value })} className={`ui-input h-8 w-auto ${differs ? 'border-amber-400' : ''}`}>
-                        <option value="">Do not award</option>
-                        {l.quotes.filter((x) => x.eligible).map((x) => (<option key={x.supplier_id} value={x.supplier_id}>{x.supplier_name} — {formatKes(x.unit_price)}</option>))}
+                        <option value="">Do not order</option>
+                        {l.quotes.some((x) => x.eligible) && (
+                          <optgroup label="Quoted this item">
+                            {l.quotes.filter((x) => x.eligible).map((x) => (<option key={x.supplier_id} value={x.supplier_id}>{x.supplier_name} — {formatKes(x.unit_price)}</option>))}
+                          </optgroup>
+                        )}
+                        <optgroup label="Other suppliers">
+                          {activeSuppliers.filter((s) => !quotedIds.has(s.id)).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
+                        </optgroup>
                       </select>
                       {differs && <span className="ml-2 text-xs text-amber-700">differs from the recommendation</span>}
+                    </td>
+                    <td className="text-right">
+                      {chosen && !quotedBy(l.rfq_line_id, chosen)
+                        ? <input value={manualPrices[l.rfq_line_id] ?? ''} onChange={(e) => setManualPrices({ ...manualPrices, [l.rfq_line_id]: e.target.value.replace(/[^\d.]/g, '') })} placeholder="to confirm" className="ui-input h-8 w-28 tabular text-right" />
+                        : <span className="tabular text-sm">{chosenQuote ? formatKes(chosenQuote.unit_price) : '—'}</span>}
                     </td>
                   </tr>
                 )
@@ -587,11 +628,11 @@ function AnalysisPanel({ rfq }: { rfq: Rfq }) {
             </Field>
           )}
           <div className="flex flex-wrap gap-2">
-            {!departs && <Button variant="primary" disabled={award.isPending} onClick={() => award.mutate(true)}>{award.isPending ? 'Awarding…' : 'Award as recommended'}</Button>}
-            {departs && <Button variant="primary" disabled={award.isPending || justification.trim().length < 10} onClick={() => award.mutate(false)}>{award.isPending ? 'Awarding…' : 'Award my choices'}</Button>}
-            {departs && <Button onClick={() => { setChoices(plan); setJustification('') }}>Back to the recommendation</Button>}
+            {!custom && <Button variant="primary" disabled={award.isPending || !anyAwarded} onClick={() => award.mutate(true)}>{award.isPending ? 'Converting…' : 'Convert to purchase orders (as recommended)'}</Button>}
+            {custom && <Button variant="primary" disabled={award.isPending || !anyAwarded || (departs && justification.trim().length < 10)} onClick={() => award.mutate(false)}>{award.isPending ? 'Converting…' : 'Convert to purchase orders'}</Button>}
+            {custom && <Button onClick={() => { setChoices(plan); setManualPrices({}); setJustification('') }}>Back to the recommendation</Button>}
           </div>
-          <p className="text-xs text-slate-500">Awarding raises one draft purchase order per supplier at the quoted prices. Each still needs approval before it is sent.</p>
+          <p className="text-xs text-slate-500">One draft purchase order is raised per supplier, at the quoted (or entered) prices. Each still needs approval before it is sent.</p>
           {award.isError && <InlineError error={award.error} />}
         </div>
       )}

@@ -10,6 +10,7 @@ use App\Models\PurchaseOrder;
 use App\Models\Rfq;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
+use App\Models\UnitOfMeasure;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -212,6 +213,48 @@ class SupplierQuotesCbaTest extends TestCase
             ->assertJsonPath("overall.plan.{$rfq['lines'][0]['id']}", $this->supplierB->id);
 
         $this->assertStringContainsString('costs KES 400.00 less than splitting', $analysis->json('overall.summary'));
+    }
+
+    public function test_any_unit_can_be_requested_and_a_new_one_is_added_with_its_pack_size(): void
+    {
+        // An imported product missing its base-unit row is still requestable in that unit.
+        ProductUom::where('product_id', $this->amox->id)->where('uom_id', $this->amox->base_uom_id)->delete();
+        $payload = ['title' => 'Units', 'supplier_ids' => [$this->supplierA->id], 'lines' => [['product_id' => $this->amox->id, 'uom_id' => $this->amox->base_uom_id, 'qty' => '100']]];
+        $this->postJson('/api/rfqs', $payload)->assertCreated();
+        $this->assertTrue(ProductUom::where('product_id', $this->amox->id)->where('uom_id', $this->amox->base_uom_id)->where('is_base', true)->where('factor_to_base', 1)->exists());
+
+        // A unit the product does not have needs its pack size, then is added as a purchase unit.
+        $drum = UnitOfMeasure::create(['code' => 'DRUM', 'name' => 'Drum', 'is_base_candidate' => false]);
+        $payload['lines'] = [['product_id' => $this->amox->id, 'uom_id' => $drum->id, 'qty' => '2']];
+        $this->postJson('/api/rfqs', $payload)->assertStatus(422);
+        $payload['lines'][0]['factor_to_base'] = 500;
+        $this->postJson('/api/rfqs', $payload)->assertCreated();
+        $added = ProductUom::where('product_id', $this->amox->id)->where('uom_id', $drum->id)->sole();
+        $this->assertSame(500, (int) $added->factor_to_base);
+        $this->assertTrue((bool) $added->is_purchase);
+    }
+
+    public function test_a_line_one_supplier_cannot_supply_is_assigned_to_another_who_did_not_quote(): void
+    {
+        $rfq = $this->sentRfq(twoLines: true);
+        // Alpha has only the first item; Beta never quoted at all.
+        $this->quote($rfq, $this->supplierA, [$this->line($rfq, 0, '400', 5)]);
+        $this->postJson("/api/rfqs/{$rfq['id']}/close")->assertOk();
+
+        $this->postJson("/api/rfqs/{$rfq['id']}/award", ['lines' => [
+            ['rfq_line_id' => $rfq['lines'][0]['id'], 'supplier_id' => $this->supplierA->id],
+            ['rfq_line_id' => $rfq['lines'][1]['id'], 'supplier_id' => $this->supplierB->id, 'unit_price' => '99.50'],
+        ]])->assertOk()->assertJsonPath('status', 'AWARDED')->assertJsonCount(2, 'created_purchase_orders');
+
+        $orders = PurchaseOrder::where('rfq_id', $rfq['id'])->with('lines')->get()->keyBy('supplier_id');
+        $this->assertSame('400.0000', (string) $orders[$this->supplierA->id]->lines->sole()->unit_price);
+        $this->assertSame('99.5000', (string) $orders[$this->supplierB->id]->lines->sole()->unit_price);
+
+        // Overriding an actual recommendation still needs a reason.
+        $rfq2 = $this->sentRfq();
+        $this->quote($rfq2, $this->supplierA, [$this->line($rfq2, 0, '400', 5)]);
+        $this->postJson("/api/rfqs/{$rfq2['id']}/award", ['lines' => [['rfq_line_id' => $rfq2['lines'][0]['id'], 'supplier_id' => $this->supplierB->id]]])
+            ->assertStatus(422)->assertJsonPath('error.code', 'JUSTIFICATION_REQUIRED');
     }
 
     public function test_accepting_the_recommendation_raises_one_draft_purchase_order_per_supplier(): void

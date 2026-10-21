@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\NumberSequence;
 use App\Models\Product;
+use App\Models\ProductUom;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
 use App\Models\Rfq;
@@ -13,6 +14,7 @@ use App\Models\RfqLine;
 use App\Models\RfqQuoteLine;
 use App\Models\RfqSupplier;
 use App\Models\Supplier;
+use App\Models\UnitOfMeasure;
 use Illuminate\Support\Facades\DB;
 
 class InvalidRfqStatusException extends \RuntimeException {}
@@ -202,10 +204,16 @@ class RfqService
      * DRAFT purchase order is raised per awarded supplier, at the quoted
      * prices, for the quantity each can supply.
      *
+     * A line may also go to a supplier who did not quote it (one who was
+     * not invited, or quoted only part of the list): it is ordered at the
+     * price given in $prices, or with no price for the supplier to confirm.
+     * Only overriding an actual recommendation needs a justification.
+     *
      * @param  array<string, string|null>|null  $choices  rfq_line_id => supplier_id (null leaves the line unawarded)
+     * @param  array<string, string|null>  $prices  rfq_line_id => unit price for a supplier who did not quote that line
      * @return array{rfq: Rfq, purchase_orders: list<PurchaseOrder>}
      */
-    public function award(Rfq $rfq, ?array $choices, ?string $justification, int $userId): array
+    public function award(Rfq $rfq, ?array $choices, ?string $justification, int $userId, array $prices = []): array
     {
         $this->assertStatus($rfq, ['SENT', 'CLOSED']);
 
@@ -223,13 +231,16 @@ class RfqService
         }
 
         $followed = true;
+        $overridden = false;
         foreach ($lines->keys() as $lineId) {
             if (($choices[$lineId] ?? null) !== ($recommended[$lineId] ?? null)) {
                 $followed = false;
+                // Filling a line nobody recommended anyone for is not overriding the analysis.
+                $overridden = $overridden || ($recommended[$lineId] ?? null) !== null;
             }
         }
         $justification = trim((string) $justification);
-        if (! $followed && mb_strlen($justification) < self::MIN_JUSTIFICATION_LENGTH) {
+        if ($overridden && mb_strlen($justification) < self::MIN_JUSTIFICATION_LENGTH) {
             throw new AwardJustificationRequiredException('This award departs from the recommendation. Say why (at least '.self::MIN_JUSTIFICATION_LENGTH.' characters).');
         }
 
@@ -240,7 +251,18 @@ class RfqService
             }
             $quote = collect($lines[$lineId]['quotes'])->firstWhere('supplier_id', $supplierId);
             if (! $quote) {
-                throw new \DomainException('That supplier did not quote '.($lines[$lineId]['product']['name'] ?? 'this line').'.');
+                $supplier = Supplier::find($supplierId);
+                if (! $supplier || $supplier->status !== 'ACTIVE' || ! $supplier->is_active || $supplier->isLicenceExpired()) {
+                    throw new \DomainException(($supplier?->name ?? 'That supplier').' cannot be ordered from (inactive, or licence expired).');
+                }
+                $price = $prices[$lineId] ?? null;
+                $bySupplier[$supplierId][$lineId] = [
+                    'qty_to_order' => (string) $lines[$lineId]['qty'],
+                    'unit_price' => $price === null || $price === '' ? null : bcadd((string) $price, '0', 4),
+                    'lead_time_days' => 0,
+                ];
+
+                continue;
             }
             if (! $quote['eligible']) {
                 $supplier = Supplier::find($supplierId);
@@ -320,7 +342,47 @@ class RfqService
     }
 
     /**
-     * @param  list<array{product_id: string, uom_id: string, qty: numeric-string, notes?: ?string}>  $lines
+     * Makes the chosen unit one the product can be bought in. The base unit
+     * always can (its row is created if an imported product lacks it); a
+     * selling-only unit is opened for purchasing; a unit the product does not
+     * have yet is added with the pack size given (how many base units it holds).
+     */
+    private function ensurePurchaseUnit(Product $product, string $uomId, int|string|null $factorToBase): void
+    {
+        $existing = $product->uoms()->where('uom_id', $uomId)->first();
+        if ($existing) {
+            if (! $existing->is_purchase) {
+                $existing->update(['is_purchase' => true]);
+            }
+
+            return;
+        }
+
+        if ($uomId === (string) $product->base_uom_id) {
+            ProductUom::create([
+                'product_id' => $product->id, 'uom_id' => $uomId, 'factor_to_base' => 1,
+                'is_base' => true, 'is_purchase' => true, 'is_sales' => true, 'is_default_sales' => ! $product->uoms()->where('is_default_sales', true)->exists(),
+            ]);
+
+            return;
+        }
+
+        $factor = (int) $factorToBase;
+        if ($factor < 2 || (string) $factor !== trim((string) $factorToBase)) {
+            $unit = UnitOfMeasure::whereKey($uomId)->value('code') ?? 'that unit';
+            $base = $product->baseUom?->code ?? 'base units';
+            throw new \InvalidArgumentException("{$product->name} has no {$unit} unit yet: say how many {$base} are in one {$unit} (a whole number of 2 or more).");
+        }
+
+        ProductUom::create([
+            'product_id' => $product->id, 'uom_id' => $uomId, 'factor_to_base' => $factor,
+            'is_base' => false, 'is_purchase' => true, 'is_sales' => false, 'is_default_sales' => false,
+        ]);
+        AuditLog::record('PRODUCT_UOM_ADDED', 'product', $product->id, ['reference' => $product->code, 'after_json' => ['uom_id' => $uomId, 'factor_to_base' => $factor, 'via' => 'rfq']]);
+    }
+
+    /**
+     * @param  list<array{product_id: string, uom_id: string, qty: numeric-string, factor_to_base?: int|string|null, notes?: ?string}>  $lines
      */
     private function replaceLines(Rfq $rfq, array $lines): void
     {
@@ -331,9 +393,7 @@ class RfqService
         $rfq->lines()->delete();
         foreach (array_values($lines) as $index => $line) {
             $product = Product::findOrFail($line['product_id']);
-            if (! $product->uoms()->where('uom_id', $line['uom_id'])->exists()) {
-                throw new \InvalidArgumentException("{$product->name} cannot be bought in that unit; choose one of its available units.");
-            }
+            $this->ensurePurchaseUnit($product, (string) $line['uom_id'], $line['factor_to_base'] ?? null);
             if (bccomp((string) $line['qty'], '0', 4) <= 0) {
                 throw new \InvalidArgumentException('Every line needs a quantity above zero.');
             }

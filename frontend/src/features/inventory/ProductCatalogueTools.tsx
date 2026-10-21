@@ -29,7 +29,7 @@ type ImportSummary = { rows: number; created: number; updated: number; unchanged
 
 /** The columns the import reads; any others in the file are ignored. */
 const IMPORT_COLUMNS = [
-  'code', 'name', 'sku', 'gtin', 'generic_name', 'strength', 'description',
+  'code', 'name', 'brand_name', 'sku', 'gtin', 'generic_name', 'strength', 'description',
   'category_code', 'category_name', 'parent_category_code', 'parent_category_name',
   'dosage_form_code', 'storage_condition_code', 'base_uom', 'tax_code', 'default_price',
   'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active',

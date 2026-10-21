@@ -25,7 +25,7 @@ class ProductCatalogueController extends ApiController
 {
     /** The CSV columns, in order; the import reads the ones listed in ProductImportService::COLUMNS. */
     private const EXPORT_COLUMNS = [
-        'code', 'name', 'sku', 'gtin', 'generic_name', 'strength', 'description', 'category_code', 'dosage_form_code', 'storage_condition_code',
+        'code', 'name', 'brand_name', 'sku', 'gtin', 'generic_name', 'strength', 'description', 'category_code', 'dosage_form_code', 'storage_condition_code',
         'base_uom', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active',
     ];
 
@@ -178,13 +178,13 @@ class ProductCatalogueController extends ApiController
                 ->leftJoin('units_of_measure as u', 'u.id', '=', 'p.base_uom_id')
                 ->where('p.organisation_id', $organisationId)
                 ->orderBy('p.code')
-                ->select('p.id', 'p.code', 'p.name', 'p.sku', 'p.gtin', 'p.generic_name', 'p.strength', 'p.description',
+                ->select('p.id', 'p.code', 'p.name', 'p.brand_name', 'p.sku', 'p.gtin', 'p.generic_name', 'p.strength', 'p.description',
                     'c.code as category_code', 'd.code as dosage_form_code', 's.code as storage_condition_code', 'u.code as base_uom', 't.code as tax_code',
                     'p.default_price', 'p.reorder_point', 'p.safety_stock', 'p.lead_time_days', 'p.requires_batch', 'p.is_active')
                 ->chunk(500, function ($products) use ($out) {
                     foreach ($products as $p) {
                         fputcsv($out, [
-                            $p->code, $this->safeCell((string) $p->name), $p->sku, $p->gtin, $this->safeCell((string) $p->generic_name), $p->strength,
+                            $p->code, $this->safeCell((string) $p->name), $this->safeCell((string) $p->brand_name), $p->sku, $p->gtin, $this->safeCell((string) $p->generic_name), $p->strength,
                             $this->safeCell((string) $p->description), $p->category_code, $p->dosage_form_code, $p->storage_condition_code, $p->base_uom, $p->tax_code,
                             $p->default_price === null ? '' : $this->number((string) $p->default_price),
                             $this->number((string) $p->reorder_point), $this->number((string) $p->safety_stock),

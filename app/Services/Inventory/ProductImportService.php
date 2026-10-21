@@ -27,7 +27,7 @@ class ProductImportService
 {
     /** Columns the import reads; anything else in the file is ignored. */
     public const COLUMNS = [
-        'code', 'name', 'sku', 'gtin', 'generic_name', 'strength', 'description',
+        'code', 'name', 'brand_name', 'sku', 'gtin', 'generic_name', 'strength', 'description',
         'category_code', 'category_name', 'parent_category_code', 'parent_category_name',
         'dosage_form_code', 'storage_condition_code', 'base_uom', 'tax_code', 'default_price',
         'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active',
@@ -198,7 +198,7 @@ class ProductImportService
                 $seen[Str::upper($code)] ??= $line;
             }
 
-            foreach (['name', 'generic_name', 'strength', 'gtin'] as $field) {
+            foreach (['name', 'brand_name', 'generic_name', 'strength', 'gtin'] as $field) {
                 if (($text = $cell($field)) !== '') {
                     if (mb_strlen($text) > 255) {
                         $messages[] = "{$field} may not exceed 255 characters";

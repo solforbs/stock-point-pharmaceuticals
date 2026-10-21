@@ -23,7 +23,7 @@ class ProductController extends ApiController
         $this->requirePermission($request, 'product.view');
         $organisationId = $this->organisationId($request);
 
-        $allowedSorts = ['name', 'code', 'generic_name', 'default_price', 'created_at'];
+        $allowedSorts = ['name', 'brand_name', 'code', 'generic_name', 'default_price', 'created_at'];
         $sortBy = in_array($request->query('sort_by'), $allowedSorts, true) ? $request->query('sort_by') : 'name';
         $sortDir = strtolower((string) $request->query('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
 
@@ -33,6 +33,7 @@ class ProductController extends ApiController
                 $term = '%'.$request->string('q')->trim().'%';
                 $query->where(function ($q) use ($term) {
                     $q->where('name', 'like', $term)
+                        ->orWhere('brand_name', 'like', $term)
                         ->orWhere('code', 'like', $term)
                         ->orWhere('sku', 'like', $term)
                         ->orWhere('generic_name', 'like', $term);
@@ -254,6 +255,7 @@ class ProductController extends ApiController
             'sku' => ['nullable', 'string', 'max:255', Rule::unique('products', 'sku')->where('organisation_id', $organisationId)],
             'gtin' => ['nullable', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
+            'brand_name' => ['nullable', 'string', 'max:255'],
             'generic_name' => ['nullable', 'string', 'max:255'],
             'strength' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
@@ -329,6 +331,7 @@ class ProductController extends ApiController
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
+            'brand_name' => ['nullable', 'string', 'max:255'],
             'generic_name' => ['nullable', 'string', 'max:255'],
             'strength' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
