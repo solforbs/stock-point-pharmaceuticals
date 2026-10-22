@@ -6,23 +6,23 @@
     <style>
         @page { margin: 22mm 16mm 20mm 16mm; }
         body { font-family: "DejaVu Sans", sans-serif; font-size: 10px; color: #1f2937; }
-        .head { border-bottom: 3px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 3px; }
+        .head { border-bottom: 3px solid #1e3a8a; padding-bottom: 4px; margin-bottom: 3px; }
         .head-rule { border-bottom: 1px solid #93c5fd; margin-bottom: 14px; }
         .masthead { width: 100%; border-collapse: collapse; }
         .masthead td { vertical-align: top; padding: 0; }
-        .mh-logo { width: 32mm; padding-right: 10px !important; }
-        .mh-logo img { width: 30mm; max-height: 26mm; }
-        .mh-org { padding-right: 10px !important; }
-        .mh-doc { width: 46mm; text-align: right; }
+        .mh-left { width: 50%; }
+        .mh-left img { width: 34mm; max-height: 28mm; }
+        .mh-right { width: 50%; text-align: right; }
         .head .org { font-size: 16px; font-weight: bold; color: #1e3a8a; line-height: 1.2; }
-        .head .tagline { font-size: 9px; font-style: italic; color: #15803d; margin: 1px 0 5px; }
+        .head .tagline { font-size: 8.5px; font-style: italic; color: #15803d; margin-top: 2px; }
         .head .contact { border-collapse: collapse; font-size: 8.5px; color: #374151; }
-        .head .contact td { padding: 0 0 1.5px 0; vertical-align: top; }
-        .head .contact td.k, .head .contact span.k { color: #1e3a8a; font-weight: bold; padding-right: 6px; white-space: nowrap; }
-        .head .contact .sep { color: #9ca3af; padding: 0 5px; }
+        .head .contact td { padding: 0 0 2px 0; vertical-align: top; text-align: left; }
+        .head .contact td.k { color: #1e3a8a; font-weight: bold; padding-right: 8px; white-space: nowrap; }
         .head .meta { font-size: 9px; color: #6b7280; }
-        .doc-title { background: #1e3a8a; color: #ffffff; font-size: 12px; font-weight: bold; padding: 6px 8px; text-align: center; letter-spacing: .04em; text-transform: uppercase; }
-        .doc-meta { font-size: 9px; color: #6b7280; margin-top: 3px; }
+        .doc-band { margin-top: 10px; background: #1e3a8a; color: #ffffff; font-size: 13px; font-weight: bold; padding: 6px 10px; text-align: center; white-space: nowrap; letter-spacing: .02em; }
+        .doc-line { width: 100%; border-collapse: collapse; margin-top: 3px; }
+        .doc-line td { font-size: 9px; color: #6b7280; padding: 0; }
+        .doc-line td.r { text-align: right; }
         .issued-by { width: 100%; margin-top: 22px; page-break-inside: avoid; }
         .issued-by td { vertical-align: bottom; padding: 0; }
         .issued-by img.stamp { max-width: 34mm; max-height: 34mm; }
@@ -48,15 +48,19 @@
 <footer>{{ $letterhead['organisation'] }} · {{ $title }} · printed {{ $letterhead['printed_at'] }}</footer>
 
 <div class="head">
+    {{-- Logo on the left, contact details on the right, space between. --}}
     <table class="masthead">
         <tr>
-            @if ($letterhead['logo'] ?? null)
-                <td class="mh-logo"><img src="{{ $letterhead['logo'] }}" alt="Logo"></td>
-            @endif
-            <td class="mh-org">
-                <div class="org">{{ $letterhead['legal_name'] ?: $letterhead['organisation'] }}</div>
+            <td class="mh-left">
+                @if ($letterhead['logo'] ?? null)
+                    <img src="{{ $letterhead['logo'] }}" alt="Logo">
+                @else
+                    <div class="org">{{ $letterhead['legal_name'] ?: $letterhead['organisation'] }}</div>
+                @endif
                 @if ($letterhead['tagline'] ?? null)<div class="tagline">{{ $letterhead['tagline'] }}</div>@endif
-                <table class="contact">
+            </td>
+            <td class="mh-right">
+                <table class="contact" align="right">
                     @if (($letterhead['address'] ?? null) || ($letterhead['postal_address'] ?? null))
                         <tr><td class="k">Address</td><td>{{ implode(', ', array_filter([$letterhead['address'] ?? null, $letterhead['postal_address'] ?? null])) }}</td></tr>
                     @endif
@@ -64,24 +68,21 @@
                     @if ($letterhead['email'] ?? null)<tr><td class="k">Email</td><td>{{ $letterhead['email'] }}</td></tr>@endif
                     @if ($letterhead['website'] ?? null)<tr><td class="k">Web</td><td>{{ $letterhead['website'] }}</td></tr>@endif
                     {{-- A document can leave the KRA PIN off (the price list); tax documents always carry it. --}}
-                    @if ($hideKraPin ?? false)
-                        @if ($letterhead['branch'] ?? null)<tr><td class="k">Branch</td><td>{{ $letterhead['branch'] }}</td></tr>@endif
-                    @else
-                        <tr>
-                            <td class="k">KRA PIN</td>
-                            <td>
-                                @if ($letterhead['kra_pin']){{ $letterhead['kra_pin'] }}@else<span class="warn">not set</span>@endif
-                                @if ($letterhead['branch'] ?? null)<span class="sep">|</span><span class="k">Branch</span> {{ $letterhead['branch'] }}@endif
-                            </td>
-                        </tr>
-                    @endif
+                    @unless ($hideKraPin ?? false)
+                        <tr><td class="k">KRA PIN</td><td>@if ($letterhead['kra_pin']){{ $letterhead['kra_pin'] }}@else<span class="warn">not set</span>@endif</td></tr>
+                    @endunless
+                    @if ($letterhead['branch'] ?? null)<tr><td class="k">Branch</td><td>{{ $letterhead['branch'] }}</td></tr>@endif
                 </table>
             </td>
-            <td class="mh-doc">
-                <div class="doc-title">{{ $title }}</div>
-                <div class="doc-meta">{{ $docNumber }}</div>
-                @isset($docDate)<div class="doc-meta">{{ $docDate }}</div>@endisset
-            </td>
+        </tr>
+    </table>
+
+    {{-- One line: who issued it and what it is. --}}
+    <div class="doc-band">{{ $letterhead['legal_name'] ?: $letterhead['organisation'] }} - {{ $title }}</div>
+    <table class="doc-line">
+        <tr>
+            <td>{{ $docNumber }}</td>
+            <td class="r">@isset($docDate){{ $docDate }}@endisset</td>
         </tr>
     </table>
 </div>
