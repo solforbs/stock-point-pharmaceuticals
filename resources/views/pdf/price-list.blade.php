@@ -11,13 +11,12 @@
     @endphp
     @foreach (array_chunk($rows, 50) as $block)
         <table class="items" style="table-layout: fixed;{{ $loop->first ? '' : ' margin-top: 0;' }}">
-            <colgroup><col style="width: 7%">@foreach ($widths as $width)<col style="width: {{ $width }}%">@endforeach</colgroup>
             @if ($loop->first)
                 <thead>
                 <tr>
-                    <th class="num">No.</th>
-                    @foreach ($columns as $column)
-                        <th @class(['num' => $column === 'price'])>{{ $labels[$column] }}</th>
+                    <th style="width: 7%; text-align: left;">No.</th>
+                    @foreach ($columns as $i => $column)
+                        <th style="width: {{ $widths[$i] }}%;{{ $column === 'price' ? ' text-align: right;' : '' }}">{{ $labels[$column] }}</th>
                     @endforeach
                 </tr>
                 </thead>
@@ -25,12 +24,13 @@
             <tbody>
             @foreach ($block as $row)
                 <tr>
-                    <td class="num">{{ ($loop->parent->index * 50) + $loop->iteration }}</td>
-                    @foreach ($columns as $column)
+                    {{-- Widths on the cells themselves: dompdf does not honour <col> widths. --}}
+                    <td style="width: 7%; text-align: left;">{{ ($loop->parent->index * 50) + $loop->iteration }}</td>
+                    @foreach ($columns as $i => $column)
                         @if ($column === 'price')
-                            <td class="num">{{ $row['price'] === null || $row['price'] === '' ? '—' : number_format((float) $row['price'], 2) }}</td>
+                            <td class="num" style="width: {{ $widths[$i] }}%;">{{ $row['price'] === null || $row['price'] === '' ? '—' : number_format((float) $row['price'], 2) }}</td>
                         @else
-                            <td>{{ $row[$column] ?? '' }}</td>
+                            <td style="width: {{ $widths[$i] }}%;">{{ $row[$column] ?? '' }}</td>
                         @endif
                     @endforeach
                 </tr>
