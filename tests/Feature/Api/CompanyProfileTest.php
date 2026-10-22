@@ -61,6 +61,22 @@ class CompanyProfileTest extends TestCase
             ->assertStatus(422)->assertJsonValidationErrors('contact_email');
     }
 
+    public function test_every_member_of_the_institution_sees_its_logo_for_the_sidebar_and_tab_icon(): void
+    {
+        $this->getJson('/api/user')->assertOk()->assertJsonPath('organisation.logo_version', null);
+        $this->getJson('/api/organisation/logo')->assertNotFound();
+
+        $this->post('/api/admin/company-profile/images/logo', ['image' => UploadedFile::fake()->image('logo.png', 200, 200)], ['Accept' => 'application/json'])->assertOk();
+        $version = $this->getJson('/api/user')->assertOk()->json('organisation.logo_version');
+        $this->assertNotNull($version, 'the web app learns there is a logo, and when it changes');
+
+        // A cashier with no admin rights still gets the logo (not the stamp or signature).
+        $this->revokeAllRoles();
+        $this->grantPermissions(['sale.view'], 'Cashier');
+        $this->get('/api/organisation/logo')->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->get('/api/admin/company-profile/images/stamp')->assertForbidden();
+    }
+
     public function test_only_png_or_jpg_images_up_to_two_megabytes_are_accepted(): void
     {
         $bad = [
@@ -82,7 +98,7 @@ class CompanyProfileTest extends TestCase
 
         $first = Organisation::findOrFail($this->org->id)->stamp_path;
         Storage::disk('local')->assertExists($first);
-        $this->assertStringStartsWith('company-profile/' . $this->org->id . '/', $first);
+        $this->assertStringStartsWith('company-profile/'.$this->org->id.'/', $first);
 
         $this->get('/api/admin/company-profile/images/stamp')->assertOk()->assertHeader('Content-Type', 'image/png');
 
@@ -130,8 +146,8 @@ class CompanyProfileTest extends TestCase
             'amountInWords' => null,
             'cashier' => 'Test',
             'payments' => collect(),
-            'money' => fn($v) => number_format((float) $v, 2),
-            'qty' => fn($v) => (string) $v,
+            'money' => fn ($v) => number_format((float) $v, 2),
+            'qty' => fn ($v) => (string) $v,
         ], $this->branch->id);
         $this->assertStringContainsString($letterhead['logo'], $html);
         $this->assertStringContainsString($letterhead['stamp'], $html);

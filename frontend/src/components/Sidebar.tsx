@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
+import { useOrganisationLogo } from '../hooks/useOrganisationLogo'
 import { HOSPITAL_NAV, LABORATORY_NAV, moduleForPath, moduleInfo } from '../lib/modules'
 import { NAV_ITEMS, withPermittedItems, withPlatformItems, type NavItem } from '../lib/navigation'
 import { usePermissions } from '../lib/permissions'
@@ -41,6 +42,7 @@ function SidebarInner({
   const [showStatusPopup, setShowStatusPopup] = useState(false)
   const location = useLocation()
   const { data: user } = useCurrentUser()
+  const logo = useOrganisationLogo()
   const perms = usePermissions()
 
   // The sidebar shows the navigation of whichever module the URL is inside.
@@ -75,15 +77,28 @@ function SidebarInner({
       <header className="h-14 flex items-center justify-between px-4 shrink-0 border-b border-slate-100">
         {!collapsed && (
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
-              <Pill size={16} />
-            </div>
+            {logo ? (
+              <img src={logo} alt={user?.organisation?.name ?? 'Logo'} className="w-10 h-10 rounded-lg object-contain bg-white border border-slate-100 shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
+                <Pill size={16} />
+              </div>
+            )}
             <div className="min-w-0 leading-tight">
-              <div className="font-display font-extrabold tracking-tight text-[15px] text-slate-900 truncate">PharmaPoint</div>
-              {user?.organisation && (
-                <div className="text-[11px] font-semibold text-slate-500 truncate" title={user.organisation.legal_name ?? user.organisation.name}>
-                  {user.organisation.name}
-                </div>
+              {logo && user?.organisation ? (
+                <>
+                  <div className="font-display font-extrabold tracking-tight text-[14px] text-slate-900 truncate" title={user.organisation.legal_name ?? user.organisation.name}>{user.organisation.name}</div>
+                  <div className="text-[11px] font-semibold text-slate-400 truncate">PharmaPoint</div>
+                </>
+              ) : (
+                <>
+                  <div className="font-display font-extrabold tracking-tight text-[15px] text-slate-900 truncate">PharmaPoint</div>
+                  {user?.organisation && (
+                    <div className="text-[11px] font-semibold text-slate-500 truncate" title={user.organisation.legal_name ?? user.organisation.name}>
+                      {user.organisation.name}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

@@ -147,6 +147,22 @@ class CompanyProfileController extends ApiController
         return response()->json($this->present($organisation->fresh()));
     }
 
+    /**
+     * GET /api/organisation/logo — the institution's logo for anyone signed in
+     * to it: the web app shows it in the sidebar and as the browser tab icon.
+     * Only the logo; the stamp and signature stay with administrators.
+     */
+    public function logo(Request $request): StreamedResponse|JsonResponse
+    {
+        $path = $this->organisation($request)->logo_path;
+
+        if (! $path || ! Storage::disk('local')->exists($path)) {
+            return $this->error('NOT_FOUND', 'No logo has been uploaded.', 404);
+        }
+
+        return Storage::disk('local')->response($path, null, ['Cache-Control' => 'private, max-age=86400']);
+    }
+
     /** GET /api/admin/company-profile/images/{kind} — the stored image, for the preview. */
     public function image(Request $request, string $kind): StreamedResponse|JsonResponse
     {

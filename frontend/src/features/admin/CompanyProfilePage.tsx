@@ -271,6 +271,7 @@ function ImageSlot({ kind, label, profile }: { kind: CompanyProfileImageKind; la
     onSuccess: (data) => {
       toast.success(`${label} uploaded`)
       queryClient.setQueryData(QUERY_KEY, data)
+      if (kind === 'logo') queryClient.invalidateQueries({ queryKey: ['auth', 'user'] })
     },
     onError: (e) => toastApiError(e, `Could not upload the ${label.toLowerCase()}`),
   })
@@ -281,6 +282,7 @@ function ImageSlot({ kind, label, profile }: { kind: CompanyProfileImageKind; la
     onSuccess: (data) => {
       toast.success(`${label} removed`)
       queryClient.setQueryData(QUERY_KEY, data)
+      if (kind === 'logo') queryClient.invalidateQueries({ queryKey: ['auth', 'user'] })
     },
     onError: (e) => toastApiError(e, `Could not remove the ${label.toLowerCase()}`),
   })

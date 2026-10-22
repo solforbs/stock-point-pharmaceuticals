@@ -62,6 +62,7 @@ use App\Http\Controllers\Api\StockTransferController;
 use App\Http\Controllers\Api\SupplyRequestController;
 use App\Http\Controllers\Api\TrainingController;
 use App\Models\Branch;
+use App\Models\Organisation;
 use App\Services\Modules\ModuleCatalogue;
 use App\Services\Sales\SaleModes;
 use Illuminate\Http\Request;
@@ -84,7 +85,8 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->get('/us
         ]);
     $active = $branches->firstWhere('id', $activeBranchId);
 
-    return $user->toArray() + [
+    // array_merge, not +: a loaded relation in toArray() (organisation) must not hide the fields below.
+    return array_merge($user->toArray(), [
         // Effective permissions (via roles, in the current branch context) —
         // not $user->permissions, which is direct grants only and is
         // normally empty since every permission here comes through a role.
@@ -92,7 +94,11 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->get('/us
         // Which platform modules (HOSPITAL / LABORATORY / PHARMACY) this user
         // may enter — drives the module splash / direct-redirect after login.
         'modules' => ModuleCatalogue::accessibleTo($user),
-        'organisation' => $user->organisation?->only(['id', 'name', 'legal_name']),
+        // logo_version changes on every upload, so the web app refetches the
+        // logo (sidebar, browser tab icon) only when it actually changed.
+        'organisation' => $user->organisation ? $user->organisation->only(['id', 'name', 'legal_name']) + [
+            'logo_version' => ($logo = Organisation::whereKey($user->organisation_id)->value('logo_path')) ? substr(md5((string) $logo), 0, 12) : null,
+        ] : null,
         // Drives the trial / lapsed banner and read-only mode in the web app.
         'subscription' => $user->organisation ? (function ($organisation) {
             $current = $organisation->currentSubscription();
@@ -110,7 +116,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->get('/us
         'branches' => $branches->values(),
         'sale_modes' => $active['sale_modes'] ?? [],
         'default_sale_mode' => $active['default_sale_mode'] ?? null,
-    ];
+    ]);
 });
 
 // Part 21 — the API catalogue. Every route is authenticated, branch-scoped
@@ -511,6 +517,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/admin/company-profile', [CompanyProfileController::class, 'show']);
     Route::patch('/admin/company-profile', [CompanyProfileController::class, 'update']);
     Route::get('/admin/company-profile/pdf', [CompanyProfileController::class, 'pdf']);
+    Route::get('/organisation/logo', [CompanyProfileController::class, 'logo']);
     Route::get('/admin/company-profile/images/{kind}', [CompanyProfileController::class, 'image'])->whereIn('kind', ['logo', 'stamp', 'signature']);
     Route::post('/admin/company-profile/images/{kind}', [CompanyProfileController::class, 'uploadImage'])->whereIn('kind', ['logo', 'stamp', 'signature']);
     Route::delete('/admin/company-profile/images/{kind}', [CompanyProfileController::class, 'deleteImage'])->whereIn('kind', ['logo', 'stamp', 'signature']);

@@ -2,6 +2,7 @@ import { Building2, Calendar, ChevronLeft, Compass, HelpCircle, Menu, Search, Sh
 import { useEffect, useState } from 'react'
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
+import { useOrganisationFavicon } from '../hooks/useOrganisationLogo'
 import { useBranchStore } from '../lib/branch'
 import { moduleForPath, postLoginTarget } from '../lib/modules'
 import { formatDate, todayIso } from '../lib/format'
@@ -22,6 +23,7 @@ export default function AppLayout() {
   const location = useLocation()
   const isPos = location.pathname.startsWith('/sell/pos')
   const { data: user } = useCurrentUser()
+  useOrganisationFavicon()
   const activeBranchId = useBranchStore((s) => s.activeBranchId)
   useOutboxReplayer(user?.id)
   const setActiveBranch = useBranchStore((s) => s.setActiveBranch)

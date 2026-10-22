@@ -41,7 +41,8 @@ export type CurrentUser = {
   /** The platform modules this user may enter; drives the module splash. */
   modules?: ModuleKey[]
   /** The institution this account belongs to; every screen shows only its data. */
-  organisation?: { id: string; name: string; legal_name: string | null } | null
+  /** logo_version changes whenever a new logo is uploaded; null means there is none. */
+  organisation?: { id: string; name: string; legal_name: string | null; logo_version?: string | null } | null
   /** Runs the platform itself: backups, deployment, system health. */
   is_platform_admin?: boolean
   /** Drives the trial / lapsed banner; null for a platform-only account. */
