@@ -221,10 +221,10 @@ class FinanceController extends ApiController
 
     /**
      * DELETE /api/finance/journals/{id} — removes a journal, its lines and any
-     * reversal posted against it. Refused in a closed period, whose figures
-     * have been reported. The document it came from (a sale, a receipt)
-     * stays; links from petty cash or supply requests are cleared. The whole
-     * journal is kept in the audit log so it can be re-entered.
+     * reversal posted against it, in any period (an open or a closed one).
+     * The document it came from (a sale, a receipt) stays; links from petty
+     * cash or supply requests are cleared. The whole journal, and its period,
+     * are kept in the audit log so it can be re-entered.
      */
     public function destroyJournal(Request $request, string $journal): JsonResponse
     {
@@ -234,20 +234,21 @@ class FinanceController extends ApiController
 
         $entry = JournalEntry::where('organisation_id', $this->organisationId($request))->with('lines')->findOrFail($journal);
 
+        // Closed periods are no exception; the audit row records that the period was closed.
         $period = $entry->period_id ? FinancialPeriod::find($entry->period_id) : null;
-        if ($period && $period->status !== 'OPEN') {
-            return $this->error('PERIOD_CLOSED', "Journal {$entry->doc_number} is in a closed period ({$period->fiscal_year}/{$period->period_no}); its figures have been reported. Post a correcting journal instead.", 422);
-        }
 
         $reversals = JournalEntry::where('reverses_journal_id', $entry->id)->with('lines')->get();
         $snapshot = fn (JournalEntry $j) => $j->attributesToArray() + ['lines' => $j->lines->map(fn (JournalEntryLine $l) => $l->attributesToArray())->all()];
 
-        DB::transaction(function () use ($entry, $reversals, $snapshot, $data, $request) {
+        DB::transaction(function () use ($entry, $reversals, $snapshot, $data, $request, $period) {
             AuditLog::record('JOURNAL_DELETED', 'journal_entry', $entry->id, [
                 'user_id' => $request->user()->id,
                 'reference' => $entry->doc_number,
                 'reason' => $data['reason'],
-                'before_json' => $snapshot($entry) + ['reversals_deleted' => $reversals->map($snapshot)->all()],
+                'before_json' => $snapshot($entry) + [
+                    'reversals_deleted' => $reversals->map($snapshot)->all(),
+                    'period' => $period ? ['year' => $period->fiscal_year, 'no' => $period->period_no, 'status' => $period->status] : null,
+                ],
             ]);
 
             foreach ($reversals as $reversal) {

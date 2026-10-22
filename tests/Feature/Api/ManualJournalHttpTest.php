@@ -60,13 +60,15 @@ class ManualJournalHttpTest extends TestCase
         $this->assertSame('Keyed twice', $audit->before_json['narration']);
         $this->assertCount(2, $audit->before_json['lines']);
 
-        // A closed period's journals stay.
+        // A journal in a closed period can be deleted too; the audit row notes the period.
         $closed = $this->postJson('/api/finance/journals', [
             'entry_date' => now()->toDateString(), 'narration' => 'Reported',
             'lines' => [['account_id' => $cash->id, 'debit' => '10'], ['account_id' => $sales->id, 'credit' => '10']],
         ])->assertCreated()->json();
         FinancialPeriod::whereKey(JournalEntry::findOrFail($closed['id'])->period_id)->update(['status' => 'CLOSED']);
-        $this->deleteJson("/api/finance/journals/{$closed['id']}", ['reason' => 'Try'])->assertStatus(422)->assertJsonPath('error.code', 'PERIOD_CLOSED');
+        $this->deleteJson("/api/finance/journals/{$closed['id']}", ['reason' => 'Posted in error'])->assertOk();
+        $this->assertDatabaseMissing('journal_entries', ['id' => $closed['id']]);
+        $this->assertSame('CLOSED', AuditLog::where('action', 'JOURNAL_DELETED')->where('entity_id', $closed['id'])->firstOrFail()->before_json['period']['status']);
     }
 
     public function test_posting_balanced_manual_journal_succeeds(): void
