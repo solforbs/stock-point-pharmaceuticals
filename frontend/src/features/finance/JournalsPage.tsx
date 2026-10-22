@@ -9,7 +9,7 @@ import { Pagination } from '../../components/ui/Pagination'
 import { InlineError } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Field, Input, Select } from '../../components/ui/primitives'
-import { apiGet, apiPost, getApiError } from '../../lib/api'
+import { api, apiGet, apiPost, ensureCsrfCookie, getApiError } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { useChartOfAccounts } from '../../lib/hooks'
 import { formatMoney } from '../../lib/money'
@@ -21,6 +21,8 @@ export default function JournalsPage() {
   const queryClient = useQueryClient()
   const canPost = usePermission('journal.post')
   const canReverse = usePermission('journal.reverse')
+  const canDelete = usePermission('record.delete') && canReverse
+  const [deletingJournal, setDeletingJournal] = useState<JournalEntry | null>(null)
 
   const [filters, setFilters] = useState({ q: '', source_doc_type: '', from: '', to: '' })
   const [page, setPage] = useState(1)
@@ -47,6 +49,21 @@ export default function JournalsPage() {
       const apiErr = getApiError(err)
       toast.error(apiErr.message || 'Failed to reverse journal')
     },
+  })
+
+  const deleteMutation = useMutation({
+    meta: { silent: true },
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      await ensureCsrfCookie()
+      return (await api.delete<{ doc_number: string; reversals_deleted: string[] }>(`/api/finance/journals/${id}`, { data: { reason } })).data
+    },
+    onSuccess: (r) => {
+      toast.success(`Journal ${r.doc_number} deleted`, r.reversals_deleted.length ? `Its reversal ${r.reversals_deleted.join(', ')} went with it.` : undefined)
+      queryClient.invalidateQueries({ queryKey: ['finance'] })
+      queryClient.invalidateQueries({ queryKey: ['reports'] })
+      setDeletingJournal(null)
+    },
+    onError: (err) => toast.error(getApiError(err).message || 'Failed to delete journal'),
   })
 
   const columns: Column<JournalEntry>[] = [
@@ -135,15 +152,22 @@ export default function JournalsPage() {
                   Document Reference: <span className="font-semibold text-slate-900 font-mono">{j.doc_number}</span>
                   {j.reverses_journal_id && <span className="ml-2 text-amber-600 font-medium">(Reverses another journal)</span>}
                 </div>
-                {canReverse && j.source_doc_type !== 'journal_reversal' && !j.reverses_journal_id && (
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => setReversingJournal(j)}
-                  >
-                    <RotateCcw size={13} className="mr-1 inline" /> Reverse Journal
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {canReverse && j.source_doc_type !== 'journal_reversal' && !j.reverses_journal_id && (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => setReversingJournal(j)}
+                    >
+                      <RotateCcw size={13} className="mr-1 inline" /> Reverse Journal
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <Button size="sm" variant="danger" onClick={() => setDeletingJournal(j)}>
+                      <Trash2 size={13} className="mr-1 inline" /> Delete
+                    </Button>
+                  )}
+                </div>
               </div>
               <table className="ui-table">
                 <thead>
@@ -184,6 +208,27 @@ export default function JournalsPage() {
 
       {isCreating && (
         <NewJournalModal open={isCreating} onClose={() => setIsCreating(false)} />
+      )}
+
+      {deletingJournal && (
+        <ConfirmDialog
+          open={!!deletingJournal}
+          title={`Delete journal ${deletingJournal.doc_number}?`}
+          message={
+            <div className="space-y-2">
+              <p>The journal and all its lines are removed from the books, together with any reversal posted against it. The full journal is kept in the audit log.</p>
+              {deletingJournal.source_doc_type && deletingJournal.source_doc_type !== 'journal_reversal' && (
+                <p className="text-amber-700 font-medium">This journal was posted by a {deletingJournal.source_doc_type.replace(/_/g, ' ')}. That document stays as it is — only its accounting entry is removed, so the ledger will no longer show it.</p>
+              )}
+            </div>
+          }
+          confirmLabel="Delete journal"
+          danger
+          requireReason="Reason for deleting"
+          isPending={deleteMutation.isPending}
+          onConfirm={(reason) => deleteMutation.mutate({ id: deletingJournal.id, reason })}
+          onCancel={() => setDeletingJournal(null)}
+        />
       )}
 
       {reversingJournal && (

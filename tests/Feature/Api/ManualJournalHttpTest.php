@@ -2,7 +2,11 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\AuditLog;
 use App\Models\ChartOfAccount;
+use App\Models\FinancialPeriod;
+use App\Models\JournalEntry;
+use App\Models\JournalEntryLine;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -30,6 +34,39 @@ class ManualJournalHttpTest extends TestCase
                 ['account_id' => ChartOfAccount::byRole($this->org->id, 'SALES_RETAIL')->id, 'credit' => 100],
             ],
         ])->assertStatus(403);
+    }
+
+    public function test_a_journal_is_deleted_with_its_reversal_and_kept_in_the_audit_log(): void
+    {
+        $this->grantPermissions(['journal.post', 'journal.reverse', 'record.delete']);
+        $cash = ChartOfAccount::byRole($this->org->id, 'CASH');
+        $sales = ChartOfAccount::byRole($this->org->id, 'SALES_RETAIL');
+
+        $journal = $this->postJson('/api/finance/journals', [
+            'entry_date' => now()->toDateString(),
+            'narration' => 'Keyed twice',
+            'lines' => [['account_id' => $cash->id, 'debit' => '250'], ['account_id' => $sales->id, 'credit' => '250']],
+        ])->assertCreated()->json();
+        $reversal = $this->postJson("/api/finance/journals/{$journal['id']}/reverse", ['reason' => 'Wrong'])->assertSuccessful()->json();
+
+        $this->deleteJson("/api/finance/journals/{$journal['id']}", [])->assertUnprocessable();
+        $this->deleteJson("/api/finance/journals/{$journal['id']}", ['reason' => 'Duplicate entry'])->assertOk()
+            ->assertJsonPath('reversals_deleted', [$reversal['doc_number']]);
+
+        $this->assertDatabaseMissing('journal_entries', ['id' => $journal['id']]);
+        $this->assertDatabaseMissing('journal_entries', ['id' => $reversal['id']]);
+        $this->assertSame(0, JournalEntryLine::whereIn('journal_id', [$journal['id'], $reversal['id']])->count());
+        $audit = AuditLog::where('action', 'JOURNAL_DELETED')->where('entity_id', $journal['id'])->firstOrFail();
+        $this->assertSame('Keyed twice', $audit->before_json['narration']);
+        $this->assertCount(2, $audit->before_json['lines']);
+
+        // A closed period's journals stay.
+        $closed = $this->postJson('/api/finance/journals', [
+            'entry_date' => now()->toDateString(), 'narration' => 'Reported',
+            'lines' => [['account_id' => $cash->id, 'debit' => '10'], ['account_id' => $sales->id, 'credit' => '10']],
+        ])->assertCreated()->json();
+        FinancialPeriod::whereKey(JournalEntry::findOrFail($closed['id'])->period_id)->update(['status' => 'CLOSED']);
+        $this->deleteJson("/api/finance/journals/{$closed['id']}", ['reason' => 'Try'])->assertStatus(422)->assertJsonPath('error.code', 'PERIOD_CLOSED');
     }
 
     public function test_posting_balanced_manual_journal_succeeds(): void

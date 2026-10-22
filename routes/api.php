@@ -308,6 +308,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/finance/journals', [FinanceController::class, 'storeJournal']);
     Route::get('/finance/journals/{journal}', [FinanceController::class, 'showJournal']);
     Route::post('/finance/journals/{journal}/reverse', [FinanceController::class, 'reverseJournal']);
+    Route::delete('/finance/journals/{journal}', [FinanceController::class, 'destroyJournal'])->whereUuid('journal');
     Route::get('/finance/chart-of-accounts', [FinanceController::class, 'chartOfAccounts']);
     Route::get('/finance/periods', [FinanceController::class, 'periods']);
     Route::post('/finance/periods/{period}/close', [FinanceController::class, 'closePeriod']);
