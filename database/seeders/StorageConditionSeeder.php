@@ -17,8 +17,8 @@ class StorageConditionSeeder extends Seeder
 {
     /** @var list<array{code: string, name: string, min: ?string, max: ?string, excursion: ?int, cold: bool}> */
     public const CONDITIONS = [
-        ['code' => 'AMBIENT', 'name' => 'Ambient (below 25 °C)', 'min' => null, 'max' => '25.00', 'excursion' => null, 'cold' => false],
-        ['code' => 'ROOM', 'name' => 'Controlled room temperature (15–25 °C)', 'min' => '15.00', 'max' => '25.00', 'excursion' => null, 'cold' => false],
+        ['code' => 'AMBIENT', 'name' => 'Ambient (15 °C – 30 °C)', 'min' => '15.00', 'max' => '30.00', 'excursion' => null, 'cold' => false],
+        ['code' => 'ROOM', 'name' => 'Controlled Room Temperature (20 °C – 25 °C)', 'min' => '20.00', 'max' => '25.00', 'excursion' => null, 'cold' => false],
         ['code' => 'COOL', 'name' => 'Cool (8–15 °C)', 'min' => '8.00', 'max' => '15.00', 'excursion' => 120, 'cold' => false],
         ['code' => 'COLD', 'name' => 'Cold chain (2–8 °C)', 'min' => '2.00', 'max' => '8.00', 'excursion' => 30, 'cold' => true],
         ['code' => 'FROZEN', 'name' => 'Frozen (−25 to −15 °C)', 'min' => '-25.00', 'max' => '-15.00', 'excursion' => 15, 'cold' => true],
