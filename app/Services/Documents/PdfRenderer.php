@@ -69,13 +69,54 @@ class PdfRenderer
             'phone' => $this->filled($organisation?->contact_phone),
             'email' => $this->filled($organisation?->contact_email),
             'website' => $this->filled($organisation?->website),
-            'logo' => $this->imageDataUri($organisation?->logo_path),
+            'logo' => $this->letterheadLogo($organisation?->logo_path),
             'stamp' => $this->imageDataUri($organisation?->stamp_path),
             'signature' => $this->imageDataUri($organisation?->signature_path),
             'signatory_name' => $organisation?->signatory_name,
             'signatory_title' => $organisation?->signatory_title,
             'printed_at' => now()->format('j M Y, H:i'),
         ];
+    }
+
+    /**
+     * The logo at letterhead size: at most 600 px wide, flattened onto white
+     * and stored as JPEG. dompdf keeps a transparent PNG uncompressed, so a
+     * full-size upload made every PDF over a megabyte; this copy is a few
+     * dozen KB. It is made once and remade only when the logo changes.
+     */
+    public function letterheadLogo(?string $path): ?string
+    {
+        if (! $path || ! Storage::disk('local')->exists($path)) {
+            return null;
+        }
+        if (! function_exists('imagecreatefromstring')) {
+            return $this->imageDataUri($path);
+        }
+
+        $small = $path.'.letterhead.jpg';
+        $disk = Storage::disk('local');
+        if (! $disk->exists($small) || $disk->lastModified($small) < $disk->lastModified($path)) {
+            $source = @imagecreatefromstring((string) $disk->get($path));
+            if ($source === false) {
+                return $this->imageDataUri($path);
+            }
+            $width = imagesx($source);
+            $height = imagesy($source);
+            $scale = min(1, 600 / max($width, 1));
+            $w = max(1, (int) round($width * $scale));
+            $h = max(1, (int) round($height * $scale));
+
+            $canvas = imagecreatetruecolor($w, $h);
+            imagefill($canvas, 0, 0, imagecolorallocate($canvas, 255, 255, 255));
+            imagecopyresampled($canvas, $source, 0, 0, 0, 0, $w, $h, $width, $height);
+            ob_start();
+            imagejpeg($canvas, null, 88);
+            $disk->put($small, (string) ob_get_clean());
+            imagedestroy($canvas);
+            imagedestroy($source);
+        }
+
+        return 'data:image/jpeg;base64,'.base64_encode((string) $disk->get($small));
     }
 
     /**

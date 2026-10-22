@@ -132,7 +132,7 @@ class CompanyProfileTest extends TestCase
         ])->assertOk();
 
         $letterhead = $renderer->letterhead($this->branch->id);
-        $this->assertStringStartsWith('data:image/png;base64,', (string) $letterhead['logo']);
+        $this->assertStringStartsWith('data:image/jpeg;base64,', (string) $letterhead['logo'], 'the logo is shrunk to a small JPEG for PDFs');
         $this->assertStringStartsWith('data:image/png;base64,', (string) $letterhead['stamp']);
         $this->assertStringStartsWith('data:image/png;base64,', (string) $letterhead['signature']);
         $this->assertStringContainsString('Tel +254 700 000 000', (string) $letterhead['contact_line']);
