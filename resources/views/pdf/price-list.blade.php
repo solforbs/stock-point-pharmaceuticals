@@ -3,18 +3,19 @@
 @section('body')
     {{-- dompdf lays one long table out far more slowly than many short ones, so the
          list is printed in blocks of 50 rows with fixed column widths that line up;
-         only the first block carries the header. --}}
+         only the first block carries the header. Every row is numbered (No.). --}}
     @php
         $share = ['code' => 14, 'name' => 52, 'brand_name' => 22, 'price' => 14];
         $total = array_sum(array_intersect_key($share, array_flip($columns)));
-        $widths = array_map(fn ($c) => round($share[$c] * 100 / max($total, 1), 2), $columns);
+        $widths = array_map(fn ($c) => round($share[$c] * 93 / max($total, 1), 2), $columns);
     @endphp
     @foreach (array_chunk($rows, 50) as $block)
         <table class="items" style="table-layout: fixed;{{ $loop->first ? '' : ' margin-top: 0;' }}">
-            <colgroup>@foreach ($widths as $width)<col style="width: {{ $width }}%">@endforeach</colgroup>
+            <colgroup><col style="width: 7%">@foreach ($widths as $width)<col style="width: {{ $width }}%">@endforeach</colgroup>
             @if ($loop->first)
                 <thead>
                 <tr>
+                    <th class="num">No.</th>
                     @foreach ($columns as $column)
                         <th @class(['num' => $column === 'price'])>{{ $labels[$column] }}</th>
                     @endforeach
@@ -24,6 +25,7 @@
             <tbody>
             @foreach ($block as $row)
                 <tr>
+                    <td class="num">{{ ($loop->parent->index * 50) + $loop->iteration }}</td>
                     @foreach ($columns as $column)
                         @if ($column === 'price')
                             <td class="num">{{ $row['price'] === null || $row['price'] === '' ? '—' : number_format((float) $row['price'], 2) }}</td>

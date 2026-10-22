@@ -482,9 +482,10 @@ function PriceListDrawer({ onClose }: { onClose: () => void }) {
       const blob = buildXlsx({
         sheetName: 'Price List',
         title: data.data.title,
-        header: ordered.map((c) => labels[c]),
-        rows: [...rows().map((r) => ordered.map((c) => (c === 'price' ? r.price : r[c]))), ...paymentLines(data.data.payment).map((line) => [line])],
-        widths: ordered.map((c) => (c === 'name' ? 60 : c === 'brand_name' ? 24 : c === 'price' ? 14 : 14)),
+        // Every row is numbered, as on the PDF.
+        header: ['No.', ...ordered.map((c) => labels[c])],
+        rows: [...rows().map((r, i) => [String(i + 1), ...ordered.map((c) => (c === 'price' ? r.price : r[c]))]), ...paymentLines(data.data.payment).map((line) => [line])],
+        widths: [6, ...ordered.map((c) => (c === 'name' ? 60 : c === 'brand_name' ? 24 : c === 'price' ? 14 : 14))],
       })
       downloadBlob(blob, fileName('xlsx'), blob.type)
       toast.success('Price list downloaded', `${products.length} products, Excel`)
