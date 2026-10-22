@@ -45,7 +45,12 @@ type GrnLine = {
   coa_received: boolean
   /** New selling price per price list id, in the received unit; blank means leave as is. */
   selling_prices: Record<string, string>
+  /** A further batch of the line above it: same product and order line, its own batch number and expiry. */
+  is_extra_batch?: boolean
 }
+
+/** One ordered line can arrive in several batches; these rows share its order line (or, without an order, its product). */
+const sameOrderedLine = (a: GrnLine, b: GrnLine) => (a.purchase_order_line_id ? a.purchase_order_line_id === b.purchase_order_line_id : a.product_id === b.product_id)
 
 function blankLine(): Omit<GrnLine, 'key' | 'product_id' | 'product_label' | 'uom_id' | 'uom_options'> {
   return { purchase_order_line_id: null, qty_ordered: '', qty_delivered: '', qty_accepted: '', qty_rejected: '', rejection_reason: '', batch_number: '', expiry_date: '', manufacture_date: '', unit_cost: '', trade_price: '', discount_pct: '', vat: '', temperature_on_arrival: '', coa_received: false, selling_prices: {} }
@@ -207,6 +212,35 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
     const uoms = (p.uoms ?? []).filter((u) => u.is_purchase || u.is_base)
     setLines([...lines, { key: `${p.id}-${Date.now()}`, ...blankLine(), product_id: p.id, product_label: `${p.name} · ${p.code}`, uom_id: uoms[0]?.uom_id ?? p.base_uom_id, uom_options: uoms.map((u) => ({ id: u.uom_id, code: u.uom?.code ?? '' })), vat: vatOf(p.tax_code_id) }])
   }
+  /**
+   * Adds a row for another batch of the same delivered line, right after its
+   * last batch: product, unit, prices and VAT carry over; batch, expiry and
+   * dates are new, and the quantity defaults to what is still undelivered.
+   */
+  function addBatch(line: GrnLine) {
+    const group = lines.filter((x) => sameOrderedLine(x, line))
+    const delivered = group.reduce((sum, x) => sum + (Number(x.qty_delivered) || 0), 0)
+    const remaining = Math.max(0, (Number(line.qty_ordered) || 0) - delivered)
+    const qty = remaining > 0 ? String(remaining) : ''
+    const extra: GrnLine = {
+      ...line,
+      key: `${line.product_id}-${Date.now()}`,
+      qty_delivered: qty,
+      qty_accepted: qty,
+      qty_rejected: '',
+      rejection_reason: '',
+      batch_number: '',
+      expiry_date: '',
+      manufacture_date: '',
+      temperature_on_arrival: '',
+      coa_received: false,
+      // Selling prices are set once per product, on its first row.
+      selling_prices: {},
+      is_extra_batch: true,
+    }
+    const last = lines.lastIndexOf(group[group.length - 1])
+    setLines([...lines.slice(0, last + 1), extra, ...lines.slice(last + 1)])
+  }
   function update(key: string, patch: Partial<GrnLine>) {
     setLines(lines.map((l) => (l.key === key ? { ...l, ...patch } : l)))
   }
@@ -295,9 +329,11 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
                   {lines.map((l) => (
                     <Fragment key={l.key}>
                     <tr>
-                      <td className="text-xs font-semibold text-slate-900">
-                        {l.product_label}
-                        {canSetPrices && (
+                      <td className={`text-xs font-semibold text-slate-900 ${l.is_extra_batch ? 'pl-6 border-l-2 border-blue-200' : ''}`}>
+                        {l.is_extra_batch ? <span className="text-slate-500">↳ another batch of {l.product_label}</span> : l.product_label}
+                        <button type="button" onClick={() => addBatch(l)} className="block mt-1 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline">+ Add batch</button>
+                        <BatchTotals line={l} lines={lines} />
+                        {canSetPrices && !l.is_extra_batch && (
                           <button type="button" onClick={() => setPricesOpen(pricesOpen === l.key ? null : l.key)} className="block mt-1 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline">
                             {pricesOpen === l.key ? 'Hide selling prices' : `Selling prices${sellingPriceEntries(l).length ? ` (${sellingPriceEntries(l).length} new)` : ''}`}
                           </button>
@@ -310,7 +346,7 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
                           <span className="tabular text-xs font-bold text-slate-600">{l.uom_options[0]?.code ?? l.uom_id.slice(0, 8)}</span>
                         )}
                       </td>
-                      <td className="text-right"><QtyCell value={l.qty_ordered || null} /></td>
+                      <td className="text-right">{l.is_extra_batch ? <span className="text-xs text-slate-400">same line</span> : <QtyCell value={l.qty_ordered || null} />}</td>
                       <td><input value={l.qty_delivered} onChange={(e) => update(l.key, { qty_delivered: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-16 tabular text-right font-bold" /></td>
                       <td><input value={l.qty_accepted} onChange={(e) => update(l.key, { qty_accepted: e.target.value.replace(/[^\d.]/g, '') })} className="ui-input h-7 w-16 tabular text-right font-bold text-emerald-600" /></td>
                       <td>
@@ -370,6 +406,20 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
 }
 
 /** The prices keyed on a line, ready to post. */
+/** Under the last batch row of a line split into batches: how the batches add up against the order. */
+function BatchTotals({ line, lines }: { line: GrnLine; lines: GrnLine[] }) {
+  const group = lines.filter((x) => sameOrderedLine(x, line))
+  if (group.length < 2 || group[group.length - 1].key !== line.key) return null
+  const delivered = group.reduce((sum, x) => sum + (Number(x.qty_delivered) || 0), 0)
+  const ordered = Number(group[0].qty_ordered) || 0
+  const tone = ordered === 0 || delivered === ordered ? 'text-emerald-700' : delivered > ordered ? 'text-rose-600' : 'text-amber-700'
+  return (
+    <div className={`mt-1 text-xs font-medium ${tone}`}>
+      {group.length} batches · {delivered} delivered{ordered ? ` of ${ordered} ordered` : ''}
+    </div>
+  )
+}
+
 function sellingPriceEntries(line: GrnLine): { price_list_id: string; unit_price: string }[] {
   return Object.entries(line.selling_prices)
     .filter(([, price]) => price !== '')

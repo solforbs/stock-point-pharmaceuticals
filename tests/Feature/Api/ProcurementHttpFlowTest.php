@@ -58,6 +58,37 @@ class ProcurementHttpFlowTest extends TestCase
         $this->assertSame($this->uoms['STR']->id, $updated['lines'][0]['uom_id']);
     }
 
+    public function test_one_ordered_line_can_be_received_in_several_batches(): void
+    {
+        $po = $this->postJson('/api/purchase-orders', $this->poPayload())->assertCreated()->json();
+        $this->postJson("/api/purchase-orders/{$po['id']}/approve")->assertOk();
+        $this->postJson("/api/purchase-orders/{$po['id']}/send")->assertOk();
+
+        // Ten boxes ordered, delivered as 6 + 4 from two batches with their own expiries.
+        $batchLine = fn (string $batch, string $qty, string $expiry) => [
+            'purchase_order_line_id' => $po['lines'][0]['id'],
+            'product_id' => $this->amox->id,
+            'uom_id' => $this->uoms['BOX']->id,
+            'qty_delivered' => $qty, 'qty_accepted' => $qty,
+            'batch_number' => $batch, 'expiry_date' => $expiry,
+            'unit_cost' => '420',
+        ];
+        $grn = $this->postJson('/api/goods-receipts', [
+            'purchase_order_id' => $po['id'],
+            'supplier_id' => $this->supplier->id,
+            'store_id' => $this->store->id,
+            'lines' => [
+                $batchLine('XT5K049', '6', now()->addYears(2)->toDateString()),
+                $batchLine('XT5G080', '4', now()->addYears(1)->toDateString()),
+            ],
+        ])->assertCreated()->assertJsonCount(2, 'lines')->json();
+
+        $this->assertSame(['XT5G080', 'XT5K049'], ProductBatch::where('product_id', $this->amox->id)->orderBy('batch_number')->pluck('batch_number')->all());
+        $this->assertSame('10.0000', (string) GoodsReceiptLine::where('goods_receipt_id', $grn['id'])->sum('qty_accepted'));
+        $this->assertSame('2000.0000', (string) StockLedger::where('product_id', $this->amox->id)->sum('qty_base'), 'both batches are in stock: 10 boxes');
+        $this->getJson("/api/purchase-orders/{$po['id']}")->assertOk()->assertJsonPath('status', 'RECEIVED');
+    }
+
     public function test_the_full_procure_to_pay_chain(): void
     {
         // 1. Purchase order: DRAFT → APPROVED → SENT.
