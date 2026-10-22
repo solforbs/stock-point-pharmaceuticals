@@ -4,7 +4,9 @@ namespace Tests\Feature\Api;
 
 use App\Models\AccountsPayable;
 use App\Models\GoodsReceiptLine;
+use App\Models\Product;
 use App\Models\ProductBatch;
+use App\Models\ProductUom;
 use App\Models\StockLedger;
 use App\Models\TaxCode;
 use App\Models\TaxRate;
@@ -56,6 +58,52 @@ class ProcurementHttpFlowTest extends TestCase
         ])->assertOk()->assertJsonPath('lines.0.uom_id', $this->uoms['STR']->id)->json();
 
         $this->assertSame($this->uoms['STR']->id, $updated['lines'][0]['uom_id']);
+    }
+
+    public function test_transport_on_the_order_is_folded_into_each_products_landed_price(): void
+    {
+        // 10 boxes at 420 and 5 boxes of paracetamol at 160: goods 5,000; transport 500 shared by value.
+        $para = Product::create([
+            'organisation_id' => $this->org->id, 'code' => 'PARA-T', 'name' => 'Paracetamol 500mg',
+            'base_uom_id' => $this->uoms['TAB']->id, 'is_active' => true,
+        ]);
+        ProductUom::create(['product_id' => $para->id, 'uom_id' => $this->uoms['TAB']->id, 'factor_to_base' => 1, 'is_base' => true, 'is_purchase' => true, 'is_sales' => true]);
+        ProductUom::create(['product_id' => $para->id, 'uom_id' => $this->uoms['BOX']->id, 'factor_to_base' => 100, 'is_purchase' => true]);
+
+        $payload = $this->poPayload();
+        $payload['transport_cost'] = '500';
+        $payload['lines'][] = ['product_id' => $para->id, 'uom_id' => $this->uoms['BOX']->id, 'qty_ordered' => '5', 'unit_price' => '160'];
+        $po = $this->postJson('/api/purchase-orders', $payload)->assertCreated()->json();
+
+        // 420 × 10 = 4,200 of 5,000 → 420 of the transport → 42 a box; 800 of 5,000 → 80 → 16 a box.
+        $shown = collect($this->getJson("/api/purchase-orders/{$po['id']}")->assertOk()->assertJsonPath('transport_cost', '500.0000')->json('lines'))->keyBy('product_id');
+        $this->assertSame('42.0000', $shown[$this->amox->id]['transport_per_unit']);
+        $this->assertSame('462.0000', $shown[$this->amox->id]['landed_unit_price']);
+        $this->assertSame('16.0000', $shown[$para->id]['transport_per_unit']);
+        $this->assertSame('176.0000', $shown[$para->id]['landed_unit_price']);
+
+        $this->postJson("/api/purchase-orders/{$po['id']}/approve")->assertOk();
+        $this->postJson("/api/purchase-orders/{$po['id']}/send")->assertOk();
+
+        $line = fn (array $poLine, string $qty, string $cost, string $batch) => [
+            'purchase_order_line_id' => $poLine['id'], 'product_id' => $poLine['product_id'], 'uom_id' => $this->uoms['BOX']->id,
+            'qty_delivered' => $qty, 'qty_accepted' => $qty, 'batch_number' => $batch,
+            'expiry_date' => now()->addYears(2)->toDateString(), 'unit_cost' => $cost,
+        ];
+        $lines = collect($po['lines'])->keyBy('product_id');
+        $this->postJson('/api/goods-receipts', [
+            'purchase_order_id' => $po['id'], 'supplier_id' => $this->supplier->id, 'store_id' => $this->store->id,
+            'lines' => [$line($lines[$this->amox->id], '10', '420', 'T-AMX'), $line($lines[$para->id], '5', '160', 'T-PCM')],
+        ])->assertCreated();
+
+        // Stock carries the landed cost per base unit: 462 / 200 tabs and 176 / 100 tabs.
+        $this->assertSame('2.3100', (string) ProductBatch::where('batch_number', 'T-AMX')->sole()->landed_unit_cost);
+        $this->assertSame('1.7600', (string) ProductBatch::where('batch_number', 'T-PCM')->sole()->landed_unit_cost);
+
+        // The supplier is owed the goods; the transport is owed separately.
+        $this->assertSame('5500.0000', $this->accountBalance('INVENTORY'));
+        $this->assertSame('-5000.0000', $this->accountBalance('GRN_ACCRUAL'));
+        $this->assertSame('-500.0000', $this->accountBalance('FREIGHT_ACCRUAL'));
     }
 
     public function test_one_ordered_line_can_be_received_in_several_batches(): void

@@ -138,6 +138,7 @@ class ProcurementController extends ApiController
         $data = $request->validate([
             'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
             'expected_date' => ['nullable', 'date'],
+            'transport_cost' => ['nullable', 'numeric', 'min:0', 'max:100000000'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
             'lines.*.uom_id' => ['required', 'uuid', function (string $attribute, mixed $value, \Closure $fail) {
@@ -176,6 +177,7 @@ class ProcurementController extends ApiController
                 'status' => 'DRAFT',
                 'created_by' => $request->user()->id,
                 'expected_date' => $data['expected_date'] ?? null,
+                'transport_cost' => (string) ($data['transport_cost'] ?? '0'),
             ]);
             foreach ($data['lines'] as $line) {
                 PurchaseOrderLine::create(['purchase_order_id' => $po->id] + collect($line)->only(['product_id', 'uom_id', 'qty_ordered', 'unit_price', 'trade_price', 'discount_pct', 'tax_code_id'])->all());
@@ -206,6 +208,7 @@ class ProcurementController extends ApiController
         $data = $request->validate([
             'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
             'expected_date' => ['nullable', 'date'],
+            'transport_cost' => ['nullable', 'numeric', 'min:0', 'max:100000000'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
             'lines.*.uom_id' => ['required', 'uuid', function (string $attribute, mixed $value, \Closure $fail) {
@@ -239,6 +242,7 @@ class ProcurementController extends ApiController
             $order->update([
                 'supplier_id' => $data['supplier_id'],
                 'expected_date' => $data['expected_date'] ?? null,
+                'transport_cost' => (string) ($data['transport_cost'] ?? '0'),
             ]);
             $order->lines()->delete();
             foreach ($data['lines'] as $line) {
@@ -449,9 +453,14 @@ class ProcurementController extends ApiController
                 'received_by' => $request->user()->id,
             ]);
 
+            // The order's transport, shared per unit across its lines, is part of
+            // what the received stock really cost.
+            $order = ! empty($data['purchase_order_id']) ? PurchaseOrder::with('lines')->find($data['purchase_order_id']) : null;
+            $transportShares = $order ? $order->transportShares() : [];
+
             foreach ($data['lines'] as $line) {
                 $poLine = ! empty($line['purchase_order_line_id']) ? PurchaseOrderLine::find($line['purchase_order_line_id']) : null;
-                GoodsReceiptLine::create([
+                $grnLine = GoodsReceiptLine::create([
                     'goods_receipt_id' => $receipt->id,
                     'purchase_order_line_id' => $poLine?->id,
                     'product_id' => $line['product_id'],
@@ -471,6 +480,14 @@ class ProcurementController extends ApiController
                     'temperature_on_arrival' => $line['temperature_on_arrival'] ?? null,
                     'coa_received' => (bool) ($line['coa_received'] ?? false),
                 ]);
+
+                $share = $poLine ? ($transportShares[(string) $poLine->id] ?? '0') : '0';
+                if (bccomp($share, '0', 4) > 0) {
+                    // The share is per ordered unit; received in another pack, it scales by the base-unit factors.
+                    $poFactor = (int) (ProductUom::where('product_id', $poLine->product_id)->where('uom_id', $poLine->uom_id)->value('factor_to_base') ?? 1);
+                    $perReceivedUnit = bcmul(bcdiv($share, (string) max($poFactor, 1), 8), (string) $grnLine->factorToBase(), 4);
+                    $grnLine->update(['landed_unit_cost' => bcadd((string) $grnLine->unit_cost, $perReceivedUnit, 4)]);
+                }
             }
 
             $posted = $receipts->post($receipt->fresh(['lines']));

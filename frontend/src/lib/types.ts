@@ -641,6 +641,9 @@ export type PurchaseOrderLine = {
   trade_price: Decimal | null
   discount_pct: Decimal | null
   tax_code_id: string | null
+  /** The line's share of the order's transport, per unit, and so its landed (final) unit price. */
+  transport_per_unit?: Decimal
+  landed_unit_price?: Decimal | null
   /** tax_code_id comes with it so a goods receipt can show the product's VAT treatment; uoms so a draft can be edited into another pack. */
   product?: (NamedRef & { tax_code_id?: string | null; uoms?: ProductUom[] }) | null
   uom?: Uom | null
@@ -652,6 +655,8 @@ export type PurchaseOrder = {
   supplier_id: string
   status: string
   expected_date: string | null
+  /** Delivery cost of the whole order, shared across its lines by value. */
+  transport_cost?: Decimal
   sent_at: string | null
   created_at?: string
   /** Set when the order was raised by awarding a request for quotation. */

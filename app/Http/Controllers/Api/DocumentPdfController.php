@@ -181,6 +181,7 @@ class DocumentPdfController extends ApiController
             'title' => 'Purchase order',
             'order' => $order,
             'total' => $total,
+            'transport' => (string) $order->transport_cost,
             'money' => fn ($v) => number_format((float) $v, 2),
             'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
         ], $order->doc_number, $order->branch_id);

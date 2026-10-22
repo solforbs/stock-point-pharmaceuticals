@@ -242,7 +242,7 @@ class ProductCatalogueController extends ApiController
         AuditLog::record('PRICE_LIST_EXPORTED', 'organisation', $organisationId, ['after_json' => ['format' => 'PDF', 'rows' => count($data['rows']), 'columns' => $columns]]);
 
         return $pdf->render('pdf.price-list', [
-            'title' => $title,
+            'title' => 'Price List',
             'date' => now()->format('j M Y'),
             'columns' => $columns,
             'labels' => self::PRICE_LIST_COLUMNS,

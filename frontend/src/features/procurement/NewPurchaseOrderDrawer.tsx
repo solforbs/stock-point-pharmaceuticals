@@ -25,6 +25,9 @@ export interface NewPurchaseOrderDrawerProps {
   setSupplierId: (id: string) => void
   expectedDate: string
   setExpectedDate: (date: string) => void
+  /** Transport for the whole order (KES); shared across the lines by value. */
+  transportCost?: string
+  setTransportCost?: (value: string) => void
   lines: PoLine[]
   setLines: (lines: PoLine[]) => void
   onSubmit: () => void
@@ -44,6 +47,8 @@ export function NewPurchaseOrderDrawer({
   setSupplierId,
   expectedDate,
   setExpectedDate,
+  transportCost = '',
+  setTransportCost,
   lines,
   setLines,
   onSubmit,
@@ -56,6 +61,9 @@ export function NewPurchaseOrderDrawer({
   const validLines =
     lines.length > 0 &&
     lines.every((l) => l.uom_id && Number(l.qty_ordered) > 0 && /^\d+(\.\d+)?$/.test(l.unit_price) && Number(l.discount_pct || 0) <= 100)
+
+  const shares = transportPerUnit(lines, Number(transportCost) || 0)
+  const goodsTotal = lines.reduce((sum, l) => sum + (Number(l.qty_ordered) || 0) * (Number(l.unit_price) || 0), 0)
 
   return (
     <Drawer
@@ -87,6 +95,11 @@ export function NewPurchaseOrderDrawer({
             <Field label="Expected Delivery Date">
               <Input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} />
             </Field>
+            {setTransportCost && (
+              <Field label="Transport cost (KES)" hint="Shared across the lines by value; each product's landed price includes its share.">
+                <Input inputMode="decimal" placeholder="0.00" className="tabular text-right" value={transportCost} onChange={(e) => setTransportCost(decimalInput(e.target.value))} />
+              </Field>
+            )}
           </div>
         </FormSection>
 
@@ -120,6 +133,7 @@ export function NewPurchaseOrderDrawer({
                       <th className="text-right">Trade price</th>
                       <th className="text-right">Discount %</th>
                       <th className="text-right">Unit Price (KES)</th>
+                      {setTransportCost && <th className="text-right">Landed price</th>}
                       <th />
                     </tr>
                   </thead>
@@ -197,6 +211,13 @@ export function NewPurchaseOrderDrawer({
                             className="ui-input h-8 w-28 tabular text-right font-bold text-sm"
                           />
                         </td>
+                        {setTransportCost && (
+                          <td className="text-right tabular text-sm">
+                            {/^\d+(\.\d+)?$/.test(l.unit_price)
+                              ? <><div className="font-bold text-slate-900">{(Number(l.unit_price) + (shares[l.key] ?? 0)).toFixed(2)}</div>{(shares[l.key] ?? 0) > 0 && <div className="text-xs text-slate-500">+{(shares[l.key] ?? 0).toFixed(2)} transport</div>}</>
+                              : <span className="text-slate-400">—</span>}
+                          </td>
+                        )}
                         <td className="text-right">
                           <Button
                             size="xs"
@@ -212,6 +233,13 @@ export function NewPurchaseOrderDrawer({
                     ))}
                   </tbody>
                 </table>
+                {setTransportCost && (
+                  <div className="flex justify-end gap-6 px-4 py-2 text-sm tabular border-t border-slate-100">
+                    <span>Goods <b>{goodsTotal.toFixed(2)}</b></span>
+                    <span>Transport <b>{(Number(transportCost) || 0).toFixed(2)}</b></span>
+                    <span>Total <b>{(goodsTotal + (Number(transportCost) || 0)).toFixed(2)}</b></span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-6 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/60 text-xs text-slate-500">
@@ -234,4 +262,18 @@ export function NewPurchaseOrderDrawer({
       </div>
     </Drawer>
   )
+}
+
+/**
+ * Each line's share of the transport per unit, the way the server works it
+ * out: by value (qty × price), or by quantity while no line has a price.
+ */
+export function transportPerUnit(lines: PoLine[], transport: number): Record<string, number> {
+  const priced = lines.some((l) => Number(l.unit_price) > 0)
+  const weight = (l: PoLine) => (Number(l.qty_ordered) || 0) * (priced ? Number(l.unit_price) || 0 : 1)
+  const total = lines.reduce((sum, l) => sum + weight(l), 0)
+  return Object.fromEntries(lines.map((l) => {
+    const qty = Number(l.qty_ordered) || 0
+    return [l.key, transport > 0 && total > 0 && qty > 0 ? (transport * weight(l)) / total / qty : 0]
+  }))
 }

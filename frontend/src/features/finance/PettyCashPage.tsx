@@ -30,6 +30,8 @@ export default function PettyCashPage() {
   const [editing, setEditing] = useState<PettyCashVoucher | null>(null)
   const [deleting, setDeleting] = useState<PettyCashVoucher | null>(null)
   const canDelete = usePermission('record.delete')
+  const [deletingAll, setDeletingAll] = useState(false)
+  const [deleteAllTyped, setDeleteAllTyped] = useState('')
 
   const summary = useQuery({ queryKey: ['finance', 'petty-cash'], queryFn: () => apiGet<PettyCashSummary>('/api/finance/petty-cash', { per_page: 50 }), enabled: canManage })
   const refresh = () => {
@@ -44,6 +46,20 @@ export default function PettyCashPage() {
     onSuccess: (v) => {
       toast.success(`${v.doc_number} voided`, 'A reversing journal was posted; the float is restored.')
       setVoiding(null)
+      refresh()
+    },
+  })
+
+  const deleteAll = useMutation({
+    meta: { silent: true },
+    mutationFn: async (reason: string) => {
+      await ensureCsrfCookie()
+      return (await api.delete<{ deleted: number }>('/api/finance/petty-cash/vouchers', { data: { reason, confirm: 'DELETE ALL' } })).data
+    },
+    onSuccess: (r) => {
+      toast.success(`${r.deleted} voucher(s) deleted`, 'Each posted voucher was reversed, so the ledger stays balanced.')
+      setDeletingAll(false)
+      setDeleteAllTyped('')
       refresh()
     },
   })
@@ -92,6 +108,7 @@ export default function PettyCashPage() {
         actions={canManage ? (
           <>
             <Link to="/reports?report=finance.petty_cash_book" className="text-xs font-semibold text-blue-700 hover:underline">Petty cash book →</Link>
+            {canDelete && (s?.data?.length ?? 0) > 0 && <Button variant="danger" onClick={() => { deleteAll.reset(); setDeleteAllTyped(''); setDeletingAll(true) }}>Delete all</Button>}
             <Button onClick={() => setModal('topup')}>Top up float</Button>
             <Button variant="primary" onClick={() => setModal('spend')}>New voucher</Button>
           </>
@@ -148,6 +165,26 @@ export default function PettyCashPage() {
         onConfirm={(reason) => deleting && deleteVoucher.mutate({ id: deleting.id, reason })}
       />
       {deleteVoucher.isError && <InlineError error={deleteVoucher.error} />}
+      <ConfirmDialog
+        open={deletingAll}
+        title="Delete every petty cash voucher?"
+        message={
+          <div className="space-y-3">
+            <p>Every voucher at this branch is removed — top-ups and expenses, posted or void, whether or not the money was spent. Each posted voucher is reversed first, so the ledger stays balanced; every voucher is kept in the audit log.</p>
+            <Field label="Type DELETE ALL to confirm">
+              <Input value={deleteAllTyped} onChange={(e) => setDeleteAllTyped(e.target.value)} placeholder="DELETE ALL" />
+            </Field>
+          </div>
+        }
+        confirmLabel="Delete all vouchers"
+        danger
+        requireReason="Reason for deleting"
+        confirmDisabled={deleteAllTyped !== 'DELETE ALL'}
+        isPending={deleteAll.isPending}
+        onCancel={() => setDeletingAll(false)}
+        onConfirm={(reason) => deleteAll.mutate(reason)}
+      />
+      {deleteAll.isError && <InlineError error={deleteAll.error} />}
       {editing && <EditVoucherModal voucher={editing} accounts={s?.expense_accounts ?? []} balance={s?.balance ?? '0'} onClose={() => setEditing(null)} onDone={() => { setEditing(null); refresh() }} />}
     </Page>
   )

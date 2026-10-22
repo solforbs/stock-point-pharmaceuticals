@@ -128,6 +128,23 @@ class FinanceCashHttpTest extends TestCase
         $this->assertSame('800.0000', $audit->before_json['amount']);
     }
 
+    public function test_all_petty_cash_vouchers_can_be_deleted_at_once(): void
+    {
+        $this->grantPermissions(['record.delete'], 'Deleter');
+        $expense = ChartOfAccount::where('organisation_id', $this->org->id)->where('code', '6110')->firstOrFail();
+        $this->postJson('/api/finance/petty-cash/top-up', ['voucher_date' => now()->toDateString(), 'funding_source' => 'CASH', 'amount' => '5000', 'description' => 'Float'])->assertCreated();
+        $spent = $this->postJson('/api/finance/petty-cash/vouchers', ['voucher_date' => now()->toDateString(), 'account_id' => $expense->id, 'amount' => '1200', 'description' => 'Courier'])->assertCreated()->json();
+        $this->postJson("/api/finance/petty-cash/vouchers/{$spent['id']}/void", ['reason' => 'Wrong'])->assertOk();
+        $this->postJson('/api/finance/petty-cash/vouchers', ['voucher_date' => now()->toDateString(), 'account_id' => $expense->id, 'amount' => '300', 'description' => 'Water'])->assertCreated();
+
+        $this->deleteJson('/api/finance/petty-cash/vouchers', ['reason' => 'Starting over', 'confirm' => 'yes'])->assertUnprocessable();
+        $this->deleteJson('/api/finance/petty-cash/vouchers', ['reason' => 'Starting over', 'confirm' => 'DELETE ALL'])->assertOk()->assertJsonPath('deleted', 3);
+
+        $this->getJson('/api/finance/petty-cash')->assertOk()->assertJsonCount(0, 'data')->assertJsonPath('balance', '0.0000');
+        $this->assertSame('0.0000', $this->accountBalance('PETTY_CASH'), 'every posted voucher was reversed');
+        $this->assertSame(3, AuditLog::where('action', 'PETTY_CASH_DELETED')->count());
+    }
+
     public function test_supplies_are_requested_approved_by_someone_else_then_expensed(): void
     {
         $request = $this->postJson('/api/supply-requests', ['lines' => [

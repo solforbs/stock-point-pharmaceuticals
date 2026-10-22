@@ -29,6 +29,7 @@ export default function PurchaseOrdersPage() {
   const [creating, setCreating] = useState(!!params.get('supplier'))
   const [supplierId, setSupplierId] = useState(params.get('supplier') ?? '')
   const [expectedDate, setExpectedDate] = useState('')
+  const [transportCost, setTransportCost] = useState('')
   const [lines, setLines] = useState<PoLine[]>([])
   const selectedId = params.get('po')
 
@@ -44,6 +45,7 @@ export default function PurchaseOrdersPage() {
       apiPost<PurchaseOrder>('/api/purchase-orders', {
         supplier_id: supplierId,
         expected_date: expectedDate || null,
+        transport_cost: transportCost || '0',
         lines: lines.map((l) => ({
           product_id: l.product.id,
           uom_id: l.uom_id,
@@ -58,6 +60,7 @@ export default function PurchaseOrdersPage() {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
       setCreating(false)
       setLines([])
+      setTransportCost('')
       setParams({ po: po.id })
     },
   })
@@ -133,6 +136,8 @@ export default function PurchaseOrdersPage() {
         setSupplierId={setSupplierId}
         expectedDate={expectedDate}
         setExpectedDate={setExpectedDate}
+        transportCost={transportCost}
+        setTransportCost={setTransportCost}
         lines={lines}
         setLines={setLines}
         onSubmit={() => create.mutate()}

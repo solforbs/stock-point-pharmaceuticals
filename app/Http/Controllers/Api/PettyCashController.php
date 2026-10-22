@@ -11,6 +11,7 @@ use App\Services\Tenancy\TenantRules;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /** Petty cash: the branch float, top-ups into it and the vouchers spent from it. */
 class PettyCashController extends ApiController
@@ -40,8 +41,9 @@ class PettyCashController extends ApiController
             'balance' => $balance,
             'float_limit' => number_format((float) $float, 4, '.', ''),
             'to_restore' => bccomp($float, $balance, 4) > 0 ? bcsub($float, $balance, 4) : '0.0000',
-            'expense_accounts' => ChartOfAccount::where('organisation_id', $organisationId)->where('account_type', 'EXPENSE')->where('is_postable', true)->where('is_active', true)
-                ->where('code', '>=', '6000')->orderBy('code')->get(['id', 'code', 'name']),
+            'expense_accounts' => ChartOfAccount::where('organisation_id', $organisationId)->where('is_postable', true)->where('is_active', true)
+                ->where(fn ($q) => $q->where(fn ($e) => $e->where('account_type', 'EXPENSE')->where('code', '>=', '6000'))->orWhere('system_role', 'FREIGHT_ACCRUAL'))
+                ->orderBy('code')->get(['id', 'code', 'name']),
         ] + $vouchers->toArray());
     }
 
@@ -121,6 +123,35 @@ class PettyCashController extends ApiController
         $pettyCash->delete($voucher, $data['reason'], $request->user()->id);
 
         return response()->json(['deleted' => true, 'doc_number' => $voucher->doc_number]);
+    }
+
+    /** What the caller must send to delete every voucher, so it is never one stray click. */
+    public const DELETE_ALL_CONFIRMATION = 'DELETE ALL';
+
+    /**
+     * DELETE /api/finance/petty-cash/vouchers — every voucher of the active
+     * branch, linked or not. Each goes the same way as a single delete: a
+     * posted one is reversed first and every row is kept in the audit log,
+     * so the ledger stays balanced.
+     */
+    public function destroyAll(Request $request, PettyCashService $pettyCash): JsonResponse
+    {
+        $this->requirePermission($request, 'petty.cash.manage');
+        $this->requirePermission($request, 'record.delete');
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:3', 'max:255'],
+            'confirm' => ['required', Rule::in([self::DELETE_ALL_CONFIRMATION])],
+        ], ['confirm.in' => 'Type '.self::DELETE_ALL_CONFIRMATION.' to confirm.']);
+        set_time_limit(300);
+
+        $deleted = 0;
+        $vouchers = PettyCashVoucher::where('branch_id', $this->branchId($request))->orderByDesc('voucher_date')->orderByDesc('created_at')->get();
+        foreach ($vouchers as $voucher) {
+            $pettyCash->delete($voucher, $data['reason'], $request->user()->id);
+            $deleted++;
+        }
+
+        return response()->json(['deleted' => $deleted]);
     }
 
     public function void(Request $request, string $voucher, PettyCashService $pettyCash): JsonResponse

@@ -60,6 +60,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   isPending,
+  confirmDisabled = false,
 }: {
   open: boolean
   title: ReactNode
@@ -71,6 +72,8 @@ export function ConfirmDialog({
   onConfirm: (reason: string) => void
   onCancel: () => void
   isPending?: boolean
+  /** Keeps the confirm button off until the caller's own condition holds (e.g. a typed phrase). */
+  confirmDisabled?: boolean
 }) {
   const [reason, setReason] = useState('')
   useEffect(() => {
@@ -89,13 +92,13 @@ export function ConfirmDialog({
           <Button onClick={onCancel} disabled={isPending}>
             Cancel
           </Button>
-          <Button variant={danger ? 'danger' : 'primary'} disabled={!reasonOk || isPending} onClick={() => onConfirm(reason.trim())}>
+          <Button variant={danger ? 'danger' : 'primary'} disabled={!reasonOk || isPending || confirmDisabled} onClick={() => onConfirm(reason.trim())}>
             {isPending ? 'Working…' : confirmLabel}
           </Button>
         </>
       }
     >
-      {message && <p className="text-slate-600 mb-3">{message}</p>}
+      {message && <div className="text-slate-600 mb-3">{message}</div>}
       {requireReason && (
         <Field label={requireReason} required hint={`At least ${reasonMinLength} characters. This is recorded in the audit log.`}>
           <Textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />

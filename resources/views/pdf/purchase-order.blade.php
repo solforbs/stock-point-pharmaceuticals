@@ -58,7 +58,13 @@
     </table>
 
     <table class="totals">
-        <tr class="grand"><td>Total Order Value (KES)</td><td class="num">{{ $money($total) }}</td></tr>
+        @if (bccomp($transport ?? '0', '0', 4) > 0)
+            <tr><td>Goods (KES)</td><td class="num">{{ $money($total) }}</td></tr>
+            <tr><td>Transport (KES)</td><td class="num">{{ $money($transport) }}</td></tr>
+            <tr class="grand"><td>Total incl. transport (KES)</td><td class="num">{{ $money(bcadd($total, $transport, 4)) }}</td></tr>
+        @else
+            <tr class="grand"><td>Total Order Value (KES)</td><td class="num">{{ $money($total) }}</td></tr>
+        @endif
     </table>
 
     <div class="note">

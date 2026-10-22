@@ -8,6 +8,7 @@ use App\Models\NumberSequence;
 use App\Models\ProductBatch;
 use App\Services\Finance\JournalPoster;
 use App\Services\Inventory\StockLedgerService;
+use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -37,6 +38,8 @@ class GoodsReceiptService
             $organisationId = Branch::whereKey($receipt->branch_id)->value('organisation_id');
             $userId = $receipt->received_by ?? Auth::id();
             $inventoryValue = '0.0000';
+            // The part of the stock value that is the order's transport, not the supplier's goods.
+            $freightValue = '0.0000';
 
             foreach ($receipt->lines as $line) {
                 if (bccomp((string) $line->qty_accepted, '0', 4) <= 0) {
@@ -77,9 +80,16 @@ class GoodsReceiptService
                 ]);
 
                 $inventoryValue = bcadd($inventoryValue, bcmul($qtyBase, $landedCostBase, 4), 4);
+                $freightPerBase = bcsub($landedCostBase, $line->unitCostBase(), 4);
+                if (bccomp($freightPerBase, '0', 4) > 0) {
+                    $freightValue = bcadd($freightValue, bcmul($qtyBase, $freightPerBase, 4), 4);
+                }
             }
 
             if (bccomp($inventoryValue, '0', 4) > 0) {
+                if (bccomp($freightValue, '0', 4) > 0) {
+                    ChartOfAccountsSeeder::provisionAccounts((string) $organisationId);
+                }
                 $this->journalPoster->post([
                     'organisation_id' => $organisationId,
                     'branch_id' => $receipt->branch_id,
@@ -88,10 +98,14 @@ class GoodsReceiptService
                     'source_doc_id' => $receipt->id,
                     'narration' => "Goods received {$receipt->doc_number}",
                     'posted_by' => $userId,
-                ], [
+                ], array_values(array_filter([
                     ['account_role' => 'INVENTORY', 'debit' => $inventoryValue, 'narration' => "GRN {$receipt->doc_number} — stock in"],
-                    ['account_role' => 'GRN_ACCRUAL', 'credit' => $inventoryValue, 'partner_type' => 'supplier', 'partner_id' => $receipt->supplier_id, 'narration' => "GRN {$receipt->doc_number} — awaiting supplier invoice"],
-                ]);
+                    // The supplier invoices the goods only; the transport is owed to whoever delivered.
+                    ['account_role' => 'GRN_ACCRUAL', 'credit' => bcsub($inventoryValue, $freightValue, 4), 'partner_type' => 'supplier', 'partner_id' => $receipt->supplier_id, 'narration' => "GRN {$receipt->doc_number} — awaiting supplier invoice"],
+                    bccomp($freightValue, '0', 4) > 0
+                        ? ['account_role' => 'FREIGHT_ACCRUAL', 'credit' => $freightValue, 'narration' => "GRN {$receipt->doc_number} — transport on the order"]
+                        : null,
+                ])));
             }
 
             $receipt->update(['status' => 'POSTED', 'received_at' => $receipt->received_at ?? now()]);

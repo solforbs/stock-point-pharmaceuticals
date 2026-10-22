@@ -37,6 +37,7 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
   const [editing, setEditing] = useState(false)
   const [supplierId, setSupplierId] = useState('')
   const [expectedDate, setExpectedDate] = useState('')
+  const [transportCost, setTransportCost] = useState('')
   const [lines, setLines] = useState<PoLine[]>([])
 
   const act = useMutation({
@@ -53,6 +54,7 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
       apiPatch<PurchaseOrder>(`/api/purchase-orders/${id}`, {
         supplier_id: supplierId,
         expected_date: expectedDate || null,
+        transport_cost: transportCost || '0',
         lines: lines.map((l) => ({
           product_id: l.product.id,
           uom_id: l.uom_id,
@@ -72,6 +74,7 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
   function startEditing(p: PurchaseOrder) {
     setSupplierId(p.supplier_id)
     setExpectedDate(p.expected_date ?? '')
+    setTransportCost(Number(p.transport_cost ?? 0) > 0 ? String(Number(p.transport_cost)) : '')
     setLines(
       (p.lines ?? []).map((l) => ({
         key: l.id,
@@ -150,6 +153,8 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
               { label: 'Expected', value: formatDate(p.expected_date) },
               { label: 'Sent', value: formatDateTime(p.sent_at) },
               { label: 'Order value', value: <MoneyCell value={total.toFixed(4)} symbol /> },
+              { label: 'Transport', value: <MoneyCell value={String(p.transport_cost ?? '0')} symbol /> },
+              { label: 'Total incl. transport', value: <MoneyCell value={(total + Number(p.transport_cost ?? 0)).toFixed(4)} symbol /> },
             ]}
           />
           <table className="ui-table">
@@ -159,6 +164,7 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
                 <th>UOM</th>
                 <th className="text-right">Qty</th>
                 <th className="text-right">Unit price</th>
+                <th className="text-right">Landed price</th>
                 <th className="text-right">Line total</th>
               </tr>
             </thead>
@@ -174,6 +180,10 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
                   <td className="text-right">
                     <MoneyCell value={l.unit_price} />
                     {tradeTermsLabel(l.trade_price, l.discount_pct) && <div className="text-xs text-slate-500 tabular">{tradeTermsLabel(l.trade_price, l.discount_pct)}</div>}
+                  </td>
+                  <td className="text-right">
+                    {l.landed_unit_price != null ? <MoneyCell value={l.landed_unit_price} /> : '—'}
+                    {Number(l.transport_per_unit ?? 0) > 0 && <div className="text-xs text-slate-500 tabular">+{Number(l.transport_per_unit).toFixed(2)} transport</div>}
                   </td>
                   <td className="text-right"><MoneyCell value={(Number(l.qty_ordered) * Number(l.unit_price)).toFixed(4)} /></td>
                 </tr>
@@ -207,6 +217,8 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
         setSupplierId={setSupplierId}
         expectedDate={expectedDate}
         setExpectedDate={setExpectedDate}
+        transportCost={transportCost}
+        setTransportCost={setTransportCost}
         lines={lines}
         setLines={setLines}
         onSubmit={() => save.mutate()}

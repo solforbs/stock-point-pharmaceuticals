@@ -30,6 +30,8 @@ class ChartOfAccountsSeeder extends Seeder
         ['2240', 'Net salaries payable', 'LIABILITY', 'NET_PAY_PAYABLE'],
         ['2250', 'Other payroll deductions payable', 'LIABILITY', 'OTHER_DEDUCTIONS_PAYABLE'],
         ['2310', 'GRN accrual', 'LIABILITY', 'GRN_ACCRUAL'],
+        // Transport on a purchase order, owed to whoever delivers; cleared when they are paid.
+        ['2320', 'Transport / freight accrual', 'LIABILITY', 'FREIGHT_ACCRUAL'],
         ['3010', 'Share capital', 'EQUITY', null],
         ['3100', 'Retained earnings', 'EQUITY', null],
         ['3200', 'Opening balance equity', 'EQUITY', 'OPENING_BALANCE_EQUITY'],

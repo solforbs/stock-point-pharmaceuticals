@@ -293,6 +293,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/finance/petty-cash/vouchers/{voucher}/void', [PettyCashController::class, 'void'])->whereUuid('voucher');
     Route::put('/finance/petty-cash/vouchers/{voucher}', [PettyCashController::class, 'update'])->whereUuid('voucher');
     Route::delete('/finance/petty-cash/vouchers/{voucher}', [PettyCashController::class, 'destroy'])->whereUuid('voucher');
+    Route::delete('/finance/petty-cash/vouchers', [PettyCashController::class, 'destroyAll']);
     Route::get('/supply-requests', [SupplyRequestController::class, 'index']);
     Route::post('/supply-requests', [SupplyRequestController::class, 'store']);
     Route::get('/supply-requests/{supplyRequest}', [SupplyRequestController::class, 'show'])->whereUuid('supplyRequest');

@@ -83,7 +83,7 @@ class PettyCashService
             // Serialise spending per branch so two vouchers cannot both spend the last shilling.
             Branch::whereKey($branchId)->lockForUpdate()->first();
 
-            $expense = ChartOfAccount::query()->where('is_active', true)->where('is_postable', true)->where('account_type', 'EXPENSE')->find($data['account_id']);
+            $expense = $this->spendableAccount($data['account_id']);
             if (! $expense) {
                 throw new \DomainException('Choose an expense account for this voucher.');
             }
@@ -153,7 +153,7 @@ class PettyCashService
             $balance = $this->balance($voucher->organisation_id, $voucher->branch_id);
 
             if ($voucher->voucher_type === 'EXPENSE') {
-                $expense = ChartOfAccount::query()->where('is_active', true)->where('is_postable', true)->where('account_type', 'EXPENSE')->find($data['account_id'] ?? null);
+                $expense = $this->spendableAccount($data['account_id'] ?? null);
                 if (! $expense) {
                     throw new \DomainException('Choose an expense account for this voucher.');
                 }
@@ -234,6 +234,18 @@ class PettyCashService
 
             $voucher->delete();
         });
+    }
+
+    /**
+     * What a petty cash voucher may be charged to: an expense, or the
+     * transport accrual — transport already counted in stock cost on a goods
+     * receipt is paid off against it, not expensed a second time.
+     */
+    private function spendableAccount(?string $accountId): ?ChartOfAccount
+    {
+        return $accountId === null ? null : ChartOfAccount::query()->where('is_active', true)->where('is_postable', true)
+            ->where(fn ($q) => $q->where('account_type', 'EXPENSE')->orWhere('system_role', 'FREIGHT_ACCRUAL'))
+            ->find($accountId);
     }
 
     /** Posts the mirror image of the voucher's current journal. */

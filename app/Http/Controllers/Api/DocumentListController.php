@@ -26,19 +26,27 @@ class DocumentListController extends ApiController
     {
         $this->requirePermission($request, 'po.create');
 
-        return response()->json(
-            PurchaseOrder::where('branch_id', $this->branchId($request))
-                ->with([
-                    'supplier:id,code,name,licence_expiry,status',
-                    // qty_received = Σ accepted across every GRN for the line (Part 9.2 outstanding quantity).
-                    'lines' => fn ($q) => $q->withSum('goodsReceiptLines as qty_received', 'qty_accepted'),
-                    // tax_code_id so the goods receipt can show the VAT treatment the product carries today.
-                    // The product's units come along so a draft's lines can be re-priced in another pack when edited.
-                    'lines.product:id,code,name,tax_code_id', 'lines.product.uoms.uom:id,code', 'lines.uom:id,code,name',
-                    'goodsReceipts:id,purchase_order_id,doc_number,status,received_at',
-                ])
-                ->findOrFail($po)
-        );
+        $order = PurchaseOrder::where('branch_id', $this->branchId($request))
+            ->with([
+                'supplier:id,code,name,licence_expiry,status',
+                // qty_received = Σ accepted across every GRN for the line (Part 9.2 outstanding quantity).
+                'lines' => fn ($q) => $q->withSum('goodsReceiptLines as qty_received', 'qty_accepted'),
+                // tax_code_id so the goods receipt can show the VAT treatment the product carries today.
+                // The product's units come along so a draft's lines can be re-priced in another pack when edited.
+                'lines.product:id,code,name,tax_code_id', 'lines.product.uoms.uom:id,code', 'lines.uom:id,code,name',
+                'goodsReceipts:id,purchase_order_id,doc_number,status,received_at',
+            ])
+            ->findOrFail($po);
+
+        // Each line's share of the transport, and so its landed (final) unit price.
+        $shares = $order->transportShares();
+        foreach ($order->lines as $line) {
+            $share = $shares[(string) $line->id] ?? '0.0000';
+            $line->setAttribute('transport_per_unit', $share);
+            $line->setAttribute('landed_unit_price', $line->unit_price === null ? null : bcadd((string) $line->unit_price, $share, 4));
+        }
+
+        return response()->json($order);
     }
 
     public function quotations(Request $request): JsonResponse
