@@ -1718,6 +1718,10 @@ export type CompanyProfile = {
   postal_address: string | null
   signatory_name: string | null
   signatory_title: string | null
+  mpesa_paybill?: string | null
+  mpesa_account?: string | null
+  mpesa_till?: string | null
+  payment_note?: string | null
   images: Record<CompanyProfileImageKind, boolean>
   images_version: number | null
 }

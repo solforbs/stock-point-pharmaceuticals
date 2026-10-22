@@ -220,8 +220,10 @@ class PettyCashService
         DB::transaction(function () use ($voucher, $reason, $userId) {
             Branch::whereKey($voucher->branch_id)->lockForUpdate()->first();
 
+            // Deleting is always allowed, even for a top-up already spent: the
+            // reversal keeps the ledger right, and the float simply shows what is
+            // really left (below zero if the money had been used).
             if ($voucher->status === 'POSTED') {
-                $this->assertFloatSurvivesRemoving($voucher);
                 $this->reverse($voucher, 'petty_cash_delete', "Deletion of petty cash voucher {$voucher->doc_number} — {$reason}", $userId);
             }
 

@@ -7,6 +7,7 @@ use App\Models\ProductCategory;
 use App\Models\StockAdjustment;
 use App\Models\StockLedger;
 use App\Models\Store;
+use App\Services\Documents\PdfRenderer;
 use App\Services\Inventory\BatchQualityService;
 use App\Services\Inventory\InventoryReport;
 use App\Services\Inventory\OpeningStockService;
@@ -16,10 +17,39 @@ use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Response;
 
 class InventoryController extends ApiController
 {
     /** GET /api/inventory/stock — the eight quantity states (Part 7.3). */
+    /**
+     * POST /api/inventory/stock/pdf — the stock cross-check sheet as the user
+     * left it on screen (cells may have been edited before downloading), so
+     * the PDF matches what they would have printed. Nothing is stored.
+     */
+    public function stockSheetPdf(Request $request, PdfRenderer $pdf): Response
+    {
+        $this->requirePermission($request, 'stock.view');
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'subtitle' => ['nullable', 'string', 'max:500'],
+            'header' => ['required', 'array', 'min:1', 'max:20'],
+            'header.*' => ['nullable', 'string', 'max:100'],
+            'rows' => ['present', 'array', 'max:50000'],
+            'rows.*' => ['array', 'max:20'],
+            'rows.*.*' => ['nullable', 'string', 'max:500'],
+        ]);
+        set_time_limit(300);
+
+        return $pdf->render('pdf.stock-sheet', [
+            'title' => $data['title'],
+            'subtitle' => $data['subtitle'] ?? null,
+            'date' => now()->format('j M Y H:i'),
+            'header' => $data['header'],
+            'rows' => $data['rows'],
+        ], $data['title'].' '.now()->format('Y-m-d'), $this->branchId($request));
+    }
+
     public function stock(Request $request, InventoryReport $report): JsonResponse
     {
         $this->requirePermission($request, 'stock.view');

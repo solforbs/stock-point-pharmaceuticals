@@ -26,6 +26,25 @@ class InventoryHttpTest extends TestCase
         Sanctum::actingAs($this->user);
     }
 
+    public function test_the_stock_sheet_downloads_as_a_pdf_with_the_users_edits(): void
+    {
+        $sheet = [
+            'title' => 'Stockpoint - Stock on hand',
+            'subtitle' => 'All stores · All headings',
+            'header' => ['#', 'Code', 'Product', 'Store', 'Batch', 'Expiry', 'On hand', 'Counted', 'Remarks'],
+            'rows' => [['1', 'AMOX500', 'Amoxicillin 500mg Capsules', 'MAIN', 'B-1', '01 Jan 2028', '1,000', '998', 'two loose caps']],
+        ];
+
+        $pdf = $this->post('/api/inventory/stock/pdf', $sheet)->assertOk();
+        $this->assertStringStartsWith('%PDF-', (string) $pdf->getContent());
+
+        $this->postJson('/api/inventory/stock/pdf', ['title' => 'x', 'header' => [], 'rows' => []])->assertUnprocessable();
+
+        $this->revokeAllRoles();
+        $this->grantPermissions(['sale.view'], 'Cashier');
+        $this->postJson('/api/inventory/stock/pdf', $sheet)->assertForbidden();
+    }
+
     public function test_stock_reports_the_eight_states_from_the_batch_register(): void
     {
         $released = $this->receive('R1', now()->addYears(2)->toDateString(), '10000', '2.0000');

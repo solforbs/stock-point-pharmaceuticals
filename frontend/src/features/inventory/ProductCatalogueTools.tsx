@@ -407,13 +407,37 @@ function ChangePreview({ summary }: { summary: ImportSummary }) {
 }
 
 type PriceListColumn = 'code' | 'name' | 'brand_name' | 'price'
+type PriceListPayment = {
+  mpesa_paybill: string | null
+  mpesa_account: string | null
+  mpesa_till: string | null
+  note: string | null
+  account_name: string
+  banks: { bank_name: string | null; account_name: string | null; account_number: string | null; branch_name: string | null }[]
+}
 type PriceListData = {
   title: string
   columns: Record<PriceListColumn, string>
+  payment: PriceListPayment
   products: { id: string; code: string; name: string; brand_name: string | null; default_price: string | null }[]
 }
 
 const SHOWN_ROWS = 300
+
+/** The payment block as text lines (a blank line and a heading first), for the Excel file and the on-screen preview. */
+function paymentLines(p: PriceListPayment): string[] {
+  const lines: string[] = []
+  if (p.mpesa_paybill || p.mpesa_till) {
+    lines.push(`LIPA NA M-PESA${p.note ? ` (${p.note})` : ''}`)
+    if (p.mpesa_paybill) lines.push(`Business number (paybill): ${p.mpesa_paybill}${p.mpesa_account ? ` · Account number: ${p.mpesa_account}` : ''}`)
+    if (p.mpesa_till) lines.push(`Buy Goods till: ${p.mpesa_till}`)
+    lines.push(`Account name: ${p.account_name}`)
+  }
+  for (const b of p.banks) {
+    lines.push(`Bank: ${[b.bank_name, b.branch_name].filter(Boolean).join(', ')} · A/C ${b.account_number ?? ''} · ${b.account_name || p.account_name}`)
+  }
+  return lines.length ? ['', 'HOW TO PAY', ...lines] : []
+}
 
 /**
  * The master price list, cut for one recipient: choose the columns, fill in
@@ -423,7 +447,7 @@ const SHOWN_ROWS = 300
  */
 function PriceListDrawer({ onClose }: { onClose: () => void }) {
   const data = useQuery({ queryKey: ['products', 'price-list'], queryFn: () => apiGet<PriceListData>('/api/products/price-list') })
-  const [columns, setColumns] = useState<PriceListColumn[]>(['code', 'name', 'brand_name', 'price'])
+  const [columns, setColumns] = useState<PriceListColumn[]>(['name', 'brand_name', 'price'])
   const [adjustPct, setAdjustPct] = useState('')
   const [overrides, setOverrides] = useState<Record<string, string>>({})
   const [search, setSearch] = useState('')
@@ -459,7 +483,7 @@ function PriceListDrawer({ onClose }: { onClose: () => void }) {
         sheetName: 'Price List',
         title: data.data.title,
         header: ordered.map((c) => labels[c]),
-        rows: rows().map((r) => ordered.map((c) => (c === 'price' ? r.price : r[c]))),
+        rows: [...rows().map((r) => ordered.map((c) => (c === 'price' ? r.price : r[c]))), ...paymentLines(data.data.payment).map((line) => [line])],
         widths: ordered.map((c) => (c === 'name' ? 60 : c === 'brand_name' ? 24 : c === 'price' ? 14 : 14)),
       })
       downloadBlob(blob, fileName('xlsx'), blob.type)
@@ -547,7 +571,13 @@ function PriceListDrawer({ onClose }: { onClose: () => void }) {
               </Card>
             )}
 
-            <Card padded title={`3. Download (${products.length} products)`}>
+            <Card padded title="How to pay (printed at the foot of the list)">
+              {paymentLines(data.data.payment).length > 2
+                ? <div className="text-sm text-slate-700 space-y-0.5">{paymentLines(data.data.payment).slice(2).map((line) => <div key={line}>{line}</div>)}</div>
+                : <p className="text-sm text-amber-700">No payment details yet. Add the M-PESA paybill and account under Admin → Company Profile, and bank accounts under Finance → Bank Accounts.</p>}
+            </Card>
+
+            <Card padded title={`3. Download (${products.length} products in stock)`}>
               <div className="flex flex-wrap gap-2">
                 <Button variant="primary" disabled={ordered.length === 0 || busy !== null} onClick={downloadExcel}><Download size={13} /> {busy === 'xlsx' ? 'Preparing…' : 'Excel (.xlsx)'}</Button>
                 <Button variant="primary" disabled={ordered.length === 0 || busy !== null} onClick={() => void downloadPdf()}><Download size={13} /> {busy === 'pdf' ? 'Preparing PDF…' : 'PDF'}</Button>

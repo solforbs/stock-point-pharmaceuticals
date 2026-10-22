@@ -235,16 +235,22 @@ class ProductCatalogueHttpTest extends TestCase
         $this->postJson('/api/products/import', ['rows' => $rows])->assertCreated()->assertJsonPath('updated', 0)->assertJsonPath('unchanged', 2);
     }
 
-    public function test_the_master_price_list_is_built_from_the_products_and_exported_without_changing_them(): void
+    public function test_the_master_price_list_is_built_from_stock_on_hand_and_exported_without_changing_them(): void
     {
+        $this->org->update(['mpesa_paybill' => '522533', 'mpesa_account' => '990072', 'payment_note' => 'KCB Bank']);
+        // Amoxicillin is on the shelf; paracetamol has never been received.
+        $this->receive('B-LIST', now()->addYear()->toDateString(), '100', '2.0000');
+
         $list = $this->getJson('/api/products/price-list')->assertOk()
             ->assertJsonPath('title', $this->org->name.' - Price List')
-            ->assertJsonPath('columns.name', 'Description (general/scientific name)')
+            ->assertJsonPath('columns.name', 'Generic name')
+            ->assertJsonPath('payment.mpesa_paybill', '522533')
+            ->assertJsonPath('payment.mpesa_account', '990072')
             ->json();
         $amox = collect($list['products'])->firstWhere('code', 'AMOX500');
         $this->assertSame('Amoxil', $amox['brand_name']);
         $this->assertSame('2.5000', $amox['default_price']);
-        $this->assertNull(collect($list['products'])->firstWhere('code', 'PARA500')['default_price'], 'a product without a price is listed for the user to price');
+        $this->assertNull(collect($list['products'])->firstWhere('code', 'PARA500'), 'a product with no stock is not on the list');
 
         // The PDF carries the prices as adjusted for this recipient…
         $pdf = $this->post('/api/products/price-list/pdf', [

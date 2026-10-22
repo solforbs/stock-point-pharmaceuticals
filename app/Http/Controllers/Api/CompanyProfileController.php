@@ -33,6 +33,7 @@ class CompanyProfileController extends ApiController
     private const TEXT_FIELDS = [
         'tagline', 'about', 'mission', 'vision', 'core_values', 'services', 'website',
         'contact_email', 'contact_phone', 'physical_address', 'postal_address', 'signatory_name', 'signatory_title',
+        'mpesa_paybill', 'mpesa_account', 'mpesa_till', 'payment_note',
     ];
 
     /** GET /api/admin/company-profile */
@@ -75,6 +76,10 @@ class CompanyProfileController extends ApiController
             'postal_address' => ['sometimes', 'nullable', 'string', 'max:200'],
             'signatory_name' => ['sometimes', 'nullable', 'string', 'max:150'],
             'signatory_title' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'mpesa_paybill' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'mpesa_account' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'mpesa_till' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'payment_note' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
         $data = array_intersect_key($data, array_flip(self::TEXT_FIELDS));
 

@@ -116,17 +116,16 @@ class FinanceCashHttpTest extends TestCase
             ->assertJsonPath('description', 'Courier, corrected');
         $this->assertSame('4200.0000', $this->accountBalance('PETTY_CASH'));
 
-        // A top-up whose money has been spent cannot be taken back out.
-        $this->deleteJson("/api/finance/petty-cash/vouchers/{$topUp['id']}", ['reason' => 'Typed twice'])->assertStatus(422);
+        // A top-up can be deleted even after its money was spent: the float
+        // then shows what is really left, here 800 below zero.
+        $this->deleteJson("/api/finance/petty-cash/vouchers/{$topUp['id']}", ['reason' => 'Typed twice'])->assertOk();
+        $this->assertSame('-800.0000', $this->accountBalance('PETTY_CASH'));
 
         $this->deleteJson("/api/finance/petty-cash/vouchers/{$spent['id']}", ['reason' => 'Duplicate'])->assertOk()->assertJsonPath('deleted', true);
-        $this->assertSame('5000.0000', $this->accountBalance('PETTY_CASH'));
-        $this->getJson('/api/finance/petty-cash')->assertJsonCount(1, 'data');
+        $this->assertSame('0.0000', $this->accountBalance('PETTY_CASH'), 'both reversed: the ledger is back where it started');
+        $this->getJson('/api/finance/petty-cash')->assertJsonCount(0, 'data');
         $audit = AuditLog::where('action', 'PETTY_CASH_DELETED')->where('entity_id', $spent['id'])->firstOrFail();
         $this->assertSame('800.0000', $audit->before_json['amount']);
-
-        $this->deleteJson("/api/finance/petty-cash/vouchers/{$topUp['id']}", ['reason' => 'Typed twice'])->assertOk();
-        $this->assertSame('0.0000', $this->accountBalance('PETTY_CASH'));
     }
 
     public function test_supplies_are_requested_approved_by_someone_else_then_expensed(): void

@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react'
 import { useDebounced } from '../../components/ProductSearch'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Button, Field, Input, Select } from '../../components/ui/primitives'
-import { apiGet } from '../../lib/api'
+import { api, apiGet, ensureCsrfCookie } from '../../lib/api'
+import { downloadBlob } from '../../lib/csv'
 import { dSum } from '../../lib/decimal'
 import { useProductCategories, useStores } from '../../lib/hooks'
 import { formatMoney } from '../../lib/money'
@@ -61,11 +62,16 @@ export default function StockOnHandPage() {
                 rows: stock.data?.data ?? [],
                 title: `${user.data?.organisation?.name ?? 'Stock'} - Stock on hand`,
                 filters: [store ? `Store ${store.code} · ${store.name}` : 'All stores', heading ? `Heading: ${heading.name}` : 'All headings', q ? `Search: ${q}` : null].filter(Boolean).join(' · '),
+                onDownloadPdf: async (content) => {
+                  await ensureCsrfCookie()
+                  const { data } = await api.post<Blob>('/api/inventory/stock/pdf', content, { responseType: 'blob' })
+                  downloadBlob(data, `${content.title} ${new Date().toISOString().slice(0, 10)}.pdf`, 'application/pdf')
+                },
               })
               if (!opened) toast.error('The print sheet was blocked', 'Allow pop-ups for this site, then try again.')
             }}
           >
-            Print stock list
+            Print / download stock list
           </Button>
         }
       />

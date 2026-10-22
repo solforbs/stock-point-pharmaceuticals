@@ -185,6 +185,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
 
     // 21.8 Inventory
     Route::get('/inventory/stock', [InventoryController::class, 'stock']);
+    Route::post('/inventory/stock/pdf', [InventoryController::class, 'stockSheetPdf']);
     Route::get('/inventory/ledger', [InventoryController::class, 'ledger']);
     Route::post('/inventory/adjustments', [InventoryController::class, 'storeAdjustment']);
     Route::post('/inventory/opening-stock', [InventoryController::class, 'openingStock']);

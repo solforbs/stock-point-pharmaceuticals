@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
+use App\Models\BankAccount;
 use App\Models\Organisation;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -163,11 +164,15 @@ class ProductCatalogueController extends ApiController
     }
 
     /** The price list's columns, as the export screen offers them. */
-    public const PRICE_LIST_COLUMNS = ['code' => 'Code', 'name' => 'Description (general/scientific name)', 'brand_name' => 'Brand name', 'price' => 'Price (KES)'];
+    public const PRICE_LIST_COLUMNS = ['code' => 'Code', 'name' => 'Generic name', 'brand_name' => 'Brand name', 'price' => 'Price (KES)'];
+
+    /** Batches whose stock can be offered: released, or in for QC; never expired, recalled or rejected. */
+    private const OFFERABLE_BATCH_STATUSES = ['RELEASED', 'PENDING_QC'];
 
     /**
      * GET /api/products/price-list — the master list the price list is cut
-     * from: every active product with its saved default price. Exports adjust
+     * from: the active products the institution actually has in stock, with
+     * their saved default prices, and how customers pay. Exports adjust
      * prices for one recipient only; nothing here is written back.
      */
     public function priceList(Request $request): JsonResponse
@@ -178,10 +183,39 @@ class ProductCatalogueController extends ApiController
         return response()->json([
             'title' => $this->priceListTitle($organisationId),
             'columns' => self::PRICE_LIST_COLUMNS,
+            'payment' => $this->paymentDetails($organisationId),
             'products' => Product::where('organisation_id', $organisationId)->where('is_active', true)
+                ->whereExists(fn ($q) => $q->selectRaw('1')
+                    ->from('stock_balances as sb')
+                    ->join('product_batches as pb', 'pb.id', '=', 'sb.batch_id')
+                    ->whereColumn('sb.product_id', 'products.id')
+                    ->where('sb.qty_on_hand', '>', 0)
+                    ->whereIn('pb.status', self::OFFERABLE_BATCH_STATUSES)
+                    ->where('pb.expiry_date', '>', now()->toDateString()))
                 ->orderBy('name')->orderBy('code')
                 ->get(['id', 'code', 'name', 'brand_name', 'default_price']),
         ]);
+    }
+
+    /**
+     * How customers pay, for the foot of the price list: M-PESA from the
+     * company profile, then the active bank accounts.
+     *
+     * @return array{mpesa_paybill: ?string, mpesa_account: ?string, mpesa_till: ?string, note: ?string, account_name: string, banks: list<array{bank_name: ?string, account_name: ?string, account_number: ?string, branch_name: ?string}>}
+     */
+    private function paymentDetails(string $organisationId): array
+    {
+        $organisation = Organisation::find($organisationId);
+
+        return [
+            'mpesa_paybill' => $organisation?->mpesa_paybill,
+            'mpesa_account' => $organisation?->mpesa_account,
+            'mpesa_till' => $organisation?->mpesa_till,
+            'note' => $organisation?->payment_note,
+            'account_name' => $organisation?->legal_name ?: ($organisation?->name ?? ''),
+            'banks' => BankAccount::where('organisation_id', $organisationId)->where('is_active', true)->orderBy('name')
+                ->get(['bank_name', 'account_name', 'account_number', 'branch_name'])->toArray(),
+        ];
     }
 
     /**
@@ -213,6 +247,7 @@ class ProductCatalogueController extends ApiController
             'columns' => $columns,
             'labels' => self::PRICE_LIST_COLUMNS,
             'rows' => $data['rows'],
+            'payment' => $this->paymentDetails($organisationId),
         ], $title.' '.now()->format('Y-m-d'), $this->branchId($request));
     }
 

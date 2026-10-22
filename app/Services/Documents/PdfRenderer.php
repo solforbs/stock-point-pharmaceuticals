@@ -65,6 +65,10 @@ class PdfRenderer
             'address' => $branch?->address ?: $organisation?->physical_address,
             'tagline' => $organisation?->tagline,
             'contact_line' => $this->contactLine($organisation),
+            'postal_address' => $this->filled($organisation?->postal_address),
+            'phone' => $this->filled($organisation?->contact_phone),
+            'email' => $this->filled($organisation?->contact_email),
+            'website' => $this->filled($organisation?->website),
             'logo' => $this->imageDataUri($organisation?->logo_path),
             'stamp' => $this->imageDataUri($organisation?->stamp_path),
             'signature' => $this->imageDataUri($organisation?->signature_path),
@@ -100,6 +104,13 @@ class PdfRenderer
         ], fn (?string $part) => trim((string) $part) !== '');
 
         return $parts === [] ? null : implode(' · ', $parts);
+    }
+
+    private function filled(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
     }
 
     /** Keeps a document number safe to use as a file name. */

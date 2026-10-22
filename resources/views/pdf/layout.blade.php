@@ -6,15 +6,18 @@
     <style>
         @page { margin: 22mm 16mm 20mm 16mm; }
         body { font-family: "DejaVu Sans", sans-serif; font-size: 10px; color: #1f2937; }
-        .head { border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 14px; }
-        .head h1 { font-size: 16px; margin: 0 0 2px; color: #1e3a8a; }
-        .head .org { font-size: 12px; font-weight: bold; }
+        .head { border-bottom: 3px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 4px; }
+        .head-rule { border-bottom: 1px solid #93c5fd; margin-bottom: 14px; }
+        .head h1 { font-size: 15px; margin: 0 0 4px; color: #ffffff; background: #1e3a8a; padding: 5px 10px; display: inline-block; letter-spacing: .03em; }
+        .head .org { font-size: 18px; font-weight: bold; color: #1e3a8a; line-height: 1.15; }
         .head .meta { font-size: 9px; color: #6b7280; }
-        .head .tagline { font-size: 9px; font-style: italic; color: #1e3a8a; margin-bottom: 2px; }
+        .head .tagline { font-size: 9.5px; font-style: italic; color: #2563eb; margin: 1px 0 4px; }
+        .head .contact { font-size: 9px; color: #374151; line-height: 1.45; }
+        .head .contact b { color: #1e3a8a; }
         .brand { border-collapse: collapse; }
         .brand td { vertical-align: top; padding: 0; width: auto; }
-        .brand td.logo { padding-right: 8px; }
-        .brand td.logo img { max-width: 22mm; max-height: 22mm; }
+        .brand td.logo { padding-right: 10px; }
+        .brand td.logo img { max-width: 26mm; max-height: 26mm; }
         .issued-by { width: 100%; margin-top: 22px; page-break-inside: avoid; }
         .issued-by td { vertical-align: bottom; padding: 0; }
         .issued-by img.stamp { max-width: 34mm; max-height: 34mm; }
@@ -51,16 +54,25 @@
                         <td>
                             <div class="org">{{ $letterhead['legal_name'] ?: $letterhead['organisation'] }}</div>
                             @if ($letterhead['tagline'] ?? null)<div class="tagline">{{ $letterhead['tagline'] }}</div>@endif
-                            <div class="meta">
-                                {{ implode(' · ', array_filter([$letterhead['branch'], $letterhead['address']])) }}
-                            </div>
-                            @if ($letterhead['contact_line'] ?? null)<div class="meta">{{ $letterhead['contact_line'] }}</div>@endif
-                            <div class="meta">
-                                @if ($letterhead['kra_pin'])
-                                    KRA PIN: {{ $letterhead['kra_pin'] }}
-                                @else
-                                    <span class="warn">KRA PIN not set</span>
+                            <div class="contact">
+                                @if ($letterhead['address'] ?? null)<div>{{ $letterhead['address'] }}</div>@endif
+                                @if ($letterhead['postal_address'] ?? null)<div>{{ $letterhead['postal_address'] }}</div>@endif
+                                @if (($letterhead['phone'] ?? null) || ($letterhead['email'] ?? null))
+                                    <div>
+                                        @if ($letterhead['phone'] ?? null)<b>Tel:</b> {{ $letterhead['phone'] }}@endif
+                                        @if (($letterhead['phone'] ?? null) && ($letterhead['email'] ?? null)) &nbsp;·&nbsp; @endif
+                                        @if ($letterhead['email'] ?? null)<b>Email:</b> {{ $letterhead['email'] }}@endif
+                                    </div>
                                 @endif
+                                @if ($letterhead['website'] ?? null)<div><b>Web:</b> {{ $letterhead['website'] }}</div>@endif
+                                <div>
+                                    @if ($letterhead['kra_pin'])
+                                        <b>KRA PIN:</b> {{ $letterhead['kra_pin'] }}
+                                    @else
+                                        <span class="warn">KRA PIN not set</span>
+                                    @endif
+                                    @if ($letterhead['branch'] ?? null) &nbsp;·&nbsp; <b>Branch:</b> {{ $letterhead['branch'] }}@endif
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -74,6 +86,7 @@
         </tr>
     </table>
 </div>
+<div class="head-rule"></div>
 
 @yield('body')
 </body>

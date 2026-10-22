@@ -28,11 +28,16 @@ type Form = {
   postal_address: string
   signatory_name: string
   signatory_title: string
+  mpesa_paybill: string
+  mpesa_account: string
+  mpesa_till: string
+  payment_note: string
 }
 
 const EMPTY: Form = {
   tagline: '', about: '', mission: '', vision: '', core_values: '', services: '', website: '',
   contact_email: '', contact_phone: '', physical_address: '', postal_address: '', signatory_name: '', signatory_title: '',
+  mpesa_paybill: '', mpesa_account: '', mpesa_till: '', payment_note: '',
 }
 
 function toForm(p: CompanyProfile): Form {
@@ -50,6 +55,10 @@ function toForm(p: CompanyProfile): Form {
     postal_address: p.postal_address ?? '',
     signatory_name: p.signatory_name ?? '',
     signatory_title: p.signatory_title ?? '',
+    mpesa_paybill: p.mpesa_paybill ?? '',
+    mpesa_account: p.mpesa_account ?? '',
+    mpesa_till: p.mpesa_till ?? '',
+    payment_note: p.payment_note ?? '',
   }
 }
 
@@ -92,6 +101,10 @@ export default function CompanyProfilePage() {
         postal_address: blankToNull(form.postal_address),
         signatory_name: blankToNull(form.signatory_name),
         signatory_title: blankToNull(form.signatory_title),
+        mpesa_paybill: blankToNull(form.mpesa_paybill),
+        mpesa_account: blankToNull(form.mpesa_account),
+        mpesa_till: blankToNull(form.mpesa_till),
+        payment_note: blankToNull(form.payment_note),
       })
     },
     onSuccess: (data) => {
@@ -166,6 +179,24 @@ export default function CompanyProfilePage() {
               </Field>
               <Field label="Physical address" hint="Used when a branch has no address of its own." className="sm:col-span-2" error={fieldError('physical_address')}>
                 <Input value={form.physical_address} onChange={(e) => set({ physical_address: e.target.value })} />
+              </Field>
+            </div>
+          </Card>
+
+          <Card title="How customers pay you" padded>
+            <p className="text-xs text-slate-500 mb-3">Printed on price lists, together with the bank accounts under Finance → Bank Accounts.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Lipa na M-PESA paybill (business number)" error={fieldError('mpesa_paybill')}>
+                <Input value={form.mpesa_paybill} maxLength={20} onChange={(e) => set({ mpesa_paybill: e.target.value })} placeholder="e.g. 522533" />
+              </Field>
+              <Field label="Paybill account number" error={fieldError('mpesa_account')}>
+                <Input value={form.mpesa_account} maxLength={50} onChange={(e) => set({ mpesa_account: e.target.value })} placeholder="e.g. 990072" />
+              </Field>
+              <Field label="Buy Goods till number" error={fieldError('mpesa_till')}>
+                <Input value={form.mpesa_till} maxLength={20} onChange={(e) => set({ mpesa_till: e.target.value })} placeholder="Optional" />
+              </Field>
+              <Field label="Payment note" hint="e.g. which bank the paybill is with" error={fieldError('payment_note')}>
+                <Input value={form.payment_note} maxLength={255} onChange={(e) => set({ payment_note: e.target.value })} placeholder="e.g. KCB Bank · Lipa na M-PESA" />
               </Field>
             </div>
           </Card>

@@ -39,6 +39,7 @@ class Organisation extends Model
         'contact_email', 'contact_phone',
         'tagline', 'about', 'mission', 'vision', 'core_values', 'services', 'website',
         'physical_address', 'postal_address', 'signatory_name', 'signatory_title',
+        'mpesa_paybill', 'mpesa_account', 'mpesa_till', 'payment_note',
     ];
 
     /**
