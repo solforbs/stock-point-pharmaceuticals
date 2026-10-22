@@ -35,7 +35,7 @@ class SopDocumentWriter
             'sections' => $sections,
             'labels' => SopTemplates::SECTIONS,
             'letterhead' => $this->pdf->letterhead(null),
-        ])->setPaper('a4')->setOption(['isRemoteEnabled' => false, 'defaultFont' => 'DejaVu Sans'])->output();
+        ])->setPaper('a4')->setOption(['isRemoteEnabled' => false, 'defaultFont' => 'DejaVu Sans', 'isFontSubsettingEnabled' => true])->output();
 
         $fileName = $document->code.'-v'.$version.'.pdf';
         $path = 'documents/'.$document->id.'/'.uniqid('sop-', true).'.pdf';

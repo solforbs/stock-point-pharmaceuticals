@@ -26,7 +26,7 @@ class PdfRenderer
     {
         $pdf = Pdf::loadHTML($this->html($view, $data, $branchId))
             ->setPaper('a4')
-            ->setOption(['isRemoteEnabled' => false, 'defaultFont' => 'DejaVu Sans']);
+            ->setOption(['isRemoteEnabled' => false, 'defaultFont' => 'DejaVu Sans', 'isFontSubsettingEnabled' => true]);
 
         return $pdf->download($this->safeFilename($filename));
     }
