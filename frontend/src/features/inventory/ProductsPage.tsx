@@ -56,7 +56,6 @@ export default function ProductsPage() {
     { key: 'code', header: 'Code', sortKey: 'code', render: (p) => <span className="font-semibold tabular">{p.code}</span> },
     { key: 'name', header: 'General/Scientific name', sortKey: 'name', render: (p) => <>{p.name}{p.strength && <b className="ml-1">{p.strength}</b>}</> },
     { key: 'brand', header: 'Brand', sortKey: 'brand_name', render: (p) => p.brand_name || '—' },
-    { key: 'generic', header: 'Generic', sortKey: 'generic_name', render: (p) => p.generic_name ?? '—' },
     { key: 'pack', header: 'Pack size', sortable: false, render: (p) => packSize(p) },
     { key: 'uoms', header: 'Sales UOMs', sortable: false, render: (p) => (p.uoms ?? []).filter((u) => u.is_sales).map((u) => u.uom?.code).join(', ') },
     { key: 'price', header: 'Default price', sortKey: 'default_price', align: 'right', render: (p) => <MoneyCell value={p.default_price} /> },
@@ -146,7 +145,7 @@ export default function ProductsPage() {
       <div id="tour-products-filters">
         <FilterBar>
           <Field label="Search" className="w-full sm:w-72">
-            <Input placeholder="Name, code, SKU or generic" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input placeholder="Name, brand, code or SKU" value={q} onChange={(e) => setQ(e.target.value)} />
           </Field>
           <Field label="Barcode (exact)" className="w-full sm:w-52">
             <Input placeholder="Scan…" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
@@ -185,7 +184,7 @@ export default function ProductsPage() {
   )
 }
 
-type EditForm = { name: string; brand_name: string; generic_name: string; strength: string; description: string; category_id: string; dosage_form_id: string; storage_condition_id: string; tax_code_id: string; base_uom_id: string; default_price: string; reorder_point: string; safety_stock: string; lead_time_days: string; pack_integrity: boolean; is_active: boolean }
+type EditForm = { name: string; brand_name: string; strength: string; description: string; category_id: string; dosage_form_id: string; storage_condition_id: string; tax_code_id: string; base_uom_id: string; default_price: string; reorder_point: string; safety_stock: string; lead_time_days: string; pack_integrity: boolean; is_active: boolean }
 
 function ProductEditForm({ product, onDone }: { product: Product; onDone: () => void }) {
   const queryClient = useQueryClient()
@@ -197,7 +196,6 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
   const [form, setForm] = useState<EditForm>({
     name: product.name,
     brand_name: product.brand_name ?? '',
-    generic_name: product.generic_name ?? '',
     strength: product.strength ?? '',
     description: product.description ?? '',
     category_id: product.category?.id ?? '',
@@ -220,7 +218,6 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
       apiPatch<Product>(`/api/products/${product.id}`, {
         name: form.name,
         brand_name: form.brand_name || null,
-        generic_name: form.generic_name || null,
         strength: form.strength || null,
         description: form.description || null,
         category_id: form.category_id || null,
@@ -247,13 +244,12 @@ function ProductEditForm({ product, onDone }: { product: Product; onDone: () => 
     <div className="space-y-4">
       <FormSection
         title="Medication Identity & Formulation"
-        description="Brand name, generic name, pharmaceutical strength, and classification"
+        description="General/scientific name, brand, pharmaceutical strength, and classification"
         icon={FlaskConical}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="General/Scientific name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
           <Field label="Brand" error={err?.errors.brand_name?.[0]}><Input value={form.brand_name} onChange={(e) => set({ brand_name: e.target.value })} /></Field>
-          <Field label="Generic name"><Input value={form.generic_name} onChange={(e) => set({ generic_name: e.target.value })} /></Field>
           <Field label="Strength"><Input value={form.strength} onChange={(e) => set({ strength: e.target.value })} /></Field>
           <Field label="Description / key features" className="col-span-1 sm:col-span-2" hint="For non-pharma items: size, material, colour, model…"><Input value={form.description} maxLength={500} onChange={(e) => set({ description: e.target.value })} /></Field>
           <Field label="Category"><Select value={form.category_id} onChange={(e) => set({ category_id: e.target.value })}><option value="">None</option>{(categories.data ?? []).map((c) => (<option key={c.id} value={c.id}>{c.code} · {c.name}</option>))}</Select></Field>
@@ -334,7 +330,6 @@ function ProductDrawer({ id, onClose }: { id: string | null; onClose: () => void
           <DescriptionList
             items={[
               { label: 'Brand', value: p.brand_name || '—' },
-              { label: 'Generic', value: p.generic_name ?? '—' },
               { label: 'Description', value: p.description || '—' },
               { label: 'SKU / GTIN', value: `${p.sku ?? '—'} / ${p.gtin ?? '—'}` },
               { label: 'Category', value: p.category?.name ?? '—' },
@@ -487,7 +482,7 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
   const dosageForms = useDosageForms()
   const storageConditions = useStorageConditions()
   const taxCodes = useTaxCodes()
-  const [form, setForm] = useState({ code: '', name: '', brand_name: '', generic_name: '', strength: '', description: '', sku: '', gtin: '', category_id: '', dosage_form_id: '', storage_condition_id: '', tax_code_id: '', base_uom_id: '', default_price: '', reorder_point: '0', safety_stock: '0', lead_time_days: '0', is_discrete: true, pack_integrity: false, requires_batch: true })
+  const [form, setForm] = useState({ code: '', name: '', brand_name: '', strength: '', description: '', sku: '', gtin: '', category_id: '', dosage_form_id: '', storage_condition_id: '', tax_code_id: '', base_uom_id: '', default_price: '', reorder_point: '0', safety_stock: '0', lead_time_days: '0', is_discrete: true, pack_integrity: false, requires_batch: true })
   const [rows, setRows] = useState<UomRow[]>([])
 
   const create = useMutation({
@@ -496,7 +491,6 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
       apiPost<Product>('/api/products', {
         ...form,
         brand_name: form.brand_name || null,
-        generic_name: form.generic_name || null,
         strength: form.strength || null,
         description: form.description || null,
         sku: form.sku || null,
@@ -558,9 +552,6 @@ function ProductCreateDrawer({ open, onClose, onCreated }: { open: boolean; onCl
             </Field>
             <Field label="Brand" error={err?.errors.brand_name?.[0]}>
               <Input value={form.brand_name} onChange={(e) => set({ brand_name: e.target.value })} placeholder="e.g. Amoxil" />
-            </Field>
-            <Field label="Generic (INN) Name">
-              <Input value={form.generic_name} onChange={(e) => set({ generic_name: e.target.value })} placeholder="e.g. Amoxicillin" />
             </Field>
             <Field label="Strength / Concentration">
               <Input value={form.strength} onChange={(e) => set({ strength: e.target.value })} placeholder="e.g. 500mg, 5mg/mL" />

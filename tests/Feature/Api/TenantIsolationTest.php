@@ -237,7 +237,7 @@ class TenantIsolationTest extends TestCase
 
         $this->productB = Product::create([
             'organisation_id' => $this->orgB->id, 'code' => 'AMOX500', 'sku' => 'SKU-B', 'name' => 'Amoxicillin 500mg (B)',
-            'generic_name' => 'Amoxicillin', 'base_uom_id' => $this->uoms['TAB']->id, 'is_discrete' => true, 'requires_batch' => true,
+            'brand_name' => 'Amoxil', 'base_uom_id' => $this->uoms['TAB']->id, 'is_discrete' => true, 'requires_batch' => true,
             'default_price' => '3.0000', 'is_active' => true,
         ]);
         $sharedBarcode = ProductUom::where('product_id', $this->amox->id)->where('uom_id', $this->uoms['TAB']->id)->value('barcode') ?? '6001234567890';

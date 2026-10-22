@@ -180,7 +180,7 @@ export function ProductResultRow({
       <div className="flex items-center justify-between gap-2 text-xs text-slate-500 mt-0.5">
         <span className="truncate">
           <span className="font-mono font-medium">#{product.code}</span>
-          {product.generic_name ? ` · ${product.generic_name}` : ''}
+          {product.brand_name ? ` · ${product.brand_name}` : ''}
         </span>
         {extra}
       </div>

@@ -33,7 +33,7 @@ class ReturnController extends ApiController
     {
         $this->requirePermission($request, 'sale.view');
 
-        $return = $this->find($request, $return)->load(['customer:id,code,name', 'sale:id,doc_number,sale_mode,posted_at', 'lines.product:id,code,name,generic_name,strength,description,base_uom_id', 'lines.product.baseUom:id,code', 'lines.batch:id,batch_number,expiry_date,status']);
+        $return = $this->find($request, $return)->load(['customer:id,code,name', 'sale:id,doc_number,sale_mode,posted_at', 'lines.product:id,code,name,brand_name,strength,description,base_uom_id', 'lines.product.baseUom:id,code', 'lines.batch:id,batch_number,expiry_date,status']);
         $payload = $return->toArray();
         if (! $request->user()->can('product.cost.view')) {
             unset($payload['cost_total']);
@@ -123,7 +123,7 @@ class ReturnController extends ApiController
     {
         $this->requirePermission($request, 'supplier.view');
 
-        return response()->json(SupplierReturn::where('branch_id', $this->branchId($request))->with(['supplier:id,code,name', 'store:id,code', 'lines.product:id,code,name,generic_name,strength,description,base_uom_id', 'lines.product.baseUom:id,code', 'lines.batch:id,batch_number,expiry_date,status'])->findOrFail($return));
+        return response()->json(SupplierReturn::where('branch_id', $this->branchId($request))->with(['supplier:id,code,name', 'store:id,code', 'lines.product:id,code,name,brand_name,strength,description,base_uom_id', 'lines.product.baseUom:id,code', 'lines.batch:id,batch_number,expiry_date,status'])->findOrFail($return));
     }
 
     /** POST /api/supplier-returns — posts immediately: the reverse of a GRN. */

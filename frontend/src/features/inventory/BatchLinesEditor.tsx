@@ -23,7 +23,7 @@ function Row({ line, storeId, statuses, reasons, onChange, onRemove }: { line: B
         </div>
         <div className="text-xs text-slate-500 mt-0.5">
           <span className="font-mono">{line.product.code}</span> · base {line.product.base_uom?.code ?? ''}
-          {(line.product.generic_name || line.product.description) && <> · {[line.product.generic_name, line.product.description].filter(Boolean).join(' · ')}</>}
+          {(line.product.brand_name || line.product.description) && <> · {[line.product.brand_name, line.product.description].filter(Boolean).join(' · ')}</>}
         </div>
       </td>
       <td>

@@ -416,6 +416,8 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/products/import', [ProductCatalogueController::class, 'import']);
     Route::delete('/products', [ProductCatalogueController::class, 'destroyAll']);
     Route::get('/products/export', [ProductCatalogueController::class, 'export']);
+    Route::get('/products/price-list', [ProductCatalogueController::class, 'priceList']);
+    Route::post('/products/price-list/pdf', [ProductCatalogueController::class, 'priceListPdf']);
 
     // People, reports and pricing rules — leave (21.16), scheduled reports (20.3), pricing rules (Part 6)
     Route::get('/leave/types', [LeaveController::class, 'types']);

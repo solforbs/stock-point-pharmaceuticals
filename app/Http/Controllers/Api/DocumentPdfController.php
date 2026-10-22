@@ -27,7 +27,7 @@ class DocumentPdfController extends ApiController
         $this->requirePermission($request, 'sale.view');
 
         $sale = Sale::where('branch_id', $this->branchId($request))
-            ->with(['customer', 'lines.product:id,code,name,strength,generic_name', 'lines.uom:id,code', 'lines.taxCode:id,code', 'lines.batchAllocations.batch:id,batch_number,expiry_date'])
+            ->with(['customer', 'lines.product:id,code,name,strength,brand_name', 'lines.uom:id,code', 'lines.taxCode:id,code', 'lines.batchAllocations.batch:id,batch_number,expiry_date'])
             ->findOrFail($sale);
 
         // A sale has no direct payment relation: money is allocated to a

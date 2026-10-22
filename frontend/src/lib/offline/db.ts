@@ -14,7 +14,7 @@ export type PackProduct = {
   sku: string | null
   gtin: string | null
   name: string
-  generic_name: string | null
+  brand_name?: string | null
   strength: string | null
   is_discrete: boolean
   pack_integrity: boolean

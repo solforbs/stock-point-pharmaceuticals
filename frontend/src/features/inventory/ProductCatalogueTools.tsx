@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, FolderTree, Trash2, Upload } from 'lucide-react'
+import { Download, FileSpreadsheet, FolderTree, Trash2, Upload } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { DeleteRecordButton } from '../../components/DeleteRecordButton'
 import { DataTable, type Column } from '../../components/ui/DataTable'
@@ -11,6 +11,7 @@ import { Button, Card, Field, FileDropzone, Input, Select } from '../../componen
 import { api, apiGet, apiPatch, apiPost, ensureCsrfCookie, getApiError } from '../../lib/api'
 import { downloadBlob, parseCsv, tableToObjects } from '../../lib/csv'
 import { readXlsxRows } from '../../lib/xlsx'
+import { buildXlsx } from '../../lib/xlsxWriter'
 import { usePermission } from '../../lib/permissions'
 import { toast, toastApiError } from '../../lib/toast'
 
@@ -29,7 +30,7 @@ type ImportSummary = { rows: number; created: number; updated: number; unchanged
 
 /** The columns the import reads; any others in the file are ignored. */
 const IMPORT_COLUMNS = [
-  'code', 'name', 'brand_name', 'sku', 'gtin', 'generic_name', 'strength', 'description',
+  'code', 'name', 'brand_name', 'sku', 'gtin', 'strength', 'description',
   'category_code', 'category_name', 'parent_category_code', 'parent_category_name',
   'dosage_form_code', 'storage_condition_code', 'base_uom', 'tax_code', 'default_price',
   'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active',
@@ -44,6 +45,7 @@ export function ProductCatalogueActions() {
   const canEdit = usePermission('product.edit')
   const canDelete = usePermission('record.delete') && canEdit
   const [deleteAllOpen, setDeleteAllOpen] = useState(false)
+  const [priceListOpen, setPriceListOpen] = useState(false)
   const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -67,7 +69,9 @@ export function ProductCatalogueActions() {
       <Button onClick={() => setCategoriesOpen(true)}><FolderTree size={13} /> Categories</Button>
       <Button onClick={exportCsv} disabled={exporting}><Download size={13} /> {exporting ? 'Exporting…' : 'Export CSV'}</Button>
       {canEdit && <Button onClick={() => setImportOpen(true)}><Upload size={13} /> Import CSV</Button>}
+      <Button onClick={() => setPriceListOpen(true)}><FileSpreadsheet size={13} /> Export master list</Button>
       {canDelete && <Button variant="danger" onClick={() => setDeleteAllOpen(true)}><Trash2 size={13} /> Delete all</Button>}
+      {priceListOpen && <PriceListDrawer onClose={() => setPriceListOpen(false)} />}
       <CategoriesDrawer open={categoriesOpen} onClose={() => setCategoriesOpen(false)} canEdit={canEdit} />
       {canEdit && <ProductImportDrawer open={importOpen} onClose={() => setImportOpen(false)} onExport={exportCsv} />}
       {canDelete && <DeleteAllProductsModal open={deleteAllOpen} onClose={() => setDeleteAllOpen(false)} />}
@@ -399,5 +403,160 @@ function ChangePreview({ summary }: { summary: ImportSummary }) {
         </div>
       )}
     </div>
+  )
+}
+
+type PriceListColumn = 'code' | 'name' | 'brand_name' | 'price'
+type PriceListData = {
+  title: string
+  columns: Record<PriceListColumn, string>
+  products: { id: string; code: string; name: string; brand_name: string | null; default_price: string | null }[]
+}
+
+const SHOWN_ROWS = 300
+
+/**
+ * The master price list, cut for one recipient: choose the columns, fill in
+ * any product without a price, adjust prices for this list only (a typed
+ * price, or every saved price by a percentage), then download Excel or PDF.
+ * Nothing is written back — the saved prices stay as they are.
+ */
+function PriceListDrawer({ onClose }: { onClose: () => void }) {
+  const data = useQuery({ queryKey: ['products', 'price-list'], queryFn: () => apiGet<PriceListData>('/api/products/price-list') })
+  const [columns, setColumns] = useState<PriceListColumn[]>(['code', 'name', 'brand_name', 'price'])
+  const [adjustPct, setAdjustPct] = useState('')
+  const [overrides, setOverrides] = useState<Record<string, string>>({})
+  const [search, setSearch] = useState('')
+  const [onlyMissing, setOnlyMissing] = useState(false)
+  const [busy, setBusy] = useState<'xlsx' | 'pdf' | null>(null)
+
+  const products = data.data?.products ?? []
+  const pct = Number(adjustPct) || 0
+  /** The price on this list: a typed price as typed, otherwise the saved price adjusted by the percentage. */
+  const priceOf = (p: PriceListData['products'][number]): number | null => {
+    const typed = overrides[p.id]
+    if (typed !== undefined && typed !== '') return Number(typed)
+    if (p.default_price === null || p.default_price === '') return null
+    return Math.round(Number(p.default_price) * (1 + pct / 100) * 100) / 100
+  }
+  const missing = products.filter((p) => priceOf(p) === null)
+  const visible = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    return products.filter((p) => (!onlyMissing || (p.default_price === null && !overrides[p.id]))
+      && (!term || [p.code, p.name, p.brand_name].some((v) => v && v.toLowerCase().includes(term))))
+  }, [products, search, onlyMissing, overrides])
+
+  const ordered = (['code', 'name', 'brand_name', 'price'] as PriceListColumn[]).filter((c) => columns.includes(c))
+  const rows = () => products.map((p) => ({ code: p.code, name: p.name, brand_name: p.brand_name ?? '', price: priceOf(p) }))
+  const fileName = (ext: string) => `${data.data?.title ?? 'Price list'} ${new Date().toISOString().slice(0, 10)}.${ext}`
+
+  const downloadExcel = () => {
+    if (!data.data) return
+    setBusy('xlsx')
+    try {
+      const labels = data.data.columns
+      const blob = buildXlsx({
+        sheetName: 'Price List',
+        title: data.data.title,
+        header: ordered.map((c) => labels[c]),
+        rows: rows().map((r) => ordered.map((c) => (c === 'price' ? r.price : r[c]))),
+        widths: ordered.map((c) => (c === 'name' ? 60 : c === 'brand_name' ? 24 : c === 'price' ? 14 : 14)),
+      })
+      downloadBlob(blob, fileName('xlsx'), blob.type)
+      toast.success('Price list downloaded', `${products.length} products, Excel`)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const downloadPdf = async () => {
+    setBusy('pdf')
+    try {
+      await ensureCsrfCookie()
+      const { data: pdf } = await api.post<Blob>('/api/products/price-list/pdf', { columns: ordered, rows: rows() }, { responseType: 'blob' })
+      downloadBlob(pdf, fileName('pdf'), 'application/pdf')
+      toast.success('Price list downloaded', `${products.length} products, PDF`)
+    } catch (e) {
+      toastApiError(e, 'The PDF could not be made')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <Drawer open onClose={onClose} title="Export master list" subtitle={data.data?.title} width={980}>
+      <div className="space-y-4">
+        {data.isLoading && <p className="text-sm text-slate-600">Loading products…</p>}
+        {data.isError && <InlineError error={data.error} />}
+        {data.data && (
+          <>
+            <Card padded title="1. Columns">
+              <div className="flex flex-wrap gap-4">
+                {(Object.keys(data.data.columns) as PriceListColumn[]).map((c) => (
+                  <label key={c} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={columns.includes(c)} onChange={(e) => setColumns(e.target.checked ? [...columns, c] : columns.filter((x) => x !== c))} />
+                    {data.data.columns[c]}
+                  </label>
+                ))}
+              </div>
+            </Card>
+
+            {columns.includes('price') && (
+              <Card padded title="2. Prices for this list">
+                <div className="space-y-3">
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    These prices apply to this download only — the products' saved prices do not change. Adjust every saved price by a percentage (e.g. 20 for a list going outside Nairobi), and type a price for any product to set it exactly.
+                  </p>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <Field label="Adjust saved prices by (%)" hint="Negative lowers them. Typed prices are used as typed.">
+                      <Input value={adjustPct} inputMode="decimal" placeholder="0" className="w-32 tabular text-right" onChange={(e) => setAdjustPct(e.target.value.replace(/[^\d.-]/g, ''))} />
+                    </Field>
+                    <Field label="Find a product"><Input value={search} placeholder="Code, name or brand" onChange={(e) => setSearch(e.target.value)} /></Field>
+                    <label className="flex items-center gap-2 text-sm pb-2 cursor-pointer">
+                      <input type="checkbox" checked={onlyMissing} onChange={(e) => setOnlyMissing(e.target.checked)} />
+                      Only products with no price ({products.filter((p) => p.default_price === null).length})
+                    </label>
+                  </div>
+                  {missing.length > 0 && <p className="text-xs text-amber-700 font-medium">{missing.length} product(s) still have no price; they will show “—” unless you type one.</p>}
+                  <div className="max-h-[360px] overflow-auto rounded-xl border border-slate-200">
+                    <table className="ui-table">
+                      <thead><tr><th>Code</th><th>Description</th><th>Brand</th><th className="text-right">Saved price</th><th className="text-right">Price on this list</th></tr></thead>
+                      <tbody>
+                        {visible.slice(0, SHOWN_ROWS).map((p) => (
+                          <tr key={p.id} className={priceOf(p) === null ? 'bg-amber-50/60' : ''}>
+                            <td className="tabular font-mono text-xs font-semibold">{p.code}</td>
+                            <td>{p.name}</td>
+                            <td>{p.brand_name ?? '—'}</td>
+                            <td className="text-right tabular text-slate-500">{p.default_price === null ? '—' : Number(p.default_price).toFixed(2)}</td>
+                            <td className="text-right">
+                              <input
+                                value={overrides[p.id] ?? ''}
+                                placeholder={priceOf(p) === null ? 'enter price' : priceOf(p)!.toFixed(2)}
+                                inputMode="decimal"
+                                onChange={(e) => setOverrides({ ...overrides, [p.id]: e.target.value.replace(/[^\d.]/g, '') })}
+                                className="ui-input h-7 w-28 tabular text-right"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {visible.length > SHOWN_ROWS && <div className="p-2 text-xs text-slate-500">Showing {SHOWN_ROWS} of {visible.length}. Search to find others; every product is included in the download.</div>}
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            <Card padded title={`3. Download (${products.length} products)`}>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="primary" disabled={ordered.length === 0 || busy !== null} onClick={downloadExcel}><Download size={13} /> {busy === 'xlsx' ? 'Preparing…' : 'Excel (.xlsx)'}</Button>
+                <Button variant="primary" disabled={ordered.length === 0 || busy !== null} onClick={() => void downloadPdf()}><Download size={13} /> {busy === 'pdf' ? 'Preparing PDF…' : 'PDF'}</Button>
+              </div>
+              {ordered.length === 0 && <p className="text-xs text-rose-600 mt-2">Choose at least one column.</p>}
+            </Card>
+          </>
+        )}
+      </div>
+    </Drawer>
   )
 }

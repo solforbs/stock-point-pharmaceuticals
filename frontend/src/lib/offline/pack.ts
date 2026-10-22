@@ -69,13 +69,13 @@ export function useLocalStock(pack: PricePack | null | undefined): Map<string, s
   }, [pack?.storeId, pack?.generated_at])
 }
 
-/** Name, code, generic name, SKU, GTIN or a unit's barcode, as the online search does. */
+/** Name, code, brand, SKU, GTIN or a unit's barcode, as the online search does. */
 export function searchPack(pack: PricePack, query: string, limit = 20): PackProduct[] {
   const term = query.trim().toLowerCase()
   if (!term) return []
   const exact = pack.products.find((p) => p.uoms.some((u) => u.barcode === query.trim()) || p.gtin === query.trim())
   const matches = pack.products.filter((p) =>
-    [p.name, p.code, p.generic_name, p.sku].some((v) => v && v.toLowerCase().includes(term)),
+    [p.name, p.code, p.brand_name, p.sku].some((v) => v && v.toLowerCase().includes(term)),
   )
   return (exact ? [exact, ...matches.filter((p) => p.id !== exact.id)] : matches).slice(0, limit)
 }

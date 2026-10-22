@@ -51,7 +51,7 @@ class SaleController extends ApiController
         $this->requirePermission($request, 'sale.view');
 
         $sale = Sale::where('branch_id', $this->branchId($request))
-            ->with(['customer:id,code,name,customer_type', 'lines.product:id,code,name,generic_name,strength,description,base_uom_id', 'lines.product.baseUom:id,code', 'lines.uom:id,code', 'lines.batchAllocations.batch:id,batch_number,expiry_date'])
+            ->with(['customer:id,code,name,customer_type', 'lines.product:id,code,name,brand_name,strength,description,base_uom_id', 'lines.product.baseUom:id,code', 'lines.uom:id,code', 'lines.batchAllocations.batch:id,batch_number,expiry_date'])
             ->findOrFail($sale);
 
         $payload = $sale->toArray();

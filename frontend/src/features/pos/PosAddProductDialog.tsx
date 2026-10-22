@@ -127,7 +127,7 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
         {/* Product facts */}
         <div className="lg:col-span-3 space-y-4">
           <section className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <Fact label="Generic name" value={product.generic_name} />
+            <Fact label="Brand" value={product.brand_name} />
             <Fact label="Category" value={product.category?.name} />
             <Fact label="Manufacturer" value={product.manufacturer?.name} />
             <Fact label="Dosage form" value={product.dosage_form?.name} />

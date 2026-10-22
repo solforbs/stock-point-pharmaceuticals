@@ -168,7 +168,7 @@ export function packToProduct(p: PackProduct): Product {
     sku: p.sku,
     gtin: p.gtin,
     name: p.name,
-    generic_name: p.generic_name,
+    brand_name: p.brand_name,
     strength: p.strength,
     is_discrete: p.is_discrete,
     pack_integrity: p.pack_integrity,

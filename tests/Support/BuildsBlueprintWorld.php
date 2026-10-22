@@ -107,7 +107,7 @@ trait BuildsBlueprintWorld
             'organisation_id' => $this->org->id,
             'code' => 'AMOX500',
             'name' => 'Amoxicillin 500mg Capsules',
-            'generic_name' => 'Amoxicillin',
+            'brand_name' => 'Amoxil',
             'strength' => '500mg',
             'base_uom_id' => $this->uoms['TAB']->id,
             'is_discrete' => true,

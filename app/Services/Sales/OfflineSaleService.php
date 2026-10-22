@@ -71,7 +71,7 @@ class OfflineSaleService
                 'sku' => $product->sku,
                 'gtin' => $product->gtin,
                 'name' => $product->name,
-                'generic_name' => $product->generic_name,
+                'brand_name' => $product->brand_name,
                 'strength' => $product->strength,
                 'is_discrete' => (bool) $product->is_discrete,
                 'pack_integrity' => (bool) $product->pack_integrity,

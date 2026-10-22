@@ -71,8 +71,8 @@ class ProductCatalogueHttpTest extends TestCase
         $category = ProductCategory::create(['code' => 'ANALG', 'name' => 'Analgesics']);
 
         $rows = [
-            ['code' => 'PARA500', 'category_code' => 'analg', 'tax_code' => 'VAT_STD', 'reorder_point' => '250', 'safety_stock' => '1,000', 'lead_time_days' => '', 'generic_name' => 'Paracetamol', 'strength' => '', 'is_active' => ''],
-            ['code' => 'AMOX500', 'category_code' => '', 'tax_code' => '', 'reorder_point' => '', 'safety_stock' => '', 'lead_time_days' => '14', 'generic_name' => '', 'strength' => '', 'is_active' => 'no'],
+            ['code' => 'PARA500', 'category_code' => 'analg', 'tax_code' => 'VAT_STD', 'reorder_point' => '250', 'safety_stock' => '1,000', 'lead_time_days' => '', 'brand_name' => 'Panadol', 'strength' => '', 'is_active' => ''],
+            ['code' => 'AMOX500', 'category_code' => '', 'tax_code' => '', 'reorder_point' => '', 'safety_stock' => '', 'lead_time_days' => '14', 'brand_name' => '', 'strength' => '', 'is_active' => 'no'],
         ];
 
         $preview = $this->postJson('/api/products/import', ['rows' => $rows, 'dry_run' => true])->assertOk()
@@ -92,7 +92,7 @@ class ProductCatalogueHttpTest extends TestCase
         $this->assertSame('250.0000', $para->reorder_point);
         $this->assertSame('1000.0000', $para->safety_stock);
         $this->assertSame(7, $para->lead_time_days);
-        $this->assertSame('Paracetamol', $para->generic_name);
+        $this->assertSame('Panadol', $para->brand_name);
         $this->assertTrue($para->is_active);
         $this->assertSame($this->user->id, $para->updated_by);
 
@@ -100,7 +100,7 @@ class ProductCatalogueHttpTest extends TestCase
         $this->assertSame(14, $amox->lead_time_days);
         $this->assertFalse($amox->is_active);
         $this->assertSame('500mg', $amox->strength);
-        $this->assertSame('Amoxicillin', $amox->generic_name);
+        $this->assertSame('Amoxil', $amox->brand_name);
 
         // Re-importing the same file changes nothing.
         $this->postJson('/api/products/import', ['rows' => $rows])->assertCreated()->assertJsonPath('updated', 0)->assertJsonPath('unchanged', 2);
@@ -227,12 +227,38 @@ class ProductCatalogueHttpTest extends TestCase
         $csv = $this->get('/api/products/export')->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8')->streamedContent();
         $lines = array_map(fn (string $l) => str_getcsv($l, ',', '"', ''), preg_split('/\r?\n/', trim(ltrim($csv, "\xEF\xBB\xBF"))));
 
-        $this->assertSame(['code', 'name', 'brand_name', 'sku', 'gtin', 'generic_name', 'strength', 'description', 'category_code', 'dosage_form_code', 'storage_condition_code', 'base_uom', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active'], $lines[0]);
-        $this->assertSame(['AMOX500', 'Amoxicillin 500mg Capsules', '', '', '', 'Amoxicillin', '500mg', '', '', '', '', 'TAB', '', '2.5', '0', '0', '0', '1', '1'], $lines[1]);
-        $this->assertSame(['PARA500', 'Paracetamol 500mg Tablets', '', '', '', '', '', '', 'ANALG', '', '', 'TAB', 'VAT_STD', '', '100', '0', '7', '1', '1'], $lines[2]);
+        $this->assertSame(['code', 'name', 'brand_name', 'sku', 'gtin', 'strength', 'description', 'category_code', 'dosage_form_code', 'storage_condition_code', 'base_uom', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active'], $lines[0]);
+        $this->assertSame(['AMOX500', 'Amoxicillin 500mg Capsules', 'Amoxil', '', '', '500mg', '', '', '', '', 'TAB', '', '2.5', '0', '0', '0', '1', '1'], $lines[1]);
+        $this->assertSame(['PARA500', 'Paracetamol 500mg Tablets', '', '', '', '', '', 'ANALG', '', '', 'TAB', 'VAT_STD', '', '100', '0', '7', '1', '1'], $lines[2]);
 
         $rows = array_map(fn (array $cells) => array_combine($lines[0], $cells), array_slice($lines, 1));
         $this->postJson('/api/products/import', ['rows' => $rows])->assertCreated()->assertJsonPath('updated', 0)->assertJsonPath('unchanged', 2);
+    }
+
+    public function test_the_master_price_list_is_built_from_the_products_and_exported_without_changing_them(): void
+    {
+        $list = $this->getJson('/api/products/price-list')->assertOk()
+            ->assertJsonPath('title', $this->org->name.' - Price List')
+            ->assertJsonPath('columns.name', 'Description (general/scientific name)')
+            ->json();
+        $amox = collect($list['products'])->firstWhere('code', 'AMOX500');
+        $this->assertSame('Amoxil', $amox['brand_name']);
+        $this->assertSame('2.5000', $amox['default_price']);
+        $this->assertNull(collect($list['products'])->firstWhere('code', 'PARA500')['default_price'], 'a product without a price is listed for the user to price');
+
+        // The PDF carries the prices as adjusted for this recipient…
+        $pdf = $this->post('/api/products/price-list/pdf', [
+            'columns' => ['code', 'name', 'price'],
+            'rows' => [['code' => 'AMOX500', 'name' => 'Amoxicillin 500mg Capsules', 'price' => '3.00'], ['code' => 'PARA500', 'name' => 'Paracetamol 500mg Tablets', 'price' => '1.50']],
+        ])->assertOk();
+        $this->assertStringStartsWith('%PDF-', (string) $pdf->getContent());
+        $this->assertTrue(AuditLog::where('action', 'PRICE_LIST_EXPORTED')->exists());
+
+        // …and the saved prices stay as they were.
+        $this->assertSame('2.5000', $this->amox->fresh()->default_price);
+        $this->assertNull($this->para->fresh()->default_price);
+
+        $this->postJson('/api/products/price-list/pdf', ['columns' => ['cost'], 'rows' => [['code' => 'X']]])->assertUnprocessable();
     }
 
     public function test_catalogue_maintenance_requires_product_edit(): void

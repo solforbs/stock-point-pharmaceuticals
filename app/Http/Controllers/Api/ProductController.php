@@ -23,7 +23,7 @@ class ProductController extends ApiController
         $this->requirePermission($request, 'product.view');
         $organisationId = $this->organisationId($request);
 
-        $allowedSorts = ['name', 'brand_name', 'code', 'generic_name', 'default_price', 'created_at'];
+        $allowedSorts = ['name', 'brand_name', 'code', 'default_price', 'created_at'];
         $sortBy = in_array($request->query('sort_by'), $allowedSorts, true) ? $request->query('sort_by') : 'name';
         $sortDir = strtolower((string) $request->query('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
 
@@ -35,8 +35,7 @@ class ProductController extends ApiController
                     $q->where('name', 'like', $term)
                         ->orWhere('brand_name', 'like', $term)
                         ->orWhere('code', 'like', $term)
-                        ->orWhere('sku', 'like', $term)
-                        ->orWhere('generic_name', 'like', $term);
+                        ->orWhere('sku', 'like', $term);
                 });
             })
             ->when($request->filled('barcode'), fn ($q) => $q->whereHas('uoms', fn ($u) => $u->where('barcode', $request->string('barcode'))))
@@ -256,7 +255,6 @@ class ProductController extends ApiController
             'gtin' => ['nullable', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'brand_name' => ['nullable', 'string', 'max:255'],
-            'generic_name' => ['nullable', 'string', 'max:255'],
             'strength' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
             'dosage_form_id' => ['nullable', 'uuid', TenantRules::exists('dosage_forms')],
@@ -332,7 +330,6 @@ class ProductController extends ApiController
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'brand_name' => ['nullable', 'string', 'max:255'],
-            'generic_name' => ['nullable', 'string', 'max:255'],
             'strength' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
             'category_id' => ['nullable', 'uuid', TenantRules::exists('product_categories')],

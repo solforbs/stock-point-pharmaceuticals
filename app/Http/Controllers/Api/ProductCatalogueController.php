@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
+use App\Models\Organisation;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Services\Admin\RecordDeletionService;
+use App\Services\Documents\PdfRenderer;
 use App\Services\Inventory\ProductImportService;
 use App\Services\Inventory\ProductImportValidationException;
 use App\Services\Tenancy\TenantContext;
@@ -15,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -25,7 +28,7 @@ class ProductCatalogueController extends ApiController
 {
     /** The CSV columns, in order; the import reads the ones listed in ProductImportService::COLUMNS. */
     private const EXPORT_COLUMNS = [
-        'code', 'name', 'brand_name', 'sku', 'gtin', 'generic_name', 'strength', 'description', 'category_code', 'dosage_form_code', 'storage_condition_code',
+        'code', 'name', 'brand_name', 'sku', 'gtin', 'strength', 'description', 'category_code', 'dosage_form_code', 'storage_condition_code',
         'base_uom', 'tax_code', 'default_price', 'reorder_point', 'safety_stock', 'lead_time_days', 'requires_batch', 'is_active',
     ];
 
@@ -159,6 +162,65 @@ class ProductCatalogueController extends ApiController
         return response()->json($result);
     }
 
+    /** The price list's columns, as the export screen offers them. */
+    public const PRICE_LIST_COLUMNS = ['code' => 'Code', 'name' => 'Description (general/scientific name)', 'brand_name' => 'Brand name', 'price' => 'Price (KES)'];
+
+    /**
+     * GET /api/products/price-list — the master list the price list is cut
+     * from: every active product with its saved default price. Exports adjust
+     * prices for one recipient only; nothing here is written back.
+     */
+    public function priceList(Request $request): JsonResponse
+    {
+        $this->requirePermission($request, 'product.view');
+        $organisationId = $this->organisationId($request);
+
+        return response()->json([
+            'title' => $this->priceListTitle($organisationId),
+            'columns' => self::PRICE_LIST_COLUMNS,
+            'products' => Product::where('organisation_id', $organisationId)->where('is_active', true)
+                ->orderBy('name')->orderBy('code')
+                ->get(['id', 'code', 'name', 'brand_name', 'default_price']),
+        ]);
+    }
+
+    /**
+     * POST /api/products/price-list/pdf — the list as the user finished it
+     * on screen (chosen columns, prices as adjusted for this recipient).
+     */
+    public function priceListPdf(Request $request, PdfRenderer $pdf): Response
+    {
+        $this->requirePermission($request, 'product.view');
+        $data = $request->validate([
+            'columns' => ['required', 'array', 'min:1'],
+            'columns.*' => ['string', Rule::in(array_keys(self::PRICE_LIST_COLUMNS))],
+            'rows' => ['required', 'array', 'min:1', 'max:20000'],
+            'rows.*.code' => ['nullable', 'string', 'max:255'],
+            'rows.*.name' => ['nullable', 'string', 'max:255'],
+            'rows.*.brand_name' => ['nullable', 'string', 'max:255'],
+            'rows.*.price' => ['nullable', 'numeric', 'min:0'],
+        ]);
+        set_time_limit(300);
+
+        $organisationId = $this->organisationId($request);
+        $columns = array_values(array_intersect(array_keys(self::PRICE_LIST_COLUMNS), $data['columns']));
+        $title = $this->priceListTitle($organisationId);
+        AuditLog::record('PRICE_LIST_EXPORTED', 'organisation', $organisationId, ['after_json' => ['format' => 'PDF', 'rows' => count($data['rows']), 'columns' => $columns]]);
+
+        return $pdf->render('pdf.price-list', [
+            'title' => $title,
+            'date' => now()->format('j M Y'),
+            'columns' => $columns,
+            'labels' => self::PRICE_LIST_COLUMNS,
+            'rows' => $data['rows'],
+        ], $title.' '.now()->format('Y-m-d'), $this->branchId($request));
+    }
+
+    private function priceListTitle(string $organisationId): string
+    {
+        return (Organisation::whereKey($organisationId)->value('name') ?? 'Price list').' - Price List';
+    }
+
     /** GET /api/products/export — the organisation's products as CSV, ready to edit and re-import. */
     public function export(Request $request): StreamedResponse
     {
@@ -178,13 +240,13 @@ class ProductCatalogueController extends ApiController
                 ->leftJoin('units_of_measure as u', 'u.id', '=', 'p.base_uom_id')
                 ->where('p.organisation_id', $organisationId)
                 ->orderBy('p.code')
-                ->select('p.id', 'p.code', 'p.name', 'p.brand_name', 'p.sku', 'p.gtin', 'p.generic_name', 'p.strength', 'p.description',
+                ->select('p.id', 'p.code', 'p.name', 'p.brand_name', 'p.sku', 'p.gtin', 'p.strength', 'p.description',
                     'c.code as category_code', 'd.code as dosage_form_code', 's.code as storage_condition_code', 'u.code as base_uom', 't.code as tax_code',
                     'p.default_price', 'p.reorder_point', 'p.safety_stock', 'p.lead_time_days', 'p.requires_batch', 'p.is_active')
                 ->chunk(500, function ($products) use ($out) {
                     foreach ($products as $p) {
                         fputcsv($out, [
-                            $p->code, $this->safeCell((string) $p->name), $this->safeCell((string) $p->brand_name), $p->sku, $p->gtin, $this->safeCell((string) $p->generic_name), $p->strength,
+                            $p->code, $this->safeCell((string) $p->name), $this->safeCell((string) $p->brand_name), $p->sku, $p->gtin, $p->strength,
                             $this->safeCell((string) $p->description), $p->category_code, $p->dosage_form_code, $p->storage_condition_code, $p->base_uom, $p->tax_code,
                             $p->default_price === null ? '' : $this->number((string) $p->default_price),
                             $this->number((string) $p->reorder_point), $this->number((string) $p->safety_stock),

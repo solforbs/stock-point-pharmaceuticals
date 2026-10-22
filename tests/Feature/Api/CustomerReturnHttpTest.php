@@ -155,7 +155,7 @@ class CustomerReturnHttpTest extends TestCase
             ->assertJsonPath('lines.0.return_reason', 'DAMAGED')
             ->assertJsonPath('lines.0.remarks', 'Box crushed in transit to Kakuma')
             ->assertJsonPath('lines.0.product.strength', '500mg')
-            ->assertJsonPath('lines.0.product.generic_name', 'Amoxicillin')
+            ->assertJsonPath('lines.0.product.brand_name', 'Amoxil')
             ->assertJsonPath('lines.0.product.description', 'Hard gelatin capsule, red/yellow')
             ->assertJsonPath('lines.0.product.base_uom.code', 'TAB')
             ->assertJsonPath('lines.0.batch.batch_number', 'B1')

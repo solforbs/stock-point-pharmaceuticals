@@ -80,7 +80,7 @@ export type ProductUom = {
 export type NamedRef = { id: string; code?: string; name: string }
 
 /** A product as a document line names it: enough to tell the exact item apart. */
-export type ItemRef = NamedRef & { generic_name?: string | null; strength?: string | null; description?: string | null; base_uom?: { id: string; code: string } | null }
+export type ItemRef = NamedRef & { brand_name?: string | null; strength?: string | null; description?: string | null; base_uom?: { id: string; code: string } | null }
 
 export type ReturnReason =
   | 'DAMAGED' | 'EXPIRED' | 'SHORT_EXPIRY' | 'WRONG_ITEM' | 'EXCESS_QUANTITY' | 'QUALITY_COMPLAINT'
@@ -105,7 +105,6 @@ export type Product = {
   gtin: string | null
   name: string
   brand_name?: string | null
-  generic_name: string | null
   strength: string | null
   /** Key features, for non-pharma items that have no strength. */
   description?: string | null
@@ -159,7 +158,7 @@ export type UsualPrice = { unit_price: Decimal; uom_id: string; uom_code: string
 
 /** GET /api/products/{id}/insight — everything a cashier needs beside one cart line. */
 export type ProductInsight = {
-  product: { id: string; code: string; name: string; generic_name: string | null; strength: string | null }
+  product: { id: string; code: string; name: string; brand_name?: string | null; strength: string | null }
   tax: { code: string | null; name: string | null; rate_pct: Decimal; treatment: 'STANDARD' | 'ZERO_RATED' | 'EXEMPT' | 'NOT_SET' }
   min_margin_pct: Decimal | null
   uoms: {

@@ -195,10 +195,10 @@ class EncounterController extends ApiController
                     $query->where(fn ($q) => $q->where('name', 'like', $term)
                         ->orWhere('code', 'like', $term)
                         ->orWhere('sku', 'like', $term)
-                        ->orWhere('generic_name', 'like', $term));
+                        ->orWhere('brand_name', 'like', $term));
                 })
                 ->when($request->filled('barcode'), fn ($q) => $q->whereHas('uoms', fn ($u) => $u->where('barcode', $request->string('barcode'))))
-                ->select(['id', 'code', 'name', 'generic_name', 'strength'])
+                ->select(['id', 'code', 'name', 'brand_name', 'strength'])
                 ->orderBy('name')
                 ->paginate($request->integer('per_page', 20))
         );

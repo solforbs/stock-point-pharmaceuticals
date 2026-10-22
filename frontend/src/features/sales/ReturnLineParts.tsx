@@ -8,7 +8,7 @@ import { RETURN_REASON_LABEL } from './returnReasons'
  */
 export function ReturnItemCell({ product, fallbackId }: { product?: ItemRef | null; fallbackId: string }) {
   if (!product) return <span className="tabular">{fallbackId.slice(0, 8)}</span>
-  const detail = [product.generic_name, product.description].filter(Boolean).join(' · ')
+  const detail = [product.brand_name, product.description].filter(Boolean).join(' · ')
   return (
     <div className="min-w-0">
       <div className="font-semibold text-slate-900 leading-snug">

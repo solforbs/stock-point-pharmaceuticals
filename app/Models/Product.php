@@ -14,7 +14,7 @@ class Product extends Model
     use BelongsToOrganisation, HasUuids;
 
     protected $fillable = [
-        'organisation_id', 'code', 'sku', 'gtin', 'name', 'brand_name', 'generic_name', 'strength', 'description',
+        'organisation_id', 'code', 'sku', 'gtin', 'name', 'brand_name', 'strength', 'description',
         'dosage_form_id', 'category_id', 'manufacturer_id', 'base_uom_id',
         'tax_code_id', 'storage_condition_id',
         'is_discrete', 'pack_integrity', 'requires_batch',

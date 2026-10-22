@@ -67,7 +67,7 @@ class ProductInsight
         $lastPurchase = $canSeeCost ? ($this->lastPurchases([$product->id], $context['branch_id'])[$product->id] ?? null) : null;
 
         return [
-            'product' => $product->only(['id', 'code', 'name', 'generic_name', 'strength']),
+            'product' => $product->only(['id', 'code', 'name', 'brand_name', 'strength']),
             'tax' => $this->taxTreatment($product, $customer),
             'min_margin_pct' => $product->discountPolicy?->min_margin_pct,
             'uoms' => $uoms,
@@ -237,9 +237,10 @@ class ProductInsight
     }
 
     /**
-     * In-stock substitutes: the same molecule first, then the same category
-     * and dosage form. Rule-based on the catalogue, so it is only as good as
-     * the generic names and categories recorded on each product.
+     * In-stock substitutes: the same general/scientific name (another brand of
+     * the same item) first, then the same category and dosage form. Rule-based
+     * on the catalogue, so it is only as good as the names and categories
+     * recorded on each product.
      *
      * @return list<array<string, mixed>>
      */
@@ -250,15 +251,10 @@ class ProductInsight
             ->where('is_active', true)
             ->whereKeyNot($product->id)
             ->where(function ($q) use ($product) {
-                if ($product->generic_name) {
-                    $q->orWhere('generic_name', $product->generic_name);
-                }
+                $q->orWhere('name', $product->name);
                 if ($product->category_id) {
                     $q->orWhere(fn ($c) => $c->where('category_id', $product->category_id)
                         ->when($product->dosage_form_id, fn ($d) => $d->where('dosage_form_id', $product->dosage_form_id)));
-                }
-                if (! $product->generic_name && ! $product->category_id) {
-                    $q->whereRaw('1 = 0');
                 }
             })
             ->with(['baseUom', 'uoms.uom'])
@@ -293,7 +289,7 @@ class ProductInsight
         return $candidates
             ->filter(fn (Product $p) => ($inBranch[$p->id] ?? 0) > 0)
             ->map(fn (Product $p) => [
-                'match' => $product->generic_name && $p->generic_name === $product->generic_name ? 'SAME_GENERIC' : 'SAME_CATEGORY',
+                'match' => $p->name === $product->name ? 'SAME_GENERIC' : 'SAME_CATEGORY',
                 'free_in_store' => number_format($inStore[$p->id] ?? 0, 4, '.', ''),
                 'free_in_branch' => number_format($inBranch[$p->id], 4, '.', ''),
                 'product' => $p->toArray(),

@@ -88,19 +88,20 @@ class ProductInsightHttpTest extends TestCase
             ->assertJsonPath('usual_price.everyone.unit_price', '440.0000');
     }
 
-    public function test_alternatives_are_in_stock_products_of_the_same_generic_first(): void
+    public function test_alternatives_are_in_stock_products_of_the_same_general_name_first(): void
     {
         $this->grantPermissions(['product.view']);
-        $inStock = $this->otherProduct('AMOX250', 'Amoxil 250mg Capsules', 'Amoxicillin');
+        // Other brands of the same general/scientific name.
+        $inStock = $this->otherProduct('AMOX-MOX', 'Amoxicillin 500mg Capsules', 'Moxacil');
         $this->stockOf($inStock, 'B-ALT', '50');
-        $this->otherProduct('AMOX-SUSP', 'Amoxicillin Suspension', 'Amoxicillin');
-        $this->otherProduct('PCM500', 'Paracetamol 500mg', 'Paracetamol');
+        $this->otherProduct('AMOX-EMPTY', 'Amoxicillin 500mg Capsules', 'Ospamox');
+        $this->otherProduct('PCM500', 'Paracetamol 500mg', 'Panadol');
 
         $alternatives = $this->getJson("/api/products/{$this->amox->id}/insight?store_id={$this->store->id}")
             ->assertOk()->json('alternatives');
 
         $this->assertCount(1, $alternatives, 'only the in-stock substitute, never an empty shelf or a different molecule');
-        $this->assertSame('AMOX250', $alternatives[0]['product']['code']);
+        $this->assertSame('AMOX-MOX', $alternatives[0]['product']['code']);
         $this->assertSame('SAME_GENERIC', $alternatives[0]['match']);
         $this->assertSame('50.0000', $alternatives[0]['free_in_store']);
         $this->assertNotEmpty($alternatives[0]['product']['uoms'], 'enough to add it straight to the cart');
@@ -141,10 +142,10 @@ class ProductInsightHttpTest extends TestCase
         ]);
     }
 
-    private function otherProduct(string $code, string $name, string $generic): Product
+    private function otherProduct(string $code, string $name, string $brand): Product
     {
         $product = Product::create([
-            'organisation_id' => $this->org->id, 'code' => $code, 'name' => $name, 'generic_name' => $generic,
+            'organisation_id' => $this->org->id, 'code' => $code, 'name' => $name, 'brand_name' => $brand,
             'base_uom_id' => $this->uoms['TAB']->id, 'is_discrete' => true, 'requires_batch' => true,
             'default_price' => '3.0000', 'is_active' => true,
         ]);

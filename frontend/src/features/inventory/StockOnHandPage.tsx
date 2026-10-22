@@ -8,6 +8,9 @@ import { dSum } from '../../lib/decimal'
 import { useProductCategories, useStores } from '../../lib/hooks'
 import { formatMoney } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
+import { toast } from '../../lib/toast'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
+import { printStockSheet } from './printStockSheet'
 import type { ProductCategory, StockStateRow } from '../../lib/types'
 import { ExpiryBadge } from './ExpiryBadge'
 import { StockStatesTable } from './StockStatesTable'
@@ -27,6 +30,7 @@ export default function StockOnHandPage() {
   const [grouped, setGrouped] = useState(true)
   const [q, setQ] = useState('')
   const debouncedQ = useDebounced(q)
+  const user = useCurrentUser()
 
   const stock = useQuery({
     queryKey: ['inventory', 'stock', { store_id: storeId, q: debouncedQ, category_id: categoryId }],
@@ -47,6 +51,23 @@ export default function StockOnHandPage() {
         parent="Inventory"
         title="Stock on Hand"
         subtitle="The authoritative live view of stock across the 8 balance states, calculated per store and grouped under its stock heading."
+        actions={
+          <Button
+            disabled={!stock.data}
+            onClick={() => {
+              const store = (stores.data ?? []).find((s) => s.id === storeId)
+              const heading = (categories.data ?? []).find((c) => c.id === categoryId)
+              const opened = printStockSheet({
+                rows: stock.data?.data ?? [],
+                title: `${user.data?.organisation?.name ?? 'Stock'} - Stock on hand`,
+                filters: [store ? `Store ${store.code} · ${store.name}` : 'All stores', heading ? `Heading: ${heading.name}` : 'All headings', q ? `Search: ${q}` : null].filter(Boolean).join(' · '),
+              })
+              if (!opened) toast.error('The print sheet was blocked', 'Allow pop-ups for this site, then try again.')
+            }}
+          >
+            Print stock list
+          </Button>
+        }
       />
       <div id="tour-stock-filters">
         <FilterBar>

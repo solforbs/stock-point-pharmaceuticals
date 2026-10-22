@@ -33,7 +33,7 @@
                 <td>
                     {{ $line->product?->name }}@if ($line->product?->strength && ! str_contains((string) $line->product?->name, (string) $line->product?->strength)) {{ $line->product->strength }}@endif
                     @if ($line->is_bonus)<strong>(free)</strong>@endif
-                    <div class="meta">{{ $line->product?->code }}@if ($line->product?->generic_name) · {{ $line->product->generic_name }}@endif</div>
+                    <div class="meta">{{ $line->product?->code }}@if ($line->product?->brand_name) · {{ $line->product->brand_name }}@endif</div>
                     @foreach ($line->batchAllocations as $allocation)
                         <div class="meta">Batch {{ $allocation->batch?->batch_number }} · expires {{ $allocation->batch?->expiry_date?->format('M Y') }}</div>
                     @endforeach
