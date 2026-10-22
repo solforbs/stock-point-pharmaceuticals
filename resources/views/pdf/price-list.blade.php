@@ -1,4 +1,4 @@
-@extends('pdf.layout', ['title' => $title, 'docNumber' => 'Prices in KES', 'docDate' => $date])
+@extends('pdf.layout', ['title' => $title, 'docNumber' => 'Prices in KES', 'docDate' => $date, 'hideKraPin' => true])
 
 @section('body')
     <table class="items">

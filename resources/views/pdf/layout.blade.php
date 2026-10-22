@@ -63,13 +63,18 @@
                     @if ($letterhead['phone'] ?? null)<tr><td class="k">Tel</td><td>{{ $letterhead['phone'] }}</td></tr>@endif
                     @if ($letterhead['email'] ?? null)<tr><td class="k">Email</td><td>{{ $letterhead['email'] }}</td></tr>@endif
                     @if ($letterhead['website'] ?? null)<tr><td class="k">Web</td><td>{{ $letterhead['website'] }}</td></tr>@endif
-                    <tr>
-                        <td class="k">KRA PIN</td>
-                        <td>
-                            @if ($letterhead['kra_pin']){{ $letterhead['kra_pin'] }}@else<span class="warn">not set</span>@endif
-                            @if ($letterhead['branch'] ?? null)<span class="sep">|</span><span class="k">Branch</span> {{ $letterhead['branch'] }}@endif
-                        </td>
-                    </tr>
+                    {{-- A document can leave the KRA PIN off (the price list); tax documents always carry it. --}}
+                    @if ($hideKraPin ?? false)
+                        @if ($letterhead['branch'] ?? null)<tr><td class="k">Branch</td><td>{{ $letterhead['branch'] }}</td></tr>@endif
+                    @else
+                        <tr>
+                            <td class="k">KRA PIN</td>
+                            <td>
+                                @if ($letterhead['kra_pin']){{ $letterhead['kra_pin'] }}@else<span class="warn">not set</span>@endif
+                                @if ($letterhead['branch'] ?? null)<span class="sep">|</span><span class="k">Branch</span> {{ $letterhead['branch'] }}@endif
+                            </td>
+                        </tr>
+                    @endif
                 </table>
             </td>
             <td class="mh-doc">
