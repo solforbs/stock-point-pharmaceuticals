@@ -24,15 +24,19 @@ class RecordDeletionService
      * customer's credit account, its contacts) and go with it, so they never
      * hold it.
      *
+     * Rows in $detachTables keep existing without the record (their link is
+     * cleared), so they do not hold it either.
+     *
      * @param  list<string>  $ownedTables
+     * @param  list<string>  $detachTables
      * @return list<array{table: string, column: string, count: int}>
      */
-    public function references(string $table, string $id, array $ownedTables = []): array
+    public function references(string $table, string $id, array $ownedTables = [], array $detachTables = []): array
     {
         $found = [];
 
         foreach ($this->foreignKeysTo($table) as $fk) {
-            if (in_array($fk['table'], $ownedTables, true)) {
+            if (in_array($fk['table'], $ownedTables, true) || in_array($fk['table'], $detachTables, true)) {
                 continue;
             }
             $count = (int) DB::table($fk['table'])->where($fk['column'], $id)->count();
@@ -48,38 +52,49 @@ class RecordDeletionService
 
     /**
      * Deletes the record, or refuses and says exactly what is holding it.
-     * Rows in $ownedTables are deleted with it. The whole row, and the owned
-     * rows, go into the audit log first, so a deletion made in error can be
-     * read back and re-entered.
+     * Rows in $ownedTables are deleted with it; rows in $detachTables stay,
+     * with their link to it cleared. The whole row, the owned rows and which
+     * rows were detached go into the audit log first, so a deletion made in
+     * error can be read back and re-entered.
      *
      * @param  list<string>  $ownedTables
+     * @param  list<string>  $detachTables
      *
      * @throws RecordInUseException
      */
-    public function delete(Model $model, string $label, ?int $userId = null, array $ownedTables = []): void
+    public function delete(Model $model, string $label, ?int $userId = null, array $ownedTables = [], array $detachTables = []): void
     {
         $table = $model->getTable();
         $id = (string) $model->getKey();
 
-        $references = $this->references($table, $id, $ownedTables);
+        $references = $this->references($table, $id, $ownedTables, $detachTables);
         if ($references !== []) {
             throw new RecordInUseException($label, $references);
         }
 
-        DB::transaction(function () use ($model, $table, $id, $label, $userId, $ownedTables): void {
+        DB::transaction(function () use ($model, $table, $id, $label, $userId, $ownedTables, $detachTables): void {
             $owned = [];
+            $detached = [];
             foreach ($this->foreignKeysTo($table) as $fk) {
                 if (in_array($fk['table'], $ownedTables, true)) {
                     $rows = DB::table($fk['table'])->where($fk['column'], $id);
                     $owned[$fk['table']] = $rows->get()->map(fn ($row) => (array) $row)->all();
                     $rows->delete();
+                } elseif (in_array($fk['table'], $detachTables, true)) {
+                    $ids = DB::table($fk['table'])->where($fk['column'], $id)->pluck('id')->all();
+                    if ($ids !== []) {
+                        DB::table($fk['table'])->whereIn('id', $ids)->update([$fk['column'] => null]);
+                        $detached[$fk['table']] = $ids;
+                    }
                 }
             }
 
             AuditLog::record('RECORD_DELETED', $table, $id, [
                 'user_id' => $userId,
                 'reference' => $label,
-                'before_json' => $model->attributesToArray() + ($owned !== [] ? ['deleted_with_it' => $owned] : []),
+                'before_json' => $model->attributesToArray()
+                    + ($owned !== [] ? ['deleted_with_it' => $owned] : [])
+                    + ($detached !== [] ? ['detached' => $detached] : []),
             ]);
 
             $model->delete();

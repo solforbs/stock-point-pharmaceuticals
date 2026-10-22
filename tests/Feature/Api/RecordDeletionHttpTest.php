@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\AccountsReceivable;
 use App\Models\AuditLog;
 use App\Models\CustomerContact;
 use App\Models\CustomerCredit;
@@ -128,14 +129,23 @@ class RecordDeletionHttpTest extends TestCase
         $this->assertSame('5000.0000', $audit->before_json['deleted_with_it']['customer_credits'][0]['credit_limit']);
     }
 
-    public function test_a_customer_who_still_owes_money_cannot_be_deleted(): void
+    public function test_a_customer_is_deleted_with_its_statement_while_its_sales_stay_unnamed(): void
     {
         $customer = $this->postJson('/api/customers', ['code' => 'OWES', 'name' => 'Owes Money', 'customer_type' => 'CLINIC'])->assertCreated()->json();
+        $this->receive('B-CUST', now()->addYear()->toDateString(), '100', '2.0000');
+        $sale = $this->checkout([$this->saleLine('TAB', '10', '5.00')], [['method' => 'CASH', 'amount' => '50.00']], ['customer_id' => $customer['id']]);
+        AccountsReceivable::create(['organisation_id' => $this->org->id, 'customer_id' => $customer['id'], 'txn_type' => 'INVOICE', 'sale_id' => $sale->id, 'amount' => '1250', 'balance_after' => '1250', 'branch_id' => $this->branch->id]);
         CustomerCredit::whereKey($customer['id'])->update(['current_balance' => '1250']);
 
-        $this->deleteJson("/api/admin/records/customers/{$customer['id']}")->assertStatus(422)
-            ->assertJsonPath('error.code', 'CUSTOMER_HAS_BALANCE');
-        $this->assertTrue(CustomerCredit::whereKey($customer['id'])->exists());
+        $this->getJson("/api/admin/records/customers/{$customer['id']}/references")->assertOk()->assertJsonPath('deletable', true);
+        $this->deleteJson("/api/admin/records/customers/{$customer['id']}")->assertOk();
+
+        $this->assertSame(0, AccountsReceivable::where('customer_id', $customer['id'])->count(), 'the statement of account goes with the customer');
+        $this->assertFalse(CustomerCredit::whereKey($customer['id'])->exists());
+        $this->assertNull($sale->fresh()->customer_id, 'the sale stays in the books, without a name');
+        $audit = AuditLog::where('action', 'RECORD_DELETED')->where('entity_id', $customer['id'])->firstOrFail();
+        $this->assertCount(1, $audit->before_json['deleted_with_it']['accounts_receivables']);
+        $this->assertSame([$sale->id], $audit->before_json['detached']['sales']);
     }
 
     public function test_transactions_are_not_a_deletable_type_at_all(): void
