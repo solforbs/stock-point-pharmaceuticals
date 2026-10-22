@@ -5,6 +5,8 @@ namespace Tests\Feature\Api;
 use App\Models\Customer;
 use App\Models\Organisation;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -18,6 +20,38 @@ class CustomerManagementHttpTest extends TestCase
         parent::setUp();
         $this->buildWorld();
         Sanctum::actingAs($this->user);
+    }
+
+    public function test_a_customer_carries_its_legal_status_and_certified_documents(): void
+    {
+        Storage::fake('local');
+        $this->grantPermissions(['customer.manage', 'sale.create', 'licence.view']);
+
+        $customer = $this->postJson('/api/customers', [
+            'code' => 'CHEM-01', 'name' => 'Lodwar Chemists Ltd', 'customer_type' => 'RETAIL_PHARMACY',
+            'legal_status' => 'LIMITED_COMPANY', 'registration_number' => 'PVT-AB12CD3', 'kra_pin' => 'P051234567M',
+            'superintendent_name' => 'Dr. Achieng Otieno', 'superintendent_reg_no' => 'PPB/2019/1234',
+        ])->assertCreated()->assertJsonPath('legal_status', 'LIMITED_COMPANY')->assertJsonPath('superintendent_name', 'Dr. Achieng Otieno')->json();
+
+        // A certificate of incorporation never expires; a PPB licence and a county permit must say when they do.
+        $this->post("/api/customers/{$customer['id']}/documents", ['licence_type' => 'CERT_OF_INCORPORATION', 'licence_number' => 'PVT-AB12CD3', 'document' => UploadedFile::fake()->create('incorporation.pdf', 50, 'application/pdf')], ['Accept' => 'application/json'])
+            ->assertCreated()->assertJsonPath('expiry_date', null)->assertJsonPath('status', 'VALID')->assertJsonPath('has_document', true);
+        $this->post("/api/customers/{$customer['id']}/documents", ['licence_type' => 'PPB_PREMISES', 'licence_number' => 'PPB-77'], ['Accept' => 'application/json'])->assertUnprocessable();
+        $ppb = $this->post("/api/customers/{$customer['id']}/documents", ['licence_type' => 'PPB_PREMISES', 'licence_number' => 'PPB-77', 'issued_by' => 'PPB', 'issue_date' => now()->startOfYear()->toDateString(), 'expiry_date' => now()->addDays(20)->toDateString()], ['Accept' => 'application/json'])
+            ->assertCreated()->assertJsonPath('status', 'EXPIRING')->json();
+        $this->post("/api/customers/{$customer['id']}/documents", ['licence_type' => 'COUNTY_PERMIT', 'licence_number' => 'TC-2026-001', 'expiry_date' => now()->endOfYear()->toDateString()], ['Accept' => 'application/json'])->assertCreated();
+
+        $docs = $this->getJson("/api/customers/{$customer['id']}/documents")->assertOk()->assertJsonCount(3)->json();
+        $incorporation = collect($docs)->firstWhere('licence_type', 'CERT_OF_INCORPORATION');
+        $this->get("/api/customers/{$customer['id']}/documents/{$incorporation['id']}/file")->assertOk();
+
+        // Last year's copy is archived when the renewal comes in.
+        $this->postJson("/api/customers/{$customer['id']}/documents/{$ppb['id']}", ['is_active' => false])->assertOk()->assertJsonPath('is_active', false);
+        $this->getJson("/api/customers/{$customer['id']}/documents")->assertJsonCount(2);
+
+        // The documents also sit in the licence register, under the customer's name.
+        $register = collect($this->getJson('/api/licences?holder_type=CUSTOMER')->assertOk()->json('data'));
+        $this->assertSame('Lodwar Chemists Ltd', $register->firstWhere('licence_type', 'COUNTY_PERMIT')['holder_name']);
     }
 
     public function test_updating_a_customer_requires_customer_manage_permission(): void

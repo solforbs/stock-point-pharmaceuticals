@@ -16,7 +16,7 @@ import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import { downloadFile, MAX_UPLOAD_BYTES, toFormData } from './files'
 
-type HolderType = 'ORGANISATION' | 'BRANCH' | 'EMPLOYEE' | 'SUPPLIER'
+type HolderType = 'ORGANISATION' | 'BRANCH' | 'EMPLOYEE' | 'SUPPLIER' | 'CUSTOMER'
 type LicenceStatus = 'VALID' | 'EXPIRING' | 'EXPIRED'
 
 type Licence = {
@@ -42,7 +42,7 @@ type Licence = {
 
 type LicenceList = { data: Licence[]; summary: { valid: number; expiring: number; expired: number } }
 
-const HOLDER_TYPES: HolderType[] = ['ORGANISATION', 'BRANCH', 'EMPLOYEE', 'SUPPLIER']
+const HOLDER_TYPES: HolderType[] = ['ORGANISATION', 'BRANCH', 'EMPLOYEE', 'SUPPLIER', 'CUSTOMER']
 const LICENCE_TYPES: { value: string; label: string }[] = [
   { value: 'PPB_PREMISES', label: 'PPB premises licence' },
   { value: 'PPB_PHARMACIST', label: 'PPB pharmacist practising licence' },
@@ -52,6 +52,8 @@ const LICENCE_TYPES: { value: string; label: string }[] = [
   { value: 'PUBLIC_HEALTH', label: 'Public health certificate' },
   { value: 'KRA_TCC', label: 'KRA tax compliance certificate' },
   { value: 'NHIF_SHIF', label: 'SHIF / NHIF accreditation' },
+  { value: 'CERT_OF_INCORPORATION', label: 'Certificate of incorporation' },
+  { value: 'COUNTY_PERMIT', label: 'County permit' },
   { value: 'OTHER', label: 'Other' },
 ]
 const typeLabel = (v: string) => LICENCE_TYPES.find((t) => t.value === v)?.label ?? titleCase(v)
@@ -63,7 +65,7 @@ function LicenceExpiry({ licence }: { licence: Licence }) {
   const label = licence.status === 'EXPIRED' ? 'Expired' : licence.status === 'EXPIRING' ? `${days} d left` : 'Valid'
   return (
     <span className="inline-flex items-center gap-1.5 tabular whitespace-nowrap">
-      {formatDate(licence.expiry_date)}
+      {licence.expiry_date ? formatDate(licence.expiry_date) : 'Does not expire'}
       <StatusBadge status={licence.status} tone={STATUS_TONE[licence.status]} label={label} />
     </span>
   )
@@ -296,7 +298,7 @@ function LicenceForm({ licence, onDone, onCancel }: { licence?: Licence; onDone:
     },
   })
   const err = save.isError ? getApiError(save.error) : null
-  const valid = form.licence_number.trim() && form.expiry_date && (form.holder_type === 'ORGANISATION' || form.holder_id) && !fileError
+  const valid = form.licence_number.trim() && (form.expiry_date || form.licence_type === 'CERT_OF_INCORPORATION') && (form.holder_type === 'ORGANISATION' || form.holder_id) && !fileError
 
   return (
     <div className="space-y-4">

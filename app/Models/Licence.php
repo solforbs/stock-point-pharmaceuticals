@@ -11,7 +11,7 @@ use Illuminate\Support\Carbon;
  * Part 16.3 (V6) — a licence or certificate held by the organisation, a
  * branch, an employee or a supplier. Status is derived from the expiry date.
  *
- * @property-read Carbon $expiry_date
+ * @property-read Carbon|null $expiry_date
  * @property-read Carbon|null $issue_date
  */
 class Licence extends Model
@@ -58,9 +58,10 @@ class Licence extends Model
         return self::statusFor($this->expiry_date);
     }
 
-    public function getDaysToExpiryAttribute(): int
+    /** Null for a document that never expires (a certificate of incorporation). */
+    public function getDaysToExpiryAttribute(): ?int
     {
-        return (int) now()->startOfDay()->diffInDays($this->expiry_date->copy()->startOfDay(), false);
+        return $this->expiry_date === null ? null : (int) now()->startOfDay()->diffInDays($this->expiry_date->copy()->startOfDay(), false);
     }
 
     public function getHasDocumentAttribute(): bool

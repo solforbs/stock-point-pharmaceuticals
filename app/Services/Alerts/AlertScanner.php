@@ -36,6 +36,8 @@ class AlertScanner
         'KRA_TCC' => 'KRA tax compliance certificate',
         'NHIF_SHIF' => 'SHIF accreditation',
         'OTHER' => 'Licence',
+        'CERT_OF_INCORPORATION' => 'Certificate of incorporation',
+        'COUNTY_PERMIT' => 'County permit',
     ];
 
     /**
@@ -382,6 +384,7 @@ class AlertScanner
             'BRANCH' => DB::table('branches')->where('id', $holderId)->value('name'),
             'SUPPLIER' => DB::table('suppliers')->where('id', $holderId)->value('name'),
             'EMPLOYEE' => DB::table('employees')->where('id', $holderId)->value('name'),
+            'CUSTOMER' => DB::table('customers')->where('id', $holderId)->value('name'),
             default => DB::table('organisations')->where('id', $holderId)->value('name'),
         };
     }

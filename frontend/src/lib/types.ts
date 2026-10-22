@@ -342,6 +342,12 @@ export type Customer = {
   bank_account_name?: string | null
   bank_account_number?: string | null
   mpesa_phone?: string | null
+  /** Legal status: how the customer is constituted, its registration and superintendent pharmacist. */
+  legal_status?: string | null
+  registration_number?: string | null
+  kra_pin?: string | null
+  superintendent_name?: string | null
+  superintendent_reg_no?: string | null
   is_active: boolean
   tier?: CustomerTier | null
   credit?: CustomerCredit | null

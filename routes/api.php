@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ColdChainController;
 use App\Http\Controllers\Api\CompanyProfileController;
 use App\Http\Controllers\Api\ControlledDocumentController;
 use App\Http\Controllers\Api\CustomerContactController;
+use App\Http\Controllers\Api\CustomerDocumentController;
 use App\Http\Controllers\Api\CustomerStatementController;
 use App\Http\Controllers\Api\DailyBriefingController;
 use App\Http\Controllers\Api\DashboardController;
@@ -138,6 +139,11 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/customers', [MasterDataController::class, 'customers']);
     Route::post('/customers', [MasterDataController::class, 'storeCustomer']);
     Route::get('/customers/{customer}', [MasterDataController::class, 'customer']);
+    // A customer's legal documents (certificate of incorporation, PPB licence, county permit…).
+    Route::get('/customers/{customer}/documents', [CustomerDocumentController::class, 'index']);
+    Route::post('/customers/{customer}/documents', [CustomerDocumentController::class, 'store']);
+    Route::post('/customers/{customer}/documents/{document}', [CustomerDocumentController::class, 'update']);
+    Route::get('/customers/{customer}/documents/{document}/file', [CustomerDocumentController::class, 'file']);
     Route::patch('/customers/{customer}', [MasterDataController::class, 'updateCustomer'])->whereUuid('customer');
     Route::patch('/customers/{customer}/credit', [MasterDataController::class, 'updateCredit']);
     Route::get('/customer-tiers', [MasterDataController::class, 'tiers']);

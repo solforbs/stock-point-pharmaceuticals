@@ -25,6 +25,8 @@ class CompanyProfileDocument
         'KRA_TCC' => 'KRA tax compliance certificate',
         'NHIF_SHIF' => 'SHIF accreditation',
         'OTHER' => 'Other certificate',
+        'CERT_OF_INCORPORATION' => 'Certificate of incorporation',
+        'COUNTY_PERMIT' => 'County permit',
     ];
 
     /**
@@ -45,7 +47,7 @@ class CompanyProfileDocument
                 'number' => $licence->licence_number,
                 'issued_by' => $licence->issued_by,
                 'holder' => $licence->holder_type === 'BRANCH' ? $branches->firstWhere('id', $licence->holder_id)?->name : null,
-                'expiry' => $licence->expiry_date->format('j M Y'),
+                'expiry' => $licence->expiry_date?->format('j M Y') ?? 'Does not expire',
                 'status' => $licence->status,
             ]);
 

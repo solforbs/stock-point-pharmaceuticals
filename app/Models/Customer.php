@@ -21,6 +21,7 @@ class Customer extends Model
 
     protected $fillable = [
         'organisation_id', 'code', 'name', 'customer_type', 'tier_id', 'tax_status',
+        'legal_status', 'registration_number', 'kra_pin', 'superintendent_name', 'superintendent_reg_no',
         'exemption_ref', 'exemption_expiry', 'payment_terms_days',
         'fulfilment_policy', 'price_list_id', 'email', 'phone', 'address', 'bank_name', 'bank_account_name', 'bank_account_number', 'mpesa_phone',
         'is_active', 'created_by',

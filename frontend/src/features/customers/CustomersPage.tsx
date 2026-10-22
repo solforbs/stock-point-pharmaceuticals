@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Building2, Landmark, MapPin, Pencil, UserSquare2, Wallet } from 'lucide-react'
+import { Building2, FileCheck2, Landmark, MapPin, Pencil, Scale, UserSquare2, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { DeleteRecordButton } from '../../components/DeleteRecordButton'
@@ -20,6 +20,7 @@ import { useCustomerTiers } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Customer, Paginated } from '../../lib/types'
+import { blankDocument, CustomerLegalPanel, DocumentDraftFields, documentValid, legalFormOf, legalPayload, LegalStatusFields, uploadCustomerDocument, type DocumentDraft } from './CustomerLegalSection'
 
 const TYPES = ['WALK_IN', 'RETAIL_PHARMACY', 'HOSPITAL', 'CLINIC', 'NGO', 'GOVERNMENT', 'TENDER', 'INSTITUTION']
 
@@ -179,6 +180,8 @@ function CustomerDetailDrawer({ id, onClose }: { id: string | null; onClose: () 
             />
           </FormSection>
 
+          <CustomerLegalPanel customer={c} canManage={canManage} />
+
           <div className="flex items-center justify-end pt-2">
             <Link
               to={`/sell/statements?customer=${c.id}`}
@@ -226,6 +229,7 @@ function CustomerEditForm({
     bank_account_number: customer.bank_account_number ?? '',
     mpesa_phone: customer.mpesa_phone ?? '',
     is_active: customer.is_active,
+    ...legalFormOf(customer),
   })
   const set = (patch: Partial<typeof form>) => setForm({ ...form, ...patch })
 
@@ -243,6 +247,7 @@ function CustomerEditForm({
         bank_account_number: form.bank_account_number || null,
         mpesa_phone: form.mpesa_phone || null,
         payment_terms_days: Number(form.payment_terms_days || 0),
+        ...legalPayload(legalFormOf(form as unknown as Customer)),
       }),
     onSuccess: (updated) => {
       toast.success(`Customer ${updated.code} updated`)
@@ -338,6 +343,10 @@ function CustomerEditForm({
 
       <PaymentDetailsSection form={form} set={set} />
 
+      <FormSection title="Legal Status" description="How the customer is constituted, its registration and superintendent pharmacist. Documents are managed on the customer's page." icon={Scale}>
+        <LegalStatusFields form={form} set={set} errors={err?.errors} />
+      </FormSection>
+
       {err && !Object.keys(err.errors).length && <InlineError error={update.error} />}
 
       <DrawerFooter
@@ -370,8 +379,11 @@ function CustomerCreateDrawer({ open, onClose, onCreated }: { open: boolean; onC
     bank_account_number: '',
     mpesa_phone: '',
     credit_limit: '100000',
+    ...legalFormOf(null),
   })
   const set = (patch: Partial<typeof form>) => setForm({ ...form, ...patch })
+  // Documents entered before the customer exists; uploaded right after it is created.
+  const [documents, setDocuments] = useState<DocumentDraft[]>([])
 
   const create = useMutation({
     meta: { silent: true },
@@ -387,10 +399,17 @@ function CustomerCreateDrawer({ open, onClose, onCreated }: { open: boolean; onC
         bank_account_number: form.bank_account_number || null,
         mpesa_phone: form.mpesa_phone || null,
         payment_terms_days: Number(form.payment_terms_days || 0),
+        ...legalPayload(legalFormOf(form as unknown as Customer)),
       }),
-    onSuccess: (c) => {
-      toast.success(`Customer ${c.code} created`)
+    onSuccess: async (c) => {
+      let failed = 0
+      for (const d of documents) {
+        try { await uploadCustomerDocument(c.id, d) } catch { failed++ }
+      }
+      if (failed > 0) toast.error(`${failed} document(s) could not be uploaded`, 'Add them again from the customer\'s page.')
+      toast.success(`Customer ${c.code} created`, documents.length - failed > 0 ? `${documents.length - failed} document(s) attached.` : undefined)
       queryClient.invalidateQueries({ queryKey: ['customers'] })
+      setDocuments([])
       onClose()
       onCreated(c)
     },
@@ -488,6 +507,23 @@ function CustomerCreateDrawer({ open, onClose, onCreated }: { open: boolean; onC
 
         <PaymentDetailsSection form={form} set={set} />
 
+        <FormSection
+          title="Legal Status"
+          description="Registration details and the annual certified documents: Certificate of Incorporation, Pharmacy & Poisons Board licence, county permit"
+          icon={Scale}
+        >
+          <div className="space-y-3">
+            <LegalStatusFields form={form} set={set} errors={err?.errors} />
+            <div className="space-y-2">
+              {documents.map((d) => (
+                <DocumentDraftFields key={d.key} draft={d} onChange={(next) => setDocuments(documents.map((x) => (x.key === d.key ? next : x)))} onRemove={() => setDocuments(documents.filter((x) => x.key !== d.key))} />
+              ))}
+              <Button size="sm" onClick={() => setDocuments([...documents, blankDocument()])}><FileCheck2 size={13} /> Add document</Button>
+              {documents.some((d) => !documentValid(d)) && <p className="text-xs text-amber-700">Each document needs its number, and an expiry date unless it is a Certificate of Incorporation.</p>}
+            </div>
+          </div>
+        </FormSection>
+
         {err && !Object.keys(err.errors).length && <InlineError error={create.error} />}
 
         <DrawerFooter
@@ -495,7 +531,7 @@ function CustomerCreateDrawer({ open, onClose, onCreated }: { open: boolean; onC
           onSubmit={() => create.mutate()}
           submitLabel="Create Customer Account"
           isSubmitting={create.isPending}
-          disabled={!form.code || !form.name}
+          disabled={!form.code || !form.name || documents.some((d) => !documentValid(d))}
         />
       </div>
     </Drawer>

@@ -77,6 +77,11 @@ class MasterDataController extends ApiController
             'bank_account_name' => ['nullable', 'string', 'max:150'],
             'bank_account_number' => ['nullable', 'string', 'max:60'],
             'mpesa_phone' => ['nullable', 'string', 'max:30'],
+            'legal_status' => ['nullable', 'in:SOLE_PROPRIETOR,PARTNERSHIP,LIMITED_COMPANY,GOVERNMENT,NGO_FAITH_BASED,OTHER'],
+            'registration_number' => ['nullable', 'string', 'max:100'],
+            'kra_pin' => ['nullable', 'string', 'max:30'],
+            'superintendent_name' => ['nullable', 'string', 'max:150'],
+            'superintendent_reg_no' => ['nullable', 'string', 'max:100'],
             'credit_limit' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -117,6 +122,11 @@ class MasterDataController extends ApiController
             'bank_account_name' => ['nullable', 'string', 'max:150'],
             'bank_account_number' => ['nullable', 'string', 'max:60'],
             'mpesa_phone' => ['nullable', 'string', 'max:30'],
+            'legal_status' => ['nullable', 'in:SOLE_PROPRIETOR,PARTNERSHIP,LIMITED_COMPANY,GOVERNMENT,NGO_FAITH_BASED,OTHER'],
+            'registration_number' => ['nullable', 'string', 'max:100'],
+            'kra_pin' => ['nullable', 'string', 'max:30'],
+            'superintendent_name' => ['nullable', 'string', 'max:150'],
+            'superintendent_reg_no' => ['nullable', 'string', 'max:100'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
@@ -125,6 +135,7 @@ class MasterDataController extends ApiController
             'exemption_ref', 'exemption_expiry', 'payment_terms_days',
             'fulfilment_policy', 'phone', 'email', 'address', 'bank_name', 'bank_account_name',
             'bank_account_number', 'mpesa_phone', 'is_active',
+            'legal_status', 'registration_number', 'kra_pin', 'superintendent_name', 'superintendent_reg_no',
         ]);
 
         $updateData = $data;

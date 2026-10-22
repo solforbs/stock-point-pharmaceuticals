@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
 use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\Licence;
 use App\Models\Organisation;
@@ -23,13 +24,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class LicenceController extends ApiController
 {
-    private const LICENCE_TYPES = 'PPB_PREMISES,PPB_PHARMACIST,PPB_PHARMTECH,BUSINESS_PERMIT,FIRE,PUBLIC_HEALTH,KRA_TCC,NHIF_SHIF,OTHER';
+    public const LICENCE_TYPES = 'PPB_PREMISES,PPB_PHARMACIST,PPB_PHARMTECH,BUSINESS_PERMIT,FIRE,PUBLIC_HEALTH,KRA_TCC,NHIF_SHIF,OTHER,CERT_OF_INCORPORATION,COUNTY_PERMIT';
+
+    /** Document types that never expire. */
+    public const NON_EXPIRING_TYPES = 'CERT_OF_INCORPORATION';
 
     public function index(Request $request): JsonResponse
     {
         $this->requireViewPermission($request);
         $filters = $request->validate([
-            'holder_type' => ['nullable', 'in:ORGANISATION,BRANCH,EMPLOYEE,SUPPLIER'],
+            'holder_type' => ['nullable', 'in:ORGANISATION,BRANCH,EMPLOYEE,SUPPLIER,CUSTOMER'],
             'status' => ['nullable', 'in:VALID,EXPIRING,EXPIRED'],
             'licence_type' => ['nullable', 'in:'.self::LICENCE_TYPES],
             'q' => ['nullable', 'string', 'max:100'],
@@ -81,7 +85,7 @@ class LicenceController extends ApiController
                 && (! $status || $r['status'] === $status)
                 && (! $licenceType || $r['licence_type'] === $licenceType)
                 && ($term === '' || str_contains(mb_strtolower(implode(' ', [$r['licence_number'], $r['holder_name'], $r['issued_by']])), $term)))
-            ->sortBy(fn (array $r) => $r['expiry_date'] ?? '0000-00-00')
+            ->sortBy(fn (array $r) => $r['expiry_date'] ?? '9999-12-31')
             ->values();
 
         return response()->json([
@@ -141,12 +145,13 @@ class LicenceController extends ApiController
     public function holders(Request $request): JsonResponse
     {
         $this->requirePermission($request, 'licence.manage');
-        $data = $request->validate(['holder_type' => ['required', 'in:BRANCH,EMPLOYEE,SUPPLIER']]);
+        $data = $request->validate(['holder_type' => ['required', 'in:BRANCH,EMPLOYEE,SUPPLIER,CUSTOMER']]);
         $orgId = $this->organisationId($request);
 
         $query = match ($data['holder_type']) {
             'BRANCH' => Branch::where('organisation_id', $orgId),
             'EMPLOYEE' => Employee::where('organisation_id', $orgId)->where('is_active', true),
+            'CUSTOMER' => Customer::where('organisation_id', $orgId)->where('is_active', true),
             default => Supplier::where('organisation_id', $orgId)->where('is_active', true),
         };
 
@@ -159,7 +164,7 @@ class LicenceController extends ApiController
         $data = $request->validate($this->rules());
         $orgId = $this->organisationId($request);
         $data['holder_id'] = $this->resolveHolder($data['holder_type'], $data['holder_id'] ?? null, $orgId);
-        $this->assertDatesInOrder($data['issue_date'] ?? null, $data['expiry_date']);
+        $this->assertDatesInOrder($data['issue_date'] ?? null, $data['expiry_date'] ?? null);
 
         $licence = new Licence(collect($data)->except('document')->all() + [
             'organisation_id' => $orgId,
@@ -195,7 +200,7 @@ class LicenceController extends ApiController
             $data['holder_id'] = $this->resolveHolder($data['holder_type'] ?? $model->holder_type, $data['holder_id'] ?? $model->holder_id, $model->organisation_id);
         }
 
-        $this->assertDatesInOrder($data['issue_date'] ?? $model->issue_date?->toDateString(), $data['expiry_date'] ?? $model->expiry_date->toDateString());
+        $this->assertDatesInOrder($data['issue_date'] ?? $model->issue_date?->toDateString(), array_key_exists('expiry_date', $data) ? $data['expiry_date'] : $model->expiry_date?->toDateString());
         $fields = collect($data)->except('document')->all();
         $before = $model->only(array_keys($fields));
         $model->fill($fields + ['updated_by' => $request->user()->id]);
@@ -232,13 +237,13 @@ class LicenceController extends ApiController
     private function rules(): array
     {
         return [
-            'holder_type' => ['required', 'in:ORGANISATION,BRANCH,EMPLOYEE,SUPPLIER'],
+            'holder_type' => ['required', 'in:ORGANISATION,BRANCH,EMPLOYEE,SUPPLIER,CUSTOMER'],
             'holder_id' => ['nullable', 'string', 'max:64'],
             'licence_type' => ['required', 'in:'.self::LICENCE_TYPES],
             'licence_number' => ['required', 'string', 'max:100'],
             'issued_by' => ['nullable', 'string', 'max:150'],
             'issue_date' => ['nullable', 'date'],
-            'expiry_date' => ['required', 'date'],
+            'expiry_date' => ['nullable', 'required_unless:licence_type,'.self::NON_EXPIRING_TYPES, 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ];
@@ -256,6 +261,7 @@ class LicenceController extends ApiController
         $exists = match ($type) {
             'BRANCH' => Branch::where('organisation_id', $orgId)->whereKey($holderId)->exists(),
             'EMPLOYEE' => Employee::where('organisation_id', $orgId)->whereKey($holderId)->exists(),
+            'CUSTOMER' => Customer::where('organisation_id', $orgId)->whereKey($holderId)->exists(),
             default => Supplier::where('organisation_id', $orgId)->whereKey($holderId)->exists(),
         };
         if (! $exists) {
@@ -265,9 +271,9 @@ class LicenceController extends ApiController
         return $holderId;
     }
 
-    private function assertDatesInOrder(?string $issueDate, string $expiryDate): void
+    private function assertDatesInOrder(?string $issueDate, ?string $expiryDate): void
     {
-        if ($issueDate && strtotime($expiryDate) < strtotime($issueDate)) {
+        if ($issueDate && $expiryDate && strtotime($expiryDate) < strtotime($issueDate)) {
             throw ValidationException::withMessages(['expiry_date' => 'The expiry date cannot be before the issue date.']);
         }
     }
@@ -294,6 +300,9 @@ class LicenceController extends ApiController
         }
         foreach (Supplier::whereIn('id', $ids('SUPPLIER'))->get(['id', 'name']) as $s) {
             $names['SUPPLIER:'.$s->id] = $s->name;
+        }
+        foreach (Customer::whereIn('id', $ids('CUSTOMER'))->get(['id', 'name']) as $c) {
+            $names['CUSTOMER:'.$c->id] = $c->name;
         }
 
         return $names;
