@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\CustomerContact;
+use App\Models\CustomerCredit;
 use App\Models\CustomerTier;
 use App\Models\DosageForm;
 use App\Models\PriceList;
@@ -35,7 +36,10 @@ class RecordDeletionController extends ApiController
      * What an administrator may delete, and the permission each needs
      * alongside `record.delete`.
      *
-     * @var array<string, array{model: class-string<Model>, permission: string, label: string}>
+     * `owned` lists tables whose rows belong to the record and are deleted
+     * with it rather than holding it.
+     *
+     * @var array<string, array{model: class-string<Model>, permission: string, label: string, owned?: list<string>}>
      */
     private const DELETABLE = [
         'products' => ['model' => Product::class, 'permission' => 'product.edit', 'label' => 'code'],
@@ -43,7 +47,7 @@ class RecordDeletionController extends ApiController
         'dosage-forms' => ['model' => DosageForm::class, 'permission' => 'product.edit', 'label' => 'code'],
         'storage-conditions' => ['model' => StorageCondition::class, 'permission' => 'product.edit', 'label' => 'code'],
         'tax-codes' => ['model' => TaxCode::class, 'permission' => 'admin.settings', 'label' => 'code'],
-        'customers' => ['model' => Customer::class, 'permission' => 'customer.manage', 'label' => 'code'],
+        'customers' => ['model' => Customer::class, 'permission' => 'customer.manage', 'label' => 'code', 'owned' => ['customer_credits', 'customer_contacts']],
         'customer-contacts' => ['model' => CustomerContact::class, 'permission' => 'customer.manage', 'label' => 'name'],
         'customer-tiers' => ['model' => CustomerTier::class, 'permission' => 'customer.manage', 'label' => 'code'],
         'suppliers' => ['model' => Supplier::class, 'permission' => 'supplier.manage', 'label' => 'code'],
@@ -77,7 +81,7 @@ class RecordDeletionController extends ApiController
     public function references(Request $request, string $type, string $id, RecordDeletionService $deletions): JsonResponse
     {
         $model = $this->find($request, $type, $id);
-        $references = $deletions->references($model->getTable(), (string) $model->getKey());
+        $references = $deletions->references($model->getTable(), (string) $model->getKey(), self::DELETABLE[$type]['owned'] ?? []);
 
         return response()->json([
             'type' => $type,
@@ -95,7 +99,7 @@ class RecordDeletionController extends ApiController
         $label = $this->labelFor($type, $model);
 
         $this->guardSpecialCases($request, $type, $model);
-        $deletions->delete($model, $label, $request->user()?->id);
+        $deletions->delete($model, $label, $request->user()?->id, self::DELETABLE[$type]['owned'] ?? []);
 
         return response()->json(['deleted' => true, 'type' => $type, 'id' => (string) $model->getKey(), 'label' => $label]);
     }
@@ -107,6 +111,21 @@ class RecordDeletionController extends ApiController
      */
     private function guardSpecialCases(Request $request, string $type, Model $model): void
     {
+        if ($type === 'customers') {
+            // The credit account goes with the customer only when it is settled:
+            // a balance still owed (or money received and not yet applied) is real
+            // and must be cleared or written off first.
+            $credit = CustomerCredit::find($model->getKey());
+            if ($credit && (bccomp((string) $credit->current_balance, '0', 2) !== 0 || bccomp((string) $credit->unallocated_receipts, '0', 2) !== 0)) {
+                throw new RecordNotDeletableException('CUSTOMER_HAS_BALANCE', 422, sprintf(
+                    'This customer\'s account is not settled (balance KES %s, unapplied receipts KES %s). Clear it first, or deactivate the customer instead.',
+                    number_format((float) $credit->current_balance, 2), number_format((float) $credit->unallocated_receipts, 2),
+                ));
+            }
+
+            return;
+        }
+
         if ($type !== 'users') {
             return;
         }

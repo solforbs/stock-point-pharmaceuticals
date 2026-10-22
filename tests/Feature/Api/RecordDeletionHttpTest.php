@@ -3,6 +3,8 @@
 namespace Tests\Feature\Api;
 
 use App\Models\AuditLog;
+use App\Models\CustomerContact;
+use App\Models\CustomerCredit;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\User;
@@ -109,6 +111,31 @@ class RecordDeletionHttpTest extends TestCase
 
         $this->deleteJson('/api/products', ['confirm' => 'DELETE ALL PRODUCTS'])->assertForbidden();
         $this->assertNotNull(Product::find($this->amox->id));
+    }
+
+    public function test_a_customer_is_deleted_with_its_settled_credit_account_and_contacts(): void
+    {
+        $customer = $this->postJson('/api/customers', ['code' => 'LN-54878', 'name' => 'Lenah Jones', 'customer_type' => 'RETAIL_PHARMACY', 'credit_limit' => '5000'])->assertCreated()->json();
+        CustomerContact::create(['customer_id' => $customer['id'], 'name' => 'Lenah']);
+        $this->assertTrue(CustomerCredit::whereKey($customer['id'])->exists());
+
+        $this->getJson("/api/admin/records/customers/{$customer['id']}/references")->assertOk()->assertJsonPath('deletable', true);
+        $this->deleteJson("/api/admin/records/customers/{$customer['id']}")->assertOk()->assertJsonPath('label', 'LN-54878');
+
+        $this->assertFalse(CustomerCredit::whereKey($customer['id'])->exists(), 'the credit account goes with the customer');
+        $this->assertSame(0, CustomerContact::where('customer_id', $customer['id'])->count());
+        $audit = AuditLog::where('action', 'RECORD_DELETED')->where('entity_id', $customer['id'])->firstOrFail();
+        $this->assertSame('5000.0000', $audit->before_json['deleted_with_it']['customer_credits'][0]['credit_limit']);
+    }
+
+    public function test_a_customer_who_still_owes_money_cannot_be_deleted(): void
+    {
+        $customer = $this->postJson('/api/customers', ['code' => 'OWES', 'name' => 'Owes Money', 'customer_type' => 'CLINIC'])->assertCreated()->json();
+        CustomerCredit::whereKey($customer['id'])->update(['current_balance' => '1250']);
+
+        $this->deleteJson("/api/admin/records/customers/{$customer['id']}")->assertStatus(422)
+            ->assertJsonPath('error.code', 'CUSTOMER_HAS_BALANCE');
+        $this->assertTrue(CustomerCredit::whereKey($customer['id'])->exists());
     }
 
     public function test_transactions_are_not_a_deletable_type_at_all(): void
