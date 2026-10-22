@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\AuditLog;
 use App\Models\StockBalance;
+use App\Models\User;
 use App\Services\Admin\BackupService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -171,16 +172,45 @@ class OperationsHttpTest extends TestCase
         $this->assertCount(1, glob($this->backupDir.'/db-*.sql.gz'));
     }
 
-    public function test_operations_endpoints_require_admin_settings(): void
+    public function test_system_administrators_are_created_granted_and_revoked_from_the_command_line(): void
     {
-        $this->revokeAllRoles();
-        $this->grantPermissions(['product.view'], 'Viewer');
+        $this->user->forceFill(['is_platform_admin' => false])->save();
+
+        $this->artisan('platform:admin', ['email' => 'sysadmin@example.test', '--name' => 'System Administrator'])->assertSuccessful();
+        $admin = User::where('email', 'sysadmin@example.test')->sole();
+        $this->assertTrue($admin->is_platform_admin);
+        $this->assertNull($admin->organisation_id, 'a platform-only account belongs to no institution');
+
+        // The last system administrator cannot be removed; another one first.
+        $this->artisan('platform:admin', ['email' => 'sysadmin@example.test', '--revoke' => true])->assertFailed();
+        $this->artisan('platform:admin', ['email' => $this->user->email])->assertSuccessful();
+        $this->assertTrue($this->user->fresh()->is_platform_admin);
+        $this->artisan('platform:admin', ['email' => $this->user->email, '--revoke' => true])->assertSuccessful();
+        $this->assertFalse($this->user->fresh()->is_platform_admin);
+    }
+
+    public function test_running_the_system_is_for_system_administrators_only(): void
+    {
+        // An institution's most senior staff (a Director with every permission) cannot.
+        $this->user->forceFill(['is_platform_admin' => false])->save();
+        $this->grantPermissions(['admin.settings', 'deploy.run'], 'Director-like');
 
         $this->getJson('/api/admin/system-health')->assertForbidden();
         $this->postJson('/api/admin/system-health/retry-failed-jobs')->assertForbidden();
         $this->getJson('/api/admin/backups')->assertForbidden();
         $this->postJson('/api/admin/backups')->assertForbidden();
         $this->get('/api/admin/backups/db-20260101-000000.sql.gz/download')->assertForbidden();
+        $this->getJson('/api/admin/deployments')->assertForbidden();
+        $this->postJson('/api/admin/deployments')->assertForbidden();
+
+        // A system administrator can, with no institution permission at all.
+        $this->revokeAllRoles();
+        $this->user->forceFill(['is_platform_admin' => true])->save();
+        $this->getJson('/api/admin/system-health')->assertOk();
+        $this->getJson('/api/admin/backups')->assertOk();
+
+        // The sync centre is the institution's own and keeps its permission check.
+        $this->grantPermissions(['product.view'], 'Viewer');
         $this->getJson('/api/admin/sync-status')->assertForbidden();
     }
 

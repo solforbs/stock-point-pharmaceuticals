@@ -19,7 +19,6 @@ class DeploymentController extends ApiController
     /** GET /api/admin/deployments */
     public function status(Request $request, DeploymentService $deployments): JsonResponse
     {
-        $this->requirePermission($request, 'deploy.run');
         $this->requirePlatformAdmin($request);
 
         return response()->json($deployments->status() + [
@@ -31,7 +30,6 @@ class DeploymentController extends ApiController
     /** POST /api/admin/deployments/check — fetches from GitHub; never moves HEAD. */
     public function check(Request $request, DeploymentService $deployments): JsonResponse
     {
-        $this->requirePermission($request, 'deploy.run');
         $this->requirePlatformAdmin($request);
 
         $result = $deployments->fetch();
@@ -45,7 +43,6 @@ class DeploymentController extends ApiController
     /** POST /api/admin/deployments — pulls and deploys, in the background. */
     public function deploy(Request $request, DeploymentService $deployments): JsonResponse
     {
-        $this->requirePermission($request, 'deploy.run');
         $this->requirePlatformAdmin($request);
 
         if (! config('deployment.enabled')) {

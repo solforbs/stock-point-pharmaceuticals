@@ -161,11 +161,8 @@ export const NAV_ITEMS: NavItem[] = [
       { key: 'number-sequences', label: 'Number Sequences', path: '/admin/number-sequences' },
       { key: 'audit-log', label: 'Audit Log', path: '/admin/audit-log' },
       { key: 'alerts', label: 'Alerts', path: '/admin/alerts' },
-      { key: 'deployments', label: 'CI/CD & Deployments', path: '/admin/deployments', platformOnly: true },
       { key: 'sync-centre', label: 'Sync Centre', path: '/admin/sync-centre' },
-      { key: 'system-health', label: 'System Health', path: '/admin/system-health', platformOnly: true },
-      { key: 'backup', label: 'Backup', path: '/admin/backup', platformOnly: true },
-      { key: 'platform', label: 'Platform console', path: '/platform', platformOnly: true },
+      { key: 'platform', label: 'System administration', path: '/platform', platformOnly: true },
     ],
   },
 ]

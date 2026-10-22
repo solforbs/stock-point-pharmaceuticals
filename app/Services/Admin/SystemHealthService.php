@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\FinancialPeriod;
+use App\Models\Organisation;
 use App\Services\Inventory\LedgerReconciliation;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -29,7 +30,8 @@ class SystemHealthService
     /**
      * @return array<string, mixed>
      */
-    public function report(string $organisationId): array
+    /** For one institution, or (null) across every institution — a system administrator belongs to none. */
+    public function report(?string $organisationId): array
     {
         return [
             'generated_at' => now()->toIso8601String(),
@@ -239,8 +241,18 @@ class SystemHealthService
     /**
      * @return array<string, mixed>
      */
-    private function financialPeriod(string $organisationId): array
+    private function financialPeriod(?string $organisationId): array
     {
+        if ($organisationId === null) {
+            $missing = Organisation::query()->where('is_active', true)->orderBy('name')->get(['id', 'name'])
+                ->filter(fn (Organisation $o) => ! FinancialPeriod::openPeriodFor((string) $o->id, now()))
+                ->pluck('name')->values()->all();
+
+            return $missing === []
+                ? $this->check('green', 'Every institution has a financial period open for today.', ['period' => null])
+                : $this->check('red', 'No financial period is open for today at: '.implode(', ', $missing).'. Run `php artisan finance:open-periods`.', ['period' => null, 'institutions' => $missing]);
+        }
+
         $period = FinancialPeriod::openPeriodFor($organisationId, now());
         if (! $period) {
             return $this->check('red', 'No financial period is open for today, so nothing can post. Run `php artisan finance:open-periods` or open one in Finance → Periods.', ['period' => null]);

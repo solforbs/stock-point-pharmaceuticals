@@ -107,11 +107,8 @@ const CompanyProfilePage = lazy(() => import('./features/admin/CompanyProfilePag
 const SecurityPage = lazy(() => import('./features/admin/SecurityPage'))
 const NumberSequencesPage = lazy(() => import('./features/admin/NumberSequencesPage'))
 const AuditLogPage = lazy(() => import('./features/admin/AuditLogPage'))
-const SystemHealthPage = lazy(() => import('./features/admin/SystemHealthPage'))
-const BackupPage = lazy(() => import('./features/admin/BackupPage'))
 const SyncCentrePage = lazy(() => import('./features/admin/SyncCentrePage'))
 const AlertsPage = lazy(() => import('./features/admin/AlertsPage'))
-const DeploymentsPage = lazy(() => import('./features/admin/DeploymentsPage'))
 const PayrollBandsPage = lazy(() => import('./features/admin/PayrollBandsPage'))
 const PricingRulesPage = lazy(() => import('./features/admin/pricing/PricingRulesPage'))
 
@@ -245,11 +242,11 @@ function App() {
             <Route path="/finance/petty-cash" element={<PettyCashPage />} />
             <Route path="/finance/bank-accounts" element={<BankAccountsPage />} />
             <Route path="/sell/statements" element={<CustomerStatementsPage />} />
-            <Route path="/admin/system-health" element={<SystemHealthPage />} />
-            <Route path="/admin/backup" element={<BackupPage />} />
+            <Route path="/admin/system-health" element={<Navigate to="/platform?tab=health" replace />} />
+            <Route path="/admin/backup" element={<Navigate to="/platform?tab=backups" replace />} />
             <Route path="/admin/sync-centre" element={<SyncCentrePage />} />
             <Route path="/admin/alerts" element={<AlertsPage />} />
-            <Route path="/admin/deployments" element={<DeploymentsPage />} />
+            <Route path="/admin/deployments" element={<Navigate to="/platform?tab=deployments" replace />} />
             <Route path="/admin/payroll-bands" element={<PayrollBandsPage />} />
             <Route path="/quality/cold-chain" element={<ColdChainPage />} />
             <Route path="/quality/pharmacovigilance" element={<PharmacovigilancePage />} />

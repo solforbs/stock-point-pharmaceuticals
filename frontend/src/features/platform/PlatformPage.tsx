@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Building2, CreditCard, Inbox, LogOut, Plus, ShieldCheck, Tags } from 'lucide-react'
-import { useState } from 'react'
+import { Activity, Building2, CreditCard, DatabaseBackup, GitBranch, Inbox, LogOut, Plus, ShieldCheck, Tags } from 'lucide-react'
+import { lazy, Suspense, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
@@ -19,13 +19,21 @@ import { toast } from '../../lib/toast'
 import type { InvitationRow, Paginated, Plan, SubscriptionPaymentRow, TenantDetail, TenantRequestRow, TenantRow } from '../../lib/types'
 import { ACCESS_LABEL } from '../billing/accessState'
 
-type Tab = 'requests' | 'tenants' | 'plans' | 'payments'
+type Tab = 'requests' | 'tenants' | 'plans' | 'payments' | 'deployments' | 'health' | 'backups'
+
+// Running the system itself: only system administrators reach this console.
+const DeploymentsPage = lazy(() => import('../admin/DeploymentsPage'))
+const SystemHealthPage = lazy(() => import('../admin/SystemHealthPage'))
+const BackupPage = lazy(() => import('../admin/BackupPage'))
 
 const TABS: { key: Tab; label: string; icon: typeof Inbox }[] = [
   { key: 'requests', label: 'Quote requests', icon: Inbox },
   { key: 'tenants', label: 'Institutions', icon: Building2 },
   { key: 'plans', label: 'Plans', icon: Tags },
   { key: 'payments', label: 'Payments', icon: CreditCard },
+  { key: 'deployments', label: 'CI/CD & Deployments', icon: GitBranch },
+  { key: 'health', label: 'System health', icon: Activity },
+  { key: 'backups', label: 'Backups', icon: DatabaseBackup },
 ]
 
 /**
@@ -55,7 +63,7 @@ export default function PlatformPage() {
       <header className="h-14 bg-white border-b border-slate-200 flex items-center gap-3 px-4 sm:px-6">
         <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><ShieldCheck size={16} /></div>
         <div className="leading-tight">
-          <div className="font-display font-bold text-slate-900">Platform console</div>
+          <div className="font-display font-bold text-slate-900">System administration</div>
           <div className="text-[11px] text-slate-500">{user?.name}</div>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -83,6 +91,11 @@ export default function PlatformPage() {
         {tab === 'tenants' && <TenantsTab />}
         {tab === 'plans' && <PlansTab />}
         {tab === 'payments' && <PaymentsTab />}
+        <Suspense fallback={<LoadingSkeleton />}>
+          {tab === 'deployments' && <DeploymentsPage />}
+          {tab === 'health' && <SystemHealthPage />}
+          {tab === 'backups' && <BackupPage />}
+        </Suspense>
       </div>
     </div>
   )

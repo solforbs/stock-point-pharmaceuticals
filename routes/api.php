@@ -402,9 +402,6 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/documents/{document}/acknowledgements', [ControlledDocumentController::class, 'acknowledgements']);
 
     // Admin operations and catalogue maintenance (Parts 5, 17) — system health, backups, sync centre, categories, product import/export
-    Route::get('/admin/system-health', [OperationsController::class, 'systemHealth']);
-    Route::post('/admin/system-health/retry-failed-jobs', [OperationsController::class, 'retryFailedJobs']);
-    Route::post('/admin/system-health/forget-failed-job/{id}', [OperationsController::class, 'forgetFailedJob']);
     // Part 18.3 — deleting master data (never transactions).
     // Part 15 — statutory payroll rates, kept current by the System Administrator.
     Route::get('/payroll-bands', [PayrollBandController::class, 'index']);
@@ -416,14 +413,6 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/admin/records/{type}/{id}/references', [RecordDeletionController::class, 'references']);
     Route::delete('/admin/records/{type}/{id}', [RecordDeletionController::class, 'destroy']);
 
-    // Part 17 — deployments: pull the latest code and run the deploy script.
-    Route::get('/admin/deployments', [DeploymentController::class, 'status']);
-    Route::post('/admin/deployments/check', [DeploymentController::class, 'check']);
-    Route::post('/admin/deployments', [DeploymentController::class, 'deploy']);
-
-    Route::get('/admin/backups', [OperationsController::class, 'backups']);
-    Route::post('/admin/backups', [OperationsController::class, 'createBackup']);
-    Route::get('/admin/backups/{name}/download', [OperationsController::class, 'downloadBackup']);
     Route::get('/admin/sync-status', [OperationsController::class, 'syncStatus']);
     Route::get('/product-categories/all', [ProductCatalogueController::class, 'categories']);
     Route::post('/product-categories', [ProductCatalogueController::class, 'storeCategory']);
@@ -646,6 +635,21 @@ Route::prefix('public')->group(function () {
 });
 
 // The platform console: institutions, quote requests, plans and payments.
+// Running the system itself — deployments (CI/CD), backups and system health —
+// belongs to the system administrators (platform administrators), never to an
+// institution's own staff, however senior. No institution context is needed.
+Route::middleware(['auth:sanctum', 'platform'])->group(function () {
+    Route::get('/admin/system-health', [OperationsController::class, 'systemHealth']);
+    Route::post('/admin/system-health/retry-failed-jobs', [OperationsController::class, 'retryFailedJobs']);
+    Route::post('/admin/system-health/forget-failed-job/{id}', [OperationsController::class, 'forgetFailedJob']);
+    Route::get('/admin/deployments', [DeploymentController::class, 'status']);
+    Route::post('/admin/deployments/check', [DeploymentController::class, 'check']);
+    Route::post('/admin/deployments', [DeploymentController::class, 'deploy']);
+    Route::get('/admin/backups', [OperationsController::class, 'backups']);
+    Route::post('/admin/backups', [OperationsController::class, 'createBackup']);
+    Route::get('/admin/backups/{name}/download', [OperationsController::class, 'downloadBackup']);
+});
+
 Route::middleware(['auth:sanctum', 'platform'])->prefix('platform')->group(function () {
     Route::get('/quote-requests', [PlatformController::class, 'quoteRequests']);
     Route::post('/quote-requests/{tenantRequest}/approve', [PlatformController::class, 'approveRequest']);

@@ -10,7 +10,7 @@ import { api, apiGet, apiPost } from '../../lib/api'
 import { formatBytes } from '../../lib/bytes'
 import { downloadBlob } from '../../lib/csv'
 import { formatDateTime } from '../../lib/format'
-import { usePermission } from '../../lib/permissions'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { toast, toastApiError } from '../../lib/toast'
 
 type BackupFile = { name: string; size: number; created_at: string; kind: 'database' | 'files' | 'full' }
@@ -18,7 +18,7 @@ type BackupListing = { data: BackupFile[]; retention_days: number; mysqldump_ava
 
 /** Part 17 — database backups: what exists, taking one now, and getting a copy off the server. */
 export default function BackupPage() {
-  const canManage = usePermission('admin.settings')
+  const canManage = !!useCurrentUser().data?.is_platform_admin
   const queryClient = useQueryClient()
   const [downloading, setDownloading] = useState<string | null>(null)
   const listing = useQuery({ queryKey: ['admin', 'backups'], queryFn: () => apiGet<BackupListing>('/api/admin/backups'), enabled: canManage })

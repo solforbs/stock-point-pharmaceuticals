@@ -8,7 +8,7 @@ import { Button, Card } from '../../components/ui/primitives'
 import { InlineError, NoAccess } from '../../components/ui/States'
 import { apiGet, apiPost, getApiError } from '../../lib/api'
 import { formatDateTime } from '../../lib/format'
-import { usePermission } from '../../lib/permissions'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { toast } from '../../lib/toast'
 
 type DeployRun = {
@@ -50,7 +50,7 @@ const runTone = { succeeded: 'green', failed: 'red', running: 'blue', unknown: '
  * sends a command, so nothing typed here can reach a shell.
  */
 export default function DeploymentsPage() {
-  const canDeploy = usePermission('deploy.run')
+  const canDeploy = !!useCurrentUser().data?.is_platform_admin
   const queryClient = useQueryClient()
   const [confirming, setConfirming] = useState(false)
   // Which version the confirm dialog is about; null means the branch tip.

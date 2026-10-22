@@ -28,10 +28,9 @@ class OperationsController extends ApiController
     /** GET /api/admin/system-health */
     public function systemHealth(Request $request, SystemHealthService $health): JsonResponse
     {
-        $this->requirePermission($request, 'admin.settings');
         $this->requirePlatformAdmin($request);
 
-        return response()->json($health->report($this->organisationId($request)) + [
+        return response()->json($health->report($request->user()->organisation_id) + [
             'failed_jobs' => $health->recentFailures(),
         ]);
     }
@@ -39,7 +38,6 @@ class OperationsController extends ApiController
     /** POST /api/admin/system-health/retry-failed-jobs {ids?} — pushes failed jobs back onto their queue. */
     public function retryFailedJobs(Request $request): JsonResponse
     {
-        $this->requirePermission($request, 'admin.settings');
         $this->requirePlatformAdmin($request);
         $data = $request->validate([
             'ids' => ['nullable', 'array', 'max:100'],
@@ -61,7 +59,6 @@ class OperationsController extends ApiController
     /** POST /api/admin/system-health/forget-failed-job/{id} — discards one failed job for good. */
     public function forgetFailedJob(Request $request, string $id): JsonResponse
     {
-        $this->requirePermission($request, 'admin.settings');
         $this->requirePlatformAdmin($request);
 
         $job = DB::table('failed_jobs')->where('uuid', $id)->first();
@@ -80,7 +77,6 @@ class OperationsController extends ApiController
     /** GET /api/admin/backups */
     public function backups(Request $request, BackupService $backups): JsonResponse
     {
-        $this->requirePermission($request, 'admin.settings');
         $this->requirePlatformAdmin($request);
 
         return response()->json([
@@ -94,7 +90,6 @@ class OperationsController extends ApiController
     /** POST /api/admin/backups — takes a dump now, synchronously. */
     public function createBackup(Request $request, BackupService $backups): JsonResponse
     {
-        $this->requirePermission($request, 'admin.settings');
         $this->requirePlatformAdmin($request);
         $data = $request->validate(['kind' => ['nullable', 'in:database,full']]);
 
@@ -112,7 +107,6 @@ class OperationsController extends ApiController
     /** GET /api/admin/backups/{name}/download — the name must be one the listing returns. */
     public function downloadBackup(Request $request, BackupService $backups, string $name): BinaryFileResponse
     {
-        $this->requirePermission($request, 'admin.settings');
         $this->requirePlatformAdmin($request);
 
         $path = preg_match(BackupService::NAME_PATTERN, $name) === 1 ? $backups->pathFor($name) : null;

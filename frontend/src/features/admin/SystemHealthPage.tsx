@@ -12,7 +12,7 @@ import { apiGet, apiPost } from '../../lib/api'
 import { formatBytes } from '../../lib/bytes'
 import { formatDateTime } from '../../lib/format'
 import { formatKes } from '../../lib/money'
-import { usePermission } from '../../lib/permissions'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { toast } from '../../lib/toast'
 
 type Light = 'green' | 'amber' | 'red'
@@ -41,7 +41,7 @@ const LIGHT_TONE: Record<Light, StatusTone> = { green: 'green', amber: 'amber', 
 
 /** Part 17 — one screen that says whether the system is healthy, and what to do when it is not. */
 export default function SystemHealthPage() {
-  const canView = usePermission('admin.settings')
+  const canView = !!useCurrentUser().data?.is_platform_admin
   const queryClient = useQueryClient()
   const [forgetting, setForgetting] = useState<FailedJob | null>(null)
   const health = useQuery({
