@@ -17,6 +17,7 @@ const PricingPage = lazy(() => import('./features/site/PricingPage'))
 const AboutPage = lazy(() => import('./features/site/AboutPage'))
 const ContactPage = lazy(() => import('./features/site/ContactPage'))
 const PlatformPage = lazy(() => import('./features/platform/PlatformPage'))
+const MyAccountPage = lazy(() => import('./features/admin/MyAccountPage'))
 const ModuleSelectPage = lazy(() => import('./features/platform/ModuleSelectPage'))
 const NoAccessPage = lazy(() => import('./features/platform/ModuleSelectPage').then((m) => ({ default: m.NoAccessPage })))
 const BillingPage = lazy(() => import('./features/billing/BillingPage'))
@@ -161,6 +162,7 @@ function App() {
             }
           >
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/account" element={<MyAccountPage />} />
 
             {/* Hospital module */}
             <Route path="/hospital" element={<Navigate to="/hospital/dashboard" replace />} />

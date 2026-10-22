@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdrReportController;
 use App\Http\Controllers\Api\AlertController;
@@ -635,6 +636,12 @@ Route::prefix('public')->group(function () {
 });
 
 // The platform console: institutions, quote requests, plans and payments.
+// Every signed-in person's own login: email and password (current password required).
+Route::middleware(['auth:sanctum', 'throttle:10,1'])->prefix('account')->group(function () {
+    Route::patch('/email', [AccountController::class, 'updateEmail']);
+    Route::patch('/password', [AccountController::class, 'updatePassword']);
+});
+
 // Running the system itself — deployments (CI/CD), backups and system health —
 // belongs to the system administrators (platform administrators), never to an
 // institution's own staff, however senior. No institution context is needed.

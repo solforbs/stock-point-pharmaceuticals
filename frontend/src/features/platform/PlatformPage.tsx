@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, Building2, CreditCard, DatabaseBackup, GitBranch, Inbox, LogOut, Plus, ShieldCheck, Tags } from 'lucide-react'
+import { Activity, Building2, CreditCard, DatabaseBackup, GitBranch, Inbox, LogOut, Plus, ShieldCheck, Tags, UserCog } from 'lucide-react'
 import { lazy, Suspense, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { DataTable, type Column } from '../../components/ui/DataTable'
@@ -19,12 +19,13 @@ import { toast } from '../../lib/toast'
 import type { InvitationRow, Paginated, Plan, SubscriptionPaymentRow, TenantDetail, TenantRequestRow, TenantRow } from '../../lib/types'
 import { ACCESS_LABEL } from '../billing/accessState'
 
-type Tab = 'requests' | 'tenants' | 'plans' | 'payments' | 'deployments' | 'health' | 'backups'
+type Tab = 'requests' | 'tenants' | 'plans' | 'payments' | 'deployments' | 'health' | 'backups' | 'account'
 
 // Running the system itself: only system administrators reach this console.
 const DeploymentsPage = lazy(() => import('../admin/DeploymentsPage'))
 const SystemHealthPage = lazy(() => import('../admin/SystemHealthPage'))
 const BackupPage = lazy(() => import('../admin/BackupPage'))
+const MyAccountPage = lazy(() => import('../admin/MyAccountPage'))
 
 const TABS: { key: Tab; label: string; icon: typeof Inbox }[] = [
   { key: 'requests', label: 'Quote requests', icon: Inbox },
@@ -34,6 +35,7 @@ const TABS: { key: Tab; label: string; icon: typeof Inbox }[] = [
   { key: 'deployments', label: 'CI/CD & Deployments', icon: GitBranch },
   { key: 'health', label: 'System health', icon: Activity },
   { key: 'backups', label: 'Backups', icon: DatabaseBackup },
+  { key: 'account', label: 'My account', icon: UserCog },
 ]
 
 /**
@@ -95,6 +97,7 @@ export default function PlatformPage() {
           {tab === 'deployments' && <DeploymentsPage />}
           {tab === 'health' && <SystemHealthPage />}
           {tab === 'backups' && <BackupPage />}
+          {tab === 'account' && <MyAccountPage />}
         </Suspense>
       </div>
     </div>

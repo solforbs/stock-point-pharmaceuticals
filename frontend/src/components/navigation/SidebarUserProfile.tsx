@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { LogOut, ShieldCheck, User } from 'lucide-react'
+import { LogOut, ShieldCheck, User, UserCog } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { forgetCachedUser } from '../../hooks/useCurrentUser'
 import { api } from '../../lib/api'
@@ -61,6 +61,13 @@ export function SidebarUserProfile({ user, collapsed }: SidebarUserProfileProps)
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
+        <Link
+          to="/account"
+          title="My account: login email and password"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+        >
+          <UserCog size={16} />
+        </Link>
         <Link
           to="/admin/security"
           title="Security & MFA"
