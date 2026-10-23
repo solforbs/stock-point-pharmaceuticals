@@ -75,7 +75,7 @@ export default function ValuationPage() {
           title: assumptions ? `${title} (${assumptions.formula})` : title,
           header: ['No.', ...cols.map((c) => c.label)],
           rows: [
-            ...r.rows.map((row, i) => [String(i + 1), ...cols.map((c) => value(row, c.key, c.type))]),
+            ...r.rows.map((row, i) => [String(i + 1), ...cols.map((c) => value(row, c.key, c.type ?? ''))]),
             ['Totals', ...cols.map((c) => (c.key in totals ? Number(totals[c.key]) : ''))],
           ],
           widths: [6, ...cols.map((c) => (c.key === 'name' ? 44 : 16))],
