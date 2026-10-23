@@ -8,7 +8,7 @@ import { useProductInsight, useProductStock } from '../../lib/hooks'
 import { formatMoney, formatPct, formatQty } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
 import type { Product, ProductInsight } from '../../lib/types'
-import { useCartStore, type AddProductOptions } from './cartStore'
+import { buyerLabel, useCartStore, type AddProductOptions } from './cartStore'
 import { previewFefo } from './fefo'
 
 const MARKUP_STEPS = ['10', '20', '25', '30']
@@ -37,6 +37,7 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
   const storeId = useCartStore((s) => s.storeId)
   const saleMode = useCartStore((s) => s.saleMode)
   const customerId = useCartStore((s) => s.customer?.id ?? null)
+  const buyerType = useCartStore((s) => s.buyerType)
   const lines = useCartStore((s) => s.lines)
 
   const salesUoms = (product.uoms ?? []).filter((u) => u.is_sales || u.is_base)
@@ -46,7 +47,7 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
   const [sellingPrice, setSellingPrice] = useState('')
   const priceRef = useRef<HTMLInputElement>(null)
 
-  const { data: insight, isLoading: insightLoading } = useProductInsight(product.id, storeId, customerId, !offline)
+  const { data: insight, isLoading: insightLoading } = useProductInsight(product.id, storeId, customerId, !offline, buyerType)
   const { data: stock } = useProductStock(offline ? null : product.id)
 
   const uom = salesUoms.find((u) => u.uom_id === uomId) ?? defaultUom
@@ -89,12 +90,14 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
   const fefo = previewFefo(storeRow, qtyBase)
   const otherStores = (stock?.stores ?? []).filter((row) => row.store_id !== storeId && dIsPos(row.free_to_sell))
 
-  const canConfirm = qtyValid && !belowLanding && !!uom && (priceValid || !canSetPrice || !landingPrice)
+  // A final price may be above or below the landing price, but never below what the stock cost.
+  const belowCost = priceValid && !!unitCost && dCmp(sellingPrice, unitCost) < 0
+  const canConfirm = qtyValid && !belowCost && !!uom && (priceValid || !canSetPrice || !landingPrice)
 
   function confirm() {
     if (!canConfirm || !uom) return
-    // Only a price above the landing price travels; anything else sells at the catalog's.
-    onConfirm(product, uom.uom_id, { qty: qty.trim(), sellingPrice: canSetPrice && raised ? dRound2(sellingPrice) : null })
+    // A price different from the landing price travels as this sale's till price.
+    onConfirm(product, uom.uom_id, { qty: qty.trim(), sellingPrice: canSetPrice && (raised || belowLanding) ? dRound2(sellingPrice) : null })
   }
 
   function applyMarkup(pct: string) {
@@ -257,7 +260,7 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
 
           <div>
             <label className="block">
-              <span className="ui-label">Final selling price / {uomCode}</span>
+              <span className="ui-label">Final selling price for {buyerLabel(buyerType).toLowerCase()} / {uomCode}</span>
               <input
                 ref={priceRef}
                 type="text"
@@ -272,7 +275,7 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
                   }
                 }}
                 className={`mt-1 w-full h-12 px-3 rounded-xl border text-2xl font-bold text-right tabular focus:outline-none ${
-                  belowLanding ? 'border-rose-400 text-rose-700 bg-rose-50/40' : 'border-slate-300 text-slate-900 focus:border-blue-500'
+                  belowCost ? 'border-rose-400 text-rose-700 bg-rose-50/40' : belowLanding ? 'border-amber-400 text-amber-800 bg-amber-50/40' : 'border-slate-300 text-slate-900 focus:border-blue-500'
                 } disabled:bg-slate-50 disabled:text-slate-500`}
               />
             </label>
@@ -301,10 +304,24 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
             ) : (
               <p className="mt-1.5 text-slate-500">Sells at the landing price. Setting a different price needs the price override permission.</p>
             )}
-            {belowLanding && (
+            {belowCost && (
               <p role="alert" className="mt-1.5 text-rose-700 font-semibold">
-                Below the landing price. To sell for less, add it at the landing price and give a discount in the cart.
+                Below what this stock cost ({unitCost ? formatMoney(unitCost) : '—'} a {uomCode}): it would be sold at a loss.
               </p>
+            )}
+            {belowLanding && !belowCost && (
+              <p className="mt-1.5 text-amber-800 font-medium">Below the landing price: sold at this price to this {buyerLabel(buyerType).toLowerCase()} for this sale only.</p>
+            )}
+            {insight?.usual_price.buyer && (
+              <button
+                type="button"
+                disabled={!canSetPrice}
+                onClick={() => setSellingPrice(dRound2(insight.usual_price.buyer!.last_price))}
+                className="mt-2 w-full text-left rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-xs hover:bg-amber-100 disabled:cursor-default"
+              >
+                <span className="font-bold text-amber-900">{buyerLabel(buyerType)}s usually pay {formatMoney(insight.usual_price.buyer.unit_price)}</span>
+                <span className="text-amber-800"> per {insight.usual_price.buyer.uom_code ?? 'unit'} · last {formatMoney(insight.usual_price.buyer.last_price)}{canSetPrice ? ' (tap to use)' : ''}</span>
+              </button>
             )}
           </div>
 

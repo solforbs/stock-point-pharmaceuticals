@@ -4,6 +4,7 @@ import type { NormalisedApiError } from '../../lib/apiError'
 import { dAdd, dIsPos, dMul, dMulInt, isValidDecimal } from '../../lib/decimal'
 import type { Customer, Product, ProductUom, Quote, QuoteLine, Sale, SaleMode, TenderLine } from '../../lib/types'
 import { defaultSalesUom } from '../../components/ProductSearch'
+import { useSessionMode } from '../../lib/sessionMode'
 
 /**
  * Part 16.3 — the POS state model. Optimistic for display only (line added,
@@ -62,11 +63,36 @@ export type HeldCart = {
 
 export type ModeSwitchNote = { from: SaleMode; to: SaleMode; beforeTotal: string | null }
 
+/** Who the sale is to: the till works out the final price for that kind of buyer. */
+export type BuyerType = 'WALK_IN' | 'CHEMIST' | 'CLINIC' | 'HOSPITAL' | 'GOVERNMENT' | 'NGO'
+export const BUYER_TYPES: { value: BuyerType; label: string }[] = [
+  { value: 'WALK_IN', label: 'Walk-in' },
+  { value: 'CHEMIST', label: 'Chemist' },
+  { value: 'CLINIC', label: 'Clinic' },
+  { value: 'HOSPITAL', label: 'Hospital' },
+  { value: 'GOVERNMENT', label: 'Government' },
+  { value: 'NGO', label: 'NGO' },
+]
+export const buyerLabel = (t: BuyerType) => BUYER_TYPES.find((b) => b.value === t)?.label ?? t
+
+/** A chosen customer's type sets the buyer; anything else counts as walk-in. */
+function buyerTypeFor(customer: Customer | null): BuyerType {
+  switch (customer?.customer_type) {
+    case 'RETAIL_PHARMACY': return 'CHEMIST'
+    case 'CLINIC': return 'CLINIC'
+    case 'HOSPITAL': return 'HOSPITAL'
+    case 'GOVERNMENT': return 'GOVERNMENT'
+    case 'NGO': return 'NGO'
+    default: return 'WALK_IN'
+  }
+}
+
 type CartState = {
   saleMode: SaleMode
   storeId: string | null
   terminalId: string
   customer: Customer | null
+  buyerType: BuyerType
   lines: CartLine[]
   headerDiscount: string
   headerDiscountReason: string
@@ -101,6 +127,7 @@ type CartState = {
   setStore: (storeId: string) => void
   setTerminal: (terminalId: string) => void
   setCustomer: (customer: Customer | null) => void
+  setBuyerType: (buyerType: BuyerType) => void
   addProduct: (product: Product, uomId?: string, options?: AddProductOptions) => string | null
   setQty: (lineRef: string, qty: string) => void
   setUom: (lineRef: string, uomId: string) => void
@@ -178,9 +205,10 @@ function recompute(line: CartLine): CartLine {
 }
 
 /** The cart facts a quote depends on; a quote is fresh only while this matches. */
-export function cartSignature(s: Pick<CartState, 'saleMode' | 'storeId' | 'customer' | 'headerDiscount' | 'headerDiscountReason' | 'lines'>): string {
+export function cartSignature(s: Pick<CartState, 'saleMode' | 'storeId' | 'customer' | 'buyerType' | 'headerDiscount' | 'headerDiscountReason' | 'lines'>): string {
   return JSON.stringify({
     m: s.saleMode,
+    b: s.buyerType,
     st: s.storeId,
     c: s.customer?.id ?? null,
     hd: s.headerDiscount,
@@ -189,11 +217,12 @@ export function cartSignature(s: Pick<CartState, 'saleMode' | 'storeId' | 'custo
   })
 }
 
-export function quotePayload(s: Pick<CartState, 'saleMode' | 'storeId' | 'customer' | 'headerDiscount' | 'headerDiscountReason' | 'lines'>) {
+export function quotePayload(s: Pick<CartState, 'saleMode' | 'storeId' | 'customer' | 'buyerType' | 'headerDiscount' | 'headerDiscountReason' | 'lines'>) {
   return {
     sale_mode: s.saleMode,
     store_id: s.storeId,
     customer_id: s.customer?.id ?? null,
+    buyer_type: s.buyerType,
     header_discount: s.headerDiscount && isValidDecimal(s.headerDiscount) && Number(s.headerDiscount) > 0 ? s.headerDiscount : null,
     header_discount_reason: s.headerDiscountReason || null,
     lines: s.lines.map((l) => ({
@@ -210,6 +239,7 @@ export function quotePayload(s: Pick<CartState, 'saleMode' | 'storeId' | 'custom
 
 const emptyCart = {
   customer: null,
+  buyerType: 'WALK_IN' as BuyerType,
   lines: [] as CartLine[],
   headerDiscount: '',
   headerDiscountReason: '',
@@ -234,7 +264,8 @@ const emptyCart = {
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
-  saleMode: 'RETAIL',
+  // The mode chosen after sign-in carries the whole session.
+  saleMode: useSessionMode.getState().mode ?? 'RETAIL',
   // Remembered so a till reloaded during an outage still knows its store.
   storeId: readStore(),
   terminalId: readTerminal(),
@@ -264,7 +295,8 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
     set({ terminalId })
   },
-  setCustomer: (customer) => set({ customer, checkoutError: null }),
+  setCustomer: (customer) => set({ customer, buyerType: buyerTypeFor(customer), checkoutError: null }),
+  setBuyerType: (buyerType) => set({ buyerType, checkoutError: null }),
 
   addProduct: (product, uomId, options) => {
     const uoms = (product.uoms ?? []).filter((u) => u.is_sales || u.is_base)
@@ -453,3 +485,15 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   reset: () => set({ ...emptyCart }),
 }))
+
+// The session mode and the till's mode follow each other: a switch at the
+// till (or recalling a held cart) becomes the session's mode, and a mode
+// chosen from the sidebar or the splash reaches an open till.
+useCartStore.subscribe((s, prev) => {
+  if (s.saleMode !== prev.saleMode && (s.saleMode === 'RETAIL' || s.saleMode === 'WHOLESALE') && useSessionMode.getState().mode !== s.saleMode) {
+    useSessionMode.getState().choose(s.saleMode)
+  }
+})
+useSessionMode.subscribe((s) => {
+  if (s.mode && useCartStore.getState().saleMode !== s.mode) useCartStore.getState().setSaleMode(s.mode)
+})

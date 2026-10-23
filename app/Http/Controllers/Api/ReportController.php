@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Services\Documents\PdfRenderer;
 use App\Services\Reports\ReportNotFoundException;
 use App\Services\Reports\ReportRunner;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +22,7 @@ class ReportController extends ApiController
         $filters = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
-            'format' => ['nullable', 'in:json,csv'],
+            'format' => ['nullable', 'in:json,csv,pdf,doc'],
             'customer_id' => ['nullable', 'uuid'],
             'product_id' => ['nullable', 'uuid'],
             'store_id' => ['nullable', 'uuid'],
@@ -35,6 +36,8 @@ class ReportController extends ApiController
             'dead_days' => ['nullable', 'integer', 'min:1'],
             'open_hour' => ['nullable', 'integer', 'between:0,23'],
             'close_hour' => ['nullable', 'integer', 'between:1,24'],
+            'handling_pct' => ['nullable', 'numeric', 'between:0,500'],
+            'margin_pct' => ['nullable', 'numeric', 'between:0,500'],
         ]);
         $format = $filters['format'] ?? 'json';
         unset($filters['format']);
@@ -43,6 +46,26 @@ class ReportController extends ApiController
             $result = $runner->run($report, $request->user(), $this->organisationId($request), $this->branchId($request), array_filter($filters, fn ($v) => $v !== null));
         } catch (ReportNotFoundException $e) {
             return $this->error('NOT_FOUND', $e->getMessage(), 404);
+        }
+
+        // PDF and Word: the report under the institution's letterhead.
+        if ($format === 'pdf' || $format === 'doc') {
+            $pdf = app(PdfRenderer::class);
+            $data = ['title' => $result['title'], 'report' => $result, 'date' => now()->format('j M Y H:i')];
+            $name = str_replace('.', '-', $report).'-'.now()->format('Y-m-d');
+            if ($format === 'pdf') {
+                set_time_limit(300);
+
+                return $pdf->render('pdf.report', $data, $name, $this->branchId($request));
+            }
+
+            // Word opens HTML saved as .doc as an ordinary, editable document.
+            $html = $pdf->html('pdf.report', $data + ['forWord' => true], $this->branchId($request));
+
+            return response($html, 200, [
+                'Content-Type' => 'application/msword; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="'.$name.'.doc"',
+            ]);
         }
 
         if ($format === 'csv') {

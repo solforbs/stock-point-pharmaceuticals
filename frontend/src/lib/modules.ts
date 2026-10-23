@@ -1,6 +1,7 @@
 import { Building2, FlaskConical, Microscope, Pill, Stethoscope, TestTubes, Users, type LucideIcon } from 'lucide-react'
 import type { CurrentUser, ModuleKey } from './types'
 import type { NavItem } from './navigation'
+import { sessionModesFor } from './sessionMode'
 
 /**
  * The healthcare platform's modules. Which of them a user may enter is
@@ -63,7 +64,8 @@ export function moduleForPath(pathname: string): ModuleKey {
 export function postLoginTarget(user: CurrentUser): string {
   const modules = user.modules ?? []
   if (modules.length === 0) return '/no-access'
-  if (modules.length === 1) return moduleInfo(modules[0]).home
+  // A pharmacy that sells both retail and wholesale asks which one this session runs in.
+  if (modules.length === 1 && (modules[0] !== 'PHARMACY' || sessionModesFor(user).length < 2)) return moduleInfo(modules[0]).home
   return '/select-module'
 }
 

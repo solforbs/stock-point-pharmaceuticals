@@ -80,10 +80,10 @@ export function useProductStock(id: string | null | undefined) {
   })
 }
 
-export function useProductInsight(id: string | null | undefined, storeId: string | null | undefined, customerId: string | null | undefined, enabled = true) {
+export function useProductInsight(id: string | null | undefined, storeId: string | null | undefined, customerId: string | null | undefined, enabled = true, buyerType?: string | null) {
   return useQuery({
-    queryKey: ['products', id, 'insight', storeId, customerId ?? null],
-    queryFn: () => apiGet<ProductInsight>(`/api/products/${id}/insight`, { store_id: storeId, customer_id: customerId ?? undefined }),
+    queryKey: ['products', id, 'insight', storeId, customerId ?? null, buyerType ?? null],
+    queryFn: () => apiGet<ProductInsight>(`/api/products/${id}/insight`, { store_id: storeId, customer_id: customerId ?? undefined, buyer_type: buyerType ?? undefined }),
     enabled: enabled && !!id && !!storeId,
     staleTime: 60_000,
   })

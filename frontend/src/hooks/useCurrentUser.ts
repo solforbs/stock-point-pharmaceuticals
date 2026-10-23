@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import { api } from '../lib/api'
 import { isUnreachableError } from '../lib/offline/connectivity'
+import { forgetSessionMode } from '../lib/sessionMode'
 import type { CurrentUser } from '../lib/types'
 
 const CACHE_KEY = 'last-signed-in-user'
@@ -30,6 +31,7 @@ export function forgetCachedUser() {
   } catch {
     // ignore
   }
+  forgetSessionMode()
 }
 
 /**

@@ -228,22 +228,26 @@ class PriceQuoteService
         }
         $explain[] = "Base price → {$basePrice}".($engine['rank_price'] !== $engine['list_price'] ? " (list {$engine['rank_price']} before quantity break)" : '');
 
-        // The till may sell above the landing price for this sale only; going
-        // below it is a discount, which has its own controls in step 3. Both
-        // are final prices: VAT was settled at receiving, so a till price
-        // carries its VAT inside it and the customer pays exactly that.
+        // The till may set the final price for this sale only — above the
+        // landing price, or below it for a buyer who pays less (a chemist, a
+        // hospital) — but never below what the stock cost. VAT was settled at
+        // receiving, so a till price carries its VAT inside it and the
+        // customer pays exactly that.
         $landingPrice = Money::round(bcmul($basePrice, bcadd('1', $rateFraction, 6), 6), 2);
         $priceSource = $engine['source'];
         $tillPrice = null;
         if (! empty($line['selling_price'])) {
             $sellingPrice = Money::round((string) $line['selling_price'], 2);
-            if (bccomp($sellingPrice, $landingPrice, 4) > 0) {
+            $netTill = Money::round(bcdiv($sellingPrice, bcadd('1', $rateFraction, 6), 6), 2);
+            if ($costPerUom !== null && bccomp($netTill, Money::round($costPerUom, 2), 4) < 0) {
+                throw new \InvalidArgumentException("{$product->name}: {$sellingPrice} is below what this stock cost (".Money::round(bcmul($costPerUom, bcadd('1', $rateFraction, 6), 6), 2).' a '.$uom->uom->code.'); it would be sold at a loss.');
+            }
+            if (bccomp($sellingPrice, $landingPrice, 4) !== 0) {
                 $tillPrice = $sellingPrice;
-                $basePrice = Money::round(bcdiv($tillPrice, bcadd('1', $rateFraction, 6), 6), 2);
+                $basePrice = $netTill;
                 $priceSource = 'TILL_PRICE';
-                $explain[] = "Final selling price set at the till → {$tillPrice} (landing price {$landingPrice})";
-            } elseif (bccomp($sellingPrice, $landingPrice, 4) < 0) {
-                $explain[] = "Selling price {$sellingPrice} is below the landing price {$landingPrice} → sold at {$landingPrice}; use a discount to go lower";
+                $buyer = ! empty($request['buyer_type']) ? ' for '.strtolower(str_replace('_', ' ', (string) $request['buyer_type'])) : '';
+                $explain[] = "Final selling price set at the till{$buyer} → {$tillPrice} (landing price {$landingPrice})";
             }
         }
 

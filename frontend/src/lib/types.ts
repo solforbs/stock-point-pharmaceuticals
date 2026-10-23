@@ -173,7 +173,7 @@ export type ProductInsight = {
     retail_markup_pct: Decimal | null
   }[]
   buying: { wac_per_base: Decimal | null; last_purchase: LastPurchase | null } | null
-  usual_price: { customer: UsualPrice | null; everyone: UsualPrice | null }
+  usual_price: { customer: UsualPrice | null; everyone: UsualPrice | null; buyer?: UsualPrice | null }
   alternatives: { match: 'SAME_GENERIC' | 'SAME_CATEGORY'; free_in_store: Decimal; free_in_branch: Decimal; product: Product }[]
 }
 

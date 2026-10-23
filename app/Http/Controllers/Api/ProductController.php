@@ -183,6 +183,7 @@ class ProductController extends ApiController
         $data = $request->validate([
             'store_id' => ['required', 'uuid', Rule::exists('stores', 'id')->where('branch_id', $branchId)],
             'customer_id' => ['nullable', 'uuid', Rule::exists('customers', 'id')->where('organisation_id', $organisationId)],
+            'buyer_type' => ['nullable', 'in:WALK_IN,CHEMIST,CLINIC,HOSPITAL,GOVERNMENT,NGO'],
         ]);
 
         $product = Product::where('organisation_id', $organisationId)->findOrFail($product);
@@ -192,6 +193,7 @@ class ProductController extends ApiController
             'branch_id' => $branchId,
             'store_id' => $data['store_id'],
             'customer_id' => $data['customer_id'] ?? null,
+            'buyer_type' => $data['buyer_type'] ?? null,
             'user_id' => $request->user()->id,
         ], $request->user()->can('product.cost.view')));
     }

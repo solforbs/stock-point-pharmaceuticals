@@ -22,7 +22,7 @@ class Sale extends Model
 
     protected $fillable = [
         'organisation_id', 'branch_id', 'store_id', 'sale_mode', 'sub_type',
-        'customer_id', 'quote_id', 'user_id', 'terminal_id', 'doc_number', 'status',
+        'customer_id', 'buyer_type', 'quote_id', 'user_id', 'terminal_id', 'doc_number', 'status',
         'subtotal', 'discount_total', 'tax_total', 'grand_total', 'cost_total', 'idempotency_key',
         'voided_by', 'void_reason', 'voided_at',
         'etims_status', 'etims_control_code', 'etims_invoice_number', 'etims_submitted_at', 'etims_error',

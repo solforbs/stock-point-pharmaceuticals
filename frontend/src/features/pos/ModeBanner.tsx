@@ -5,7 +5,7 @@ import { ConfirmDialog } from '../../components/ui/Modal'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { usePermission } from '../../lib/permissions'
 import type { SaleMode, Store } from '../../lib/types'
-import { useCartStore } from './cartStore'
+import { BUYER_TYPES, useCartStore, type BuyerType } from './cartStore'
 
 /**
  * Modern single-line POS Terminal & Mode Ribbon (Height: 44px fixed)
@@ -21,6 +21,8 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
   const setSaleMode = useCartStore((s) => s.setSaleMode)
   const setStore = useCartStore((s) => s.setStore)
   const setTerminal = useCartStore((s) => s.setTerminal)
+  const buyerType = useCartStore((s) => s.buyerType)
+  const setBuyerType = useCartStore((s) => s.setBuyerType)
   const [pendingMode, setPendingMode] = useState<SaleMode | null>(null)
 
   const modes = user?.sale_modes ?? []
@@ -59,6 +61,21 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
             )
           })}
         </div>
+      </div>
+
+      {/* Who the sale is to: prices are worked out for this kind of buyer. */}
+      <div className="flex items-center gap-1.5 shrink-0 text-xs">
+        <span className="font-bold text-slate-500">Selling to:</span>
+        <select
+          value={buyerType}
+          onChange={(e) => setBuyerType(e.target.value as BuyerType)}
+          disabled={status === 'POSTED' || status === 'POSTING'}
+          aria-label="Selling to"
+          title="Walk-in, chemist, clinic, hospital, government or NGO: set the final price for this buyer on each line"
+          className="h-7 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold px-2.5 outline-none cursor-pointer"
+        >
+          {BUYER_TYPES.map((b) => (<option key={b.value} value={b.value}>{b.label}</option>))}
+        </select>
       </div>
 
       {/* Right: Store, Terminal, Cashier & Live Status */}

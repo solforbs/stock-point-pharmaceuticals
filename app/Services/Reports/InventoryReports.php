@@ -2,6 +2,7 @@
 
 namespace App\Services\Reports;
 
+use App\Models\Setting;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -14,6 +15,13 @@ class InventoryReports
      */
     public function valuation(ReportContext $ctx): array
     {
+        // Estimated sale value = value at purchase price × (1 + transport & handling %)
+        // × (1 + profit margin %). The percentages come from the request, else
+        // from the pricing settings (handling 0%, margin 20% unless set).
+        $handlingPct = (string) ($ctx->filter('handling_pct') ?? Setting::resolve($ctx->organisationId, $ctx->branchId, 'pricing', 'transport_handling_pct', '0'));
+        $marginPct = (string) ($ctx->filter('margin_pct') ?? Setting::resolve($ctx->organisationId, $ctx->branchId, 'pricing', 'target_margin_pct', '20'));
+        $uplift = bcmul(bcadd('1', bcdiv($handlingPct, '100', 6), 6), bcadd('1', bcdiv($marginPct, '100', 6), 6), 8);
+
         $rows = DB::table('stock_balances as b')
             ->join('products as p', 'p.id', '=', 'b.product_id')
             ->join('stores as s', 's.id', '=', 'b.store_id')
@@ -23,13 +31,26 @@ class InventoryReports
             ->havingRaw('SUM(b.qty_on_hand) <> 0')
             ->selectRaw('p.code, p.name, s.code as store, SUM(b.qty_on_hand) as qty, SUM(b.qty_on_hand * b.wac) as value_cost, SUM(b.qty_on_hand) * p.default_price as value_retail')
             ->orderBy('p.name')->orderBy('s.code')->get()
-            ->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'store' => $r->store, 'qty_base' => $this->d($r->qty), 'value_at_cost' => $this->d($r->value_cost), 'value_at_retail' => $this->d($r->value_retail),
-                'wac' => bccomp($this->d($r->qty), '0', 4) !== 0 ? bcdiv($this->d($r->value_cost), $this->d($r->qty), 4) : '0.0000'])->all();
+            ->map(function ($r) use ($uplift) {
+                // The product's saved price is its purchase price; without one, its cost.
+                $purchase = $r->value_retail !== null ? $this->d($r->value_retail) : $this->d($r->value_cost);
+
+                return ['code' => $r->code, 'name' => $r->name, 'store' => $r->store, 'qty_base' => $this->d($r->qty), 'value_at_cost' => $this->d($r->value_cost), 'value_at_retail' => $purchase,
+                    'estimated_sale_value' => bcadd(bcmul($purchase, $uplift, 6), '0', 4),
+                    'wac' => bccomp($this->d($r->qty), '0', 4) !== 0 ? bcdiv($this->d($r->value_cost), $this->d($r->qty), 4) : '0.0000'];
+            })->all();
 
         return $this->result([
             $this->col('code', 'Code'), $this->col('name', 'Product'), $this->col('store', 'Store'), $this->col('qty_base', 'On hand (base)', 'qty'),
-            $this->col('wac', 'WAC', 'money'), $this->col('value_at_cost', 'Value at cost', 'money'), $this->col('value_at_retail', 'Value at retail', 'money'),
-        ], $rows, ['qty_base', 'value_at_cost', 'value_at_retail']);
+            $this->col('wac', 'WAC', 'money'), $this->col('value_at_cost', 'Value at cost', 'money'), $this->col('value_at_retail', 'Value at purchase price', 'money'),
+            $this->col('estimated_sale_value', 'Estimated sale value', 'money'),
+        ], $rows, ['qty_base', 'value_at_cost', 'value_at_retail', 'estimated_sale_value']) + [
+            'assumptions' => [
+                'handling_pct' => $handlingPct,
+                'margin_pct' => $marginPct,
+                'formula' => "Estimated sale value = value at purchase price × (1 + {$handlingPct}% transport & handling) × (1 + {$marginPct}% profit margin)",
+            ],
+        ];
     }
 
     /**

@@ -24,6 +24,8 @@ class PricingController extends ApiController
             'sale_mode' => ['required', 'in:RETAIL,WHOLESALE,DISPENSING'],
             'store_id' => ['required', 'uuid', TenantRules::exists('stores')],
             'customer_id' => ['nullable', 'uuid', TenantRules::exists('customers')],
+            // Who the sale is to; the till prices the line for that kind of buyer.
+            'buyer_type' => ['nullable', 'in:WALK_IN,CHEMIST,CLINIC,HOSPITAL,GOVERNMENT,NGO'],
             'header_discount' => ['nullable', 'numeric', 'min:0'],
             'header_discount_reason' => ['nullable', 'string', 'max:255'],
             'lines' => ['required', 'array', 'min:1'],

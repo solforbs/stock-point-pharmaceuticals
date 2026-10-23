@@ -214,14 +214,37 @@ class PosHttpFlowTest extends TestCase
             ->assertJsonPath('totals.grand_total', '1400.0000');
     }
 
-    public function test_a_selling_price_below_the_landing_price_sells_at_the_landing_price(): void
+    public function test_a_buyer_may_be_sold_below_the_landing_price_and_the_sale_keeps_who_it_was_to(): void
+    {
+        $this->grantPermissions(['sale.create', 'sale.view', 'sale.price.override']);
+
+        $quote = $this->postJson('/api/pricing/quote', $this->quotePayload('2', ['selling_price' => '450']) + ['buyer_type' => 'CHEMIST'])
+            ->assertOk()
+            ->assertJsonPath('lines.0.unit_price', '450.0000')
+            ->assertJsonPath('lines.0.price_source', 'TILL_PRICE')
+            ->assertJsonPath('totals.grand_total', '900.0000')
+            ->json();
+
+        $sale = $this->postJson('/api/sales/checkout', $this->checkoutPayload($quote), ['Idempotency-Key' => 'pos-buyer'])
+            ->assertCreated()
+            ->json();
+
+        $this->assertSame('CHEMIST', Sale::findOrFail($sale['id'])->buyer_type);
+    }
+
+    public function test_a_till_price_below_what_the_stock_cost_is_refused(): void
     {
         $this->grantPermissions(['sale.create', 'sale.price.override']);
 
-        $this->postJson('/api/pricing/quote', $this->quotePayload('2', ['selling_price' => '400']))
-            ->assertOk()
-            ->assertJsonPath('lines.0.unit_price', '500.0000')
-            ->assertJsonPath('totals.grand_total', '1000.0000');
+        // A box of 200 tablets cost 400 (200 × 2.00).
+        $this->postJson('/api/pricing/quote', $this->quotePayload('2', ['selling_price' => '300']))
+            ->assertStatus(422)
+            ->assertJsonPath('error.code', 'INVALID_INPUT');
+    }
+
+    public function test_an_unknown_buyer_type_is_refused(): void
+    {
+        $this->postJson('/api/pricing/quote', $this->quotePayload('2') + ['buyer_type' => 'FRIEND'])->assertStatus(422);
     }
 
     public function test_setting_a_selling_price_needs_the_price_override_permission(): void

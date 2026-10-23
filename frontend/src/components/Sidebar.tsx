@@ -1,10 +1,11 @@
-import { Activity, ChevronUp, ChevronsLeft, ChevronsRight, LayoutGrid, Pill, X } from 'lucide-react'
+import { Activity, ArrowLeftRight, ChevronUp, ChevronsLeft, ChevronsRight, LayoutGrid, Pill, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useOrganisationLogo } from '../hooks/useOrganisationLogo'
 import { HOSPITAL_NAV, LABORATORY_NAV, moduleForPath, moduleInfo } from '../lib/modules'
+import { SESSION_MODE_LABEL, sessionModesFor, useSessionMode } from '../lib/sessionMode'
 import { NAV_ITEMS, withPermittedItems, withPlatformItems, type NavItem } from '../lib/navigation'
 import { usePermissions } from '../lib/permissions'
 import { SyncStatusChip } from './SyncStatusChip'
@@ -56,6 +57,8 @@ function SidebarInner({
         ? [{ title: 'Laboratory', items: LABORATORY_NAV }]
         : SECTIONS
   const canSwitchModules = (user?.modules?.length ?? 0) > 1
+  const sessionMode = useSessionMode((s) => s.mode)
+  const canSwitchSessionMode = module === 'PHARMACY' && sessionModesFor(user).length > 1
 
   const activeGroupKey =
     sections.flatMap((s) => s.items).find((item) => item.children?.length && location.pathname.startsWith(item.path))?.key ?? null
@@ -136,6 +139,21 @@ function SidebarInner({
             {!collapsed && (
               <span className="truncate">
                 {moduleInfo(module).label} · <span className="text-slate-400 font-medium">switch</span>
+              </span>
+            )}
+          </NavLink>
+        )}
+        {canSwitchSessionMode && (
+          <NavLink
+            to="/select-module?step=mode"
+            onClick={onLinkClick}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 transition-colors"
+            title="The mode this session sells in — change it at any time"
+          >
+            <ArrowLeftRight size={16} className="shrink-0" />
+            {!collapsed && (
+              <span className="truncate">
+                {sessionMode ? `${SESSION_MODE_LABEL[sessionMode]} mode` : 'Choose a mode'} · <span className="text-amber-600 font-medium">change</span>
               </span>
             )}
           </NavLink>

@@ -106,6 +106,34 @@ class ReportsHttpTest extends TestCase
         $this->assertTrue($inventoryCheck['passes'], $inventoryCheck['detail']);
     }
 
+    public function test_valuation_estimates_the_sale_value_from_purchase_price_handling_and_margin(): void
+    {
+        $default = $this->getJson('/api/reports/inventory.valuation')->assertOk()->json();
+        $this->assertSame('20', (string) (float) $default['assumptions']['margin_pct'], 'a 20% margin unless set');
+        $this->assertSame(
+            round((float) $default['totals']['value_at_retail'] * 1.2, 2),
+            round((float) $default['totals']['estimated_sale_value'], 2),
+        );
+
+        $withHandling = $this->getJson('/api/reports/inventory.valuation?handling_pct=10&margin_pct=20')->assertOk()->json();
+        $this->assertSame(
+            round((float) $withHandling['totals']['value_at_retail'] * 1.1 * 1.2, 2),
+            round((float) $withHandling['totals']['estimated_sale_value'], 2),
+        );
+        $this->assertSame('Value at purchase price', collect($withHandling['columns'])->firstWhere('key', 'value_at_retail')['label']);
+    }
+
+    public function test_valuation_exports_as_pdf_and_word(): void
+    {
+        $pdf = $this->get('/api/reports/inventory.valuation?format=pdf')->assertOk();
+        $this->assertStringContainsString('application/pdf', (string) $pdf->headers->get('Content-Type'));
+        $this->assertStringStartsWith('%PDF', $pdf->getContent());
+
+        $doc = $this->get('/api/reports/inventory.valuation?format=doc')->assertOk();
+        $this->assertStringContainsString('application/msword', (string) $doc->headers->get('Content-Type'));
+        $this->assertStringContainsString('Estimated sale value', $doc->getContent());
+    }
+
     public function test_exports_are_csv_and_audited(): void
     {
         $response = $this->get('/api/reports/sales.by_product?format=csv')->assertOk();

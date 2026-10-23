@@ -78,6 +78,8 @@ class ProductInsight
             'usual_price' => [
                 'customer' => $customer ? $this->usualPrice($product->id, $context['branch_id'], $customer->id) : null,
                 'everyone' => $this->usualPrice($product->id, $context['branch_id'], null),
+                // What this kind of buyer (chemist, hospital…) usually pays.
+                'buyer' => ! empty($context['buyer_type']) ? $this->usualPrice($product->id, $context['branch_id'], null, (string) $context['buyer_type']) : null,
             ],
             'alternatives' => $this->alternatives($product, $context['organisation_id'], $context['branch_id'], $context['store_id']),
         ];
@@ -202,7 +204,7 @@ class ProductInsight
      *
      * @return array{unit_price: string, uom_id: string, uom_code: ?string, times: int, last_price: string, last_sold_at: string}|null
      */
-    private function usualPrice(string $productId, string $branchId, ?string $customerId): ?array
+    private function usualPrice(string $productId, string $branchId, ?string $customerId, ?string $buyerType = null): ?array
     {
         $base = DB::table('sale_lines as l')
             ->join('sales as s', 's.id', '=', 'l.sale_id')
@@ -211,7 +213,8 @@ class ProductInsight
             ->where('s.posted_at', '>=', now()->subDays(self::HISTORY_DAYS))
             ->where('l.product_id', $productId)
             ->where('l.is_bonus', false)
-            ->when($customerId, fn ($q) => $q->where('s.customer_id', $customerId));
+            ->when($customerId, fn ($q) => $q->where('s.customer_id', $customerId))
+            ->when($buyerType, fn ($q) => $q->where('s.buyer_type', $buyerType));
 
         $mostFrequent = (clone $base)
             ->groupBy('l.uom_id', 'l.unit_price')
