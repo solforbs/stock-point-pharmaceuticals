@@ -11,7 +11,7 @@ class TaxCode extends Model
 {
     use BelongsToOrganisation, HasUuids;
 
-    protected $fillable = ['organisation_id', 'code', 'name', 'tax_type', 'is_recoverable', 'is_active'];
+    protected $fillable = ['organisation_id', 'code', 'name', 'tax_type', 'etims_tax_type', 'is_recoverable', 'is_active'];
 
     protected function casts(): array
     {

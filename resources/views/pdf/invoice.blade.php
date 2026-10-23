@@ -77,7 +77,25 @@
         </table>
     @endif
 
-    @if ($sale->etims_invoice_number ?? null)
+    @if ($etims ?? null)
+        {{-- What KRA's OSCU returned for this sale: it identifies the receipt on KRA's side. --}}
+        <table class="items" style="width: 100%; margin-top: 14px;">
+            <thead><tr><th colspan="2">KRA eTIMS</th></tr></thead>
+            <tbody>
+            <tr><td style="width: 32%;">CU invoice number</td><td>{{ $sale->etims_invoice_number }}</td></tr>
+            <tr><td>Receipt signature</td><td>{{ $etims->receipt_signature }}</td></tr>
+            @if ($etims->internal_data)
+                <tr><td>Internal data</td><td>{{ $etims->internal_data }}</td></tr>
+            @endif
+            @if ($etims->sdc_datetime)
+                <tr><td>Signed at</td><td>{{ $etims->sdc_datetime }}</td></tr>
+            @endif
+            @if ($etims->qr_url)
+                <tr><td>Verify with KRA</td><td style="word-break: break-all;">{{ $etims->qr_url }}</td></tr>
+            @endif
+            </tbody>
+        </table>
+    @elseif ($sale->etims_invoice_number ?? null)
         <div class="note">eTIMS invoice: {{ $sale->etims_invoice_number }}</div>
     @endif
 

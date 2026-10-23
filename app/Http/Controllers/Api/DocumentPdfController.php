@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
 use App\Models\DeliveryNote;
+use App\Models\EtimsTransmission;
 use App\Models\GoodsReceipt;
 use App\Models\PurchaseOrder;
 use App\Models\Quotation;
@@ -49,6 +50,8 @@ class DocumentPdfController extends ApiController
             'amountInWords' => class_exists(\NumberFormatter::class) ? $this->amountInWords((string) $sale->grand_total) : null,
             'cashier' => User::where('id', $sale->user_id)->value('name'),
             'payments' => $payments,
+            'etims' => EtimsTransmission::where('document_type', 'sale')->where('document_id', $sale->id)
+                ->where('status', EtimsTransmission::SUCCESS)->latest()->first(),
             'money' => fn ($v) => number_format((float) $v, 2),
             'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
         ], $sale->doc_number, $sale->branch_id);

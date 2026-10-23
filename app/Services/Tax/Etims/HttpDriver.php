@@ -2,6 +2,8 @@
 
 namespace App\Services\Tax\Etims;
 
+use App\Models\CustomerReturn;
+use App\Models\Sale;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
@@ -13,12 +15,12 @@ use Illuminate\Support\Facades\Http;
  */
 class HttpDriver implements EtimsDriver
 {
-    public function submitInvoice(array $payload): EtimsResult
+    public function submitInvoice(array $payload, ?Sale $sale = null): EtimsResult
     {
         return $this->send(config('etims.http.invoice_path'), $payload);
     }
 
-    public function submitCreditNote(array $payload): EtimsResult
+    public function submitCreditNote(array $payload, ?CustomerReturn $return = null): EtimsResult
     {
         return $this->send(config('etims.http.credit_note_path'), $payload);
     }

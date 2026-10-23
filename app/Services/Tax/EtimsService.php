@@ -45,14 +45,14 @@ class EtimsService
 
     public function submitSale(Sale $sale): Sale
     {
-        $this->transmit($sale, fn () => $this->driver->submitInvoice($this->invoicePayload($sale)));
+        $this->transmit($sale, fn () => $this->driver->submitInvoice($this->invoicePayload($sale), $sale));
 
         return $sale->fresh();
     }
 
     public function submitCreditNote(CustomerReturn $return): CustomerReturn
     {
-        $this->transmit($return, fn () => $this->driver->submitCreditNote($this->creditNotePayload($return)));
+        $this->transmit($return, fn () => $this->driver->submitCreditNote($this->creditNotePayload($return), $return));
 
         return $return->fresh();
     }

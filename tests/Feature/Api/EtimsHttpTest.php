@@ -61,12 +61,12 @@ class EtimsHttpTest extends TestCase
         config(['etims.enabled' => true, 'etims.driver' => 'log']);
         $this->app->bind(EtimsDriver::class, fn () => new class implements EtimsDriver
         {
-            public function submitInvoice(array $payload): EtimsResult
+            public function submitInvoice(array $payload, ?Sale $sale = null): EtimsResult
             {
                 throw new EtimsTransmissionException('KRA gateway unreachable: connection timed out');
             }
 
-            public function submitCreditNote(array $payload): EtimsResult
+            public function submitCreditNote(array $payload, ?CustomerReturn $return = null): EtimsResult
             {
                 throw new EtimsTransmissionException('KRA gateway unreachable');
             }

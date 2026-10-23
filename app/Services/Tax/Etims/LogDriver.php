@@ -2,6 +2,8 @@
 
 namespace App\Services\Tax\Etims;
 
+use App\Models\CustomerReturn;
+use App\Models\Sale;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -13,14 +15,14 @@ use Illuminate\Support\Str;
  */
 class LogDriver implements EtimsDriver
 {
-    public function submitInvoice(array $payload): EtimsResult
+    public function submitInvoice(array $payload, ?Sale $sale = null): EtimsResult
     {
         Log::channel(config('logging.default'))->info('eTIMS invoice (log driver)', $payload);
 
         return new EtimsResult('LOG-'.Str::upper(Str::random(12)), 'LOG-INV-'.now()->format('YmdHis').'-'.Str::upper(Str::random(4)));
     }
 
-    public function submitCreditNote(array $payload): EtimsResult
+    public function submitCreditNote(array $payload, ?CustomerReturn $return = null): EtimsResult
     {
         Log::channel(config('logging.default'))->info('eTIMS credit note (log driver)', $payload);
 

@@ -17,6 +17,7 @@ class Product extends Model
         'organisation_id', 'code', 'sku', 'gtin', 'name', 'brand_name', 'strength', 'description',
         'dosage_form_id', 'category_id', 'manufacturer_id', 'base_uom_id',
         'tax_code_id', 'storage_condition_id',
+        'etims_item_class', 'etims_packaging_unit', 'etims_quantity_unit', 'etims_origin_country', 'etims_item_code',
         'is_discrete', 'pack_integrity', 'requires_batch',
         'reorder_point', 'safety_stock', 'lead_time_days', 'default_price', 'is_active',
         'created_by', 'updated_by',
