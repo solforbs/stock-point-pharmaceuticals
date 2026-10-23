@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from './api'
+import { useSessionMode } from './sessionMode'
 import type { AdminBranch, AdminRole, AdminUser, BankAccount, ChartAccount, CustomerTier, DashboardSummary, DosageForm, JournalEntry, Paginated, PermissionGroup, PriceList, Product, ProductCategory, ProductInsight, ProductStock, PurchaseOrder, StorageCondition, Store, Supplier, TaxCode, Uom, UserRef } from './types'
 
 export function useUsers(q = '') {
@@ -14,8 +15,21 @@ export function usePurchaseOrder(id: string | null | undefined) {
   return useQuery({ queryKey: ['purchase-orders', id], queryFn: () => apiGet<PurchaseOrder>(`/api/purchase-orders/${id}`), enabled: !!id })
 }
 
-export function useStores() {
-  return useQuery({ queryKey: ['stores'], queryFn: () => apiGet<Store[]>('/api/stores'), staleTime: 5 * 60_000 })
+/**
+ * The branch's stores. A session running the retail or the wholesale
+ * business sees only that business's stores (and those serving both);
+ * transfers between the two ask for all of them.
+ */
+export function useStores(options?: { allBusinesses?: boolean }) {
+  const mode = useSessionMode((s) => s.mode)
+  const scopedTo = options?.allBusinesses ? null : mode
+
+  return useQuery({
+    queryKey: ['stores'],
+    queryFn: () => apiGet<Store[]>('/api/stores'),
+    staleTime: 5 * 60_000,
+    select: scopedTo ? (stores: Store[]) => stores.filter((s) => !s.business_mode || s.business_mode === scopedTo) : undefined,
+  })
 }
 
 /** The institution's own bank accounts, for choosing where a receipt was paid in. */

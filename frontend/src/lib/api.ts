@@ -2,6 +2,7 @@ import axios, { type AxiosRequestConfig } from 'axios'
 import { useBranchStore } from './branch'
 import { isUnreachableError, useConnectivityStore } from './offline/connectivity'
 import { queryClient } from './queryClient'
+import { useSessionMode } from './sessionMode'
 
 export type { ApiError } from './apiError'
 export { getApiError } from './apiError'
@@ -22,6 +23,9 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const branchId = useBranchStore.getState().activeBranchId
   if (branchId) config.headers.set('X-Branch-Id', branchId)
+  // The business (retail or wholesale) this session runs in: each keeps its own stores' stock and sales.
+  const businessMode = useSessionMode.getState().mode
+  if (businessMode) config.headers.set('X-Business-Mode', businessMode)
   return config
 })
 

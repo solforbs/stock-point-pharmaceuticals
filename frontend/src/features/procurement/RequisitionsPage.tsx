@@ -20,6 +20,7 @@ import { usePermissions } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Paginated, Product, ReorderSuggestion, Requisition, Rfq } from '../../lib/types'
 import { ExpiryBadge } from '../inventory/StockOnHandPage'
+import { SingleSourceModal } from './SingleSourceModal'
 
 const STATUSES = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'CONVERTED']
 type ReqLine = { key: string; product: Product; qty_base: string; notes: string }
@@ -247,6 +248,7 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
   const [rejecting, setRejecting] = useState(false)
   const [editLines, setEditLines] = useState<EditLine[] | null>(null)
   const [quoting, setQuoting] = useState(false)
+  const [singleSourcing, setSingleSourcing] = useState(false)
   const [quoteSupplierIds, setQuoteSupplierIds] = useState<string[]>([])
   const navigate = useNavigate()
   const [replacing, setReplacing] = useState<string | null>(null)
@@ -311,6 +313,7 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
             {r.status === 'DRAFT' && perms.has('requisition.create') && !editLines && <Button size="sm" variant="primary" disabled={submit.isPending} onClick={() => submit.mutate()}>Submit</Button>}
             {r.status === 'PENDING_APPROVAL' && perms.has('requisition.approve') && <><Button size="sm" variant="success" disabled={approve.isPending} onClick={() => approve.mutate()}>Approve</Button><Button size="sm" variant="danger" onClick={() => setRejecting(true)}>Reject</Button></>}
             {r.status === 'APPROVED' && perms.has('rfq.manage') && <Button size="sm" variant="primary" onClick={() => { setQuoteSupplierIds([]); requestQuotation.reset(); setQuoting(true) }}>Request quotation</Button>}
+            {r.status === 'APPROVED' && perms.has('po.create') && <Button size="sm" onClick={() => setSingleSourcing(true)} title="Order from one supplier without a bid analysis, for a recorded reason">Single source</Button>}
           </div>
         ) : null
       }
@@ -389,6 +392,7 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
           {requestQuotation.isError && <InlineError error={requestQuotation.error} />}
         </div>
       </Modal>
+      {r && singleSourcing && <SingleSourceModal requisition={r} open={singleSourcing} onClose={() => setSingleSourcing(false)} />}
       <ConfirmDialog open={rejecting} title="Reject requisition" confirmLabel="Reject" danger requireReason="Reason" isPending={reject.isPending} onCancel={() => setRejecting(false)} onConfirm={(reason) => reject.mutate(reason)} />
     </Drawer>
   )

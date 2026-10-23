@@ -76,6 +76,7 @@ class TenantProvisioner
                 $store = Store::create([
                     'branch_id' => $branch->id, 'code' => 'MAIN', 'name' => 'Main store', 'store_type' => 'MAIN', 'is_sellable' => true,
                 ]);
+                Store::ensureRetailStoreFor($branch);
 
                 $user = User::create([
                     'name' => $data['admin_name'],

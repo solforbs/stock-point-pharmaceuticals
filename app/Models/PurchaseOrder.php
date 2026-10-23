@@ -18,8 +18,28 @@ class PurchaseOrder extends Model
 {
     use BelongsToTenantBranch, HasUuids;
 
+    public const COMPETITIVE = 'COMPETITIVE';
+
+    public const SINGLE_SOURCE = 'SINGLE_SOURCE';
+
+    /**
+     * Why a supplier may be chosen without a bid analysis.
+     *
+     * @var array<string, string>
+     */
+    public const SINGLE_SOURCE_REASONS = [
+        'DIRECT_DELIVERY' => 'Supplier delivers direct to us',
+        'SOLE_SUPPLIER' => 'Only supplier holding the item at the moment',
+        'SOLE_DISTRIBUTOR' => 'Manufacturer or sole licensed distributor',
+        'URGENT_NEED' => 'Urgent or emergency need',
+        'AGREED_PRICE' => 'Existing agreement or contract price',
+        'CONTINUITY' => 'Same brand or batch continuity for patients',
+        'OTHER' => 'Other (explained in the justification)',
+    ];
+
     protected $fillable = [
-        'doc_number', 'supplier_id', 'branch_id', 'requisition_id', 'rfq_id', 'status',
+        'doc_number', 'supplier_id', 'branch_id', 'requisition_id', 'rfq_id', 'sourcing_method',
+        'single_source_reason', 'single_source_justification', 'status',
         'created_by', 'approved_by', 'sent_at', 'expected_date', 'transport_cost',
         'over_receipt_tolerance_pct', 'under_receipt_close_pct',
     ];

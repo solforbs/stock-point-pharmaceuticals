@@ -2,8 +2,8 @@
 
 namespace App\Services\Reports;
 
+use App\Models\Store;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Everything a report query needs: the organisation and branch it is
@@ -24,7 +24,7 @@ final class ReportContext
         public readonly string $to,
         public readonly array $filters = [],
     ) {
-        $this->storeIds = DB::table('stores')->where('branch_id', $branchId)->pluck('id')->map(fn ($id) => (string) $id)->all();
+        $this->storeIds = Store::where('branch_id', $branchId)->inBusinessMode()->pluck('id')->map(fn ($id) => (string) $id)->all();
     }
 
     /**

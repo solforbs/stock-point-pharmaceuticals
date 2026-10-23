@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { queryClient } from './queryClient'
 import type { CurrentUser, SaleMode } from './types'
 
 const SESSION_MODE_KEY = 'pharmacy-session-mode'
@@ -30,7 +31,10 @@ export const useSessionMode = create<SessionModeState>((set) => ({
     } catch {
       // the choice still holds until the page is reloaded
     }
+    const changed = useSessionMode.getState().mode !== mode
     set({ mode })
+    // Stock, sales and stores differ between the two businesses: refetch them all.
+    if (changed) queryClient.invalidateQueries()
   },
 }))
 

@@ -1,12 +1,15 @@
+import { useQuery } from '@tanstack/react-query'
 import { Printer } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { Modal } from '../../components/ui/Modal'
 import { Button, Kbd } from '../../components/ui/primitives'
 import { StatusBadge } from '../../components/ui/StatusBadge'
+import { apiGet } from '../../lib/api'
 import { dCmp, dIsPos, dSub, dSum, isValidDecimal } from '../../lib/decimal'
 import { formatDateTime } from '../../lib/format'
 import { formatMoney, formatQty } from '../../lib/money'
+import type { Sale } from '../../lib/types'
 import { useCartStore } from './cartStore'
 
 /**
@@ -23,6 +26,16 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
   const customer = useCartStore((s) => s.customer)
   const terminalId = useCartStore((s) => s.terminalId)
   const offline = useCartStore((s) => s.postedOffline)
+
+  // KRA signs the invoice just after posting: follow the sale until it has
+  // the eTIMS invoice number and signature that belong on the receipt.
+  const etims = useQuery({
+    queryKey: ['sales', sale?.id, 'etims'],
+    queryFn: () => apiGet<Sale>(`/api/sales/${sale?.id}`),
+    enabled: !!sale && !offline,
+    initialData: sale ?? undefined,
+    refetchInterval: (q) => (q.state.data?.etims_status === 'PENDING' && q.state.dataUpdateCount < 10 ? 2000 : false),
+  }).data
 
   if (!sale) return null
 
@@ -104,6 +117,19 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
             </>
           )}
         </div>
+        {!offline && etims?.etims_status === 'SUBMITTED' && (
+          <div className="mt-3 border-t border-dashed border-slate-300 pt-2 text-center">
+            <div className="font-bold">KRA eTIMS</div>
+            <div>CU invoice no. {etims.etims_invoice_number}</div>
+            {etims.etims_control_code && <div className="break-all">Signature {etims.etims_control_code}</div>}
+          </div>
+        )}
+        {!offline && etims?.etims_status === 'PENDING' && (
+          <div className="text-center mt-3 text-slate-500">eTIMS: waiting for KRA to sign this invoice…</div>
+        )}
+        {!offline && etims?.etims_status === 'FAILED' && (
+          <div className="text-center mt-3 text-amber-700">eTIMS: not yet accepted by KRA; it is retried from Compliance.</div>
+        )}
         {offline && (
           <div className="text-center mt-3 font-bold">
             OFFLINE SALE: NOT A TAX INVOICE.

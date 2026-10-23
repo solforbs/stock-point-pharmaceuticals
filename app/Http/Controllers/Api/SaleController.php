@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Sale;
+use App\Models\Store;
 use App\Services\Finance\ReceiptService;
 use App\Services\Sales\CheckoutService;
 use App\Services\Sales\VoidSaleService;
@@ -27,6 +28,7 @@ class SaleController extends ApiController
 
         $sales = Sale::query()
             ->where('branch_id', $this->branchId($request))
+            ->whereNotIn('store_id', Store::outsideBusinessMode())
             ->when($filters['sale_mode'] ?? null, fn ($q, $v) => $q->where('sale_mode', $v))
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['customer_id'] ?? null, fn ($q, $v) => $q->where('customer_id', $v))

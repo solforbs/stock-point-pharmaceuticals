@@ -6,6 +6,7 @@ use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ProductPrice;
 use App\Models\ProductUom;
+use App\Models\Store;
 use App\Services\Inventory\InventoryReport;
 use App\Services\Pricing\TaxResolver;
 use App\Services\Sales\ProductInsight;
@@ -120,14 +121,15 @@ class ProductController extends ApiController
         return DB::table('stock_balances as sb')
             ->join('product_batches as pb', 'pb.id', '=', 'sb.batch_id')
             ->join('stores as st', 'st.id', '=', 'sb.store_id')
-            ->where('st.branch_id', $this->branchId($request));
+            ->where('st.branch_id', $this->branchId($request))
+            ->whereNotIn('st.id', Store::outsideBusinessMode());
     }
 
     /** Correlated free-to-sell for products.id; bindings: today, branch id. */
     private function freeToSellSql(): string
     {
         return "SELECT SUM(CASE WHEN pb.status = 'RELEASED' AND pb.expiry_date >= ? THEN sb.qty_on_hand - sb.qty_reserved - sb.qty_quarantined ELSE 0 END)
-            FROM stock_balances sb JOIN product_batches pb ON pb.id = sb.batch_id JOIN stores st ON st.id = sb.store_id WHERE st.branch_id = ?";
+            FROM stock_balances sb JOIN product_batches pb ON pb.id = sb.batch_id JOIN stores st ON st.id = sb.store_id WHERE st.branch_id = ?".Store::businessModeSql('st');
     }
 
     public function show(Request $request, string $product, ProductInsight $insight): JsonResponse

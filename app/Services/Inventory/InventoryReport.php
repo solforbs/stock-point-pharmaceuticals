@@ -2,6 +2,7 @@
 
 namespace App\Services\Inventory;
 
+use App\Models\Store;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -29,6 +30,7 @@ class InventoryReport
             ->when($categoryIds !== null, fn ($q) => $q->whereIn('p.category_id', $categoryIds))
             ->when($productId, fn ($q) => $q->where('b.product_id', $productId))
             ->when($storeId, fn ($q) => $q->where('b.store_id', $storeId))
+            ->whereNotIn('b.store_id', $excludedStores = Store::outsideBusinessMode())
             ->when($search, fn ($q) => $q->where(fn ($w) => $w->where('p.name', 'like', "%{$search}%")->orWhere('p.code', 'like', "%{$search}%")))
             ->select([
                 'b.product_id', 'p.code as product_code', 'p.name as product_name', 'p.reorder_point', 'p.category_id', 'c.name as category_name',
@@ -100,7 +102,7 @@ class InventoryReport
                 continue;
             }
             [$transitProductId, $transitStoreId] = explode('|', $key);
-            if (($productId && $productId !== $transitProductId) || ($storeId && $storeId !== $transitStoreId)) {
+            if (($productId && $productId !== $transitProductId) || ($storeId && $storeId !== $transitStoreId) || in_array($transitStoreId, $excludedStores, true)) {
                 continue;
             }
             $product = DB::table('products as p')->leftJoin('product_categories as c', 'c.id', '=', 'p.category_id')

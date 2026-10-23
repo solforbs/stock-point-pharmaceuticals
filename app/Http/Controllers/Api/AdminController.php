@@ -269,6 +269,7 @@ class AdminController extends ApiController
 
         $data = $request->validate($this->branchRules($organisationId, null));
         $branch = Branch::create($data + ['organisation_id' => $organisationId, 'is_active' => $data['is_active'] ?? true, 'created_by' => $request->user()->id]);
+        Store::ensureRetailStoreFor($branch);
         AuditLog::record('BRANCH_CREATED', 'branch', $branch->id, ['reference' => $branch->code]);
 
         return response()->json($branch->load('stores'), 201);
@@ -283,6 +284,7 @@ class AdminController extends ApiController
         $data = $request->validate($this->branchRules($organisationId, $branch));
         $before = $branch->only(['name', 'address', 'county', 'is_active', 'retail_enabled', 'wholesale_enabled', 'dispensing_enabled']);
         $branch->update($data + ['updated_by' => $request->user()->id]);
+        Store::ensureRetailStoreFor($branch);
         AuditLog::record('BRANCH_UPDATED', 'branch', $branch->id, ['reference' => $branch->code, 'before_json' => $before, 'after_json' => $branch->fresh()->only(array_keys($before)), 'changed_fields' => array_keys($data)]);
 
         return response()->json($branch->fresh()->load('stores'));
@@ -297,6 +299,7 @@ class AdminController extends ApiController
             'code' => ['required', 'string', 'max:20', Rule::unique('stores', 'code')->where('branch_id', $branch->id)],
             'name' => ['required', 'string', 'max:100'],
             'store_type' => ['required', 'in:MAIN,COLD,QUARANTINE,RETAIL,TRANSIT,DISPENSARY'],
+            'business_mode' => ['sometimes', 'nullable', 'in:RETAIL,WHOLESALE'],
             'storage_condition_id' => ['nullable', 'uuid', TenantRules::exists('storage_conditions')],
             'is_sellable' => ['nullable', 'boolean'],
         ]);
@@ -317,11 +320,12 @@ class AdminController extends ApiController
             'code' => ['sometimes', 'required', 'string', 'max:20', Rule::unique('stores', 'code')->where('branch_id', $branch->id)->ignore($store->id)],
             'name' => ['sometimes', 'required', 'string', 'max:100'],
             'store_type' => ['sometimes', 'required', 'in:MAIN,COLD,QUARANTINE,RETAIL,TRANSIT,DISPENSARY'],
+            'business_mode' => ['sometimes', 'nullable', 'in:RETAIL,WHOLESALE'],
             'storage_condition_id' => ['nullable', 'uuid', TenantRules::exists('storage_conditions')],
             'is_sellable' => ['nullable', 'boolean'],
         ]);
 
-        $before = $store->only(['code', 'name', 'store_type', 'storage_condition_id', 'is_sellable']);
+        $before = $store->only(['code', 'name', 'store_type', 'business_mode', 'storage_condition_id', 'is_sellable']);
         $store->update($data + ['updated_by' => $request->user()->id]);
         AuditLog::record('STORE_UPDATED', 'store', $store->id, [
             'reference' => "{$branch->code}/{$store->code}",

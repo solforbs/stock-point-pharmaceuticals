@@ -124,6 +124,6 @@ class LocationController extends ApiController
      */
     private function branchStoreIds(Request $request): array
     {
-        return Store::where('branch_id', $this->branchId($request))->pluck('id')->map(fn ($id) => (string) $id)->all();
+        return Store::where('branch_id', $this->branchId($request))->inBusinessMode()->pluck('id')->map(fn ($id) => (string) $id)->all();
     }
 }

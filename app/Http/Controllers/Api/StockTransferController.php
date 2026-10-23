@@ -16,7 +16,7 @@ class StockTransferController extends ApiController
     public function index(Request $request): JsonResponse
     {
         $this->requirePermission($request, 'stock.view');
-        $storeIds = Store::where('branch_id', $this->branchId($request))->pluck('id');
+        $storeIds = Store::where('branch_id', $this->branchId($request))->inBusinessMode()->pluck('id');
 
         return response()->json(
             StockTransfer::query()

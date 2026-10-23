@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\PurchaseOrder;
 use App\Models\Requisition;
 use App\Models\User;
 use App\Services\Notifications\Notifier;
@@ -11,6 +12,7 @@ use App\Services\Procurement\RfqService;
 use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /** Part 9.1 — requisition to purchase order, plus the reorder advisor. */
 class RequisitionController extends ApiController
@@ -30,7 +32,7 @@ class RequisitionController extends ApiController
     {
         $this->requirePermission($request, 'requisition.view');
 
-        return response()->json($this->find($request, $requisition)->load(['lines.product:id,code,name,base_uom_id', 'lines.product.baseUom:id,code', 'rfqs:id,requisition_id,doc_number,status']));
+        return response()->json($this->find($request, $requisition)->load(['lines.product:id,code,name,base_uom_id', 'lines.product.baseUom:id,code', 'lines.product.uoms.uom:id,code', 'rfqs:id,requisition_id,doc_number,status']));
     }
 
     public function store(Request $request, RequisitionService $requisitions): JsonResponse
@@ -121,7 +123,6 @@ class RequisitionController extends ApiController
         }
     }
 
-    /** POST /api/requisitions/{id}/convert — supplier selection; the PO still needs its own approval. */
     /**
      * POST /api/requisitions/{id}/request-quotation — send an approved
      * requisition out for supplier quotes; the purchase order comes from
@@ -145,12 +146,19 @@ class RequisitionController extends ApiController
         return response()->json($requisitions->requestQuotation($this->find($request, $requisition), $data + ['user_id' => $request->user()->id], $rfqs), 201);
     }
 
+    /**
+     * POST /api/requisitions/{id}/convert — single sourcing: one supplier
+     * chosen without a bid analysis, for a recorded reason. The purchase
+     * order still needs its own approval.
+     */
     public function convert(Request $request, string $requisition, RequisitionService $requisitions): JsonResponse
     {
         $this->requirePermission($request, 'po.create');
 
         $data = $request->validate([
             'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
+            'single_source_reason' => ['required', Rule::in(array_keys(PurchaseOrder::SINGLE_SOURCE_REASONS))],
+            'justification' => ['required', 'string', 'min:10', 'max:1000'],
             'expected_date' => ['nullable', 'date'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.requisition_line_id' => ['required', 'uuid'],

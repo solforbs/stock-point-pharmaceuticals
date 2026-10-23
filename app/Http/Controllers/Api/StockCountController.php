@@ -19,7 +19,7 @@ class StockCountController extends ApiController
 
         return response()->json(
             StockCount::query()
-                ->whereIn('store_id', Store::where('branch_id', $this->branchId($request))->pluck('id'))
+                ->whereIn('store_id', Store::where('branch_id', $this->branchId($request))->inBusinessMode()->pluck('id'))
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->with('store:id,code,name')->withCount('lines')
                 ->orderByDesc('created_at')->orderByDesc('id')->paginate($request->integer('per_page', 25))

@@ -4,6 +4,7 @@ import { SyncStatusChip } from '../../components/SyncStatusChip'
 import { ConfirmDialog } from '../../components/ui/Modal'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { usePermission } from '../../lib/permissions'
+import { useSessionMode } from '../../lib/sessionMode'
 import type { SaleMode, Store } from '../../lib/types'
 import { BUYER_TYPES, useCartStore, type BuyerType } from './cartStore'
 
@@ -25,7 +26,10 @@ export function ModeBanner({ stores }: { stores: Store[] }) {
   const setBuyerType = useCartStore((s) => s.setBuyerType)
   const [pendingMode, setPendingMode] = useState<SaleMode | null>(null)
 
-  const modes = user?.sale_modes ?? []
+  // A session running the retail or the wholesale business sells in that
+  // mode only: the other one is not offered at this till.
+  const sessionMode = useSessionMode((s) => s.mode)
+  const modes = sessionMode ? [sessionMode] : (user?.sale_modes ?? [])
   const switchable = modes.length > 1 && canSwitch && status !== 'POSTED' && status !== 'POSTING'
 
   function requestSwitch(mode: SaleMode) {

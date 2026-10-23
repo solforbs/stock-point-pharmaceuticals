@@ -15,6 +15,7 @@ import { toast } from '../../lib/toast'
 import type { Product, PurchaseOrder } from '../../lib/types'
 import { ExpiryBadge } from '../inventory/ExpiryBadge'
 import { NewPurchaseOrderDrawer, type PoLine } from './NewPurchaseOrderDrawer'
+import { singleSourceReasonLabel } from './sourcing'
 import { tradeTermsLabel } from './tradeTerms'
 
 /** '10.0000' → '10', '418.5000' → '418.5' — decimals read like the user typed them. */
@@ -148,6 +149,12 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
               </span>
             )}
           </div>
+          {p.sourcing_method === 'SINGLE_SOURCE' && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <div className="font-bold">Single sourced, no bid analysis: {singleSourceReasonLabel(p.single_source_reason)}</div>
+              {p.single_source_justification && <div className="mt-0.5 leading-relaxed">{p.single_source_justification}</div>}
+            </div>
+          )}
           <DescriptionList
             items={[
               { label: 'Expected', value: formatDate(p.expected_date) },

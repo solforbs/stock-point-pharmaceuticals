@@ -67,13 +67,14 @@ export default function BranchesPage() {
                 <div className="p-4 text-xs text-slate-500">No stores yet. A branch needs at least a MAIN store before it can receive goods.</div>
               ) : (
                 <table className="ui-table">
-                  <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Sellable</th><th className="text-right">Actions</th></tr></thead>
+                  <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Business</th><th>Sellable</th><th className="text-right">Actions</th></tr></thead>
                   <tbody>
                     {selected.stores.map((s: AdminStore) => (
                       <tr key={s.id}>
                         <td className="font-semibold tabular">{s.code}</td>
                         <td>{s.name}</td>
                         <td><StatusBadge status={s.store_type} tone={s.store_type === 'QUARANTINE' ? 'purple' : s.store_type === 'COLD' ? 'cold' : s.store_type === 'TRANSIT' ? 'blue' : 'slate'} /></td>
+                        <td>{s.business_mode === 'RETAIL' ? 'Retail' : s.business_mode === 'WHOLESALE' ? 'Wholesale' : 'Both'}</td>
                         <td>{s.is_sellable ? 'Yes' : 'No'}</td>
                         <td className="text-right">
                           <Button size="sm" onClick={() => { setAddingStore(false); setEditingStore(s) }}>Edit</Button>
@@ -188,6 +189,7 @@ function StoreForm({ branch, store, onDone, onCancel }: { branch: AdminBranch; s
     code: store?.code ?? '',
     name: store?.name ?? '',
     store_type: store?.store_type ?? 'MAIN',
+    business_mode: store ? (store.business_mode ?? '') : 'WHOLESALE',
     storage_condition_id: store?.storage_condition_id ?? '',
     is_sellable: store?.is_sellable ?? true,
   })
@@ -199,10 +201,12 @@ function StoreForm({ branch, store, onDone, onCancel }: { branch: AdminBranch; s
       store
         ? apiPatch<AdminStore>(`/api/admin/branches/${branch.id}/stores/${store.id}`, {
             ...form,
+            business_mode: form.business_mode || null,
             storage_condition_id: form.storage_condition_id || null,
           })
         : apiPost<AdminStore>(`/api/admin/branches/${branch.id}/stores`, {
             ...form,
+            business_mode: form.business_mode || null,
             storage_condition_id: form.storage_condition_id || null,
           }),
     onSuccess: (s) => {
@@ -226,8 +230,15 @@ function StoreForm({ branch, store, onDone, onCancel }: { branch: AdminBranch; s
           <Field label="Code" required error={err?.errors.code?.[0]}><Input value={form.code} maxLength={20} onChange={(e) => set({ code: e.target.value.toUpperCase() })} /></Field>
           <Field label="Name" required error={err?.errors.name?.[0]}><Input value={form.name} onChange={(e) => set({ name: e.target.value })} /></Field>
           <Field label="Type" required error={err?.errors.store_type?.[0]}>
-            <Select value={form.store_type} onChange={(e) => set({ store_type: e.target.value, is_sellable: e.target.value === 'QUARANTINE' || e.target.value === 'TRANSIT' ? false : form.is_sellable })}>
+            <Select value={form.store_type} onChange={(e) => set({ store_type: e.target.value, business_mode: !store && ['RETAIL', 'DISPENSARY'].includes(e.target.value) ? 'RETAIL' : form.business_mode, is_sellable: e.target.value === 'QUARANTINE' || e.target.value === 'TRANSIT' ? false : form.is_sellable })}>
               {STORE_TYPES.map((t) => (<option key={t} value={t}>{titleCase(t)}</option>))}
+            </Select>
+          </Field>
+          <Field label="Business" hint="A retail store's stock and sales are seen only in retail mode, a wholesale store's only in wholesale mode.">
+            <Select value={form.business_mode} onChange={(e) => set({ business_mode: e.target.value })}>
+              <option value="WHOLESALE">Wholesale</option>
+              <option value="RETAIL">Retail</option>
+              <option value="">Both</option>
             </Select>
           </Field>
           <Field label="Storage condition" hint="The range cold-chain monitoring holds this store to (Part 8.5).">

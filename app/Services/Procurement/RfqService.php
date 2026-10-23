@@ -302,6 +302,7 @@ class RfqService
                     'branch_id' => $rfq->branch_id,
                     'requisition_id' => $rfq->requisition_id,
                     'rfq_id' => $rfq->id,
+                    'sourcing_method' => PurchaseOrder::COMPETITIVE,
                     'status' => 'DRAFT',
                     'created_by' => $userId,
                     'expected_date' => now()->addDays($leadDays)->toDateString(),

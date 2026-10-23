@@ -28,7 +28,7 @@ export default function TransfersPage() {
   const [params, setParams] = useSearchParams()
   const queryClient = useQueryClient()
   const perms = usePermissions()
-  const stores = useStores()
+  const stores = useStores({ allBusinesses: true })
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
   const [creating, setCreating] = useState(false)

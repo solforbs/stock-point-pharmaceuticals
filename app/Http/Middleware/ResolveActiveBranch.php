@@ -54,9 +54,27 @@ class ResolveActiveBranch
             app(PermissionRegistrar::class)->setPermissionsTeamId($branchId);
             $request->attributes->set('active_branch_id', $branchId);
             $request->attributes->set('active_organisation_id', (string) $user->organisation_id);
+            app()->instance('current.business_mode', $this->resolveBusinessMode($request, $branchId));
         }
 
         return $next($request);
+    }
+
+    /**
+     * The business (retail or wholesale) the session chose at sign-in, sent
+     * as X-Business-Mode. It only separates anything on a branch trading in
+     * both; elsewhere the request runs the branch's one business as before.
+     */
+    private function resolveBusinessMode(Request $request, ?string $branchId): ?string
+    {
+        $mode = $request->header('X-Business-Mode');
+        if (! $branchId || ! in_array($mode, ['RETAIL', 'WHOLESALE'], true)) {
+            return null;
+        }
+
+        $branch = DB::table('branches')->where('id', $branchId)->first(['retail_enabled', 'wholesale_enabled']);
+
+        return $branch && $branch->retail_enabled && $branch->wholesale_enabled ? $mode : null;
     }
 
     private function resolveBranchId(Request $request, $user): ?string

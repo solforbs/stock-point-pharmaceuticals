@@ -60,6 +60,8 @@ export type Store = {
   code: string
   name: string
   store_type: string
+  /** Which business the store serves; null serves both retail and wholesale. */
+  business_mode?: 'RETAIL' | 'WHOLESALE' | null
   is_sellable: boolean
 }
 
@@ -483,6 +485,10 @@ export type Sale = {
   voided_at: string | null
   posted_at: string | null
   created_at?: string
+  /** KRA eTIMS: PENDING until KRA signs the invoice, then SUBMITTED with its number and signature. */
+  etims_status?: string | null
+  etims_invoice_number?: string | null
+  etims_control_code?: string | null
   customer?: (NamedRef & { customer_type?: string }) | null
   lines?: SaleLine[]
 }
@@ -667,6 +673,10 @@ export type PurchaseOrder = {
   created_at?: string
   /** Set when the order was raised by awarding a request for quotation. */
   rfq_id?: string | null
+  /** COMPETITIVE (bid analysis) or SINGLE_SOURCE (one supplier, for a recorded reason). */
+  sourcing_method?: 'COMPETITIVE' | 'SINGLE_SOURCE' | null
+  single_source_reason?: string | null
+  single_source_justification?: string | null
   lines_count?: number
   supplier?: (NamedRef & { licence_expiry?: string | null; status?: string }) | null
   lines?: PurchaseOrderLine[]
@@ -908,7 +918,7 @@ export type RequisitionLine = {
   product_id: string
   qty_requested: Decimal
   notes: string | null
-  product?: (NamedRef & { base_uom_id?: string; base_uom?: Uom | null }) | null
+  product?: (NamedRef & { base_uom_id?: string; base_uom?: Uom | null; uoms?: ProductUom[] }) | null
 }
 
 export type Requisition = {
@@ -1300,7 +1310,7 @@ export type PermissionGroup = { group: string; permissions: string[] }
 export type StoreType = 'MAIN' | 'COLD' | 'QUARANTINE' | 'RETAIL' | 'TRANSIT' | 'DISPENSARY'
 export const STORE_TYPES: StoreType[] = ['MAIN', 'COLD', 'QUARANTINE', 'RETAIL', 'TRANSIT', 'DISPENSARY']
 
-export type AdminStore = { id: string; code: string; name: string; store_type: string; is_sellable: boolean; storage_condition_id?: string | null }
+export type AdminStore = { id: string; code: string; name: string; store_type: string; business_mode?: 'RETAIL' | 'WHOLESALE' | null; is_sellable: boolean; storage_condition_id?: string | null }
 
 export type AdminBranch = {
   id: string

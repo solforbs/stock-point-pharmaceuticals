@@ -173,10 +173,12 @@ class RequisitionService
     }
 
     /**
-     * Supplier selection: the approved requisition becomes one purchase
-     * order (DRAFT, awaiting its own approval) for the chosen supplier.
+     * Single sourcing: the approved requisition becomes one purchase order
+     * (DRAFT, awaiting its own approval) for one chosen supplier without a
+     * bid analysis. The reason and its justification travel on the order,
+     * so its approver and any later audit see why no bids were sought.
      *
-     * @param  array{supplier_id: string, user_id: int, expected_date?: ?string, lines: list<array{requisition_line_id: string, uom_id: string, qty_ordered: string, unit_price: string, tax_code_id?: ?string}>}  $data
+     * @param  array{supplier_id: string, user_id: int, single_source_reason: string, justification: string, expected_date?: ?string, lines: list<array{requisition_line_id: string, uom_id: string, qty_ordered: string, unit_price: string, tax_code_id?: ?string}>}  $data
      */
     public function convertToPurchaseOrder(Requisition $requisition, array $data): PurchaseOrder
     {
@@ -197,6 +199,9 @@ class RequisitionService
                 'supplier_id' => $supplier->id,
                 'branch_id' => $requisition->branch_id,
                 'requisition_id' => $requisition->id,
+                'sourcing_method' => PurchaseOrder::SINGLE_SOURCE,
+                'single_source_reason' => $data['single_source_reason'],
+                'single_source_justification' => $data['justification'],
                 'status' => 'DRAFT',
                 'created_by' => $data['user_id'],
                 'expected_date' => $data['expected_date'] ?? null,
@@ -225,7 +230,8 @@ class RequisitionService
 
             AuditLog::record('REQUISITION_CONVERTED', 'requisition', $requisition->id, [
                 'user_id' => $data['user_id'], 'branch_id' => $requisition->branch_id, 'reference' => $requisition->doc_number,
-                'after_json' => ['purchase_order' => $po->doc_number],
+                'after_json' => ['purchase_order' => $po->doc_number, 'single_source_reason' => $data['single_source_reason']],
+                'reason' => $data['justification'],
             ]);
             AuditLog::record('PO_CREATED', 'purchase_order', $po->id, ['user_id' => $data['user_id'], 'reference' => $po->doc_number]);
 

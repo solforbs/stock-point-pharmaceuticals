@@ -30,17 +30,17 @@ class DashboardController extends ApiController
         $branchId = $this->branchId($request);
         $organisationId = $this->organisationId($request);
         $today = now()->toDateString();
-        $storeIds = Store::where('branch_id', $branchId)->pluck('id');
+        $storeIds = Store::where('branch_id', $branchId)->inBusinessMode()->pluck('id');
 
         $sales = null;
         if ($user->can('sale.view')) {
-            $byMode = DB::table('sales')->where('branch_id', $branchId)->where('status', 'POSTED')->whereDate('posted_at', $today)
+            $byMode = DB::table('sales')->where('branch_id', $branchId)->whereIn('store_id', $storeIds)->where('status', 'POSTED')->whereDate('posted_at', $today)
                 ->selectRaw('sale_mode, COUNT(*) as n, COALESCE(SUM(grand_total), 0) as total')->groupBy('sale_mode')->get();
             $sales = [
                 'count' => (int) $byMode->sum('n'),
                 'total' => number_format((float) $byMode->sum('total'), 4, '.', ''),
                 'by_mode' => $byMode->mapWithKeys(fn ($r) => [$r->sale_mode => ['count' => (int) $r->n, 'total' => number_format((float) $r->total, 4, '.', '')]]),
-                'voided_today' => Sale::where('branch_id', $branchId)->where('status', 'VOIDED')->whereDate('voided_at', $today)->count(),
+                'voided_today' => Sale::where('branch_id', $branchId)->whereIn('store_id', $storeIds)->where('status', 'VOIDED')->whereDate('voided_at', $today)->count(),
             ];
         }
 
@@ -82,7 +82,7 @@ class DashboardController extends ApiController
                 ->where('p.organisation_id', $organisationId)
                 ->where('p.is_active', true)
                 ->where('p.reorder_point', '>', 0)
-                ->whereRaw('(SELECT COALESCE(SUM(b.qty_on_hand - b.qty_reserved), 0) FROM stock_balances b WHERE b.product_id = p.id AND b.store_id IN (SELECT id FROM stores WHERE branch_id = ?)) < p.reorder_point', [$branchId])
+                ->whereRaw('(SELECT COALESCE(SUM(b.qty_on_hand - b.qty_reserved), 0) FROM stock_balances b WHERE b.product_id = p.id AND b.store_id IN (SELECT id FROM stores WHERE branch_id = ?'.Store::businessModeSql('stores').')) < p.reorder_point', [$branchId])
                 ->count();
 
             $inventory = [

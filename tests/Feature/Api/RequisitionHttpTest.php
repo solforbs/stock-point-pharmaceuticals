@@ -38,11 +38,14 @@ class RequisitionHttpTest extends TestCase
         $this->postJson("/api/requisitions/{$req['id']}/approve")->assertOk()->assertJsonPath('status', 'APPROVED');
 
         $po = $this->postJson("/api/requisitions/{$req['id']}/convert", [
-            'supplier_id' => $this->supplier->id,
+            'supplier_id' => $this->supplier->id, 'single_source_reason' => 'DIRECT_DELIVERY', 'justification' => 'The distributor delivers direct to the branch.',
             'lines' => [['requisition_line_id' => $req['lines'][0]['id'], 'uom_id' => $this->uoms['BOX']->id, 'qty_ordered' => '20', 'unit_price' => '420']],
         ])->assertCreated()->assertJsonPath('status', 'DRAFT')->assertJsonPath('requisition_id', $req['id'])->json();
 
         $this->assertSame('20.0000', (string) PurchaseOrder::findOrFail($po['id'])->lines()->first()->qty_ordered);
+        $order = PurchaseOrder::findOrFail($po['id']);
+        $this->assertSame('SINGLE_SOURCE', $order->sourcing_method, 'no bid analysis: single sourced');
+        $this->assertSame('DIRECT_DELIVERY', $order->single_source_reason);
         $this->getJson("/api/requisitions/{$req['id']}")->assertOk()->assertJsonPath('status', 'CONVERTED');
 
         $this->postJson("/api/requisitions/{$req['id']}/convert", ['supplier_id' => $this->supplier->id, 'lines' => []])->assertStatus(422);
@@ -105,6 +108,20 @@ class RequisitionHttpTest extends TestCase
             ->assertStatus(409)->assertJsonPath('error.code', 'INVALID_STATE');
     }
 
+    public function test_single_sourcing_without_a_reason_and_justification_is_refused(): void
+    {
+        $req = $this->postJson('/api/requisitions', ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '100']]])->assertCreated()->json();
+        $this->postJson("/api/requisitions/{$req['id']}/submit")->assertOk();
+        $this->postJson("/api/requisitions/{$req['id']}/approve")->assertOk();
+        $line = ['requisition_line_id' => $req['lines'][0]['id'], 'uom_id' => $this->uoms['BOX']->id, 'qty_ordered' => '10', 'unit_price' => '400'];
+
+        $this->postJson("/api/requisitions/{$req['id']}/convert", ['supplier_id' => $this->supplier->id, 'lines' => [$line]])
+            ->assertStatus(422)->assertJsonValidationErrors(['single_source_reason', 'justification']);
+        $this->postJson("/api/requisitions/{$req['id']}/convert", ['supplier_id' => $this->supplier->id, 'single_source_reason' => 'CHEAPEST', 'justification' => 'Because we said so.', 'lines' => [$line]])
+            ->assertStatus(422)->assertJsonValidationErrors(['single_source_reason']);
+        $this->getJson("/api/requisitions/{$req['id']}")->assertJsonPath('status', 'APPROVED');
+    }
+
     public function test_a_requisition_can_be_converted_to_a_purchase_order_with_a_null_unit_price(): void
     {
         $req = $this->postJson('/api/requisitions', ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '100']]])->assertCreated()->json();
@@ -112,7 +129,7 @@ class RequisitionHttpTest extends TestCase
         $this->postJson("/api/requisitions/{$req['id']}/approve")->assertOk();
 
         $po = $this->postJson("/api/requisitions/{$req['id']}/convert", [
-            'supplier_id' => $this->supplier->id,
+            'supplier_id' => $this->supplier->id, 'single_source_reason' => 'DIRECT_DELIVERY', 'justification' => 'The distributor delivers direct to the branch.',
             'lines' => [['requisition_line_id' => $req['lines'][0]['id'], 'uom_id' => $this->uoms['BOX']->id, 'qty_ordered' => '10', 'unit_price' => null]],
         ])->assertCreated()->assertJsonPath('status', 'DRAFT')->json();
 
@@ -132,13 +149,13 @@ class RequisitionHttpTest extends TestCase
         // A unit the product does not have at all is refused…
         $drum = UnitOfMeasure::create(['code' => 'DRUM', 'name' => 'Drum', 'is_base_candidate' => false]);
         $this->postJson("/api/requisitions/{$req2['id']}/convert", [
-            'supplier_id' => $this->supplier->id,
+            'supplier_id' => $this->supplier->id, 'single_source_reason' => 'DIRECT_DELIVERY', 'justification' => 'The distributor delivers direct to the branch.',
             'lines' => [['requisition_line_id' => $req2['lines'][0]['id'], 'uom_id' => $drum->id, 'qty_ordered' => '10', 'unit_price' => '25']],
         ])->assertStatus(422)->assertJsonPath('error.code', 'INVALID_INPUT');
 
         // …but any of its own units can be bought, a selling unit (strips) included.
         $this->postJson("/api/requisitions/{$req2['id']}/convert", [
-            'supplier_id' => $this->supplier->id,
+            'supplier_id' => $this->supplier->id, 'single_source_reason' => 'DIRECT_DELIVERY', 'justification' => 'The distributor delivers direct to the branch.',
             'lines' => [['requisition_line_id' => $req2['lines'][0]['id'], 'uom_id' => $this->uoms['STR']->id, 'qty_ordered' => '10', 'unit_price' => '25']],
         ])->assertCreated();
     }
@@ -160,7 +177,7 @@ class RequisitionHttpTest extends TestCase
         $this->postJson("/api/requisitions/{$req['id']}/submit")->assertOk();
         $this->postJson("/api/requisitions/{$req['id']}/approve")->assertOk();
         $po = $this->postJson("/api/requisitions/{$req['id']}/convert", [
-            'supplier_id' => $this->supplier->id,
+            'supplier_id' => $this->supplier->id, 'single_source_reason' => 'DIRECT_DELIVERY', 'justification' => 'The distributor delivers direct to the branch.',
             'lines' => [['requisition_line_id' => $req['lines'][0]['id'], 'uom_id' => $this->uoms['BOX']->id, 'qty_ordered' => '20', 'unit_price' => '420']],
         ])->assertCreated()->json();
         PurchaseOrder::whereKey($po['id'])->update(['status' => 'APPROVED']);
