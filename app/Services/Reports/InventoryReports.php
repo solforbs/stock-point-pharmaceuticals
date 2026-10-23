@@ -15,7 +15,7 @@ class InventoryReports
      */
     public function valuation(ReportContext $ctx): array
     {
-        // Estimated sale value = value at purchase price × (1 + transport & handling %)
+        // Estimated sale value = value at wholesale × (1 + transport & handling %)
         // × (1 + profit margin %). The percentages come from the request, else
         // from the pricing settings (handling 0%, margin 20% unless set).
         $handlingPct = (string) ($ctx->filter('handling_pct') ?? Setting::resolve($ctx->organisationId, $ctx->branchId, 'pricing', 'transport_handling_pct', '0'));
@@ -32,7 +32,7 @@ class InventoryReports
             ->selectRaw('p.code, p.name, s.code as store, SUM(b.qty_on_hand) as qty, SUM(b.qty_on_hand * b.wac) as value_cost, SUM(b.qty_on_hand) * p.default_price as value_retail')
             ->orderBy('p.name')->orderBy('s.code')->get()
             ->map(function ($r) use ($uplift) {
-                // The product's saved price is its purchase price; without one, its cost.
+                // The product's saved price is its wholesale price; without one, its cost.
                 $purchase = $r->value_retail !== null ? $this->d($r->value_retail) : $this->d($r->value_cost);
 
                 return ['code' => $r->code, 'name' => $r->name, 'store' => $r->store, 'qty_base' => $this->d($r->qty), 'value_at_cost' => $this->d($r->value_cost), 'value_at_retail' => $purchase,
@@ -42,13 +42,13 @@ class InventoryReports
 
         return $this->result([
             $this->col('code', 'Code'), $this->col('name', 'Product'), $this->col('store', 'Store'), $this->col('qty_base', 'On hand (base)', 'qty'),
-            $this->col('wac', 'WAC', 'money'), $this->col('value_at_cost', 'Value at cost', 'money'), $this->col('value_at_retail', 'Value at purchase price', 'money'),
+            $this->col('wac', 'WAC', 'money'), $this->col('value_at_cost', 'Value at cost', 'money'), $this->col('value_at_retail', 'Value at wholesale', 'money'),
             $this->col('estimated_sale_value', 'Estimated sale value', 'money'),
         ], $rows, ['qty_base', 'value_at_cost', 'value_at_retail', 'estimated_sale_value']) + [
             'assumptions' => [
                 'handling_pct' => $handlingPct,
                 'margin_pct' => $marginPct,
-                'formula' => "Estimated sale value = value at purchase price × (1 + {$handlingPct}% transport & handling) × (1 + {$marginPct}% profit margin)",
+                'formula' => "Estimated sale value = value at wholesale × (1 + {$handlingPct}% transport & handling) × (1 + {$marginPct}% profit margin)",
             ],
         ];
     }

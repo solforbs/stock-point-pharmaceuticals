@@ -97,7 +97,7 @@ export default function ValuationPage() {
       <PageHeader
         parent="Inventory"
         title="Valuation"
-        subtitle="On-hand value at weighted average cost, at purchase price, and the estimated sale value, per product and store. Reads posted stock balances only."
+        subtitle="On-hand value at weighted average cost, at wholesale, and the estimated sale value, per product and store. Reads posted stock balances only."
         actions={canView && r ? (
           <div className="flex flex-wrap gap-2">
             <Button disabled={exporting !== null} onClick={() => void exportAs('pdf')}><FileText size={13} /> {exporting === 'pdf' ? 'Preparing…' : 'PDF'}</Button>
@@ -118,7 +118,7 @@ export default function ValuationPage() {
                   {(stores.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.code} · {s.name}</option>))}
                 </Select>
               </Field>
-              <Field label="Transport & handling %" hint="Added to the purchase price">
+              <Field label="Transport & handling %" hint="Added to the wholesale value">
                 <Input inputMode="decimal" className="tabular text-right w-28" placeholder={assumptions?.handling_pct ? String(Number(assumptions.handling_pct)) : '0'} value={handlingPct} onChange={(e) => setHandlingPct(e.target.value.replace(/[^\d.]/g, ''))} />
               </Field>
               <Field label="Profit margin %" hint="On top of cost + transport">
@@ -132,7 +132,7 @@ export default function ValuationPage() {
               <div className="text-2xl font-bold tracking-tight text-slate-900 tabular leading-tight">{result.isLoading ? '…' : formatKes(totalCost === undefined ? null : String(totalCost))}</div>
             </div>
             <div className="ui-card p-4">
-              <div className="ui-label !mb-1 text-slate-500 font-semibold">Total at purchase price</div>
+              <div className="ui-label !mb-1 text-slate-500 font-semibold">Total at wholesale</div>
               <div className="text-2xl font-bold tracking-tight text-slate-900 tabular leading-tight">{result.isLoading ? '…' : formatKes(totalPurchase === undefined ? null : String(totalPurchase))}</div>
             </div>
             <div className="ui-card p-4">

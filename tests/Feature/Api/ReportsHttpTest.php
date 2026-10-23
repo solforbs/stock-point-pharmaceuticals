@@ -120,7 +120,7 @@ class ReportsHttpTest extends TestCase
             round((float) $withHandling['totals']['value_at_retail'] * 1.1 * 1.2, 2),
             round((float) $withHandling['totals']['estimated_sale_value'], 2),
         );
-        $this->assertSame('Value at purchase price', collect($withHandling['columns'])->firstWhere('key', 'value_at_retail')['label']);
+        $this->assertSame('Value at wholesale', collect($withHandling['columns'])->firstWhere('key', 'value_at_retail')['label']);
     }
 
     public function test_valuation_exports_as_pdf_and_word(): void

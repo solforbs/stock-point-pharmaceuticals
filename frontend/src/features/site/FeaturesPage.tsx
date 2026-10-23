@@ -11,8 +11,8 @@ export default function FeaturesPage() {
     <>
       <PageIntro
         eyebrow="Features"
-        title="Ten modules, one system"
-        body="Hospital, laboratory and pharmacy share one patient record, one product list, one set of prices and one ledger. Nothing is retyped between them, and nothing disagrees."
+        title="Eight modules, one system"
+        body="The counter, the trade desk, the store and the books share one product list, one set of prices and one ledger. Nothing is retyped between them, and nothing disagrees."
         image="pills.jpg"
       />
 

@@ -33,7 +33,7 @@ class AdminController extends ApiController
         ['scope' => 'pricing', 'key' => 'round_to', 'type' => 'string', 'default' => 'NONE', 'description' => 'Rounding applied to quoted unit prices: NONE, 0.05, 0.10, 0.50 or 1.'],
         ['scope' => 'pricing', 'key' => 'default_max_discount_pct', 'type' => 'decimal', 'default' => '0', 'description' => 'Ceiling for line discounts when no product or tier policy says otherwise.'],
         ['scope' => 'pricing', 'key' => 'default_discount_approval_pct', 'type' => 'decimal', 'default' => null, 'description' => 'Discount percentage above which a second approver is required.'],
-        ['scope' => 'pricing', 'key' => 'transport_handling_pct', 'type' => 'decimal', 'default' => '0', 'description' => 'Transport and handling, as a percentage of purchase price, in the stock valuation\'s estimated sale value.'],
+        ['scope' => 'pricing', 'key' => 'transport_handling_pct', 'type' => 'decimal', 'default' => '0', 'description' => 'Transport and handling, as a percentage of the wholesale value, in the stock valuation\'s estimated sale value.'],
         ['scope' => 'pricing', 'key' => 'target_margin_pct', 'type' => 'decimal', 'default' => '20', 'description' => 'Profit margin, as a percentage, in the stock valuation\'s estimated sale value.'],
         ['scope' => 'pricing', 'key' => 'default_min_margin_pct', 'type' => 'decimal', 'default' => '0', 'description' => 'Minimum gross margin a quote may fall to before it is refused.'],
         ['scope' => 'sales', 'key' => 'min_shelf_life_days', 'type' => 'integer', 'default' => 90, 'description' => 'FEFO will not allocate a batch expiring sooner than this.'],

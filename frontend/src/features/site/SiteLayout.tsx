@@ -173,7 +173,7 @@ function UtilityBar() {
         </a>
 
         <div className="ml-auto flex items-center gap-4">
-          <span className="hidden text-slate-400 sm:inline">Serving hospitals and pharmacies countrywide</span>
+          <span className="hidden text-slate-400 sm:inline">Serving pharmacies and wholesalers countrywide</span>
           <Link to="/login" className="flex items-center gap-1.5 font-semibold text-slate-700 hover:text-blue-600">
             <UserRound className="h-4 w-4" aria-hidden />
             Sign in
@@ -460,8 +460,8 @@ function SiteFooter() {
         <div className="md:col-span-2">
           <Brand />
           <p className="mt-5 max-w-sm text-slate-500">
-            Hospital management, laboratory and pharmacy ERP for hospitals, clinics, labs, pharmacies and wholesalers — in
-            every county in Kenya, from a single counter to a full hospital.
+            Pharmacy and wholesale ERP for retail pharmacies, chemists and distributors — in every county in Kenya, from a
+            single counter to a wholesale network.
           </p>
           <div className="mt-6 flex flex-col gap-3">
             <a href={PHONE_HREF} className="flex items-center gap-2.5 text-slate-700 transition-colors hover:text-blue-600">
