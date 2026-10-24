@@ -102,7 +102,7 @@ export default function AppLayout() {
             {isPos ? (
               <div className="flex items-center gap-3">
                 <span className="font-display text-[15px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                  PharmaPoint POS
+                  Stockpoint POS
                 </span>
                 <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/70">
                   Live Terminal

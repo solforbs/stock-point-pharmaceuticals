@@ -39,7 +39,7 @@ export const useTourStore = create<TourState>((set, get) => ({
 
   hasCompletedTour: (tourId: string) => {
     try {
-      return localStorage.getItem(`pharmapoint_tour_completed_${tourId}`) === 'true'
+      return localStorage.getItem(`stockpoint_tour_completed_${tourId}`) === 'true'
     } catch {
       return false
     }
@@ -100,7 +100,7 @@ export const useTourStore = create<TourState>((set, get) => ({
     const { activeTourId } = get()
     if (activeTourId) {
       try {
-        localStorage.setItem(`pharmapoint_tour_completed_${activeTourId}`, 'true')
+        localStorage.setItem(`stockpoint_tour_completed_${activeTourId}`, 'true')
       } catch {}
     }
     set({

@@ -1492,7 +1492,7 @@ export const REGISTERED_TOURS: TourDefinition[] = [
   {
     id: 'pos',
     route: '/sell/pos',
-    title: 'PharmaPoint POS Terminal',
+    title: 'Stockpoint POS Terminal',
     subtitle: 'Master fast drug barcode scanning, stock room selection, patient accounts, and payment checkout',
     steps: POS_TOUR_STEPS,
   },

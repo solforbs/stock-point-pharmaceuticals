@@ -2,7 +2,7 @@
 
 @section('body')
     <div style="text-align: center; margin-top: 40px;">
-        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: #6b7280;">PharmaPoint Training Centre</div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: #6b7280;">Stockpoint Training Centre</div>
         <div style="font-size: 12px; margin-top: 28px;">This certifies that</div>
         <div style="font-size: 24px; font-weight: bold; color: #1e3a8a; margin-top: 10px;">{{ $trainee->name }}</div>
         @if ($trainee->username)

@@ -42,9 +42,11 @@ class OnboardingService
 
         Mail::to($request->email)->send(new TenantRequestReceivedMail($request));
         $admins = User::where('is_platform_admin', true)->where('is_active', true)->pluck('email')->all();
-        if ($admins !== []) {
-            Mail::to($admins)->send(new NewTenantRequestMail($request));
-        }
+        $recipients = array_values(array_unique(array_filter([
+            'info@solforbs.com',
+            ...$admins,
+        ])));
+        Mail::to($recipients)->send(new NewTenantRequestMail($request));
 
         return $request;
     }

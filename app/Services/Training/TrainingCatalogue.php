@@ -5,7 +5,7 @@ namespace App\Services\Training;
 use App\Console\Commands\CreateAdminUser;
 
 /**
- * The PharmaPoint training pack (client item 17): seven modules, one per
+ * The Stockpoint training pack (client item 17): seven modules, one per
  * job, each with lessons written from the real screens, practice tasks done
  * in the live system and a knowledge check.
  *
@@ -113,7 +113,7 @@ final class TrainingCatalogue
     {
         return [
             'key' => 'getting-started',
-            'title' => 'Getting started with PharmaPoint',
+            'title' => 'Getting started with Stockpoint',
             'summary' => 'Signing in, finding your way around, searching, messages and alerts, and how practice in the live system works.',
             'audience' => 'Everyone',
             'roles' => [],
@@ -128,7 +128,7 @@ final class TrainingCatalogue
                         'If you work in more than one branch, the branch selector in the sidebar switches between them. Everything you post (sales, stock movements, payments) belongs to the branch that is active at the time.',
                     ],
                     'steps' => [
-                        'Open the PharmaPoint link your manager sent you and sign in with your username or email and the temporary password.',
+                        'Open the Stockpoint link your manager sent you and sign in with your username or email and the temporary password.',
                         'Choose a new password if you are asked to. Use at least 12 characters and keep it to yourself.',
                         'Check the branch name in the sidebar. If you work in several branches, switch to the one you are standing in.',
                         'Sign out when you leave the counter, especially on a shared computer.',
@@ -178,7 +178,7 @@ final class TrainingCatalogue
                 [
                     'key' => 'practice-safely',
                     'title' => 'Practising in the live system',
-                    'summary' => 'Practice tasks are done in the real PharmaPoint. Here is how to do that safely.',
+                    'summary' => 'Practice tasks are done in the real Stockpoint. Here is how to do that safely.',
                     'body' => [
                         'The practice tasks in this training centre are done in the real system, on real screens, so you learn exactly what you will use at work. When you press "Start task", the system notes the time; when you press "Mark as done", it looks for the record you created after that time and, where it can, marks the task "Verified by the system".',
                         'Because the records are real, agree with your manager before you start: use the training store or customer they tell you to, use small quantities, and let a supervisor void or reverse anything that should not stay in the books. Never practise with a real patient waiting.',
@@ -204,7 +204,7 @@ final class TrainingCatalogue
                 [
                     'key' => 'message',
                     'title' => 'Send a message to a colleague',
-                    'instructions' => 'Send a short message to your supervisor saying you have started your PharmaPoint training.',
+                    'instructions' => 'Send a short message to your supervisor saying you have started your Stockpoint training.',
                     'checklist' => ['Chose one colleague as the recipient', 'Wrote a subject and a message', 'The message appears in their inbox'],
                     'route' => '/dashboard',
                     'verify' => ['table' => 'user_messages', 'user_column' => 'sender_id', 'label' => 'a message you sent'],

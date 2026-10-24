@@ -1,4 +1,4 @@
-import { Activity, ArrowLeftRight, ChevronUp, ChevronsLeft, ChevronsRight, LayoutGrid, Pill, X } from 'lucide-react'
+import { Activity, ArrowLeftRight, ChevronUp, ChevronsLeft, ChevronsRight, LayoutGrid, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
@@ -81,28 +81,21 @@ function SidebarInner({
         {!collapsed && (
           <div className="flex items-center gap-2.5 min-w-0">
             {logo ? (
-              <img src={logo} alt={user?.organisation?.name ?? 'Logo'} className="w-10 h-10 rounded-lg object-contain bg-white border border-slate-100 shrink-0" />
+              <img src={logo} alt={user?.organisation?.name ?? 'Logo'} className="w-9 h-9 rounded-lg object-contain bg-white border border-slate-100 shrink-0" />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
-                <Pill size={16} />
-              </div>
+              <img
+                src="/assets/solforbs-logo.png"
+                alt="Solforbs"
+                className="w-8 h-8 rounded-lg object-contain shrink-0"
+              />
             )}
             <div className="min-w-0 leading-tight">
-              {logo && user?.organisation ? (
-                <>
-                  <div className="font-display font-extrabold tracking-tight text-[14px] text-slate-900 truncate" title={user.organisation.legal_name ?? user.organisation.name}>{user.organisation.name}</div>
-                  <div className="text-[11px] font-semibold text-slate-400 truncate">PharmaPoint</div>
-                </>
-              ) : (
-                <>
-                  <div className="font-display font-extrabold tracking-tight text-[15px] text-slate-900 truncate">PharmaPoint</div>
-                  {user?.organisation && (
-                    <div className="text-[11px] font-semibold text-slate-500 truncate" title={user.organisation.legal_name ?? user.organisation.name}>
-                      {user.organisation.name}
-                    </div>
-                  )}
-                </>
-              )}
+              <div className="flex items-center gap-1.5 font-display font-extrabold tracking-tight text-[14px] text-slate-900 truncate">
+                <span>{user?.organisation?.name ?? 'Stockpoint'}</span>
+              </div>
+              <div className="text-[11px] font-semibold text-slate-400 truncate">
+                Stockpoint · Solforbs
+              </div>
             </div>
           </div>
         )}

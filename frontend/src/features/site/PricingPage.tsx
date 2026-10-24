@@ -1,37 +1,146 @@
 import { useQuery } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, Infinity as InfinityIcon } from 'lucide-react'
 import { apiGet } from '../../lib/api'
 import { formatMoney } from '../../lib/money'
-import { InlineError, LoadingSkeleton } from '../../components/ui/States'
+import { LoadingSkeleton } from '../../components/ui/States'
+import { Pricing1, type PricingPlan } from '../../components/ui/pricing-1'
 import type { Plan } from '../../lib/types'
 import { CallToAction } from './SiteLayout'
-import { Reveal, RevealItem } from './motion'
 import { PageIntro } from './PageIntro'
 import { FAQS } from './content'
 
 type Interval = 'MONTHLY' | 'YEARLY'
 
+
+/** Maps a catalogue plan onto the pricing columns for the chosen billing interval. */
+function toPricingPlan(plan: Plan, interval: Interval, popular: boolean): PricingPlan {
+  const isEnterprise = plan.code === 'ENTERPRISE' || parseFloat(String(plan.price_monthly)) === 0
+  const price = interval === 'YEARLY' ? plan.price_yearly : plan.price_monthly
+  const unavailable = !isEnterprise && interval === 'YEARLY' && plan.price_yearly === null
+
+  let formattedPrice = `${plan.currency} ${formatMoney(price ?? '0')}`
+  let periodText: string | undefined = interval === 'YEARLY' ? 'yearly' : 'monthly'
+
+  if (isEnterprise) {
+    formattedPrice = 'Contact us'
+    periodText = undefined
+  } else if (unavailable) {
+    formattedPrice = 'Monthly only'
+    periodText = undefined
+  }
+
+  // Build key highlights with prominent user limit display
+  const userHighlight = plan.max_users === null
+    ? 'Unlimited user accounts (Pharmacists, Cashiers, Admins)'
+    : '1 User account included'
+
+  const branchHighlight = plan.max_branches === null
+    ? 'Unlimited branches & warehouses'
+    : `${plan.max_branches} ${plan.max_branches === 1 ? 'Branch / Counter' : 'Branches'}`
+
+  return {
+    title: plan.name,
+    popular,
+    description: plan.description ?? '',
+    price: formattedPrice,
+    period: periodText,
+    features: [
+      userHighlight,
+      branchHighlight,
+      ...(plan.features ?? []),
+    ],
+    ctaLabel: isEnterprise ? 'Contact Us' : `Start with ${plan.name}`,
+    ctaHref: '/request-quote',
+  }
+}
+
+const FALLBACK_PLANS: Plan[] = [
+  {
+    id: 'starter',
+    code: 'STARTER',
+    name: 'Starter',
+    description: 'Complete pharmacy operating system for single counter chemists with 1 user login.',
+    currency: 'KES',
+    price_monthly: '1500.00' as any,
+    price_yearly: '15000.00' as any,
+    max_branches: 1,
+    max_users: 1,
+    features: [
+      '100% Offline POS (Never stops selling during outages)',
+      'Automated FEFO Expiry Picking (Oldest stock picked first)',
+      'Expiry date risk alerts & low stock notifications',
+      'M-Pesa reference recording & cash till reconciliation',
+      'Thermal receipt printing (58mm / 80mm)',
+      'Daily sales, gross margin & cashier shift reports',
+      'KRA eTIMS invoice generation & QR codes',
+      'Customer & Supplier Directory',
+      'Purchase Orders, GRN & 3-way invoice matching',
+      'Stock counts, adjustments & audit logs',
+    ],
+  },
+  {
+    id: 'pro',
+    code: 'PROFESSIONAL',
+    name: 'Pro',
+    description: 'Everything in Starter with Unlimited Users and multi-staff role permissions.',
+    currency: 'KES',
+    price_monthly: '3000.00' as any,
+    price_yearly: '30000.00' as any,
+    max_branches: 3,
+    max_users: null,
+    features: [
+      'All Features from Starter Included',
+      'Role-based branch permissions & staff audit trails',
+      'Multi-till cashier shifts & separate till balances',
+      'Customer trade price tiers, discounts & credit limits',
+      'Prescription dispensing verification & pharmacist sign-off',
+      'Batch product recall customer traceback & waste logs',
+      '12 Pre-loaded PPB Standard Operating Procedures (SOPs)',
+      'Full double-entry accounting, real-time P&L & VAT reports',
+    ],
+  },
+  {
+    id: 'enterprise',
+    code: 'ENTERPRISE',
+    name: 'Enterprise',
+    description: 'Dedicated server deployment, custom setup, complete data ownership & full managed hosting.',
+    currency: 'KES',
+    price_monthly: '0.00' as any,
+    price_yearly: null,
+    max_branches: null,
+    max_users: null,
+    features: [
+      'All Pro Features Included',
+      'Dedicated Cloud / On-Premise Server Setup',
+      'Complete Code & Database Ownership (Sold & Handed Over Completely)',
+      'Fully Managed by Our Engineering Team (Backups, Updates, 24/7 Monitoring)',
+      'Unlimited Branches, Warehouses & Regional Depots',
+      'Wholesale quotations, sales orders & delivery gate passes',
+      'Cold-chain vaccine logs & custom ERP integrations',
+      'Dedicated Account Manager & On-Site Staff Training',
+    ],
+  },
+]
+
 /** The plans as the platform currently offers them, read from the public endpoint. */
 export default function PricingPage() {
   const [interval, setInterval] = useState<Interval>('MONTHLY')
-  const plans = useQuery({ queryKey: ['public', 'plans'], queryFn: () => apiGet<Plan[]>('/api/public/plans'), staleTime: 300_000 })
-  const yearlyOffered = (plans.data ?? []).some((plan) => plan.price_yearly !== null)
+  const plansQuery = useQuery({ queryKey: ['public', 'plans'], queryFn: () => apiGet<Plan[]>('/api/public/plans'), staleTime: 0, retry: 1 })
+  const displayPlans = plansQuery.data && plansQuery.data.length > 0 ? plansQuery.data : FALLBACK_PLANS
+  const yearlyOffered = displayPlans.some((plan) => plan.price_yearly !== null)
 
   return (
     <>
       <PageIntro
-        eyebrow="Pricing"
-        title="One price, every module"
-        body="No per-module licence and no charge for the reports. Pick the plan that matches your branches and your team, and start with a free seven-day trial."
-        image="dispensary.jpg"
+        eyebrow="Pharmacy Plans & Licensing"
+        title="Predictable Pricing for Growing Pharmacies"
+        body="One straightforward subscription covering your tills, batch inventory, and double-entry accounting. No hidden fees, no per-module add-ons, and full KRA eTIMS readiness."
       />
 
       <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6">
         {yearlyOffered && (
-          <div className="mb-10 flex justify-center">
+          <div className="mb-2 flex justify-center">
             <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
               {(['MONTHLY', 'YEARLY'] as const).map((option) => (
                 <button
@@ -50,19 +159,15 @@ export default function PricingPage() {
           </div>
         )}
 
-        {plans.isLoading && <LoadingSkeleton rows={4} />}
-        {plans.error && <InlineError error={plans.error} />}
+        {plansQuery.isLoading && !plansQuery.data && <LoadingSkeleton rows={4} />}
 
-        {plans.data && (
-          <Reveal className="grid items-start gap-6 lg:grid-cols-3" amount={0.1}>
-            {plans.data.map((plan, index) => (
-              <PlanCard key={plan.id} plan={plan} interval={interval} featured={index === 1} />
-            ))}
-          </Reveal>
-        )}
+        <Pricing1
+          heading="Simple and transparent pricing"
+          plans={displayPlans.map((plan, index) => toPricingPlan(plan, interval, index === 1))}
+        />
 
-        <p className="mt-8 text-center text-xs text-slate-500">
-          Prices are per institution and exclude VAT. Setup, data loading and training are quoted separately —{' '}
+        <p className="mt-2 text-center text-xs text-slate-500">
+          Prices are per pharmacy and exclude VAT. Setup, data loading and training are quoted separately —{' '}
           <Link to="/request-quote" className="font-semibold text-blue-600 hover:underline">ask us for a quote</Link>.
         </p>
       </section>
@@ -70,82 +175,6 @@ export default function PricingPage() {
       <Faqs />
       <CallToAction title="Not sure which plan fits?" body="Tell us how many branches and tills you run and we will tell you which one you need — and which one you do not." />
     </>
-  )
-}
-
-function PlanCard({ plan, interval, featured }: { plan: Plan; interval: Interval; featured: boolean }) {
-  const price = interval === 'YEARLY' ? plan.price_yearly : plan.price_monthly
-  const unavailable = interval === 'YEARLY' && plan.price_yearly === null
-
-  return (
-    <RevealItem
-      hover
-      className={`relative flex h-full flex-col rounded-3xl border bg-white p-7 transition-shadow ${
-        featured ? 'border-blue-600 shadow-xl shadow-blue-600/10 lg:-translate-y-3' : 'border-slate-200/90 shadow-xs hover:shadow-lg'
-      }`}
-    >
-      {featured && (
-        <span className="absolute -top-3 left-7 rounded-full bg-blue-600 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
-          Most chosen
-        </span>
-      )}
-      <h2 className="font-display text-xl font-bold tracking-tight text-slate-900">{plan.name}</h2>
-      {plan.description && <p className="mt-1.5 text-slate-500">{plan.description}</p>}
-
-      <motion.div key={interval} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="mt-6 flex flex-wrap items-baseline gap-1.5">
-        {unavailable ? (
-          <span className="text-sm font-medium text-slate-500">Offered monthly only</span>
-        ) : (
-          <>
-            <span className="text-sm font-semibold text-slate-500">{plan.currency}</span>
-            <span className="font-display text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">{formatMoney(price ?? '0')}</span>
-            <span className="text-sm text-slate-500">/{interval === 'YEARLY' ? 'year' : 'month'}</span>
-          </>
-        )}
-      </motion.div>
-
-      <dl className="mt-6 grid grid-cols-2 gap-3 border-y border-slate-100 py-4 text-sm">
-        <Limit label="Branches" value={plan.max_branches} />
-        <Limit label="Users" value={plan.max_users} />
-      </dl>
-
-      <ul className="mt-5 flex-1 space-y-2.5">
-        {(plan.features ?? []).map((feature) => (
-          <li key={feature} className="flex items-start gap-3 leading-relaxed text-slate-700">
-            <Check className="mt-1 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
-            {feature}
-          </li>
-        ))}
-      </ul>
-
-      <Link
-        to="/request-quote"
-        className={`mt-8 inline-flex items-center justify-center rounded-xl px-5 py-3.5 text-base font-semibold transition-colors ${
-          featured
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700'
-            : 'border border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
-        }`}
-      >
-        Start with {plan.name}
-      </Link>
-    </RevealItem>
-  )
-}
-
-function Limit({ label, value }: { label: string; value: number | null }) {
-  return (
-    <div>
-      <dt className="text-xs text-slate-500">{label}</dt>
-      <dd className="mt-0.5 flex items-center gap-1 font-display text-base font-semibold text-slate-900">
-        {value === null ? (
-          <>
-            <InfinityIcon className="h-4 w-4 text-blue-600" aria-hidden /> Unlimited
-          </>
-        ) : (
-          value
-        )}
-      </dd>
-    </div>
   )
 }
 

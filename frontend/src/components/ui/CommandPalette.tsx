@@ -82,7 +82,7 @@ const QUICK_ACTIONS: SearchResult[] = [
   { id: 'qa-adjustments', label: 'Stock Adjustment', subtitle: 'Record breakage, loss, or gain', path: '/inventory/adjustments', group: 'Quick Actions', icon: ShieldCheck, badge: 'Inventory' },
 ]
 
-const RECENT_KEY = 'pharmapoint_recent_searches'
+const RECENT_KEY = 'stockpoint_recent_searches'
 
 function getRecentSearches(): SearchResult[] {
   try {
@@ -365,7 +365,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                     Close
                   </span>
                 </div>
-                <span className="text-slate-400 hidden sm:inline">PharmaPoint Global Search</span>
+                <span className="text-slate-400 hidden sm:inline">Stockpoint Solforbs Global Search</span>
               </div>
             </div>
           </motion.div>

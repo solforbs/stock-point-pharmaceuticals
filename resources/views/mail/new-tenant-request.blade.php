@@ -14,9 +14,12 @@ Branches:    {{ $tenantRequest->branches_count }}
 @if ($tenantRequest->users_count)
 Users:       {{ $tenantRequest->users_count }}
 @endif
+@if ($tenantRequest->plan)
+Plan:        {{ $tenantRequest->plan->name }}
+@endif
 @if ($tenantRequest->message)
 
-Message:
+Message / Notes:
 {{ $tenantRequest->message }}
 @endif
 

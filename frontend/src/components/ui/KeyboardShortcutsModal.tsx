@@ -153,7 +153,7 @@ export function KeyboardShortcutsModal({ open, onClose }: KeyboardShortcutsModal
 
           {/* Footer */}
           <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs text-slate-500">
-            <span>Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-mono font-bold">?</kbd> anywhere in PharmaPoint to view this window</span>
+            <span>Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-mono font-bold">?</kbd> anywhere in Stockpoint Solforbs to view this window</span>
             <button
               onClick={onClose}
               className="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors cursor-pointer"

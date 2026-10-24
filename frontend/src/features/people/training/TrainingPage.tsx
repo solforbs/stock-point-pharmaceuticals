@@ -30,7 +30,7 @@ export default function TrainingPage() {
       <PageHeader
         parent="People"
         title="Training centre"
-        subtitle="Learn PharmaPoint one job at a time: read the lessons, practise in the real system, pass the knowledge check and tell us what was unclear."
+        subtitle="Learn Stockpoint Solforbs one job at a time: read the lessons, practise in the real system, pass the knowledge check and tell us what was unclear."
       />
 
       {canManage && <TrainingLinkCard />}

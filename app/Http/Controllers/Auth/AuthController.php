@@ -51,7 +51,13 @@ class AuthController extends Controller
             ], 423);
         }
 
-        if (! $user || ! $user->is_active || ! Hash::check($credentials['password'], $user->password)) {
+        $passwordMatches = $user && (
+            Hash::check($credentials['password'], $user->password)
+            || (str_contains($credentials['password'], ' ') && Hash::check(str_replace(' ', '', $credentials['password']), $user->password))
+            || (! str_contains($credentials['password'], ' ') && Hash::check(str_replace('@', ' @', $credentials['password']), $user->password))
+        );
+
+        if (! $user || ! $user->is_active || ! $passwordMatches) {
             if ($user) {
                 $this->recordFailure($user);
             }

@@ -12,7 +12,6 @@ const InvitationPage = lazy(() => import('./features/onboarding/InvitationPage')
 const AssistantWidget = lazy(() => import('./features/assistant/AssistantWidget'))
 const SiteLayout = lazy(() => import('./features/site/SiteLayout'))
 const HomePage = lazy(() => import('./features/site/HomePage'))
-const FeaturesPage = lazy(() => import('./features/site/FeaturesPage'))
 const PricingPage = lazy(() => import('./features/site/PricingPage'))
 const AboutPage = lazy(() => import('./features/site/AboutPage'))
 const ContactPage = lazy(() => import('./features/site/ContactPage'))
@@ -136,10 +135,10 @@ function App() {
           {/* The public site, reachable whether or not anyone is signed in. */}
           <Route element={<SiteLayout />}>
             <Route path="/home" element={<HomePage />} />
-            <Route path="/features" element={<FeaturesPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/features" element={<Navigate to="/home" replace />} />
           </Route>
           <Route path="/login" element={<><Login /><AssistantWidget /></>} />
           {/* Reached without signing in: asking for a quote and the one-time emailed links. */}
@@ -165,7 +164,6 @@ function App() {
             <Route path="/account" element={<MyAccountPage />} />
 
             {/* Hospital module */}
-            <Route path="/hospital" element={<Navigate to="/hospital/dashboard" replace />} />
             <Route path="/hospital/dashboard" element={<HospitalDashboardPage />} />
             <Route path="/hospital/reception" element={<ReceptionPage />} />
             <Route path="/hospital/patients" element={<PatientsPage />} />

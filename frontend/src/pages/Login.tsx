@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Eye, EyeOff, ArrowLeft, ShieldCheck, Cpu } from 'lucide-react'
+import { Eye, EyeOff, ArrowLeft, Cpu } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api, apiGet, ensureCsrfCookie, getApiError } from '../lib/api'
 import { formatDateTime, todayIso } from '../lib/format'
@@ -131,12 +131,10 @@ export default function Login() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md py-1.5 px-3.5 rounded-full border border-slate-200/80 shadow-sm">
-            <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="text-xs font-bold text-slate-900 tracking-tight">Stockpoint Solforbs</span>
-            <span className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full">
-              Pharma ERP
+            <img src="/assets/solforbs-logo.png" alt="Solforbs" className="w-6 h-6 rounded-md object-contain" />
+            <span className="text-xs font-bold text-slate-900 tracking-tight">Stockpoint</span>
+            <span className="text-[10px] text-blue-600 font-extrabold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
+              Solforbs
             </span>
           </div>
         </motion.div>
@@ -152,7 +150,7 @@ export default function Login() {
             <span className="flex items-center gap-1.5">
               <Cpu className="w-3.5 h-3.5 text-blue-400" /> Automated Pharmaceutical Logistics & Multi-Branch POS
             </span>
-            <span className="text-white/60 text-[11px]">Powered by Solforbs</span>
+            <span className="text-white/80 font-bold text-[11px]">Solforbs Product Ecosystem</span>
           </div>
         </motion.div>
 
@@ -176,12 +174,10 @@ export default function Login() {
             transition={{ duration: 0.4 }}
             className="md:hidden flex flex-col items-center text-center mb-7"
           >
-            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/30 mb-3">
-              <ShieldCheck className="w-7 h-7 text-white" />
-            </div>
+            <img src="/assets/solforbs-logo.png" alt="Solforbs" className="w-12 h-12 object-contain mb-3" />
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">Stockpoint Solforbs</h2>
             <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center justify-center gap-1">
-              <Cpu className="w-3.5 h-3.5 text-blue-600" /> Pharmaceutical ERP & Supply Chain
+              <Cpu className="w-3.5 h-3.5 text-blue-600" /> Healthcare Suite & Pharmaceutical ERP
             </p>
           </motion.div>
 
@@ -228,7 +224,7 @@ export default function Login() {
                       autoFocus
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@pharmapoint.com"
+                      placeholder="name@solforbs.com"
                       className="w-full h-11 px-3.5 border border-slate-200 rounded-xl bg-slate-50/50 text-slate-900 text-sm outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
                       autoComplete="username"
                     />

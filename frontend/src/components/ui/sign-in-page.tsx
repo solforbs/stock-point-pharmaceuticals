@@ -85,7 +85,7 @@ export function LoginPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                placeholder="name@pharmapoint.com"
+                placeholder="name@solforbs.com"
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
                 required
               />

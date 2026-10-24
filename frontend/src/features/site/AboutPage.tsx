@@ -1,26 +1,21 @@
-import { Building2, HeartPulse, MapPin, Wrench } from 'lucide-react'
 import { CallToAction } from './SiteLayout'
 import { PageIntro } from './PageIntro'
 import { Reveal, RevealItem } from './motion'
 
 const BELIEFS = [
   {
-    icon: HeartPulse,
     title: 'A pharmacy is not a shop',
     body: 'Medicines expire, arrive in batches, get recalled and get inspected. A system that treats them as ordinary stock lines will fail you on the day it matters.',
   },
   {
-    icon: MapPin,
     title: 'Built for Kenyan conditions',
     body: 'A counter in Nairobi and a counter in Wajir do not get the same connection or the same power. The system is built for the harder of the two, which is why it works everywhere.',
   },
   {
-    icon: Wrench,
     title: 'Finished, not almost',
     body: 'Every figure on a screen can be traced to the posting behind it. If a feature cannot be trusted at close of business, it is not ready to ship.',
   },
   {
-    icon: Building2,
     title: 'Grows with the business',
     body: 'One counter today, several branches and a distribution arm later — on the same system, without a migration and without losing history.',
   },
@@ -32,22 +27,22 @@ export default function AboutPage() {
       <PageIntro
         eyebrow="About"
         title="Software for the pharmacy business, written where it works"
-        body="Stockpoint Solforbs builds the system a Kenyan pharmacy actually needs — the counter, the trade desk, the store, the supplier, the regulator and the books, in one place. It is used by retail pharmacies and wholesalers across the country."
+        body="Stockpoint Solforbs builds the system a Kenyan pharmacy actually needs — the counter, the store, the supplier, the regulator and the books, in one place. It is used by chemists, dispensing pharmacies, pharmacy chains and wholesalers across the country."
         image="pharmacy-counter.jpg"
       />
 
       <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6">
         <Reveal className="grid gap-6 sm:grid-cols-2">
-          {BELIEFS.map((belief) => (
+          {BELIEFS.map((belief, idx) => (
             <RevealItem
               key={belief.title}
               hover
-              className="group rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs transition-shadow hover:shadow-lg"
+              className="group rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-xs transition-shadow hover:shadow-lg"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-                <belief.icon className="h-5 w-5" aria-hidden />
+              <span className="font-mono text-xs font-bold text-blue-600">
+                0{idx + 1}
               </span>
-              <h2 className="mt-5 font-display text-xl font-bold tracking-tight text-slate-900">{belief.title}</h2>
+              <h2 className="mt-2 font-display text-xl font-bold tracking-tight text-slate-900">{belief.title}</h2>
               <p className="mt-2.5 leading-relaxed text-slate-600">{belief.body}</p>
             </RevealItem>
           ))}
@@ -75,7 +70,7 @@ export default function AboutPage() {
           </div>
           <Reveal as="div" className="grid grid-cols-2 gap-5 self-start">
             {[
-              ['Retail · Wholesale', 'One till, both trades'],
+              ['Retail · Wholesale · Dispensing', 'Three counters, one system'],
               ['Countrywide', 'Every county, set up remotely'],
               ['Offline-capable', 'The till never stops'],
               ['KRA-ready', 'eTIMS when you are'],
