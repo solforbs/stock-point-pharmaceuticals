@@ -26,8 +26,8 @@ class ProductBatch extends Model
     protected function casts(): array
     {
         return [
-            'expiry_date' => 'date',
-            'manufacture_date' => 'date',
+            'expiry_date' => 'date:Y-m-d',
+            'manufacture_date' => 'date:Y-m-d',
             'unit_cost' => 'decimal:4',
             'landed_unit_cost' => 'decimal:4',
             'qc_released_at' => 'datetime',

@@ -15,6 +15,7 @@ use App\Models\Store;
 use App\Models\Supplier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -24,23 +25,45 @@ use Illuminate\Support\Facades\DB;
  */
 class DashboardController extends ApiController
 {
+    /**
+     * The home screen's tiles. About forty counts and sums over sales, stock
+     * and approvals: each user's answer is kept for 30 seconds (per branch,
+     * business mode and permission set), so reopening the home screen does
+     * not rerun them all.
+     */
     public function summary(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $key = implode(':', [
+            'dashboard', $user->id, $this->branchId($request), Store::currentBusinessMode() ?? 'all',
+            md5($user->getAllPermissions()->pluck('name')->sort()->implode(',')),
+        ]);
+
+        return response()->json(Cache::remember($key, 30, fn () => $this->build($request)));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function build(Request $request): array
     {
         $user = $request->user();
         $branchId = $this->branchId($request);
         $organisationId = $this->organisationId($request);
         $today = now()->toDateString();
+        // A range rather than DATE(column), so the date indexes can be used.
+        $todayRange = [now()->startOfDay(), now()->endOfDay()];
         $storeIds = Store::where('branch_id', $branchId)->inBusinessMode()->pluck('id');
 
         $sales = null;
         if ($user->can('sale.view')) {
-            $byMode = DB::table('sales')->where('branch_id', $branchId)->whereIn('store_id', $storeIds)->where('status', 'POSTED')->whereDate('posted_at', $today)
+            $byMode = DB::table('sales')->where('branch_id', $branchId)->whereIn('store_id', $storeIds)->where('status', 'POSTED')->whereBetween('posted_at', $todayRange)
                 ->selectRaw('sale_mode, COUNT(*) as n, COALESCE(SUM(grand_total), 0) as total')->groupBy('sale_mode')->get();
             $sales = [
                 'count' => (int) $byMode->sum('n'),
                 'total' => number_format((float) $byMode->sum('total'), 4, '.', ''),
                 'by_mode' => $byMode->mapWithKeys(fn ($r) => [$r->sale_mode => ['count' => (int) $r->n, 'total' => number_format((float) $r->total, 4, '.', '')]]),
-                'voided_today' => Sale::where('branch_id', $branchId)->whereIn('store_id', $storeIds)->where('status', 'VOIDED')->whereDate('voided_at', $today)->count(),
+                'voided_today' => Sale::where('branch_id', $branchId)->whereIn('store_id', $storeIds)->where('status', 'VOIDED')->whereBetween('voided_at', $todayRange)->count(),
             ];
         }
 
@@ -75,7 +98,7 @@ class DashboardController extends ApiController
                 ->join('product_batches as pb', 'pb.id', '=', 'b.batch_id')
                 ->whereIn('b.store_id', $storeIds)
                 ->where('pb.status', 'RELEASED')
-                ->whereDate('pb.expiry_date', '<=', now()->addDays(90)->toDateString())
+                ->where('pb.expiry_date', '<=', now()->addDays(90)->toDateString())
                 ->sum('b.qty_on_hand');
 
             $lowStockCount = DB::table('products as p')
@@ -89,7 +112,7 @@ class DashboardController extends ApiController
                 'pending_qc_batches' => (clone $batchesInBranch)->where('status', 'PENDING_QC')->count(),
                 'pending_qc_qty' => number_format((float) $pendingQcQty, 4, '.', ''),
                 'quarantined_batches' => (clone $batchesInBranch)->where('status', 'QUARANTINED')->count(),
-                'expiring_90d_batches' => (clone $batchesInBranch)->where('status', 'RELEASED')->whereDate('expiry_date', '<=', now()->addDays(90)->toDateString())->count(),
+                'expiring_90d_batches' => (clone $batchesInBranch)->where('status', 'RELEASED')->where('expiry_date', '<=', now()->addDays(90)->toDateString())->count(),
                 'expiring_90d_qty' => number_format((float) $expiring90dQty, 4, '.', ''),
                 'expired_batches_on_hand' => (clone $batchesInBranch)->where('status', 'EXPIRED')->count(),
                 'low_stock_count' => $lowStockCount,
@@ -102,7 +125,7 @@ class DashboardController extends ApiController
         if ($user->can('po.create')) {
             $procurement = [
                 'open_purchase_orders' => PurchaseOrder::where('branch_id', $branchId)->whereIn('status', ['APPROVED', 'SENT', 'PARTIALLY_RECEIVED'])->count(),
-                'suppliers_licence_expired' => Supplier::where('organisation_id', $organisationId)->where('is_active', true)->whereDate('licence_expiry', '<', $today)->count(),
+                'suppliers_licence_expired' => Supplier::where('organisation_id', $organisationId)->where('is_active', true)->where('licence_expiry', '<', $today)->count(),
                 'suppliers_licence_expiring_30d' => Supplier::where('organisation_id', $organisationId)->where('is_active', true)
                     ->whereBetween('licence_expiry', [$today, now()->addDays(30)->toDateString()])->count(),
             ];
@@ -127,7 +150,7 @@ class DashboardController extends ApiController
             $quality['adr_draft_reports'] = DB::table('adr_reports')->where('branch_id', $branchId)->where('status', 'DRAFT')->count();
         }
         if ($user->can('licence.view')) {
-            $quality['licences_expired'] = DB::table('licences')->where('organisation_id', $organisationId)->where('is_active', true)->whereDate('expiry_date', '<', $today)->count();
+            $quality['licences_expired'] = DB::table('licences')->where('organisation_id', $organisationId)->where('is_active', true)->where('expiry_date', '<', $today)->count();
             $quality['licences_expiring_60d'] = DB::table('licences')->where('organisation_id', $organisationId)->where('is_active', true)
                 ->whereBetween('expiry_date', [$today, now()->addDays(60)->toDateString()])->count();
         }
@@ -167,7 +190,7 @@ class DashboardController extends ApiController
             ];
         }
 
-        return response()->json([
+        return [
             'as_of' => now()->toIso8601String(),
             'sales_today' => $sales,
             'approvals' => $approvals === [] ? null : $approvals,
@@ -178,6 +201,6 @@ class DashboardController extends ApiController
             'people' => $people === [] ? null : $people,
             'finance' => $finance,
             'ar' => $arSummary,
-        ]);
+        ];
     }
 }

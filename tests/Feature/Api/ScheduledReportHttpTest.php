@@ -46,7 +46,7 @@ class ScheduledReportHttpTest extends TestCase
             ->assertJsonPath('recipients', ['owner@example.test', 'finance@example.test'])
             ->assertJsonPath('is_active', true)
             ->json();
-        $this->assertStringStartsWith('2026-09-21T07:30', $schedule['next_run_at'], 'the next Monday at 07:30');
+        $this->assertSame('2026-09-21 07:30', Carbon::parse($schedule['next_run_at'])->setTimezone(config('app.timezone'))->format('Y-m-d H:i'), 'the next Monday at 07:30 local time');
         $this->getJson('/api/scheduled-reports')->assertOk()->assertJsonCount(1, 'data');
 
         // Not yet due: nothing is sent.

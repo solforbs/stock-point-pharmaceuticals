@@ -28,7 +28,7 @@ class AccountsPayable extends Model
         return [
             'amount' => 'decimal:4',
             'balance_after' => 'decimal:4',
-            'due_date' => 'date',
+            'due_date' => 'date:Y-m-d',
             'created_at' => 'datetime',
         ];
     }

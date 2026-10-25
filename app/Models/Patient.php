@@ -25,7 +25,7 @@ class Patient extends Model
 
     protected function casts(): array
     {
-        return ['date_of_birth' => 'date', 'is_active' => 'boolean'];
+        return ['date_of_birth' => 'date:Y-m-d', 'is_active' => 'boolean'];
     }
 
     public function encounters(): HasMany

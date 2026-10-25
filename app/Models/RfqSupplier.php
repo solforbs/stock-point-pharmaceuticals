@@ -26,8 +26,8 @@ class RfqSupplier extends Model
     protected function casts(): array
     {
         return [
-            'quote_date' => 'date',
-            'valid_until' => 'date',
+            'quote_date' => 'date:Y-m-d',
+            'valid_until' => 'date:Y-m-d',
             'received_at' => 'datetime',
             'payment_terms_days' => 'integer',
             'delivery_charge' => 'decimal:4',

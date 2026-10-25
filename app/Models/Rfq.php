@@ -34,7 +34,7 @@ class Rfq extends Model
     protected function casts(): array
     {
         return [
-            'needed_by' => 'date',
+            'needed_by' => 'date:Y-m-d',
             'sent_at' => 'datetime',
             'closed_at' => 'datetime',
             'awarded_at' => 'datetime',

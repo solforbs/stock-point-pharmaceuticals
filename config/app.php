@@ -85,9 +85,9 @@ return [
     |
     */
 
-    // Kenyan trading days: "sales today", the 00:05 expiry job and period
-    // boundaries follow local time in production (APP_TIMEZONE=Africa/Nairobi).
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    // Kenyan trading days: "sales today", the 00:05 expiry job, period
+    // boundaries and printed times follow local time unless APP_TIMEZONE says otherwise.
+    'timezone' => env('APP_TIMEZONE', 'Africa/Nairobi'),
 
     /*
     |--------------------------------------------------------------------------

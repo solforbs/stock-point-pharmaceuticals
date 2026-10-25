@@ -40,7 +40,7 @@ class SupplierAndTaxCodeHttpTest extends TestCase
         $this->patchJson("/api/suppliers/{$supplier['id']}", ['status' => 'SUSPENDED', 'licence_expiry' => '2027-06-30', 'bank_account' => '9876543210'])
             ->assertOk()
             ->assertJsonPath('status', 'SUSPENDED')
-            ->assertJsonPath('licence_expiry', '2027-06-30T00:00:00.000000Z');
+            ->assertJsonPath('licence_expiry', '2027-06-30');
 
         // Part 19.2 — bank detail changes are audited by field name, never by value.
         $updated = AuditLog::where('action', 'SUPPLIER_UPDATED')->where('entity_id', $supplier['id'])->firstOrFail();

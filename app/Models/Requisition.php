@@ -23,7 +23,7 @@ class Requisition extends Model
 
     protected function casts(): array
     {
-        return ['needed_by' => 'date'];
+        return ['needed_by' => 'date:Y-m-d'];
     }
 
     /**

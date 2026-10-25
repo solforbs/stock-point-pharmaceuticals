@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\DB;
  */
 class InventoryReport
 {
+    /** How many matching products a search returns. */
+    public const SEARCH_LIMIT = 50;
+
     /**
      * @param  list<string>|null  $categoryIds  a category and its sub-categories; null for all
      * @return list<array<string, mixed>>
@@ -31,7 +34,9 @@ class InventoryReport
             ->when($productId, fn ($q) => $q->where('b.product_id', $productId))
             ->when($storeId, fn ($q) => $q->where('b.store_id', $storeId))
             ->whereNotIn('b.store_id', $excludedStores = Store::outsideBusinessMode())
-            ->when($search, fn ($q) => $q->where(fn ($w) => $w->where('p.name', 'like', "%{$search}%")->orWhere('p.code', 'like', "%{$search}%")))
+            ->when($search, fn ($q) => $q->whereIn('b.product_id', $this->searchMatches($organisationId, $search, $categoryIds)))
+            // A sold-out batch keeps a balance row of zeros: it adds nothing, and they pile up.
+            ->where(fn ($q) => $q->where('b.qty_on_hand', '!=', 0)->orWhere('b.qty_reserved', '!=', 0)->orWhere('b.qty_quarantined', '!=', 0))
             ->select([
                 'b.product_id', 'p.code as product_code', 'p.name as product_name', 'p.reorder_point', 'p.category_id', 'c.name as category_name',
                 'b.store_id', 's.code as store_code', 's.name as store_name', 's.branch_id',
@@ -125,6 +130,25 @@ class InventoryReport
         }
 
         return array_values($grouped);
+    }
+
+    /**
+     * The first products (by name) whose name or code matches a search: the
+     * till's search box and the stock page show these, not every partial
+     * match in the catalogue.
+     *
+     * @param  list<string>|null  $categoryIds
+     * @return list<string>
+     */
+    private function searchMatches(string $organisationId, string $search, ?array $categoryIds): array
+    {
+        return DB::table('products')
+            ->where('organisation_id', $organisationId)
+            ->when($categoryIds !== null, fn ($q) => $q->whereIn('category_id', $categoryIds))
+            ->where(fn ($w) => $w->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"))
+            ->orderBy('name')
+            ->limit(self::SEARCH_LIMIT)
+            ->pluck('id')->map(fn ($id) => (string) $id)->all();
     }
 
     /**

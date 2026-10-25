@@ -48,7 +48,7 @@ class PurchaseOrder extends Model
     {
         return [
             'sent_at' => 'datetime',
-            'expected_date' => 'date',
+            'expected_date' => 'date:Y-m-d',
             'over_receipt_tolerance_pct' => 'decimal:2',
             'under_receipt_close_pct' => 'decimal:2',
             'transport_cost' => 'decimal:4',

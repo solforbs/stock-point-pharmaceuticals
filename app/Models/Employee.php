@@ -27,8 +27,8 @@ class Employee extends Model
     protected function casts(): array
     {
         return [
-            'date_joined' => 'date',
-            'date_left' => 'date',
+            'date_joined' => 'date:Y-m-d',
+            'date_left' => 'date:Y-m-d',
             'basic_salary' => 'decimal:4',
             'regular_allowances' => 'decimal:4',
             'pension_contribution' => 'decimal:4',

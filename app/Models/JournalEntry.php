@@ -22,7 +22,7 @@ class JournalEntry extends Model
     protected function casts(): array
     {
         return [
-            'entry_date' => 'date',
+            'entry_date' => 'date:Y-m-d',
             'posted_at' => 'datetime',
         ];
     }

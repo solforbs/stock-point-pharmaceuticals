@@ -22,7 +22,7 @@ class Consultation extends Model
     {
         return [
             'vital_signs' => 'array',
-            'follow_up_date' => 'date',
+            'follow_up_date' => 'date:Y-m-d',
             'completed_at' => 'datetime',
         ];
     }

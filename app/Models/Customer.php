@@ -31,7 +31,7 @@ class Customer extends Model
     {
         return [
             'is_active' => 'boolean',
-            'exemption_expiry' => 'date',
+            'exemption_expiry' => 'date:Y-m-d',
         ];
     }
 

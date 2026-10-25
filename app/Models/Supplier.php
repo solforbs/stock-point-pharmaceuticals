@@ -23,7 +23,7 @@ class Supplier extends Model
     protected function casts(): array
     {
         return [
-            'licence_expiry' => 'date',
+            'licence_expiry' => 'date:Y-m-d',
             'is_active' => 'boolean',
             // Bank details are a classic fraud vector (Part 19.2) — encrypted
             // at rest, decrypted transparently for authorised reads.

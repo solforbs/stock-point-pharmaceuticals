@@ -26,7 +26,7 @@ class SalesOrder extends Model
     protected function casts(): array
     {
         return [
-            'required_date' => 'date',
+            'required_date' => 'date:Y-m-d',
             'subtotal' => 'decimal:4',
             'discount_total' => 'decimal:4',
             'tax_total' => 'decimal:4',

@@ -59,6 +59,10 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // The session runs in the app's local time (Kenya, no daylight
+            // saving), so NOW()/CURDATE() agree with PHP and TIMESTAMP columns,
+            // stored by MySQL in UTC, read back in local time.
+            'timezone' => env('DB_TIMEZONE', '+03:00'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],

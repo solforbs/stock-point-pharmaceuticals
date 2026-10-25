@@ -28,7 +28,7 @@ class PayrollRun extends Model
     {
         return [
             'bands_snapshot_json' => 'array',
-            'bands_as_of' => 'date',
+            'bands_as_of' => 'date:Y-m-d',
             'total_gross' => 'decimal:4', 'total_paye' => 'decimal:4', 'total_nssf_employee' => 'decimal:4', 'total_nssf_employer' => 'decimal:4',
             'total_shif' => 'decimal:4', 'total_housing_levy_employee' => 'decimal:4', 'total_housing_levy_employer' => 'decimal:4',
             'total_other_deductions' => 'decimal:4', 'total_net' => 'decimal:4',
