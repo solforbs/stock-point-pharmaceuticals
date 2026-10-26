@@ -23,6 +23,7 @@ class ProductController extends ApiController
     {
         $this->requirePermission($request, 'product.view');
         $organisationId = $this->organisationId($request);
+        $request->validate(['sellable_in_store' => ['nullable', 'uuid']]);
 
         $allowedSorts = ['name', 'brand_name', 'code', 'default_price', 'created_at'];
         $sortBy = in_array($request->query('sort_by'), $allowedSorts, true) ? $request->query('sort_by') : 'name';
@@ -54,6 +55,14 @@ class ProductController extends ApiController
                     default => null,
                 };
             })
+            // The till lists only what it can sell now: released, in date and not held back, in its own store.
+            ->when($request->filled('sellable_in_store'), fn ($q) => $q->whereIn('id', DB::table('stock_balances as sb')
+                ->join('product_batches as pb', 'pb.id', '=', 'sb.batch_id')
+                ->where('sb.store_id', (string) $request->string('sellable_in_store'))
+                ->where('pb.status', 'RELEASED')
+                ->where('pb.expiry_date', '>=', now()->toDateString())
+                ->whereRaw('sb.qty_on_hand - sb.qty_reserved - sb.qty_quarantined > 0')
+                ->select('sb.product_id')))
             ->with(['dosageForm', 'category', 'manufacturer', 'baseUom', 'uoms.uom', 'taxCode:id,code,name'])
             ->orderBy($sortBy, $sortDir)
             ->paginate($request->integer('per_page', 25));

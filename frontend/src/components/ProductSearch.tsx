@@ -13,11 +13,11 @@ export function useDebounced<T>(value: T, delay = 250): T {
   return debounced
 }
 
-export function useProductSearch(query: string, enabled = true, endpoint = '/api/products') {
+export function useProductSearch(query: string, enabled = true, endpoint = '/api/products', params: Record<string, string> = {}) {
   const q = useDebounced(query.trim(), 200)
   return useQuery({
-    queryKey: ['products', 'search', endpoint, q],
-    queryFn: () => apiGet<Paginated<Product>>(endpoint, { q, per_page: 20, is_active: 1 }),
+    queryKey: ['products', 'search', endpoint, q, params],
+    queryFn: () => apiGet<Paginated<Product>>(endpoint, { q, per_page: 20, is_active: 1, ...params }),
     enabled: enabled && q.length > 0,
     staleTime: 60_000,
     placeholderData: (prev) => prev,
@@ -25,8 +25,8 @@ export function useProductSearch(query: string, enabled = true, endpoint = '/api
 }
 
 /** Exact barcode match only (Part 24.2): a scan never fuzzy-matches. */
-export async function lookupBarcode(barcode: string, endpoint = '/api/products'): Promise<Product | null> {
-  const { data } = await api.get<Paginated<Product>>(endpoint, { params: { barcode, per_page: 1 } })
+export async function lookupBarcode(barcode: string, endpoint = '/api/products', params: Record<string, string> = {}): Promise<Product | null> {
+  const { data } = await api.get<Paginated<Product>>(endpoint, { params: { barcode, per_page: 1, ...params } })
   return data.data[0] ?? null
 }
 

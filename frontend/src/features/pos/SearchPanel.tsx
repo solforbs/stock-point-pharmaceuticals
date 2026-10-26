@@ -37,19 +37,22 @@ export function SearchPanel({
   const addProduct = useCartStore((s) => s.addProduct)
   const posted = useCartStore((s) => s.status === 'POSTED')
 
-  const { data, isFetching } = useProductSearch(query, !offline)
-  const offlineResults = offline && pack ? searchPack(pack, query).map(packToProduct) : []
+  // The till shows only what its store can sell now, not the whole catalogue.
+  const inStock: Record<string, string> = storeId ? { sellable_in_store: storeId } : {}
+  const { data, isFetching } = useProductSearch(query, !offline && !!storeId, '/api/products', inStock)
+  const offlineInStock = (p: Product) => Number(localStock?.get(p.id) ?? p.stock?.free_to_sell ?? 0) > 0
+  const offlineResults = offline && pack ? searchPack(pack, query).map(packToProduct).filter(offlineInStock) : []
   const results = offline ? offlineResults : (data?.data ?? [])
 
-  // Load popular/stocked products to eliminate the empty void
+  // Products in stock at this counter, so the panel is never empty before a search.
   const popular = useQuery({
     queryKey: ['products', 'pos-popular', storeId],
-    queryFn: () => apiGet<Paginated<Product>>('/api/products', { per_page: 30, is_active: 1 }),
+    queryFn: () => apiGet<Paginated<Product>>('/api/products', { per_page: 30, is_active: 1, ...inStock }),
     staleTime: 60_000,
-    enabled: !offline,
+    enabled: !offline && !!storeId,
   })
 
-  const popularList = offline ? (pack?.products.slice(0, 30).map(packToProduct) ?? []) : (popular.data?.data ?? [])
+  const popularList = offline ? (pack?.products.map(packToProduct).filter(offlineInStock).slice(0, 30) ?? []) : (popular.data?.data ?? [])
   const categories = Array.from(
     new Set(popularList.map((p) => p.category?.name).filter((c): c is string => !!c))
   ).slice(0, 5)
@@ -110,8 +113,9 @@ export function SearchPanel({
       const term = query.trim()
       if (!term) return
       const packed = offline && pack ? findByBarcode(pack, term) : null
-      const product = offline ? (packed ? packToProduct(packed) : null) : await lookupBarcode(term)
+      const product = offline ? (packed ? packToProduct(packed) : null) : await lookupBarcode(term, '/api/products', inStock)
       if (product) add(product)
+      else if (!offline && (await lookupBarcode(term))) setScanError(`"${term}" is out of stock at this counter.`)
       else if (offline) setScanError(`"${term}" is not in the offline price list. Search by name, or wait for the connection.`)
       else setScanError(`Unknown barcode "${term}". Search by name instead, or check the product's barcodes.`)
     } else if (e.key === 'Escape') {
@@ -162,7 +166,7 @@ export function SearchPanel({
         {query.trim() ? (
           results.length === 0 ? (
             <div className="px-4 py-8 text-center text-xs text-slate-400">
-              {isFetching ? 'Searching catalog…' : 'No products match. Press Enter for exact barcode scan.'}
+              {isFetching ? 'Searching catalog…' : 'Nothing in stock here matches. Press Enter for exact barcode scan.'}
             </div>
           ) : (
             results.map((product, i) => {
@@ -229,7 +233,7 @@ export function SearchPanel({
             <div>
               <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 px-0.5">
                 <span className="flex items-center gap-1.5 text-slate-800 font-bold">
-                  <Sparkles size={13} className="text-amber-500" /> Fast-Moving Catalog
+                  <Sparkles size={13} className="text-amber-500" /> In stock here
                 </span>
                 <span className="text-xs text-slate-400 font-normal">1-tap add</span>
               </div>
@@ -262,6 +266,12 @@ export function SearchPanel({
                       {cat}
                     </button>
                   ))}
+                </div>
+              )}
+
+              {!offline && popular.isSuccess && popularList.length === 0 && (
+                <div className="px-2 py-6 text-center text-xs text-slate-500">
+                  Nothing is in stock at this counter yet. Transfer stock in from the warehouse, or choose another stock room above.
                 </div>
               )}
 
