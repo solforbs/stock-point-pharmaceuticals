@@ -10,13 +10,13 @@ import { InlineError } from '../../components/ui/States'
 import { StatCard } from '../../components/ui/StatCard'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Field, Input, Select } from '../../components/ui/primitives'
-import { api, apiGet, apiPost, apiPut, ensureCsrfCookie, getApiError } from '../../lib/api'
+import { api, apiDelete, apiGet, apiPost, apiPut, ensureCsrfCookie, getApiError } from '../../lib/api'
 import { dIsPos } from '../../lib/decimal'
 import { formatDate, todayIso } from '../../lib/format'
 import { formatMoney } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
-import type { PettyCashSummary, PettyCashVoucher } from '../../lib/types'
+import type { ExpenseCategory, PettyCashSummary, PettyCashVoucher } from '../../lib/types'
 
 const MONEY = /^\d+(\.\d{1,2})?$/
 
@@ -25,7 +25,7 @@ export default function PettyCashPage() {
   const queryClient = useQueryClient()
   const canManage = usePermission('petty.cash.manage')
   const canSetFloat = usePermission('admin.settings')
-  const [modal, setModal] = useState<'topup' | 'spend' | 'float' | null>(null)
+  const [modal, setModal] = useState<'topup' | 'spend' | 'float' | 'categories' | null>(null)
   const [voiding, setVoiding] = useState<PettyCashVoucher | null>(null)
   const [editing, setEditing] = useState<PettyCashVoucher | null>(null)
   const [deleting, setDeleting] = useState<PettyCashVoucher | null>(null)
@@ -109,6 +109,7 @@ export default function PettyCashPage() {
           <>
             <Link to="/reports?report=finance.petty_cash_book" className="text-xs font-semibold text-blue-700 hover:underline">Petty cash book →</Link>
             {canDelete && (s?.data?.length ?? 0) > 0 && <Button variant="danger" onClick={() => { deleteAll.reset(); setDeleteAllTyped(''); setDeletingAll(true) }}>Delete all</Button>}
+            <Button onClick={() => setModal('categories')}>Expense categories</Button>
             <Button onClick={() => setModal('topup')}>Top up float</Button>
             <Button variant="primary" onClick={() => setModal('spend')}>New voucher</Button>
           </>
@@ -138,6 +139,7 @@ export default function PettyCashPage() {
 
       <TopUpModal open={modal === 'topup'} onClose={() => setModal(null)} onDone={() => { setModal(null); refresh() }} suggested={s?.to_restore} />
       <SpendModal open={modal === 'spend'} onClose={() => setModal(null)} onDone={() => { setModal(null); refresh() }} accounts={s?.expense_accounts ?? []} balance={s?.balance ?? '0'} />
+      {modal === 'categories' && <CategoriesModal canDelete={canDelete} onClose={() => setModal(null)} onChanged={refresh} />}
       <FloatModal open={modal === 'float'} onClose={() => setModal(null)} onDone={() => { setModal(null); refresh() }} current={s?.float_limit ?? '0'} />
       <ConfirmDialog
         open={voiding !== null}
@@ -363,6 +365,96 @@ function EditVoucherModal({ voucher, accounts, balance, onClose, onDone }: { vou
         <Field label="Description" required><Input value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
         {save.isError && <InlineError error={save.error} />}
       </div>
+    </Modal>
+  )
+}
+
+/** Adds, renames, switches off and deletes the expense categories a voucher can be charged to. */
+function CategoriesModal({ canDelete, onClose, onChanged }: { canDelete: boolean; onClose: () => void; onChanged: () => void }) {
+  const queryClient = useQueryClient()
+  const categories = useQuery({ queryKey: ['finance', 'expense-categories'], queryFn: () => apiGet<{ data: ExpenseCategory[] }>('/api/finance/expense-categories') })
+  const [name, setName] = useState('')
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
+  const [deleting, setDeleting] = useState<ExpenseCategory | null>(null)
+  const changed = () => {
+    queryClient.invalidateQueries({ queryKey: ['finance', 'expense-categories'] })
+    onChanged()
+  }
+
+  const add = useMutation({
+    meta: { silent: true },
+    mutationFn: () => apiPost<ExpenseCategory>('/api/finance/expense-categories', { name }),
+    onSuccess: (c) => { toast.success(`${c.name} added`, `Code ${c.code}. It is now offered on new vouchers.`); setName(''); changed() },
+  })
+  const update = useMutation({
+    meta: { silent: true },
+    mutationFn: ({ id, body }: { id: string; body: { name?: string; is_active?: boolean } }) => apiPut<ExpenseCategory>(`/api/finance/expense-categories/${id}`, body),
+    onSuccess: (c) => { toast.success(`${c.name} saved`, c.is_active ? undefined : 'It is no longer offered on new vouchers.'); setRenaming(null); changed() },
+  })
+  const remove = useMutation({
+    meta: { silent: true },
+    mutationFn: (id: string) => apiDelete(`/api/finance/expense-categories/${id}`),
+    onSuccess: () => { toast.success('Category deleted'); setDeleting(null); changed() },
+  })
+  const addError = add.isError ? getApiError(add.error) : null
+
+  return (
+    <Modal open onClose={onClose} width={680} title="Expense categories" footer={<Button onClick={onClose}>Close</Button>}>
+      <div className="space-y-4">
+        <p className="text-xs text-slate-600">What a petty cash voucher can be charged to. A category that has been used, or one of the standard ones, cannot be deleted: switch it off instead and it stops appearing on new vouchers while past vouchers keep it.</p>
+        <form className="flex gap-2 items-end" onSubmit={(e) => { e.preventDefault(); if (name.trim().length >= 3) add.mutate() }}>
+          <div className="flex-1">
+            <Field label="New category" error={addError?.errors.name?.[0]}>
+              <Input placeholder="e.g. Bank charges" value={name} onChange={(e) => setName(e.target.value)} />
+            </Field>
+          </div>
+          <Button type="submit" variant="primary" disabled={name.trim().length < 3 || add.isPending}>{add.isPending ? 'Adding…' : 'Add'}</Button>
+        </form>
+        {addError && !Object.keys(addError.errors).length && <InlineError error={add.error} />}
+        {update.isError && <InlineError error={update.error} />}
+        {categories.isError && <InlineError error={categories.error} />}
+        <div className="divide-y divide-slate-100 border border-slate-200 rounded-md max-h-[50vh] overflow-y-auto">
+          {categories.isLoading && <div className="p-3 text-sm text-slate-500">Loading…</div>}
+          {categories.data?.data.map((c) => (
+            <div key={c.id} className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
+              <span className="tabular font-mono text-xs text-slate-500 w-10">{c.code}</span>
+              {renaming?.id === c.id ? (
+                <form className="flex flex-1 gap-2" onSubmit={(e) => { e.preventDefault(); update.mutate({ id: c.id, body: { name: renaming.name } }) }}>
+                  <Input autoFocus value={renaming.name} onChange={(e) => setRenaming({ id: c.id, name: e.target.value })} />
+                  <Button size="sm" type="submit" variant="primary" disabled={renaming.name.trim().length < 3 || update.isPending}>Save</Button>
+                  <Button size="sm" onClick={() => setRenaming(null)}>Cancel</Button>
+                </form>
+              ) : (
+                <>
+                  <span className={`flex-1 min-w-0 ${c.is_active ? 'text-slate-900' : 'text-slate-400 line-through'}`}>
+                    {c.name}
+                    {c.times_used > 0 && <span className="ml-2 text-xs text-slate-500">used {c.times_used}×</span>}
+                    {c.is_protected && <span className="ml-2 text-xs text-slate-500">system</span>}
+                  </span>
+                  <div className="flex gap-1 whitespace-nowrap">
+                    <Button size="sm" onClick={() => setRenaming({ id: c.id, name: c.name })}>Rename</Button>
+                    {!c.is_protected && (
+                      <Button size="sm" disabled={update.isPending} onClick={() => update.mutate({ id: c.id, body: { is_active: !c.is_active } })}>{c.is_active ? 'Switch off' : 'Switch on'}</Button>
+                    )}
+                    {canDelete && c.can_delete && <Button size="sm" variant="danger" onClick={() => { remove.reset(); setDeleting(c) }}>Delete</Button>}
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+        {remove.isError && <InlineError error={remove.error} />}
+      </div>
+      <ConfirmDialog
+        open={deleting !== null}
+        title={deleting ? `Delete ${deleting.name}?` : ''}
+        message="It has never been used, so nothing in the books points at it. It is removed for good."
+        confirmLabel="Delete category"
+        danger
+        isPending={remove.isPending}
+        onCancel={() => setDeleting(null)}
+        onConfirm={() => deleting && remove.mutate(deleting.id)}
+      />
     </Modal>
   )
 }

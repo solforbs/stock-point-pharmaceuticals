@@ -2095,7 +2095,19 @@ export type PettyCashVoucher = {
   creator?: { id: number; name: string } | null
 }
 
-export type PettyCashSummary = Paginated<PettyCashVoucher> & {
+/** A petty cash expense category: an expense account coded 6000–6999. */
+export type ExpenseCategory = {
+  id: string
+  code: string
+  name: string
+  is_active: boolean
+  is_standard: boolean
+  is_protected: boolean
+  times_used: number
+  can_delete: boolean
+}
+
+export type PettyCashSummary =Paginated<PettyCashVoucher> & {
   balance: Decimal
   float_limit: Decimal
   to_restore: Decimal

@@ -52,6 +52,7 @@ class ChartOfAccountsSeeder extends Seeder
         ['6130', 'Refreshments and welfare', 'EXPENSE', null],
         ['6140', 'Postage and courier', 'EXPENSE', null],
         ['6150', 'Repairs and maintenance', 'EXPENSE', null],
+        ['6160', 'Telephone and communication', 'EXPENSE', null],
         ['6190', 'Miscellaneous expenses', 'EXPENSE', null],
     ];
 

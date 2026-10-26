@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\DocumentListController;
 use App\Http\Controllers\Api\DocumentPdfController;
 use App\Http\Controllers\Api\EncounterController;
 use App\Http\Controllers\Api\EtimsController;
+use App\Http\Controllers\Api\ExpenseCategoryController;
 use App\Http\Controllers\Api\FinanceController;
 use App\Http\Controllers\Api\HospitalConfigController;
 use App\Http\Controllers\Api\InventoryController;
@@ -301,6 +302,10 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::put('/finance/petty-cash/vouchers/{voucher}', [PettyCashController::class, 'update'])->whereUuid('voucher');
     Route::delete('/finance/petty-cash/vouchers/{voucher}', [PettyCashController::class, 'destroy'])->whereUuid('voucher');
     Route::delete('/finance/petty-cash/vouchers', [PettyCashController::class, 'destroyAll']);
+    Route::get('/finance/expense-categories', [ExpenseCategoryController::class, 'index']);
+    Route::post('/finance/expense-categories', [ExpenseCategoryController::class, 'store']);
+    Route::put('/finance/expense-categories/{category}', [ExpenseCategoryController::class, 'update'])->whereUuid('category');
+    Route::delete('/finance/expense-categories/{category}', [ExpenseCategoryController::class, 'destroy'])->whereUuid('category');
     Route::get('/supply-requests', [SupplyRequestController::class, 'index']);
     Route::post('/supply-requests', [SupplyRequestController::class, 'store']);
     Route::get('/supply-requests/{supplyRequest}', [SupplyRequestController::class, 'show'])->whereUuid('supplyRequest');
