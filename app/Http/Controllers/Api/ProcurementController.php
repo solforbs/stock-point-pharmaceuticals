@@ -637,7 +637,9 @@ class ProcurementController extends ApiController
     {
         $this->requirePermission($request, 'grn.create');
 
-        return response()->json(GoodsReceipt::where('branch_id', $this->branchId($request))->with(['lines.batch', 'purchaseOrder:id,doc_number,status'])->findOrFail($receipt));
+        return response()->json(GoodsReceipt::where('branch_id', $this->branchId($request))->with([
+            'lines.batch', 'lines.product:id,code,name', 'lines.uom:id,code', 'purchaseOrder:id,doc_number,status', 'supplier:id,code,name', 'store:id,code,name',
+        ])->findOrFail($receipt));
     }
 
     /** POST /api/supplier-invoices — the invoice as the supplier sent it; matching is a separate step. */

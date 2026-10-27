@@ -709,6 +709,8 @@ export type GoodsReceiptLine = {
   discount_pct: Decimal | null
   landed_unit_cost: Decimal | null
   batch?: ProductBatch | null
+  product?: { id: string; code: string; name: string } | null
+  uom?: { id: string; code: string } | null
 }
 
 export type GoodsReceipt = {

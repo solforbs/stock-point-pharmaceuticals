@@ -4,20 +4,21 @@ import { Button } from '../../components/ui/primitives'
 import { apiGet } from '../../lib/api'
 import { downloadBlob } from '../../lib/csv'
 import { formatDate } from '../../lib/format'
+import { xlsxLetterhead } from '../../lib/letterhead'
 import { toastApiError } from '../../lib/toast'
 import type { PurchaseOrder } from '../../lib/types'
 import { buildXlsx } from '../../lib/xlsxWriter'
 
 const money = (v: string | number | null | undefined) => (v === null || v === undefined || v === '' ? null : Math.round(Number(v) * 100) / 100)
 
-/** The purchase order as an Excel workbook: the same lines, transport and totals as its PDF, built here from the order. */
+/** The purchase order as an Excel workbook: the same letterhead, lines, transport and totals as its PDF, built here from the order. */
 export function PoExcelButton({ id, docNumber, size = 'sm' }: { id: string; docNumber: string; size?: 'sm' | 'md' }) {
   const [busy, setBusy] = useState(false)
 
   const download = async () => {
     setBusy(true)
     try {
-      const po = await apiGet<PurchaseOrder>(`/api/purchase-orders/${id}`)
+      const [po, letterhead] = await Promise.all([apiGet<PurchaseOrder>(`/api/purchase-orders/${id}`), xlsxLetterhead()])
       const lines = po.lines ?? []
       const goods = lines.reduce((s, l) => s + Number(l.qty_ordered) * Number(l.unit_price ?? 0), 0)
       const transport = Number(po.transport_cost ?? 0)
@@ -30,6 +31,7 @@ export function PoExcelButton({ id, docNumber, size = 'sm' }: { id: string; docN
 
       const blob = buildXlsx({
         sheetName: docNumber,
+        letterhead,
         title: `Purchase order ${docNumber} · ${details}`,
         header: ['No.', 'Code', 'Product', 'Unit', 'Qty', 'Unit price', 'Transport per unit', 'Landed price', 'Line total'],
         rows: [

@@ -190,6 +190,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/quotations/{quotation}/pdf', [DocumentPdfController::class, 'quotation']);
     Route::get('/purchase-orders/{po}/pdf', [DocumentPdfController::class, 'purchaseOrder']);
     Route::get('/goods-receipts/{receipt}/pdf', [DocumentPdfController::class, 'goodsReceipt']);
+    Route::get('/documents/letterhead', [DocumentPdfController::class, 'letterhead']);
     Route::get('/customers/{customer}/statement/pdf', [CustomerStatementController::class, 'pdf']);
     Route::post('/sales-orders/{order}/pick', [OrderController::class, 'pick']);
     Route::post('/picking-lists/{list}/lines/{line}/pick', [OrderController::class, 'pickLine']);

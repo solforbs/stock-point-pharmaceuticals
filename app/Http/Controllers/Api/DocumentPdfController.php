@@ -11,6 +11,7 @@ use App\Models\Quotation;
 use App\Models\Sale;
 use App\Models\User;
 use App\Services\Documents\PdfRenderer;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,24 @@ use Illuminate\Support\Facades\DB;
  */
 class DocumentPdfController extends ApiController
 {
+    /**
+     * GET /api/documents/letterhead — the same letterhead the PDFs print
+     * (institution, branch, contacts, KRA PIN, logo), for documents the
+     * browser builds itself such as the Excel downloads. The stamp and
+     * signature stay on the server.
+     */
+    public function letterhead(Request $request, PdfRenderer $pdf): JsonResponse
+    {
+        $letterhead = $pdf->letterhead($this->branchId($request));
+        $logo = $letterhead['logo'] ?? null;
+
+        return response()->json([
+            ...collect($letterhead)->only(['organisation', 'legal_name', 'tagline', 'kra_pin', 'branch', 'branch_code', 'address', 'postal_address', 'phone', 'email', 'website'])->all(),
+            // Only a JPEG or PNG can go into a spreadsheet.
+            'logo' => is_string($logo) && preg_match('#^data:image/(jpeg|png);base64,#', $logo) === 1 ? $logo : null,
+        ]);
+    }
+
     /** GET /api/sales/{sale}/pdf — the tax invoice for a posted sale. */
     public function invoice(Request $request, string $sale, PdfRenderer $pdf): Response
     {
