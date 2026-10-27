@@ -45,6 +45,7 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
   const [uomId, setUomId] = useState(defaultUom?.uom_id ?? '')
   const [qty, setQty] = useState('1')
   const [sellingPrice, setSellingPrice] = useState('')
+  const [negotiatedPct, setNegotiatedPct] = useState('')
   const priceRef = useRef<HTMLInputElement>(null)
 
   const { data: insight, isLoading: insightLoading } = useProductInsight(product.id, storeId, customerId, !offline, buyerType)
@@ -62,6 +63,7 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
 
   // Open on the price this line already sells at, else the landing price.
   useEffect(() => {
+    setNegotiatedPct('')
     const agreed = inCart?.sellingPrice ?? landingPrice
     setSellingPrice(agreed ? dRound2(agreed) : '')
     // Only when the unit or the landing price itself changes, not on every keystroke.
@@ -102,7 +104,17 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
 
   function applyMarkup(pct: string) {
     if (!landingPrice) return
+    setNegotiatedPct('')
     setSellingPrice(dRound2(dMul(landingPrice, dAdd('1', dDiv(pct, '100')))))
+  }
+
+  /** The negotiated % is open: any rate on the landing price, below it with a minus sign. */
+  function applyNegotiated(input: string) {
+    const pct = input.replace(/[^\d.-]/g, '').replace(/(?!^)-/g, '')
+    setNegotiatedPct(pct)
+    if (landingPrice && isValidDecimal(pct)) {
+      setSellingPrice(dRound2(dMul(landingPrice, dAdd('1', dDiv(pct, '100')))))
+    }
   }
 
   return (
@@ -267,7 +279,10 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
                 inputMode="decimal"
                 value={sellingPrice}
                 disabled={!canSetPrice}
-                onChange={(e) => setSellingPrice(e.target.value.replace(/[^\d.]/g, ''))}
+                onChange={(e) => {
+                  setNegotiatedPct('')
+                  setSellingPrice(e.target.value.replace(/[^\d.]/g, ''))
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
@@ -292,10 +307,33 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
                     +{pct}%
                   </button>
                 ))}
+                <label className="flex items-center gap-1 pl-2.5 pr-2 py-0.5 rounded-full bg-white border border-blue-200 focus-within:border-blue-500 text-xs font-bold text-blue-700">
+                  <span className="whitespace-nowrap">Negotiated</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    aria-label="Negotiated % on the landing price"
+                    placeholder="—"
+                    value={negotiatedPct}
+                    disabled={!landingPrice}
+                    onChange={(e) => applyNegotiated(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        confirm()
+                      }
+                    }}
+                    className="w-12 bg-transparent text-right tabular text-slate-900 focus:outline-none disabled:opacity-40"
+                  />
+                  <span>%</span>
+                </label>
                 <button
                   type="button"
                   disabled={!landingPrice}
-                  onClick={() => landingPrice && setSellingPrice(dRound2(landingPrice))}
+                  onClick={() => {
+                    setNegotiatedPct('')
+                    if (landingPrice) setSellingPrice(dRound2(landingPrice))
+                  }}
                   className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer disabled:opacity-40"
                 >
                   Landing price
