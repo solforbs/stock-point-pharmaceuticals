@@ -400,6 +400,7 @@ class ProcurementController extends ApiController
             'lines.*.qty_rejected' => ['nullable', 'numeric', 'min:0'],
             'lines.*.rejection_reason' => ['nullable', 'string', 'max:255'],
             'lines.*.batch_number' => ['required', 'string', 'max:100'],
+            'lines.*.brand_name' => ['nullable', 'string', 'max:150'],
             'lines.*.expiry_date' => ['required', 'date'],
             'lines.*.manufacture_date' => ['nullable', 'date'],
             'lines.*.unit_cost' => ['nullable', 'required_without:lines.*.trade_price', 'numeric', 'min:0'],
@@ -471,6 +472,7 @@ class ProcurementController extends ApiController
                     'qty_rejected' => $line['qty_rejected'] ?? 0,
                     'rejection_reason' => $line['rejection_reason'] ?? null,
                     'batch_number' => $line['batch_number'],
+                    'brand_name' => isset($line['brand_name']) && trim($line['brand_name']) !== '' ? trim($line['brand_name']) : null,
                     'expiry_date' => $line['expiry_date'],
                     'manufacture_date' => $line['manufacture_date'] ?? null,
                     'unit_cost' => $line['unit_cost'],
@@ -639,7 +641,7 @@ class ProcurementController extends ApiController
     }
 
     /** POST /api/supplier-invoices — the invoice as the supplier sent it; matching is a separate step. */
-    public function storeSupplierInvoice(Request $request): JsonResponse
+    public function storeSupplierInvoice(Request $request, ThreeWayMatchService $matcher): JsonResponse
     {
         $this->requirePermission($request, 'invoice.match');
 
@@ -657,7 +659,9 @@ class ProcurementController extends ApiController
         ]);
 
         $branchId = $this->branchId($request);
-        $invoice = DB::transaction(function () use ($data, $branchId, $request) {
+        // Transport is never keyed on the invoice: it is the order's own, for the quantities billed.
+        $transport = $matcher->transportFor($data['lines']);
+        $invoice = DB::transaction(function () use ($data, $branchId, $request, $transport, $matcher) {
             $subtotal = '0.0000';
             $invoice = SupplierInvoice::create([
                 'doc_number' => NumberSequence::next($this->organisationId($request), 'SUPPLIER_INVOICE', $branchId, 'SINV'),
@@ -667,13 +671,19 @@ class ProcurementController extends ApiController
                 'invoice_date' => $data['invoice_date'],
                 'due_date' => $data['due_date'] ?? null,
                 'tax_total' => (string) ($data['tax_total'] ?? '0'),
+                'transport_total' => $transport,
             ]);
             foreach ($data['lines'] as $line) {
                 $lineTotal = bcmul((string) $line['qty'], (string) $line['unit_price'], 4);
                 SupplierInvoiceLine::create(['supplier_invoice_id' => $invoice->id, 'line_total' => $lineTotal] + collect($line)->only(['purchase_order_line_id', 'product_id', 'qty', 'unit_price'])->all());
                 $subtotal = bcadd($subtotal, $lineTotal, 4);
             }
-            $invoice->update(['subtotal' => $subtotal, 'grand_total' => bcadd($subtotal, (string) ($data['tax_total'] ?? '0'), 4)]);
+            $invoice->update(['subtotal' => $subtotal, 'grand_total' => bcadd(bcadd($subtotal, $transport, 4), (string) ($data['tax_total'] ?? '0'), 4)]);
+
+            $totals = $matcher->totals($invoice->fresh('lines'));
+            if (! $totals['checks']['vat']) {
+                throw ValidationException::withMessages(['tax_total' => $totals['failures'][0]]);
+            }
 
             return $invoice;
         });
@@ -693,10 +703,11 @@ class ProcurementController extends ApiController
         $lines = $matcher->compare($invoice);
 
         return response()->json([
-            'invoice' => $invoice->only(['id', 'doc_number', 'invoice_number', 'invoice_date', 'due_date', 'match_status', 'matched_at', 'subtotal', 'tax_total', 'grand_total', 'supplier']),
+            'invoice' => $invoice->only(['id', 'doc_number', 'invoice_number', 'invoice_date', 'due_date', 'match_status', 'matched_at', 'subtotal', 'transport_total', 'tax_total', 'grand_total', 'supplier']),
             'tolerances' => $matcher->tolerances(),
             'lines' => $lines,
-            'would_match' => collect($lines)->every(fn (array $line) => $line['failures'] === []),
+            'totals' => $totals = $matcher->totals($invoice),
+            'would_match' => collect($lines)->every(fn (array $line) => $line['failures'] === []) && $totals['failures'] === [],
         ]);
     }
 

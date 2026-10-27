@@ -53,6 +53,7 @@ class GoodsReceiptService
                     'organisation_id' => $organisationId,
                     'product_id' => $line->product_id,
                     'batch_number' => $line->batch_number,
+                    'brand_name' => $line->brand_name,
                     'expiry_date' => $line->expiry_date,
                     'manufacture_date' => $line->manufacture_date,
                     'supplier_id' => $receipt->supplier_id,

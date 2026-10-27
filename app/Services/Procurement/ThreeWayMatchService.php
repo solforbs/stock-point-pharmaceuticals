@@ -5,8 +5,13 @@ namespace App\Services\Procurement;
 use App\Models\AccountsPayable;
 use App\Models\AuditLog;
 use App\Models\Branch;
+use App\Models\GoodsReceiptLine;
+use App\Models\Product;
+use App\Models\PurchaseOrderLine;
 use App\Models\SupplierInvoice;
+use App\Models\TaxCode;
 use App\Services\Finance\JournalPoster;
+use App\Services\Pricing\Money;
 use Illuminate\Support\Facades\DB;
 
 final class MatchResult
@@ -33,6 +38,8 @@ class ThreeWayMatchService
 
     private const DEFAULT_PRICE_VARIANCE_ABS = '500.0000';
 
+    private const STANDARD_VAT_PCT = '16';
+
     public function __construct(private readonly JournalPoster $journalPoster) {}
 
     public function match(SupplierInvoice $invoice, ?int $matchedBy = null): MatchResult
@@ -45,6 +52,7 @@ class ThreeWayMatchService
         foreach ($this->compare($invoice) as $row) {
             array_push($failures, ...$row['failures']);
         }
+        array_push($failures, ...$this->totals($invoice)['failures']);
 
         $matched = $failures === [];
 
@@ -158,6 +166,103 @@ class ThreeWayMatchService
     }
 
     /**
+     * What the invoice should come to, from the purchase order alone: the
+     * ordered price of each invoiced quantity, the order's transport shared
+     * over those quantities, and VAT only on lines received as standard
+     * rated. A zero-rated line never carries VAT, and nothing is added that
+     * the order does not hold.
+     *
+     * @return array{
+     *     goods_expected: string, transport: string, vat_allowed: string, expected_total: string,
+     *     goods_invoiced: string, tax_invoiced: string, invoiced_total: string,
+     *     checks: array{vat: bool}, failures: list<string>
+     * }
+     */
+    public function totals(SupplierInvoice $invoice): array
+    {
+        $invoice->loadMissing('lines.purchaseOrderLine');
+
+        $goodsExpected = '0.0000';
+        $vatAllowed = '0.0000';
+        foreach ($invoice->lines as $line) {
+            $poLine = $line->purchaseOrderLine;
+            if (! $poLine) {
+                continue;
+            }
+            $value = bcmul((string) $line->qty, (string) ($poLine->unit_price ?? '0'), 4);
+            $goodsExpected = bcadd($goodsExpected, $value, 4);
+            $vatAllowed = bcadd($vatAllowed, bcdiv(bcmul($value, $this->vatRateOn($poLine), 6), '100', 4), 4);
+        }
+
+        $transport = (string) $invoice->transport_total;
+        $tax = (string) $invoice->tax_total;
+        $goodsInvoiced = (string) $invoice->lines->reduce(fn (string $sum, $line) => bcadd($sum, (string) $line->line_total, 4), '0.0000');
+
+        $failures = [];
+        // A shilling of rounding either way is the supplier's arithmetic, not extra VAT.
+        $vatOk = bccomp($tax, bcadd($vatAllowed, '1.00', 4), 4) <= 0;
+        if (! $vatOk) {
+            $failures[] = bccomp($vatAllowed, '0', 4) === 0
+                ? "VAT of KES {$tax} is charged, but every item on the invoice was received zero-rated."
+                : "VAT of KES {$tax} is more than the KES {$vatAllowed} due on the standard-rated items.";
+        }
+
+        return [
+            'goods_expected' => $goodsExpected,
+            'transport' => bcadd($transport, '0', 4),
+            'vat_allowed' => $vatAllowed,
+            'expected_total' => bcadd(bcadd($goodsExpected, $transport, 4), $vatAllowed, 4),
+            'goods_invoiced' => $goodsInvoiced,
+            'tax_invoiced' => bcadd($tax, '0', 4),
+            'invoiced_total' => bcadd(bcadd($goodsInvoiced, $transport, 4), $tax, 4),
+            'checks' => ['vat' => $vatOk],
+            'failures' => $failures,
+        ];
+    }
+
+    /**
+     * The order's transport carried by these invoice lines: each PO line's
+     * share per unit times the quantity invoiced.
+     *
+     * @param  iterable<array{purchase_order_line_id: string, qty: string|int|float}>  $lines
+     */
+    public function transportFor(iterable $lines): string
+    {
+        $shares = [];
+        $total = '0.0000';
+        foreach ($lines as $line) {
+            $poLine = PurchaseOrderLine::with('purchaseOrder')->find($line['purchase_order_line_id']);
+            if (! $poLine) {
+                continue;
+            }
+            $orderId = (string) $poLine->purchase_order_id;
+            $shares[$orderId] ??= $poLine->purchaseOrder->transportShares();
+            $total = bcadd($total, bcmul((string) $line['qty'], $shares[$orderId][(string) $poLine->id] ?? '0', 4), 4);
+        }
+
+        return Money::round($total, 2);
+    }
+
+    /**
+     * The VAT rate (%) a PO line was received at: the treatment captured on
+     * its goods receipt, else the product's own tax code. Zero-rated is 0; a
+     * product nobody has classified yet is taken at the standard 16%.
+     */
+    private function vatRateOn(PurchaseOrderLine $poLine): string
+    {
+        $taxCodeId = GoodsReceiptLine::where('purchase_order_line_id', $poLine->id)->whereNotNull('tax_code_id')->latest()->value('tax_code_id')
+            ?? $poLine->tax_code_id
+            ?? Product::whereKey($poLine->product_id)->value('tax_code_id');
+
+        if (! $taxCodeId) {
+            return self::STANDARD_VAT_PCT;
+        }
+        $rate = TaxCode::find($taxCodeId)?->currentRate()?->rate_pct;
+
+        return $rate === null ? '0' : (string) $rate;
+    }
+
+    /**
      * @return array{price_variance_pct: string, price_variance_abs: string}
      */
     public function tolerances(): array
@@ -170,8 +275,9 @@ class ThreeWayMatchService
         $organisationId = Branch::whereKey($invoice->branch_id)->value('organisation_id');
         $lineTotal = (string) $invoice->lines()->sum('line_total');
         $subtotal = bccomp((string) $invoice->subtotal, '0', 4) > 0 ? (string) $invoice->subtotal : $lineTotal;
+        $transport = (string) $invoice->transport_total;
         $tax = (string) $invoice->tax_total;
-        $grand = bccomp((string) $invoice->grand_total, '0', 4) > 0 ? (string) $invoice->grand_total : bcadd($subtotal, $tax, 4);
+        $grand = bcadd(bcadd($subtotal, $transport, 4), $tax, 4);
 
         $balance = AccountsPayable::balanceFor($invoice->supplier_id);
         AccountsPayable::create([
@@ -189,6 +295,10 @@ class ThreeWayMatchService
         $lines = [
             ['account_role' => 'GRN_ACCRUAL', 'debit' => $subtotal, 'partner_type' => 'supplier', 'partner_id' => $invoice->supplier_id, 'narration' => "Invoice {$invoice->invoice_number} matched to receipt"],
         ];
+        // The order's transport, accrued at receipt, is now owed to this supplier.
+        if (bccomp($transport, '0', 4) > 0) {
+            $lines[] = ['account_role' => 'FREIGHT_ACCRUAL', 'debit' => $transport, 'narration' => "Invoice {$invoice->invoice_number} — transport on the order"];
+        }
         if (bccomp($tax, '0', 4) > 0) {
             $lines[] = ['account_role' => 'VAT_INPUT', 'debit' => $tax, 'narration' => "Invoice {$invoice->invoice_number} — input VAT"];
         }

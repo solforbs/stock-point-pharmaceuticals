@@ -47,6 +47,7 @@ export function SingleSourceModal({ requisition, open, onClose }: { requisition:
   const [reason, setReason] = useState('')
   const [justification, setJustification] = useState('')
   const [expectedDate, setExpectedDate] = useState('')
+  const [transportCost, setTransportCost] = useState('')
   const [lines, setLines] = useState<Line[]>(() => linesFor(requisition))
   const setLine = (id: string, patch: Partial<Line>) => setLines(lines.map((l) => (l.requisition_line_id === id ? { ...l, ...patch } : l)))
 
@@ -57,6 +58,7 @@ export function SingleSourceModal({ requisition, open, onClose }: { requisition:
       single_source_reason: reason,
       justification: justification.trim(),
       expected_date: expectedDate || null,
+      transport_cost: transportCost || '0',
       lines: lines.map((l) => ({ requisition_line_id: l.requisition_line_id, uom_id: l.uom_id, qty_ordered: l.qty_ordered, unit_price: l.unit_price === '' ? null : l.unit_price })),
     }),
     onSuccess: (po) => {
@@ -68,7 +70,9 @@ export function SingleSourceModal({ requisition, open, onClose }: { requisition:
     },
   })
   const err = raise.isError ? getApiError(raise.error) : null
+  const goodsTotal = lines.reduce((s, l) => s + Number(l.qty_ordered || 0) * Number(l.unit_price || 0), 0)
   const valid = !!supplierId && !!reason && justification.trim().length >= 10 && lines.length > 0
+    && /^(\d+(\.\d{1,2})?)?$/.test(transportCost)
     && lines.every((l) => l.uom_id && Number(l.qty_ordered) > 0 && (l.unit_price === '' || Number(l.unit_price) >= 0))
 
   return (
@@ -100,7 +104,12 @@ export function SingleSourceModal({ requisition, open, onClose }: { requisition:
         <Field label="Justification" required hint="At least 10 characters, e.g. who delivers, why no other supplier can." error={err?.errors.justification?.[0]}>
           <Textarea rows={2} value={justification} onChange={(e) => setJustification(e.target.value)} maxLength={1000} />
         </Field>
-        <Field label="Expected delivery"><Input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} /></Field>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Expected delivery"><Input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} /></Field>
+          <Field label="Transport cost (KES)" hint="For the whole order; shared across the lines by value." error={err?.errors.transport_cost?.[0]}>
+            <Input inputMode="decimal" placeholder="0.00" className="tabular text-right" value={transportCost} onChange={(e) => setTransportCost(e.target.value.replace(/[^\d.]/g, ''))} />
+          </Field>
+        </div>
         <table className="ui-table">
           <thead><tr><th>Product</th><th className="text-right">Requested</th><th>Unit</th><th className="text-right">Qty</th><th className="text-right">Unit price</th></tr></thead>
           <tbody>
@@ -119,6 +128,11 @@ export function SingleSourceModal({ requisition, open, onClose }: { requisition:
             ))}
           </tbody>
         </table>
+        <div className="flex justify-end gap-4 text-sm tabular text-slate-600">
+          <span>Goods <b>{goodsTotal.toFixed(2)}</b></span>
+          <span>Transport <b>{(Number(transportCost) || 0).toFixed(2)}</b></span>
+          <span>Total <b className="text-slate-900">{(goodsTotal + (Number(transportCost) || 0)).toFixed(2)}</b></span>
+        </div>
         {err && !Object.keys(err.errors).length && <InlineError error={raise.error} />}
       </div>
     </Modal>

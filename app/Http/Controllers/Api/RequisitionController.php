@@ -160,6 +160,7 @@ class RequisitionController extends ApiController
             'single_source_reason' => ['required', Rule::in(array_keys(PurchaseOrder::SINGLE_SOURCE_REASONS))],
             'justification' => ['required', 'string', 'min:10', 'max:1000'],
             'expected_date' => ['nullable', 'date'],
+            'transport_cost' => ['nullable', 'numeric', 'min:0', 'max:100000000'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.requisition_line_id' => ['required', 'uuid'],
             'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],

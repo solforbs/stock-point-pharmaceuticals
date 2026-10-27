@@ -18,7 +18,7 @@ class ProductBatch extends Model
     use BelongsToOrganisation, HasUuids;
 
     protected $fillable = [
-        'organisation_id', 'product_id', 'batch_number', 'manufacturer_batch_ref', 'expiry_date', 'manufacture_date',
+        'organisation_id', 'product_id', 'batch_number', 'brand_name', 'manufacturer_batch_ref', 'expiry_date', 'manufacture_date',
         'manufacturer_id', 'supplier_id', 'grn_line_id', 'unit_cost', 'landed_unit_cost',
         'status', 'qc_released_by', 'qc_released_at', 'coa_document_id', 'storage_condition_id',
     ];

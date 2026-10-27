@@ -49,7 +49,7 @@
                         <div class="warn">Rejected: {{ $line->rejection_reason }}</div>
                     @endif
                 </td>
-                <td>{{ $line->batch_number ?: '—' }}</td>
+                <td>{{ $line->batch_number ?: '—' }}@if ($line->brand_name)<div class="meta">{{ $line->brand_name }}</div>@endif</td>
                 <td>{{ $line->expiry_date?->format('M Y') ?? '—' }}</td>
                 <td>{{ $line->uom?->code ?? '—' }}</td>
                 <td class="num">{{ $qty($line->qty_delivered) }}</td>

@@ -224,6 +224,7 @@ export type StorageCondition = {
 export type StockBatchRow = {
   batch_id: string
   batch_number: string
+  brand_name?: string | null
   expiry_date: string
   status: string
   on_hand: Decimal
@@ -280,6 +281,7 @@ export type ProductBatch = {
   id: string
   product_id: string
   batch_number: string
+  brand_name?: string | null
   manufacturer_batch_ref: string | null
   expiry_date: string
   manufacture_date: string | null
@@ -700,6 +702,7 @@ export type GoodsReceiptLine = {
   qty_rejected: Decimal
   rejection_reason: string | null
   batch_number: string
+  brand_name?: string | null
   expiry_date: string
   unit_cost: Decimal
   trade_price: Decimal | null
@@ -744,6 +747,7 @@ export type SupplierInvoice = {
   invoice_date: string
   due_date: string | null
   subtotal: Decimal
+  transport_total?: Decimal
   tax_total: Decimal
   grand_total: Decimal
   match_status: 'UNMATCHED' | 'MATCHED' | 'EXCEPTION'

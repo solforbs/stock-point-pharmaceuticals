@@ -34,6 +34,12 @@ type Comparison = {
   invoice: Pick<SupplierInvoice, 'id' | 'doc_number' | 'invoice_number' | 'invoice_date' | 'due_date' | 'match_status' | 'matched_at' | 'subtotal' | 'tax_total' | 'grand_total'> & { supplier: NamedRef | null }
   tolerances: { price_variance_pct: string; price_variance_abs: string }
   lines: ComparisonLine[]
+  /** What the PO says the invoice should come to, against what was billed. */
+  totals: {
+    goods_expected: Decimal; transport: Decimal; vat_allowed: Decimal; expected_total: Decimal
+    goods_invoiced: Decimal; tax_invoiced: Decimal; invoiced_total: Decimal
+    checks: { vat: boolean }; failures: string[]
+  }
   would_match: boolean
 }
 
@@ -202,6 +208,29 @@ function ComparisonPanel({ id }: { id: string }) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="ml-auto w-full max-w-md overflow-x-auto">
+        <table className="w-full text-sm tabular">
+          <thead>
+            <tr className="text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
+              <th className="py-1.5 text-left font-medium" />
+              <th className="py-1.5 text-right font-medium">Per the PO</th>
+              <th className="py-1.5 text-right font-medium">Invoiced</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td className="py-1 text-slate-600">Goods</td><td className="text-right"><MoneyCell value={data.totals.goods_expected} /></td><td className="text-right"><MoneyCell value={data.totals.goods_invoiced} /></td></tr>
+            <tr><td className="py-1 text-slate-600">Transport (from the PO)</td><td className="text-right"><MoneyCell value={data.totals.transport} /></td><td className="text-right"><MoneyCell value={data.totals.transport} /></td></tr>
+            <tr className={data.totals.checks.vat ? '' : 'text-rose-700 font-semibold'}>
+              <td className="py-1">VAT {Number(data.totals.vat_allowed) === 0 && <span className="text-xs font-normal text-slate-500">(zero-rated)</span>}</td>
+              <td className="text-right"><MoneyCell value={data.totals.vat_allowed} /></td>
+              <td className="text-right"><MoneyCell value={data.totals.tax_invoiced} /></td>
+            </tr>
+            <tr className="border-t border-slate-200 font-bold"><td className="py-1.5">Total</td><td className="text-right"><MoneyCell value={data.totals.expected_total} /></td><td className="text-right"><MoneyCell value={data.totals.invoiced_total} /></td></tr>
+          </tbody>
+        </table>
+        {data.totals.failures.map((f) => <p key={f} className="mt-1 text-xs font-semibold text-rose-700">{f}</p>)}
       </div>
 
       {runMatch.isError && <InlineError error={runMatch.error} />}

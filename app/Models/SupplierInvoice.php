@@ -17,7 +17,7 @@ class SupplierInvoice extends Model
 
     protected $fillable = [
         'doc_number', 'supplier_id', 'branch_id', 'invoice_number', 'invoice_date', 'due_date',
-        'subtotal', 'tax_total', 'grand_total', 'match_status', 'matched_at',
+        'subtotal', 'transport_total', 'tax_total', 'grand_total', 'match_status', 'matched_at',
     ];
 
     protected function casts(): array
@@ -26,6 +26,7 @@ class SupplierInvoice extends Model
             'invoice_date' => 'date:Y-m-d',
             'due_date' => 'date:Y-m-d',
             'subtotal' => 'decimal:4',
+            'transport_total' => 'decimal:4',
             'tax_total' => 'decimal:4',
             'grand_total' => 'decimal:4',
             'matched_at' => 'datetime',

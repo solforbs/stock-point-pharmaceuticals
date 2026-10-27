@@ -10,15 +10,16 @@ import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
-import { apiGet, apiPost } from '../../lib/api'
+import { apiGet, apiPost, getApiError } from '../../lib/api'
 import { dSub } from '../../lib/decimal'
 import { formatDate, formatDateTime, todayIso } from '../../lib/format'
-import { usePurchaseOrder, useSuppliers } from '../../lib/hooks'
+import { usePurchaseOrder, useSuppliers, useTaxCodes } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { MatchResult, Paginated, PurchaseOrder, SupplierInvoice } from '../../lib/types'
 
-type InvLine = { key: string; purchase_order_line_id: string; product_id: string; label: string; po_qty: string; po_price: string; qty: string; unit_price: string }
+/** transport_per_unit is the PO line's share of the order's transport; standard_rated says whether VAT can apply. */
+type InvLine = { key: string; purchase_order_line_id: string; product_id: string; label: string; po_qty: string; po_price: string; qty: string; unit_price: string; transport_per_unit: number; standard_rated: boolean }
 
 /** Part 9.4 — the invoice as the supplier sent it, then the three-way match. Only a match creates a payable. */
 export default function SupplierInvoicesPage() {
@@ -98,14 +99,31 @@ function NewInvoiceDrawer({ open, onClose, onCreated }: { open: boolean; onClose
   const pos = useQuery({ queryKey: ['purchase-orders', 'all'], queryFn: () => apiGet<Paginated<PurchaseOrder>>('/api/purchase-orders', { per_page: 200 }), enabled: open })
   const supplierPos = (pos.data?.data ?? []).filter((po) => (!supplierId || po.supplier_id === supplierId) && po.status !== 'DRAFT' && po.status !== 'CANCELLED')
   const po = usePurchaseOrder(poId || null)
+  const taxCodes = useTaxCodes()
+  const standardCodeId = (taxCodes.data ?? []).find((t) => t.code === 'VAT_STD')?.id
 
   // Every invoice line must reference a PO line: load them from GET /api/purchase-orders/{id}.
   useEffect(() => {
     const detail = po.data
     if (!detail) return
     if (!supplierId) setSupplierId(detail.supplier_id)
-    setLines((detail.lines ?? []).map((l) => ({ key: l.id, purchase_order_line_id: l.id, product_id: l.product_id, label: `${l.product?.name ?? l.product_id.slice(0, 8)} · ${l.uom?.code ?? ''}`, po_qty: l.qty_ordered, po_price: l.unit_price, qty: String(Number(l.qty_ordered)), unit_price: String(Number(l.unit_price)) })))
-  }, [po.data, supplierId])
+    setLines((detail.lines ?? []).map((l) => ({
+      key: l.id, purchase_order_line_id: l.id, product_id: l.product_id, label: `${l.product?.name ?? l.product_id.slice(0, 8)} · ${l.uom?.code ?? ''}`,
+      po_qty: l.qty_ordered, po_price: l.unit_price, qty: String(Number(l.qty_ordered)), unit_price: String(Number(l.unit_price)),
+      transport_per_unit: Number(l.transport_per_unit ?? 0),
+      // Not yet classified counts as standard-rated, as the server takes it.
+      standard_rated: !(l.tax_code_id ?? l.product?.tax_code_id) || (l.tax_code_id ?? l.product?.tax_code_id) === standardCodeId,
+    })))
+  }, [po.data, supplierId, standardCodeId])
+
+  // The invoice is expected to come to the order's value: goods, plus the order's own transport, plus VAT only where it applies.
+  const goods = lines.reduce((s, l) => s + Number(l.qty || 0) * Number(l.unit_price || 0), 0)
+  const transport = lines.reduce((s, l) => s + Number(l.qty || 0) * l.transport_per_unit, 0)
+  const vatAllowed = lines.filter((l) => l.standard_rated).reduce((s, l) => s + Number(l.qty || 0) * Number(l.po_price || 0) * 0.16, 0)
+  const anyStandardRated = lines.some((l) => l.standard_rated)
+  useEffect(() => {
+    if (!anyStandardRated) setTaxTotal('')
+  }, [anyStandardRated])
 
   const create = useMutation({
     meta: { silent: true },
@@ -144,7 +162,13 @@ function NewInvoiceDrawer({ open, onClose, onCreated }: { open: boolean; onClose
           <Field label="Invoice number" required><Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} /></Field>
           <Field label="Invoice date" required><Input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} /></Field>
           <Field label="Due date"><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
-          <Field label="Tax total (KES)"><Input inputMode="decimal" className="tabular" value={taxTotal} onChange={(e) => setTaxTotal(e.target.value.replace(/[^\d.]/g, ''))} /></Field>
+          <Field
+            label="VAT on the invoice (KES)"
+            hint={lines.length === 0 ? undefined : anyStandardRated ? `At most ${vatAllowed.toFixed(2)}: 16% of the standard-rated items only.` : 'Every item was received zero-rated, so no VAT applies.'}
+            error={create.isError ? getApiError(create.error).errors.tax_total?.[0] : undefined}
+          >
+            <Input inputMode="decimal" className="tabular" disabled={lines.length > 0 && !anyStandardRated} value={taxTotal} onChange={(e) => setTaxTotal(e.target.value.replace(/[^\d.]/g, ''))} />
+          </Field>
         </div>
         {po.isLoading && <LoadingSkeleton rows={3} />}
         {po.isError && <InlineError error={po.error} />}
@@ -165,6 +189,14 @@ function NewInvoiceDrawer({ open, onClose, onCreated }: { open: boolean; onClose
               ))}
             </tbody>
           </table>
+        ) : null}
+        {lines.length > 0 ? (
+          <div className="flex flex-wrap justify-end gap-x-5 gap-y-1 text-sm tabular text-slate-600">
+            <span>Goods <b>{goods.toFixed(2)}</b></span>
+            <span title="Taken from the purchase order; it is not typed here">Transport (from the PO) <b>{transport.toFixed(2)}</b></span>
+            <span>VAT <b>{(Number(taxTotal) || 0).toFixed(2)}</b></span>
+            <span>Invoice total <b className="text-slate-900">{(goods + transport + (Number(taxTotal) || 0)).toFixed(2)}</b></span>
+          </div>
         ) : (
           <p className="text-xs text-slate-500">Choose the purchase order; its lines load here for you to enter the invoiced quantity and price.</p>
         )}
@@ -232,8 +264,9 @@ function InvoiceDrawer({ id, onClose }: { id: string | null; onClose: () => void
             </tbody>
           </table>
           <div className="ml-auto w-72 grid grid-cols-[1fr_auto] gap-y-1 text-sm tabular">
-            <span className="text-slate-500">Subtotal</span><MoneyCell value={i.subtotal} />
-            <span className="text-slate-500">Tax</span><MoneyCell value={i.tax_total} />
+            <span className="text-slate-500">Goods</span><MoneyCell value={i.subtotal} />
+            <span className="text-slate-500">Transport (from the PO)</span><MoneyCell value={i.transport_total ?? '0'} />
+            <span className="text-slate-500">VAT</span><MoneyCell value={i.tax_total} />
             <span className="font-bold">Grand total</span><MoneyCell value={i.grand_total} className="font-bold" />
           </div>
         </div>

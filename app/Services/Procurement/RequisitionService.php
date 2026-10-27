@@ -205,6 +205,7 @@ class RequisitionService
                 'status' => 'DRAFT',
                 'created_by' => $data['user_id'],
                 'expected_date' => $data['expected_date'] ?? null,
+                'transport_cost' => bcadd((string) ($data['transport_cost'] ?? '0'), '0', 4),
             ]);
 
             foreach ($data['lines'] as $line) {

@@ -34,6 +34,8 @@ type GrnLine = {
   qty_rejected: string
   rejection_reason: string
   batch_number: string
+  /** The brand this batch of the generic came as; blank when it is the product's own. */
+  brand_name: string
   expiry_date: string
   manufacture_date: string
   unit_cost: string
@@ -53,7 +55,7 @@ type GrnLine = {
 const sameOrderedLine = (a: GrnLine, b: GrnLine) => (a.purchase_order_line_id ? a.purchase_order_line_id === b.purchase_order_line_id : a.product_id === b.product_id)
 
 function blankLine(): Omit<GrnLine, 'key' | 'product_id' | 'product_label' | 'uom_id' | 'uom_options'> {
-  return { purchase_order_line_id: null, qty_ordered: '', qty_delivered: '', qty_accepted: '', qty_rejected: '', rejection_reason: '', batch_number: '', expiry_date: '', manufacture_date: '', unit_cost: '', trade_price: '', discount_pct: '', vat: '', temperature_on_arrival: '', coa_received: false, selling_prices: {} }
+  return { purchase_order_line_id: null, qty_ordered: '', qty_delivered: '', qty_accepted: '', qty_rejected: '', rejection_reason: '', batch_number: '', brand_name: '', expiry_date: '', manufacture_date: '', unit_cost: '', trade_price: '', discount_pct: '', vat: '', temperature_on_arrival: '', coa_received: false, selling_prices: {} }
 }
 
 /** Part 9.2 — PO-backed receipt; batch + expiry mandatory; creates the batch as PENDING_QC. */
@@ -181,6 +183,7 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
           qty_rejected: l.qty_rejected || '0',
           rejection_reason: l.rejection_reason || null,
           batch_number: l.batch_number,
+          brand_name: l.brand_name.trim() || null,
           expiry_date: l.expiry_date,
           manufacture_date: l.manufacture_date || null,
           unit_cost: l.unit_cost,
@@ -324,7 +327,7 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
           {lines.length > 0 ? (
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="ui-table min-w-[1260px]">
-                <thead><tr><th>Product</th><th>UOM</th><th className="text-right">Ordered</th><th>Delivered</th><th>Accepted</th><th>Rejected</th><th>Batch no.</th><th>Expiry</th><th>Mfg date</th><th>Trade price</th><th>Disc. %</th><th>Unit cost</th><th>VAT on invoice</th><th>Temp °C</th><th>COA</th><th /></tr></thead>
+                <thead><tr><th>Product</th><th>UOM</th><th className="text-right">Ordered</th><th>Delivered</th><th>Accepted</th><th>Rejected</th><th>Batch no.</th><th>Brand</th><th>Expiry</th><th>Mfg date</th><th>Trade price</th><th>Disc. %</th><th>Unit cost</th><th>VAT on invoice</th><th>Temp °C</th><th>COA</th><th /></tr></thead>
                 <tbody>
                   {lines.map((l) => (
                     <Fragment key={l.key}>
@@ -354,6 +357,7 @@ function NewReceiptDrawer({ open, initialPo, onClose, onCreated }: { open: boole
                         {Number(l.qty_rejected) > 0 && <input value={l.rejection_reason} placeholder="Reason" onChange={(e) => update(l.key, { rejection_reason: e.target.value })} className="ui-input h-7 w-28 mt-1" />}
                       </td>
                       <td><input value={l.batch_number} onChange={(e) => update(l.key, { batch_number: e.target.value })} className="ui-input h-7 w-28 tabular font-semibold" placeholder="BATCH-001" /></td>
+                      <td><input value={l.brand_name} onChange={(e) => update(l.key, { brand_name: e.target.value })} className="ui-input h-7 w-32" placeholder="Brand (optional)" maxLength={150} aria-label="Brand" /></td>
                       <td><input type="date" value={l.expiry_date} onChange={(e) => update(l.key, { expiry_date: e.target.value })} className="ui-input h-7 w-36" /></td>
                       <td><input type="date" value={l.manufacture_date} onChange={(e) => update(l.key, { manufacture_date: e.target.value })} className="ui-input h-7 w-36" /></td>
                       <td><input value={l.trade_price} placeholder="Optional" onChange={(e) => updateTerms(l, { trade_price: decimalInput(e.target.value) })} className="ui-input h-7 w-20 tabular text-right" /></td>
@@ -438,11 +442,12 @@ function ReceiptDrawer({ id, onClose }: { id: string | null; onClose: () => void
           <div className="flex items-center gap-2"><StatusBadge status={g.status} />{g.is_emergency && <StatusBadge status="EMERGENCY" tone="amber" label="Emergency" />}{g.purchase_order && <Link to={`/buy/purchase-orders?po=${g.purchase_order.id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open purchase order</Link>}<span className="ml-auto"><PdfDownloadButton url={`/api/goods-receipts/${g.id}/pdf`} filename={g.doc_number} label="Download GRN" /></span></div>
           <DescriptionList items={[{ label: 'Supplier', value: g.supplier?.name ?? g.supplier_id.slice(0, 8) }, { label: 'Store', value: g.store?.code ?? g.store_id.slice(0, 8) }]} />
           <table className="ui-table">
-            <thead><tr><th>Batch</th><th>Expiry</th><th>Batch status</th><th className="text-right">Ordered</th><th className="text-right">Delivered</th><th className="text-right">Accepted</th><th className="text-right">Rejected</th><th className="text-right">Unit cost</th><th className="text-right">Landed cost</th></tr></thead>
+            <thead><tr><th>Batch</th><th>Brand</th><th>Expiry</th><th>Batch status</th><th className="text-right">Ordered</th><th className="text-right">Delivered</th><th className="text-right">Accepted</th><th className="text-right">Rejected</th><th className="text-right">Unit cost</th><th className="text-right">Landed cost</th></tr></thead>
             <tbody>
               {g.lines.map((l) => (
                 <tr key={l.id}>
                   <td className="tabular font-mono font-semibold">{l.batch_number}{l.batch && <Link to={`/inventory/batches?batch=${l.batch.id}`} className="ml-1.5 text-xs text-blue-600 hover:text-blue-700 hover:underline font-medium">open</Link>}</td>
+                  <td>{l.brand_name || '—'}</td>
                   <td className="tabular">{formatDate(l.expiry_date)}</td>
                   <td>{l.batch ? <StatusBadge status={l.batch.status} /> : '—'}</td>
                   <td className="text-right"><QtyCell value={l.qty_ordered} /></td>
