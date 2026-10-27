@@ -738,7 +738,11 @@ export type SupplierInvoiceLine = {
   unit_price: Decimal
   line_total: Decimal
   product?: NamedRef | null
-  purchase_order_line?: { id: string; purchase_order_id: string; qty_ordered: Decimal; unit_price: Decimal } | null
+  purchase_order_line?: {
+    id: string; purchase_order_id: string; qty_ordered: Decimal; unit_price: Decimal
+    purchase_order?: { id: string; doc_number: string } | null
+    uom?: { id: string; code: string } | null
+  } | null
 }
 
 export type SupplierInvoice = {

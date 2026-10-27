@@ -17,6 +17,7 @@ import { usePurchaseOrder, useSuppliers, useTaxCodes } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { MatchResult, Paginated, PurchaseOrder, SupplierInvoice } from '../../lib/types'
+import { SupplierInvoiceExcelButton } from './SupplierInvoiceExcelButton'
 
 /** transport_per_unit is the PO line's share of the order's transport; standard_rated says whether VAT can apply. */
 type InvLine = { key: string; purchase_order_line_id: string; product_id: string; label: string; po_qty: string; po_price: string; qty: string; unit_price: string; transport_per_unit: number; standard_rated: boolean }
@@ -47,6 +48,7 @@ export default function SupplierInvoicesPage() {
     { key: 'match', header: 'Match', render: (i) => <StatusBadge status={i.match_status} /> },
     { key: 'lines', header: 'Lines', align: 'right', render: (i) => <span className="tabular">{i.lines_count ?? '—'}</span> },
     { key: 'total', header: 'Total', align: 'right', render: (i) => <MoneyCell value={i.grand_total} />, sortValue: (i) => Number(i.grand_total) },
+    { key: 'download', header: 'Download', align: 'right', render: (i) => <SupplierInvoiceExcelButton id={i.id} docNumber={i.doc_number} /> },
   ]
 
   return (
@@ -230,7 +232,12 @@ function InvoiceDrawer({ id, onClose }: { id: string | null; onClose: () => void
   const i = invoice.data
   return (
     <Drawer open={!!id} onClose={() => { setMatch(null); onClose() }} title={i ? `${i.doc_number} · ${i.invoice_number}` : 'Supplier invoice'} subtitle={i ? `${i.supplier?.name ?? ''} · dated ${formatDate(i.invoice_date)}` : undefined} width={820}
-      actions={i && i.match_status !== 'MATCHED' && canMatch ? <Button size="sm" variant="primary" disabled={runMatch.isPending} onClick={() => runMatch.mutate()}>{runMatch.isPending ? 'Matching…' : 'Run three-way match'}</Button> : null}
+      actions={i ? (
+        <div className="flex items-center gap-2">
+          <SupplierInvoiceExcelButton id={i.id} docNumber={i.doc_number} />
+          {i.match_status !== 'MATCHED' && canMatch && <Button size="sm" variant="primary" disabled={runMatch.isPending} onClick={() => runMatch.mutate()}>{runMatch.isPending ? 'Matching…' : 'Run three-way match'}</Button>}
+        </div>
+      ) : null}
     >
       {invoice.isLoading && <LoadingSkeleton />}
       {invoice.isError && <InlineError error={invoice.error} />}
