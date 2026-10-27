@@ -15,6 +15,7 @@ import { toast } from '../../lib/toast'
 import type { Product, PurchaseOrder } from '../../lib/types'
 import { ExpiryBadge } from '../inventory/ExpiryBadge'
 import { NewPurchaseOrderDrawer, type PoLine } from './NewPurchaseOrderDrawer'
+import { PoExcelButton } from './PoExcelButton'
 import { singleSourceReasonLabel } from './sourcing'
 import { tradeTermsLabel } from './tradeTerms'
 
@@ -105,6 +106,7 @@ export function PurchaseOrderDrawer({ id, onClose }: PurchaseOrderDrawerProps) {
         p ? (
           <div className="flex items-center gap-2">
             <PdfDownloadButton url={`/api/purchase-orders/${p.id}/pdf`} filename={p.doc_number} label="Download PO PDF" />
+            <PoExcelButton id={p.id} docNumber={p.doc_number} />
             {p.rfq_id && (
               <Link to={`/buy/supplier-quotes?rfq=${p.rfq_id}`} className="text-xs font-semibold text-blue-600 hover:underline">
                 Bid analysis

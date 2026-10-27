@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { PdfDownloadButton } from '../../components/PdfDownloadButton'
+import { PoExcelButton } from './PoExcelButton'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
@@ -74,11 +75,12 @@ export default function PurchaseOrdersPage() {
     { key: 'created', header: 'Created', render: (po) => formatDateTime(po.created_at), sortValue: (po) => po.created_at ?? '' },
     {
       key: 'actions',
-      header: 'PDF',
+      header: 'Download',
       align: 'right',
       render: (po) => (
-        <span onClick={(e) => e.stopPropagation()}>
+        <span className="inline-flex gap-1 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
           <PdfDownloadButton url={`/api/purchase-orders/${po.id}/pdf`} filename={po.doc_number} label="PDF" />
+          <PoExcelButton id={po.id} docNumber={po.doc_number} />
         </span>
       ),
     },
