@@ -6,7 +6,6 @@ export type Letterhead = {
   organisation: string
   legal_name: string | null
   tagline: string | null
-  kra_pin: string | null
   branch: string | null
   branch_code: string | null
   address: string | null
@@ -27,15 +26,14 @@ export async function xlsxLetterhead(): Promise<XlsxLetterhead> {
   const l = await apiGet<Letterhead>('/api/documents/letterhead')
   const address = [l.address, l.postal_address].filter(Boolean).join(', ')
   const contacts = [l.phone ? `Tel ${l.phone}` : null, l.email, l.website].filter(Boolean).join(' · ')
-  const identity = [`KRA PIN ${l.kra_pin ?? 'not set'}`, l.branch ? `Branch ${l.branch}` : null].filter(Boolean).join(' · ')
-
+  // The KRA PIN is left off the Excel letterhead on purpose.
   return {
     lines: [
       { text: l.legal_name || l.organisation, style: 'heading' },
       ...(l.tagline ? [{ text: l.tagline }] : []),
       ...(address ? [{ text: address }] : []),
       ...(contacts ? [{ text: contacts }] : []),
-      { text: identity },
+      ...(l.branch ? [{ text: `Branch ${l.branch}` }] : []),
     ],
     logo: l.logo ? await logoFrom(l.logo).catch(() => null) : null,
   }

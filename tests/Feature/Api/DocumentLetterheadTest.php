@@ -24,7 +24,7 @@ class DocumentLetterheadTest extends TestCase
         Sanctum::actingAs($this->user);
     }
 
-    public function test_the_letterhead_names_the_institution_branch_and_contacts_but_not_the_stamp(): void
+    public function test_the_letterhead_names_the_institution_branch_and_contacts_but_not_the_pin_or_stamp(): void
     {
         $this->org->update(['legal_name' => 'Lodwar Pharma Ltd', 'contact_phone' => '0700 000 111', 'contact_email' => 'info@lodwar.test', 'kra_pin' => 'P051234567Q']);
 
@@ -32,7 +32,7 @@ class DocumentLetterheadTest extends TestCase
             ->assertJsonPath('legal_name', 'Lodwar Pharma Ltd')
             ->assertJsonPath('phone', '0700 000 111')
             ->assertJsonPath('email', 'info@lodwar.test')
-            ->assertJsonPath('kra_pin', 'P051234567Q')
+            ->assertJsonMissingPath('kra_pin')
             ->assertJsonPath('branch', $this->branch->name)
             ->assertJsonPath('logo', null)
             ->assertJsonMissingPath('stamp')
