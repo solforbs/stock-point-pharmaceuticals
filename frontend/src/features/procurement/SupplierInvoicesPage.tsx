@@ -4,23 +4,24 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
+import { ConfirmDialog } from '../../components/ui/Modal'
 import { MoneyCell, QtyCell } from '../../components/ui/MoneyCell'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
-import { apiGet, apiPost, getApiError } from '../../lib/api'
+import { api, apiGet, apiPost, apiPut, ensureCsrfCookie } from '../../lib/api'
 import { dSub } from '../../lib/decimal'
 import { formatDate, formatDateTime, todayIso } from '../../lib/format'
-import { usePurchaseOrder, useSuppliers, useTaxCodes } from '../../lib/hooks'
+import { usePurchaseOrder, useSuppliers } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { MatchResult, Paginated, PurchaseOrder, SupplierInvoice } from '../../lib/types'
 import { SupplierInvoiceExcelButton } from './SupplierInvoiceExcelButton'
 
-/** transport_per_unit is the PO line's share of the order's transport; standard_rated says whether VAT can apply. */
-type InvLine = { key: string; purchase_order_line_id: string; product_id: string; label: string; po_qty: string; po_price: string; qty: string; unit_price: string; transport_per_unit: number; standard_rated: boolean }
+/** transport_per_unit is the PO line's share of the order's transport. */
+type InvLine = { key: string; purchase_order_line_id: string; product_id: string; label: string; po_qty: string; po_price: string; qty: string; unit_price: string; transport_per_unit: number }
 
 /** Part 9.4 — the invoice as the supplier sent it, then the three-way match. Only a match creates a payable. */
 export default function SupplierInvoicesPage() {
@@ -81,79 +82,88 @@ export default function SupplierInvoicesPage() {
         <DataTable columns={columns} rows={list.data?.data} rowKey={(i) => i.id} isLoading={list.isLoading} error={list.error} onRetry={() => list.refetch()} onRowClick={(i) => setParams({ invoice: i.id })} selectedKey={selectedId} emptyTitle="No supplier invoices" />
         <Pagination page={list.data} onPage={setPage} />
       </div>
-      <NewInvoiceDrawer open={creating} onClose={() => setCreating(false)} onCreated={(i) => setParams({ invoice: i.id })} />
+      {creating && <InvoiceFormDrawer open onClose={() => setCreating(false)} onSaved={(i) => setParams({ invoice: i.id })} />}
       <InvoiceDrawer id={selectedId} onClose={() => setParams({})} />
     </Page>
   )
 }
 
-function NewInvoiceDrawer({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (i: SupplierInvoice) => void }) {
+/**
+ * Records a supplier invoice, or corrects one (editing). The invoice comes
+ * to the goods plus the order's own transport: there is no tax box, and
+ * the transport is taken from the purchase order, never typed.
+ */
+function InvoiceFormDrawer({ open, editing, onClose, onSaved }: { open: boolean; editing?: SupplierInvoice | null; onClose: () => void; onSaved: (i: SupplierInvoice) => void }) {
   const queryClient = useQueryClient()
   const suppliers = useSuppliers()
-  const [supplierId, setSupplierId] = useState('')
-  const [poId, setPoId] = useState('')
-  const [invoiceNumber, setInvoiceNumber] = useState('')
-  const [invoiceDate, setInvoiceDate] = useState(todayIso())
-  const [dueDate, setDueDate] = useState('')
-  const [taxTotal, setTaxTotal] = useState('')
+  const firstPoId = editing?.lines?.[0]?.purchase_order_line?.purchase_order_id ?? ''
+  const [supplierId, setSupplierId] = useState(editing?.supplier_id ?? '')
+  const [poId, setPoId] = useState(firstPoId)
+  const [invoiceNumber, setInvoiceNumber] = useState(editing?.invoice_number ?? '')
+  const [invoiceDate, setInvoiceDate] = useState(editing?.invoice_date?.slice(0, 10) ?? todayIso())
+  const [dueDate, setDueDate] = useState(editing?.due_date?.slice(0, 10) ?? '')
   const [lines, setLines] = useState<InvLine[]>([])
 
   const pos = useQuery({ queryKey: ['purchase-orders', 'all'], queryFn: () => apiGet<Paginated<PurchaseOrder>>('/api/purchase-orders', { per_page: 200 }), enabled: open })
   const supplierPos = (pos.data?.data ?? []).filter((po) => (!supplierId || po.supplier_id === supplierId) && po.status !== 'DRAFT' && po.status !== 'CANCELLED')
   const po = usePurchaseOrder(poId || null)
-  const taxCodes = useTaxCodes()
-  const standardCodeId = (taxCodes.data ?? []).find((t) => t.code === 'VAT_STD')?.id
 
   // Every invoice line must reference a PO line: load them from GET /api/purchase-orders/{id}.
+  // When correcting, the invoice's own quantities and prices are kept for the lines it already has.
   useEffect(() => {
     const detail = po.data
     if (!detail) return
     if (!supplierId) setSupplierId(detail.supplier_id)
-    setLines((detail.lines ?? []).map((l) => ({
-      key: l.id, purchase_order_line_id: l.id, product_id: l.product_id, label: `${l.product?.name ?? l.product_id.slice(0, 8)} · ${l.uom?.code ?? ''}`,
-      po_qty: l.qty_ordered, po_price: l.unit_price, qty: String(Number(l.qty_ordered)), unit_price: String(Number(l.unit_price)),
-      transport_per_unit: Number(l.transport_per_unit ?? 0),
-      // Not yet classified counts as standard-rated, as the server takes it.
-      standard_rated: !(l.tax_code_id ?? l.product?.tax_code_id) || (l.tax_code_id ?? l.product?.tax_code_id) === standardCodeId,
-    })))
-  }, [po.data, supplierId, standardCodeId])
+    const billed = new Map((editing && detail.id === firstPoId ? editing.lines ?? [] : []).map((l) => [l.purchase_order_line_id, l]))
+    setLines((detail.lines ?? [])
+      .filter((l) => billed.size === 0 || billed.has(l.id))
+      .map((l) => ({
+        key: l.id, purchase_order_line_id: l.id, product_id: l.product_id, label: `${l.product?.name ?? l.product_id.slice(0, 8)} · ${l.uom?.code ?? ''}`,
+        po_qty: l.qty_ordered, po_price: l.unit_price,
+        qty: String(Number(billed.get(l.id)?.qty ?? l.qty_ordered)), unit_price: String(Number(billed.get(l.id)?.unit_price ?? l.unit_price)),
+        transport_per_unit: Number(l.transport_per_unit ?? 0),
+      })))
+  }, [po.data, supplierId, editing, firstPoId])
 
-  // The invoice is expected to come to the order's value: goods, plus the order's own transport, plus VAT only where it applies.
+  // The invoice is expected to come to the order's value: the goods plus the order's own transport, nothing more.
   const goods = lines.reduce((s, l) => s + Number(l.qty || 0) * Number(l.unit_price || 0), 0)
   const transport = lines.reduce((s, l) => s + Number(l.qty || 0) * l.transport_per_unit, 0)
-  const vatAllowed = lines.filter((l) => l.standard_rated).reduce((s, l) => s + Number(l.qty || 0) * Number(l.po_price || 0) * 0.16, 0)
-  const anyStandardRated = lines.some((l) => l.standard_rated)
-  useEffect(() => {
-    if (!anyStandardRated) setTaxTotal('')
-  }, [anyStandardRated])
 
-  const create = useMutation({
+  const save = useMutation({
     meta: { silent: true },
-    mutationFn: () =>
-      apiPost<SupplierInvoice>('/api/supplier-invoices', {
+    mutationFn: () => {
+      const body = {
         supplier_id: supplierId,
         invoice_number: invoiceNumber,
         invoice_date: invoiceDate,
         due_date: dueDate || null,
-        tax_total: taxTotal || null,
         lines: lines.map((l) => ({ purchase_order_line_id: l.purchase_order_line_id, product_id: l.product_id, qty: l.qty, unit_price: l.unit_price })),
-      }),
+      }
+      return editing ? apiPut<SupplierInvoice>(`/api/supplier-invoices/${editing.id}`, body) : apiPost<SupplierInvoice>('/api/supplier-invoices', body)
+    },
     onSuccess: (inv) => {
       queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] })
-      toast.success(`Supplier invoice ${inv.doc_number} recorded`, 'Run the three-way match to create the payable.')
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+      if (editing) toast.success(`${inv.doc_number} corrected`, editing.match_status === 'MATCHED' ? 'Its payable was reversed. Run the three-way match again.' : 'Run the three-way match to create the payable.')
+      else toast.success(`Supplier invoice ${inv.doc_number} recorded`, 'Run the three-way match to create the payable.')
       setLines([])
       setPoId('')
       setInvoiceNumber('')
       onClose()
-      onCreated(inv)
+      onSaved(inv)
     },
   })
 
   const valid = !!supplierId && !!invoiceNumber && !!invoiceDate && lines.length > 0 && lines.every((l) => l.purchase_order_line_id && Number(l.qty) > 0 && /^\d+(\.\d+)?$/.test(l.unit_price))
 
   return (
-    <Drawer open={open} onClose={onClose} title="Record supplier invoice" width={880}>
+    <Drawer open={open} onClose={onClose} title={editing ? `Edit ${editing.doc_number}` : 'Record supplier invoice'} width={880}>
       <div className="space-y-3">
+        {editing?.match_status === 'MATCHED' && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            This invoice is matched. Saving a correction reverses its payable and journal; run the three-way match again afterwards.
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-3">
           <Field label="Supplier" required>
             <Select value={supplierId} onChange={(e) => { setSupplierId(e.target.value); setPoId(''); setLines([]) }}><option value="">Choose…</option>{(suppliers.data?.data ?? []).map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}</Select>
@@ -164,13 +174,6 @@ function NewInvoiceDrawer({ open, onClose, onCreated }: { open: boolean; onClose
           <Field label="Invoice number" required><Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} /></Field>
           <Field label="Invoice date" required><Input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} /></Field>
           <Field label="Due date"><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
-          <Field
-            label="VAT on the invoice (KES)"
-            hint={lines.length === 0 ? undefined : anyStandardRated ? `At most ${vatAllowed.toFixed(2)}: 16% of the standard-rated items only.` : 'Every item was received zero-rated, so no VAT applies.'}
-            error={create.isError ? getApiError(create.error).errors.tax_total?.[0] : undefined}
-          >
-            <Input inputMode="decimal" className="tabular" disabled={lines.length > 0 && !anyStandardRated} value={taxTotal} onChange={(e) => setTaxTotal(e.target.value.replace(/[^\d.]/g, ''))} />
-          </Field>
         </div>
         {po.isLoading && <LoadingSkeleton rows={3} />}
         {po.isError && <InlineError error={po.error} />}
@@ -196,16 +199,15 @@ function NewInvoiceDrawer({ open, onClose, onCreated }: { open: boolean; onClose
           <div className="flex flex-wrap justify-end gap-x-5 gap-y-1 text-sm tabular text-slate-600">
             <span>Goods <b>{goods.toFixed(2)}</b></span>
             <span title="Taken from the purchase order; it is not typed here">Transport (from the PO) <b>{transport.toFixed(2)}</b></span>
-            <span>VAT <b>{(Number(taxTotal) || 0).toFixed(2)}</b></span>
-            <span>Invoice total <b className="text-slate-900">{(goods + transport + (Number(taxTotal) || 0)).toFixed(2)}</b></span>
+            <span>Invoice total <b className="text-slate-900">{(goods + transport).toFixed(2)}</b></span>
           </div>
         ) : (
           <p className="text-xs text-slate-500">Choose the purchase order; its lines load here for you to enter the invoiced quantity and price.</p>
         )}
-        {create.isError && <InlineError error={create.error} />}
+        {save.isError && <InlineError error={save.error} />}
         <div className="flex justify-end gap-2">
           <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" disabled={!valid || create.isPending} onClick={() => create.mutate()}>{create.isPending ? 'Saving…' : 'Record invoice'}</Button>
+          <Button variant="primary" disabled={!valid || save.isPending} onClick={() => save.mutate()}>{save.isPending ? 'Saving…' : editing ? 'Save correction' : 'Record invoice'}</Button>
         </div>
       </div>
     </Drawer>
@@ -215,8 +217,26 @@ function NewInvoiceDrawer({ open, onClose, onCreated }: { open: boolean; onClose
 function InvoiceDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
   const queryClient = useQueryClient()
   const canMatch = usePermission('invoice.match')
+  const canDelete = usePermission('record.delete')
   const [match, setMatch] = useState<MatchResult | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const invoice = useQuery({ queryKey: ['supplier-invoices', id], queryFn: () => apiGet<SupplierInvoice>(`/api/supplier-invoices/${id}`), enabled: !!id })
+
+  const remove = useMutation({
+    meta: { silent: true },
+    mutationFn: async (reason: string) => {
+      await ensureCsrfCookie()
+      return (await api.delete<{ doc_number: string }>(`/api/supplier-invoices/${id}`, { data: { reason } })).data
+    },
+    onSuccess: (r) => {
+      toast.success(`${r.doc_number} deleted`, 'Any payable it raised was reversed; the invoice is kept in the audit log.')
+      setDeleting(false)
+      queryClient.invalidateQueries({ queryKey: ['supplier-invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+      onClose()
+    },
+  })
 
   const runMatch = useMutation({
     mutationFn: () => apiPost<MatchResult>(`/api/supplier-invoices/${id}/match`),
@@ -235,6 +255,8 @@ function InvoiceDrawer({ id, onClose }: { id: string | null; onClose: () => void
       actions={i ? (
         <div className="flex items-center gap-2">
           <SupplierInvoiceExcelButton id={i.id} docNumber={i.doc_number} />
+          {canMatch && <Button size="sm" onClick={() => setEditing(true)}>Edit</Button>}
+          {canMatch && canDelete && <Button size="sm" variant="danger" onClick={() => { remove.reset(); setDeleting(true) }}>Delete</Button>}
           {i.match_status !== 'MATCHED' && canMatch && <Button size="sm" variant="primary" disabled={runMatch.isPending} onClick={() => runMatch.mutate()}>{runMatch.isPending ? 'Matching…' : 'Run three-way match'}</Button>}
         </div>
       ) : null}
@@ -273,11 +295,27 @@ function InvoiceDrawer({ id, onClose }: { id: string | null; onClose: () => void
           <div className="ml-auto w-72 grid grid-cols-[1fr_auto] gap-y-1 text-sm tabular">
             <span className="text-slate-500">Goods</span><MoneyCell value={i.subtotal} />
             <span className="text-slate-500">Transport (from the PO)</span><MoneyCell value={i.transport_total ?? '0'} />
-            <span className="text-slate-500">VAT</span><MoneyCell value={i.tax_total} />
+            {/* Only an invoice recorded before tax was removed can still carry it; Edit takes it off. */}
+            {Number(i.tax_total) > 0 && <><span className="text-rose-700">Tax (not allowed: edit to remove)</span><MoneyCell value={i.tax_total} className="text-rose-700" /></>}
             <span className="font-bold">Grand total</span><MoneyCell value={i.grand_total} className="font-bold" />
           </div>
         </div>
       )}
+      {editing && i && <InvoiceFormDrawer open editing={i} onClose={() => setEditing(false)} onSaved={() => { setMatch(null); invoice.refetch() }} />}
+      <ConfirmDialog
+        open={deleting}
+        title={i ? `Delete ${i.doc_number}?` : ''}
+        message={i?.match_status === 'MATCHED'
+          ? 'It is matched: its payable and journal are reversed first, so the books stay balanced. Refused if the supplier has already been paid for it. The full invoice is kept in the audit log.'
+          : 'The invoice is removed. Nothing was posted for it, so the books do not change. The full invoice is kept in the audit log.'}
+        confirmLabel="Delete invoice"
+        danger
+        requireReason="Reason for deleting"
+        isPending={remove.isPending}
+        onCancel={() => setDeleting(false)}
+        onConfirm={(reason) => remove.mutate(reason)}
+      />
+      {remove.isError && <InlineError error={remove.error} />}
     </Drawer>
   )
 }

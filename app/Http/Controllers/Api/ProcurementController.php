@@ -646,51 +646,128 @@ class ProcurementController extends ApiController
     public function storeSupplierInvoice(Request $request, ThreeWayMatchService $matcher): JsonResponse
     {
         $this->requirePermission($request, 'invoice.match');
-
-        $data = $request->validate([
-            'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
-            'invoice_number' => ['required', 'string', 'max:100'],
-            'invoice_date' => ['required', 'date'],
-            'due_date' => ['nullable', 'date'],
-            'tax_total' => ['nullable', 'numeric', 'min:0'],
-            'lines' => ['required', 'array', 'min:1'],
-            'lines.*.purchase_order_line_id' => ['required', 'uuid', TenantRules::exists('purchase_order_lines')],
-            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
-            'lines.*.qty' => ['required', 'numeric', 'gt:0'],
-            'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
-        ]);
+        $data = $request->validate($this->supplierInvoiceRules());
 
         $branchId = $this->branchId($request);
-        // Transport is never keyed on the invoice: it is the order's own, for the quantities billed.
-        $transport = $matcher->transportFor($data['lines']);
-        $invoice = DB::transaction(function () use ($data, $branchId, $request, $transport, $matcher) {
-            $subtotal = '0.0000';
+        $invoice = DB::transaction(function () use ($data, $branchId, $request, $matcher) {
             $invoice = SupplierInvoice::create([
                 'doc_number' => NumberSequence::next($this->organisationId($request), 'SUPPLIER_INVOICE', $branchId, 'SINV'),
-                'supplier_id' => $data['supplier_id'],
                 'branch_id' => $branchId,
-                'invoice_number' => $data['invoice_number'],
-                'invoice_date' => $data['invoice_date'],
-                'due_date' => $data['due_date'] ?? null,
-                'tax_total' => (string) ($data['tax_total'] ?? '0'),
-                'transport_total' => $transport,
-            ]);
-            foreach ($data['lines'] as $line) {
-                $lineTotal = bcmul((string) $line['qty'], (string) $line['unit_price'], 4);
-                SupplierInvoiceLine::create(['supplier_invoice_id' => $invoice->id, 'line_total' => $lineTotal] + collect($line)->only(['purchase_order_line_id', 'product_id', 'qty', 'unit_price'])->all());
-                $subtotal = bcadd($subtotal, $lineTotal, 4);
-            }
-            $invoice->update(['subtotal' => $subtotal, 'grand_total' => bcadd(bcadd($subtotal, $transport, 4), (string) ($data['tax_total'] ?? '0'), 4)]);
-
-            $totals = $matcher->totals($invoice->fresh('lines'));
-            if (! $totals['checks']['vat']) {
-                throw ValidationException::withMessages(['tax_total' => $totals['failures'][0]]);
-            }
+            ] + $this->supplierInvoiceHeader($data));
+            $this->writeSupplierInvoiceLines($invoice, $data['lines'], $matcher);
+            AuditLog::record('SUPPLIER_INVOICE_RECORDED', 'supplier_invoice', $invoice->id, ['reference' => $invoice->invoice_number, 'after_json' => ['grand_total' => (string) $invoice->grand_total]]);
 
             return $invoice;
         });
 
         return response()->json($invoice->fresh('lines'), 201);
+    }
+
+    /**
+     * PUT /api/supplier-invoices/{id} — correct the invoice as recorded. A
+     * matched invoice is first taken back off the books (its payable and
+     * journal reversed) and must be matched again after the correction.
+     */
+    public function updateSupplierInvoice(Request $request, string $invoice, ThreeWayMatchService $matcher): JsonResponse
+    {
+        $this->requirePermission($request, 'invoice.match');
+        $invoice = SupplierInvoice::where('branch_id', $this->branchId($request))->findOrFail($invoice);
+        $data = $request->validate($this->supplierInvoiceRules());
+
+        $before = $invoice->only(['invoice_number', 'invoice_date', 'due_date', 'grand_total', 'match_status']);
+        try {
+            DB::transaction(function () use ($invoice, $data, $matcher, $request) {
+                $matcher->unmatch($invoice, 'corrected', $request->user()->id);
+                $invoice->update($this->supplierInvoiceHeader($data) + ['match_status' => 'UNMATCHED', 'matched_at' => null]);
+                $invoice->lines()->delete();
+                $this->writeSupplierInvoiceLines($invoice, $data['lines'], $matcher);
+            });
+        } catch (\DomainException $e) {
+            return $this->error('INVOICE_PAID', $e->getMessage(), 409);
+        }
+        AuditLog::record('SUPPLIER_INVOICE_UPDATED', 'supplier_invoice', $invoice->id, [
+            'reference' => $invoice->invoice_number, 'before_json' => $before, 'after_json' => $invoice->only(['invoice_number', 'invoice_date', 'due_date', 'grand_total', 'match_status']),
+        ]);
+
+        return response()->json($invoice->fresh('lines'));
+    }
+
+    /**
+     * DELETE /api/supplier-invoices/{id} — remove an invoice recorded in
+     * error. A matched one has its payable and journal reversed first, so the
+     * books stay balanced; the full invoice is kept in the audit log.
+     */
+    public function destroySupplierInvoice(Request $request, string $invoice, ThreeWayMatchService $matcher): JsonResponse
+    {
+        $this->requirePermission($request, 'invoice.match');
+        $this->requirePermission($request, 'record.delete');
+        $data = $request->validate(['reason' => ['required', 'string', 'min:3', 'max:255']]);
+        $invoice = SupplierInvoice::where('branch_id', $this->branchId($request))->with('lines')->findOrFail($invoice);
+
+        try {
+            DB::transaction(function () use ($invoice, $data, $matcher, $request) {
+                $matcher->unmatch($invoice, $data['reason'], $request->user()->id);
+                AuditLog::record('SUPPLIER_INVOICE_DELETED', 'supplier_invoice', $invoice->id, [
+                    'reference' => $invoice->invoice_number, 'reason' => $data['reason'],
+                    'before_json' => $invoice->toArray(),
+                ]);
+                $invoice->delete();
+            });
+        } catch (\DomainException $e) {
+            return $this->error('INVOICE_PAID', $e->getMessage(), 409);
+        }
+
+        return response()->json(['deleted' => true, 'doc_number' => $invoice->doc_number]);
+    }
+
+    /** @return array<string, mixed> */
+    private function supplierInvoiceRules(): array
+    {
+        return [
+            'supplier_id' => ['required', 'uuid', TenantRules::exists('suppliers')],
+            'invoice_number' => ['required', 'string', 'max:100'],
+            'invoice_date' => ['required', 'date'],
+            'due_date' => ['nullable', 'date'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.purchase_order_line_id' => ['required', 'uuid', TenantRules::exists('purchase_order_lines')],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.qty' => ['required', 'numeric', 'gt:0'],
+            'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function supplierInvoiceHeader(array $data): array
+    {
+        return [
+            'supplier_id' => $data['supplier_id'],
+            'invoice_number' => $data['invoice_number'],
+            'invoice_date' => $data['invoice_date'],
+            'due_date' => $data['due_date'] ?? null,
+            // No tax is added on a supplier invoice: it comes to the goods plus the order's transport.
+            'tax_total' => '0',
+        ];
+    }
+
+    /**
+     * The invoice's lines and its totals. Transport is never keyed on the
+     * invoice: it is the order's own, for the quantities billed.
+     *
+     * @param  list<array<string, mixed>>  $lines
+     */
+    private function writeSupplierInvoiceLines(SupplierInvoice $invoice, array $lines, ThreeWayMatchService $matcher): void
+    {
+        $subtotal = '0.0000';
+        foreach ($lines as $line) {
+            $lineTotal = bcmul((string) $line['qty'], (string) $line['unit_price'], 4);
+            SupplierInvoiceLine::create(['supplier_invoice_id' => $invoice->id, 'line_total' => $lineTotal] + collect($line)->only(['purchase_order_line_id', 'product_id', 'qty', 'unit_price'])->all());
+            $subtotal = bcadd($subtotal, $lineTotal, 4);
+        }
+        $transport = $matcher->transportFor($lines);
+        $invoice->update(['subtotal' => $subtotal, 'transport_total' => $transport, 'grand_total' => bcadd($subtotal, $transport, 4)]);
     }
 
     /**

@@ -49,7 +49,8 @@ export function SupplierInvoiceExcelButton({ id, docNumber, size = 'sm' }: { id:
           [],
           [null, null, 'Goods', null, null, null, null, null, money(inv.subtotal)],
           [null, null, 'Transport (from the PO)', null, null, null, null, null, money(inv.transport_total ?? 0)],
-          [null, null, 'VAT', null, null, null, null, null, money(inv.tax_total)],
+          // Only an invoice recorded before tax was removed can still carry it.
+          ...(Number(inv.tax_total) > 0 ? [[null, null, 'Tax (not allowed)', null, null, null, null, null, money(inv.tax_total)]] : []),
           [null, null, 'Invoice total', null, null, null, null, null, money(inv.grand_total)],
         ],
         widths: [6, 14, 40, 16, 8, 10, 12, 14, 16],

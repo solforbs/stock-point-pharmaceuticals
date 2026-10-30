@@ -251,6 +251,8 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::get('/goods-receipts/{receipt}', [ProcurementController::class, 'goodsReceipt']);
     Route::post('/supplier-invoices', [ProcurementController::class, 'storeSupplierInvoice']);
     Route::post('/supplier-invoices/{invoice}/match', [ProcurementController::class, 'matchSupplierInvoice']);
+    Route::put('/supplier-invoices/{invoice}', [ProcurementController::class, 'updateSupplierInvoice'])->whereUuid('invoice');
+    Route::delete('/supplier-invoices/{invoice}', [ProcurementController::class, 'destroySupplierInvoice'])->whereUuid('invoice');
     Route::post('/supplier-payments', [ProcurementController::class, 'storeSupplierPayment']);
 
     // Supplier quotes and competitive bid analysis (client item 19)

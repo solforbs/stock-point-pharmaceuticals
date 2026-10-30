@@ -58,7 +58,7 @@ class AccountsPayableTest extends TestCase
         $this->invoice = SupplierInvoice::create([
             'doc_number' => 'SI-0001', 'supplier_id' => $this->supplier->id, 'branch_id' => $this->branch->id,
             'invoice_number' => 'PDL-8812', 'invoice_date' => now()->toDateString(), 'due_date' => now()->addDays(30)->toDateString(),
-            'subtotal' => '25200.0000', 'tax_total' => '4032.0000', 'grand_total' => '29232.0000',
+            'subtotal' => '25200.0000', 'tax_total' => '0.0000', 'grand_total' => '25200.0000',
         ]);
         SupplierInvoiceLine::create([
             'supplier_invoice_id' => $this->invoice->id, 'purchase_order_line_id' => $poLine->id,
@@ -73,10 +73,9 @@ class AccountsPayableTest extends TestCase
         $result = app(ThreeWayMatchService::class)->match($this->invoice->fresh(['lines']), $this->user->id);
 
         $this->assertTrue($result->matched);
-        $this->assertSame('29232.0000', AccountsPayable::balanceFor($this->supplier->id));
+        $this->assertSame('25200.0000', AccountsPayable::balanceFor($this->supplier->id));
         $this->assertSame('0.0000', $this->accountBalance('GRN_ACCRUAL'), 'Invoice and receipt agree, so the accrual nets to zero');
-        $this->assertSame('4032.0000', $this->accountBalance('VAT_INPUT'));
-        $this->assertSame('-29232.0000', $this->accountBalance('AP_CONTROL'));
+        $this->assertSame('-25200.0000', $this->accountBalance('AP_CONTROL'));
         $this->assertTrue(JournalEntry::where('source_doc_type', 'supplier_invoice')->firstOrFail()->isBalanced());
     }
 
@@ -98,8 +97,8 @@ class AccountsPayableTest extends TestCase
             'method' => 'BANK', 'reference' => 'RTGS-77812', 'amount' => '20000.0000', 'paid_by' => $this->user->id,
         ]);
 
-        $this->assertSame('9232.0000', AccountsPayable::balanceFor($this->supplier->id));
-        $this->assertSame('-9232.0000', $this->accountBalance('AP_CONTROL'));
+        $this->assertSame('5200.0000', AccountsPayable::balanceFor($this->supplier->id));
+        $this->assertSame('-5200.0000', $this->accountBalance('AP_CONTROL'));
         $this->assertSame('-20000.0000', $this->accountBalance('BANK'));
     }
 
