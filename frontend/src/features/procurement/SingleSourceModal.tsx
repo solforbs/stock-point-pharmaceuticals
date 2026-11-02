@@ -101,24 +101,34 @@ export function SingleSourceModal({ requisition, open, onClose }: { requisition:
           <Textarea rows={2} value={justification} onChange={(e) => setJustification(e.target.value)} maxLength={1000} />
         </Field>
         <Field label="Expected delivery"><Input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} /></Field>
-        <table className="ui-table">
-          <thead><tr><th>Product</th><th className="text-right">Requested</th><th>Unit</th><th className="text-right">Qty</th><th className="text-right">Unit price</th></tr></thead>
-          <tbody>
-            {lines.map((l) => (
-              <tr key={l.requisition_line_id}>
-                <td className="font-semibold text-slate-900">{l.product}</td>
-                <td className="text-right tabular text-slate-500">{formatQty(l.requested)} {l.baseUnit}</td>
-                <td>
-                  <Select value={l.uom_id} onChange={(e) => setLine(l.requisition_line_id, { uom_id: e.target.value })} aria-label="Unit">
-                    {l.uoms.map((u) => (<option key={u.uom_id} value={u.uom_id}>{u.code}{u.factor !== 1 ? ` (×${u.factor})` : ''}</option>))}
-                  </Select>
-                </td>
-                <td className="text-right"><Input className="w-20 text-right" inputMode="decimal" value={l.qty_ordered} onChange={(e) => setLine(l.requisition_line_id, { qty_ordered: e.target.value })} aria-label="Quantity" /></td>
-                <td className="text-right"><Input className="w-24 text-right" inputMode="decimal" placeholder="Later" value={l.unit_price} onChange={(e) => setLine(l.requisition_line_id, { unit_price: e.target.value })} aria-label="Unit price" /></td>
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table className="ui-table min-w-[560px] w-full">
+            <thead>
+              <tr>
+                <th className="min-w-[160px]">Product</th>
+                <th className="w-24 text-right">Requested</th>
+                <th className="w-24">Unit</th>
+                <th className="w-24 min-w-[90px] text-right">Qty</th>
+                <th className="w-28 min-w-[100px] text-right">Unit price</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {lines.map((l) => (
+                <tr key={l.requisition_line_id}>
+                  <td className="font-semibold text-slate-900">{l.product}</td>
+                  <td className="text-right tabular text-slate-500">{formatQty(l.requested)} {l.baseUnit}</td>
+                  <td className="w-24">
+                    <Select className="!h-8 !text-xs !pl-2.5 !pr-7" value={l.uom_id} onChange={(e) => setLine(l.requisition_line_id, { uom_id: e.target.value })} aria-label="Unit">
+                      {l.uoms.map((u) => (<option key={u.uom_id} value={u.uom_id}>{u.code}{u.factor !== 1 ? ` (×${u.factor})` : ''}</option>))}
+                    </Select>
+                  </td>
+                  <td className="w-24 min-w-[90px] text-right"><Input className="!h-8 !w-20 !min-w-[76px] !px-2.5 text-right font-bold tabular inline-block" inputMode="decimal" value={l.qty_ordered} onChange={(e) => setLine(l.requisition_line_id, { qty_ordered: e.target.value })} aria-label="Quantity" /></td>
+                  <td className="w-28 min-w-[100px] text-right"><Input className="!h-8 !w-24 !min-w-[90px] !px-2.5 text-right tabular inline-block" inputMode="decimal" placeholder="Later" value={l.unit_price} onChange={(e) => setLine(l.requisition_line_id, { unit_price: e.target.value })} aria-label="Unit price" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {err && !Object.keys(err.errors).length && <InlineError error={raise.error} />}
       </div>
     </Modal>

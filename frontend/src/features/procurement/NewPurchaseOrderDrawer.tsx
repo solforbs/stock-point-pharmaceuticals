@@ -71,7 +71,7 @@ export function NewPurchaseOrderDrawer({
       onClose={onClose}
       title={title}
       subtitle={subtitle}
-      width={840}
+      width={920}
     >
       <div className="space-y-4">
         {/* Section 1: Supplier & Delivery */}
@@ -124,33 +124,33 @@ export function NewPurchaseOrderDrawer({
 
             {lines.length > 0 ? (
               <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
-                <table className="ui-table min-w-[720px]">
+                <table className="ui-table min-w-[780px] w-full">
                   <thead>
                     <tr>
-                      <th>Product</th>
-                      <th>UOM</th>
-                      <th className="text-right">Qty</th>
-                      <th className="text-right">Trade price</th>
-                      <th className="text-right">Discount %</th>
-                      <th className="text-right">Unit Price (KES)</th>
-                      {setTransportCost && <th className="text-right">Landed price</th>}
-                      <th />
+                      <th className="min-w-[200px]">Product</th>
+                      <th className="w-28 min-w-[110px]">UOM</th>
+                      <th className="w-28 min-w-[96px] text-right">Qty</th>
+                      <th className="w-28 min-w-[105px] text-right">Trade price</th>
+                      <th className="w-24 min-w-[90px] text-right">Discount %</th>
+                      <th className="w-32 min-w-[125px] text-right">Unit Price (KES)</th>
+                      {setTransportCost && <th className="w-28 min-w-[105px] text-right">Landed price</th>}
+                      <th className="w-12 text-center" />
                     </tr>
                   </thead>
                   <tbody>
                     {lines.map((l) => (
                       <tr key={l.key}>
-                        <td>
-                          <div className="font-bold text-slate-900">{l.product.name}</div>
-                          <div className="text-xs text-slate-400 font-mono">{l.product.code}</div>
+                        <td className="min-w-[200px]">
+                          <div className="font-bold text-slate-900 leading-snug">{l.product.name}</div>
+                          <div className="text-xs text-slate-400 font-mono mt-0.5">{l.product.code}</div>
                         </td>
-                        <td>
+                        <td className="w-28 min-w-[110px]">
                           <select
                             value={l.uom_id}
                             onChange={(e) =>
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, uom_id: e.target.value } : x)))
                             }
-                            className="ui-input h-8 w-auto text-sm font-semibold"
+                            className="ui-input !h-8 !w-full !min-w-[100px] !pl-2.5 !pr-7 text-xs font-semibold"
                           >
                             {(l.product.uoms ?? [])
                               .filter((u) => u.is_purchase || u.is_base)
@@ -161,18 +161,20 @@ export function NewPurchaseOrderDrawer({
                               ))}
                           </select>
                         </td>
-                        <td>
+                        <td className="w-28 min-w-[96px] text-right">
                           <input
                             type="text"
                             inputMode="decimal"
                             value={l.qty_ordered}
+                            placeholder="1"
+                            aria-label="Quantity"
                             onChange={(e) =>
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, qty_ordered: e.target.value.replace(/[^\d.]/g, '') } : x)))
                             }
-                            className="ui-input h-8 w-20 tabular text-right font-bold text-sm"
+                            className="ui-input !h-8 !w-20 !min-w-[76px] !px-2.5 tabular text-right font-bold text-sm inline-block"
                           />
                         </td>
-                        <td>
+                        <td className="w-28 min-w-[105px] text-right">
                           <input
                             type="text"
                             inputMode="decimal"
@@ -182,10 +184,10 @@ export function NewPurchaseOrderDrawer({
                               const trade_price = decimalInput(e.target.value)
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, trade_price, unit_price: netFromTrade(trade_price, x.discount_pct) || x.unit_price } : x)))
                             }}
-                            className="ui-input h-8 w-24 tabular text-right text-sm"
+                            className="ui-input !h-8 !w-24 !min-w-[90px] !px-2.5 tabular text-right text-sm inline-block"
                           />
                         </td>
-                        <td>
+                        <td className="w-24 min-w-[90px] text-right">
                           <input
                             type="text"
                             inputMode="decimal"
@@ -195,10 +197,10 @@ export function NewPurchaseOrderDrawer({
                               const discount_pct = decimalInput(e.target.value)
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, discount_pct, unit_price: netFromTrade(x.trade_price, discount_pct) || x.unit_price } : x)))
                             }}
-                            className="ui-input h-8 w-16 tabular text-right text-sm"
+                            className="ui-input !h-8 !w-16 !min-w-[65px] !px-2 tabular text-right text-sm inline-block"
                           />
                         </td>
-                        <td>
+                        <td className="w-32 min-w-[125px] text-right">
                           <input
                             type="text"
                             inputMode="decimal"
@@ -208,17 +210,17 @@ export function NewPurchaseOrderDrawer({
                             onChange={(e) =>
                               setLines(lines.map((x) => (x.key === l.key ? { ...x, unit_price: e.target.value.replace(/[^\d.]/g, '') } : x)))
                             }
-                            className="ui-input h-8 w-28 tabular text-right font-bold text-sm"
+                            className="ui-input !h-8 !w-28 !min-w-[105px] !px-2.5 tabular text-right font-bold text-sm inline-block"
                           />
                         </td>
                         {setTransportCost && (
-                          <td className="text-right tabular text-sm">
+                          <td className="w-28 min-w-[105px] text-right tabular text-sm">
                             {/^\d+(\.\d+)?$/.test(l.unit_price)
                               ? <><div className="font-bold text-slate-900">{(Number(l.unit_price) + (shares[l.key] ?? 0)).toFixed(2)}</div>{(shares[l.key] ?? 0) > 0 && <div className="text-xs text-slate-500">+{(shares[l.key] ?? 0).toFixed(2)} transport</div>}</>
                               : <span className="text-slate-400">—</span>}
                           </td>
                         )}
-                        <td className="text-right">
+                        <td className="w-12 text-center">
                           <Button
                             size="xs"
                             variant="ghost"

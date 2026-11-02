@@ -125,18 +125,18 @@ function NewRequestModal({ open, onClose, onCreated }: { open: boolean; onClose:
       footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!valid || create.isPending} onClick={() => create.mutate()}>{create.isPending ? 'Saving…' : 'Save request'}</Button></>}
     >
       <div className="space-y-3">
-        <div className="overflow-x-auto">
-          <table className="ui-table">
-            <thead><tr><th>Item</th><th>Type</th><th className="text-right">Qty</th><th>Unit</th><th className="text-right">Est. cost each</th><th /></tr></thead>
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table className="ui-table min-w-[620px] w-full">
+            <thead><tr><th className="min-w-[180px]">Item</th><th className="w-28">Type</th><th className="w-24 min-w-[90px] text-right">Qty</th><th className="w-24">Unit</th><th className="w-28 min-w-[100px] text-right">Est. cost each</th><th className="w-10" /></tr></thead>
             <tbody>
               {lines.map((l) => (
                 <tr key={l.key}>
-                  <td><input className="ui-input h-8 w-52" placeholder="e.g. Broom, Mop head, A4 paper" value={l.item} onChange={(e) => set(l.key, { item: e.target.value })} /></td>
-                  <td><select className="ui-input h-8" value={l.category} onChange={(e) => set(l.key, { category: e.target.value })}>{CATEGORIES.map((c) => (<option key={c} value={c}>{titleCase(c)}</option>))}</select></td>
-                  <td><input inputMode="decimal" className="ui-input h-8 w-20 tabular text-right" value={l.qty} onChange={(e) => set(l.key, { qty: e.target.value.replace(/[^\d.]/g, '') })} /></td>
-                  <td><input className="ui-input h-8 w-20" value={l.unit} onChange={(e) => set(l.key, { unit: e.target.value })} /></td>
-                  <td><input inputMode="decimal" className="ui-input h-8 w-28 tabular text-right" value={l.est} onChange={(e) => set(l.key, { est: e.target.value.replace(/[^\d.]/g, '') })} /></td>
-                  <td>{lines.length > 1 && <button type="button" aria-label="Remove line" className="text-slate-400 hover:text-rose-600" onClick={() => setLines(lines.filter((x) => x.key !== l.key))}><Trash2 size={14} /></button>}</td>
+                  <td className="min-w-[180px]"><input className="ui-input !h-8 w-full !px-2.5" placeholder="e.g. Broom, Mop head, A4 paper" value={l.item} onChange={(e) => set(l.key, { item: e.target.value })} /></td>
+                  <td className="w-28"><select className="ui-input !h-8 !text-xs !pl-2.5 !pr-7" value={l.category} onChange={(e) => set(l.key, { category: e.target.value })}>{CATEGORIES.map((c) => (<option key={c} value={c}>{titleCase(c)}</option>))}</select></td>
+                  <td className="w-24 min-w-[90px] text-right"><input inputMode="decimal" className="ui-input !h-8 !w-20 !min-w-[76px] !px-2.5 tabular text-right font-bold inline-block" value={l.qty} onChange={(e) => set(l.key, { qty: e.target.value.replace(/[^\d.]/g, '') })} /></td>
+                  <td className="w-24"><input className="ui-input !h-8 !w-20 !px-2.5" value={l.unit} onChange={(e) => set(l.key, { unit: e.target.value })} /></td>
+                  <td className="w-28 min-w-[100px] text-right"><input inputMode="decimal" className="ui-input !h-8 !w-28 !min-w-[90px] !px-2.5 tabular text-right inline-block" value={l.est} onChange={(e) => set(l.key, { est: e.target.value.replace(/[^\d.]/g, '') })} /></td>
+                  <td className="w-10 text-center">{lines.length > 1 && <button type="button" aria-label="Remove line" className="text-slate-400 hover:text-rose-600" onClick={() => setLines(lines.filter((x) => x.key !== l.key))}><Trash2 size={14} /></button>}</td>
                 </tr>
               ))}
             </tbody>
