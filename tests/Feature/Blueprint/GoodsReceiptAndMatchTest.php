@@ -85,15 +85,30 @@ class GoodsReceiptAndMatchTest extends TestCase
         $this->assertSame('POSTED', $receipt->fresh()->status);
     }
 
-    public function test_an_invoice_within_tolerance_matches(): void
+    public function test_an_invoice_at_the_po_price_matches(): void
     {
         $this->receiveAgainstPo('58');
 
-        // 1.8% above PO price — inside the 2% tolerance.
-        $result = app(ThreeWayMatchService::class)->match($this->invoice('58', '427.5600'));
+        $result = app(ThreeWayMatchService::class)->match($this->invoice('58', '420.0000'));
 
         $this->assertTrue($result->matched, implode(' | ', $result->failures));
         $this->assertSame('MATCHED', SupplierInvoice::first()->match_status);
+    }
+
+    /**
+     * Client instruction, 2026-10-30: the match expects the order's own value
+     * (goods plus transport) and nothing more. A price inside the Part 9.3
+     * per-line tolerance no longer lets an invoice above the order through.
+     */
+    public function test_an_invoice_above_the_po_value_does_not_match_even_inside_the_line_tolerance(): void
+    {
+        $this->receiveAgainstPo('58');
+
+        // 1.8% above PO price — inside the 2% line tolerance, but more than the order holds.
+        $result = app(ThreeWayMatchService::class)->match($this->invoice('58', '427.5600'));
+
+        $this->assertFalse($result->matched);
+        $this->assertStringContainsString('more than the KES', implode(' | ', $result->failures));
     }
 
     public function test_a_price_variance_beyond_tolerance_blocks_the_match(): void
@@ -108,9 +123,9 @@ class GoodsReceiptAndMatchTest extends TestCase
         $this->assertSame('EXCEPTION', SupplierInvoice::first()->match_status);
     }
 
-    public function test_a_small_absolute_variance_does_not_block_on_percentage_alone(): void
+    public function test_a_small_absolute_variance_passes_the_line_check_but_not_the_order_total(): void
     {
-        // A 3% variance worth KES 4 in total is exactly what the absolute floor exists for.
+        // A 3% variance worth KES 4 in total passes the line's absolute floor; the invoice still exceeds the order.
         $cheapLine = PurchaseOrderLine::create([
             'purchase_order_id' => $this->po->id,
             'product_id' => $this->amox->id,
@@ -139,7 +154,8 @@ class GoodsReceiptAndMatchTest extends TestCase
             'product_id' => $this->amox->id, 'qty' => '20', 'unit_price' => '6.7000', 'line_total' => '134.0000',
         ]);
 
-        $this->assertTrue(app(ThreeWayMatchService::class)->match($invoice)->matched);
+        $this->assertTrue(collect(app(ThreeWayMatchService::class)->compare($invoice))->every(fn (array $row) => $row['checks']['price'] === true));
+        $this->assertFalse(app(ThreeWayMatchService::class)->match($invoice)->matched);
     }
 
     public function test_over_invoicing_blocks_the_match(): void

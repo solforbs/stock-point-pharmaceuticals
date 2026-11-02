@@ -69,7 +69,7 @@ export function ProductCatalogueActions() {
       <Button onClick={() => setCategoriesOpen(true)}><FolderTree size={13} /> Categories</Button>
       <Button onClick={exportCsv} disabled={exporting}><Download size={13} /> {exporting ? 'Exporting…' : 'Export CSV'}</Button>
       {canEdit && <Button onClick={() => setImportOpen(true)}><Upload size={13} /> Import CSV</Button>}
-      <Button onClick={() => setPriceListOpen(true)}><FileSpreadsheet size={13} /> Export master list</Button>
+      <Button onClick={() => setPriceListOpen(true)}><FileSpreadsheet size={13} /> Export price list</Button>
       {canDelete && <Button variant="danger" onClick={() => setDeleteAllOpen(true)}><Trash2 size={13} /> Delete all</Button>}
       {priceListOpen && <PriceListDrawer onClose={() => setPriceListOpen(false)} />}
       <CategoriesDrawer open={categoriesOpen} onClose={() => setCategoriesOpen(false)} canEdit={canEdit} />
@@ -509,7 +509,7 @@ function PriceListDrawer({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Drawer open onClose={onClose} title="Export master list" subtitle={data.data?.title} width={980}>
+    <Drawer open onClose={onClose} title="Export price list" subtitle={data.data?.title} width={980}>
       <div className="space-y-4">
         {data.isLoading && <p className="text-sm text-slate-600">Loading products…</p>}
         {data.isError && <InlineError error={data.error} />}
@@ -545,7 +545,7 @@ function PriceListDrawer({ onClose }: { onClose: () => void }) {
                   {missing.length > 0 && <p className="text-xs text-amber-700 font-medium">{missing.length} product(s) still have no price; they will show “—” unless you type one.</p>}
                   <div className="max-h-[360px] overflow-auto rounded-xl border border-slate-200">
                     <table className="ui-table">
-                      <thead><tr><th>Code</th><th>Description</th><th>Brand</th><th className="text-right">Saved price</th><th className="text-right">Price on this list</th></tr></thead>
+                      <thead><tr><th>Code</th><th>Description</th><th>Brand</th><th className="text-right">Buying price</th><th className="text-right">Selling price</th></tr></thead>
                       <tbody>
                         {visible.slice(0, SHOWN_ROWS).map((p) => (
                           <tr key={p.id} className={priceOf(p) === null ? 'bg-amber-50/60' : ''}>

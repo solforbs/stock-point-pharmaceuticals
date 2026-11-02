@@ -45,7 +45,7 @@ export function BatchDrawer({ id, onClose }: BatchDrawerProps) {
     <Drawer
       open={!!id}
       onClose={onClose}
-      title={b ? `Batch ${b.batch_number}` : 'Batch Trace'}
+      title={b ? `Batch ${b.batch_number}${b.brand_name ? ` · ${b.brand_name}` : ''}` : 'Batch Trace'}
       subtitle={b ? `${b.product?.name ?? ''} · expires ${formatDate(b.expiry_date)}` : undefined}
       width={800}
       actions={

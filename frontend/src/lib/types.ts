@@ -224,6 +224,7 @@ export type StorageCondition = {
 export type StockBatchRow = {
   batch_id: string
   batch_number: string
+  brand_name?: string | null
   expiry_date: string
   status: string
   on_hand: Decimal
@@ -280,6 +281,7 @@ export type ProductBatch = {
   id: string
   product_id: string
   batch_number: string
+  brand_name?: string | null
   manufacturer_batch_ref: string | null
   expiry_date: string
   manufacture_date: string | null
@@ -700,12 +702,15 @@ export type GoodsReceiptLine = {
   qty_rejected: Decimal
   rejection_reason: string | null
   batch_number: string
+  brand_name?: string | null
   expiry_date: string
   unit_cost: Decimal
   trade_price: Decimal | null
   discount_pct: Decimal | null
   landed_unit_cost: Decimal | null
   batch?: ProductBatch | null
+  product?: { id: string; code: string; name: string } | null
+  uom?: { id: string; code: string } | null
 }
 
 export type GoodsReceipt = {
@@ -733,7 +738,11 @@ export type SupplierInvoiceLine = {
   unit_price: Decimal
   line_total: Decimal
   product?: NamedRef | null
-  purchase_order_line?: { id: string; purchase_order_id: string; qty_ordered: Decimal; unit_price: Decimal } | null
+  purchase_order_line?: {
+    id: string; purchase_order_id: string; qty_ordered: Decimal; unit_price: Decimal
+    purchase_order?: { id: string; doc_number: string } | null
+    uom?: { id: string; code: string } | null
+  } | null
 }
 
 export type SupplierInvoice = {
@@ -744,6 +753,7 @@ export type SupplierInvoice = {
   invoice_date: string
   due_date: string | null
   subtotal: Decimal
+  transport_total?: Decimal
   tax_total: Decimal
   grand_total: Decimal
   match_status: 'UNMATCHED' | 'MATCHED' | 'EXCEPTION'

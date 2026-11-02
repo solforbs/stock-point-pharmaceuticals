@@ -94,7 +94,10 @@ class DocumentListController extends ApiController
 
         return response()->json(
             SupplierInvoice::where('branch_id', $this->branchId($request))
-                ->with(['supplier:id,code,name', 'lines.product:id,code,name', 'lines.purchaseOrderLine:id,purchase_order_id,qty_ordered,unit_price'])
+                ->with([
+                    'supplier:id,code,name', 'lines.product:id,code,name', 'lines.purchaseOrderLine:id,purchase_order_id,uom_id,qty_ordered,unit_price',
+                    'lines.purchaseOrderLine.purchaseOrder:id,doc_number', 'lines.purchaseOrderLine.uom:id,code',
+                ])
                 ->findOrFail($invoice)
         );
     }

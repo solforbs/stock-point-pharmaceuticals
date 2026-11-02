@@ -8,6 +8,12 @@
       "port": 8000
     },
     {
+      "name": "laravel-api-scale",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set DB_DATABASE=pharmacy_erp_scale&& cd public&& php -S 127.0.0.1:8000 ..\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php"],
+      "port": 8000
+    },
+    {
       "name": "frontend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend", "run", "dev"],

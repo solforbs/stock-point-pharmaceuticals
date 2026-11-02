@@ -40,7 +40,7 @@ class InventoryReport
             ->select([
                 'b.product_id', 'p.code as product_code', 'p.name as product_name', 'p.reorder_point', 'p.category_id', 'c.name as category_name',
                 'b.store_id', 's.code as store_code', 's.name as store_name', 's.branch_id',
-                'b.batch_id', 'pb.batch_number', 'pb.expiry_date', 'pb.status', 'b.qty_on_hand', 'b.qty_reserved', 'b.qty_quarantined', 'b.wac',
+                'b.batch_id', 'pb.batch_number', 'pb.brand_name', 'pb.expiry_date', 'pb.status', 'b.qty_on_hand', 'b.qty_reserved', 'b.qty_quarantined', 'b.wac',
             ])
             ->orderBy('p.name')->orderBy('s.code')->orderBy('pb.expiry_date')
             ->get();
@@ -93,7 +93,7 @@ class InventoryReport
 
             $g['in_transit'] = $inTransit[$row->product_id.'|'.$row->store_id] ?? '0.0000';
             $g['batches'][] = [
-                'batch_id' => $row->batch_id, 'batch_number' => $row->batch_number, 'expiry_date' => $row->expiry_date,
+                'batch_id' => $row->batch_id, 'batch_number' => $row->batch_number, 'brand_name' => $row->brand_name, 'expiry_date' => $row->expiry_date,
                 'status' => $isExpired && $row->status !== 'EXPIRED' ? 'EXPIRED (by date)' : $row->status,
                 'on_hand' => $qty, 'reserved' => (string) $row->qty_reserved, 'quarantined' => (string) $row->qty_quarantined, 'wac' => (string) $row->wac,
             ];

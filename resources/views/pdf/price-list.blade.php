@@ -39,8 +39,6 @@
         </table>
     @endforeach
 
-    <p class="meta" style="margin-top: 10px;">{{ count($rows) }} products in stock. Prices in KES, subject to availability.</p>
-
     @php($hasMpesa = $payment['mpesa_paybill'] || $payment['mpesa_till'])
     @if ($hasMpesa || count($payment['banks']) > 0)
         <div style="margin-top: 16px; border: 1.5px solid #1e3a8a; padding: 10px 12px; page-break-inside: avoid;">

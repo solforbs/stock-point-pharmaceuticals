@@ -31,7 +31,7 @@ function Row({ line, storeId, statuses, reasons, onChange, onRemove }: { line: B
           <option value="">Batch…</option>
           {batches.map((b) => (
             <option key={b.batch_id} value={b.batch_id}>
-              {b.batch_number} · exp {formatDate(b.expiry_date)} · {formatQty(b.on_hand)} on hand · {titleCase(b.status)}
+              {b.batch_number}{b.brand_name ? ` (${b.brand_name})` : ''} · exp {formatDate(b.expiry_date)} · {formatQty(b.on_hand)} on hand · {titleCase(b.status)}
             </option>
           ))}
         </select>
