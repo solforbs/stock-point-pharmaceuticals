@@ -15,6 +15,8 @@ use App\Models\Store;
 use App\Models\Supplier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -56,6 +58,7 @@ class DashboardController extends ApiController
         $storeIds = Store::where('branch_id', $branchId)->inBusinessMode()->pluck('id');
 
         $sales = null;
+        $salesWeek = null;
         if ($user->can('sale.view')) {
             $byMode = DB::table('sales')->where('branch_id', $branchId)->whereIn('store_id', $storeIds)->where('status', 'POSTED')->whereBetween('posted_at', $todayRange)
                 ->selectRaw('sale_mode, COUNT(*) as n, COALESCE(SUM(grand_total), 0) as total')->groupBy('sale_mode')->get();
@@ -65,6 +68,7 @@ class DashboardController extends ApiController
                 'by_mode' => $byMode->mapWithKeys(fn ($r) => [$r->sale_mode => ['count' => (int) $r->n, 'total' => number_format((float) $r->total, 4, '.', '')]]),
                 'voided_today' => Sale::where('branch_id', $branchId)->whereIn('store_id', $storeIds)->where('status', 'VOIDED')->whereBetween('voided_at', $todayRange)->count(),
             ];
+            [$sales['by_hour'], $salesWeek] = $this->salesSeries($branchId, $storeIds);
         }
 
         // Each approval queue is counted only for someone who may clear it.
@@ -193,6 +197,7 @@ class DashboardController extends ApiController
         return [
             'as_of' => now()->toIso8601String(),
             'sales_today' => $sales,
+            'sales_7d' => $salesWeek,
             'approvals' => $approvals === [] ? null : $approvals,
             'inventory' => $inventory,
             'procurement' => $procurement,
@@ -202,5 +207,53 @@ class DashboardController extends ApiController
             'finance' => $finance,
             'ar' => $arSummary,
         ];
+    }
+
+    /**
+     * Posted sales bucketed in PHP rather than with SQL date functions, so the
+     * same code runs on MySQL and MariaDB: today's takings by hour (for the
+     * revenue curve, which must not stop at a page of sales) and the last
+     * seven days, today included, by day.
+     *
+     * @param  Collection<int, string>  $storeIds
+     * @return array{0: list<array{hour: int, count: int, total: string}>, 1: array{count: int, total: string, by_day: list<array{date: string, count: int, total: string}>}}
+     */
+    private function salesSeries(string $branchId, Collection $storeIds): array
+    {
+        $weekStart = now()->subDays(6)->startOfDay();
+        $rows = DB::table('sales')->where('branch_id', $branchId)->whereIn('store_id', $storeIds)->where('status', 'POSTED')
+            ->whereBetween('posted_at', [$weekStart, now()->endOfDay()])
+            ->get(['posted_at', 'grand_total']);
+
+        $days = [];
+        for ($day = $weekStart->copy(); $day->lte(now()); $day->addDay()) {
+            $days[$day->toDateString()] = ['date' => $day->toDateString(), 'count' => 0, 'total' => '0.0000'];
+        }
+        $hours = [];
+        $today = now()->toDateString();
+
+        foreach ($rows as $row) {
+            $postedAt = Carbon::parse($row->posted_at);
+            $date = $postedAt->toDateString();
+            if (! isset($days[$date])) {
+                continue;
+            }
+            $amount = (string) $row->grand_total;
+            $days[$date]['count']++;
+            $days[$date]['total'] = bcadd($days[$date]['total'], $amount, 4);
+            if ($date === $today) {
+                $hour = $postedAt->hour;
+                $hours[$hour] ??= ['hour' => $hour, 'count' => 0, 'total' => '0.0000'];
+                $hours[$hour]['count']++;
+                $hours[$hour]['total'] = bcadd($hours[$hour]['total'], $amount, 4);
+            }
+        }
+        ksort($hours);
+
+        return [array_values($hours), [
+            'count' => array_sum(array_column($days, 'count')),
+            'total' => array_reduce($days, fn (string $sum, array $d) => bcadd($sum, $d['total'], 4), '0.0000'),
+            'by_day' => array_values($days),
+        ]];
     }
 }

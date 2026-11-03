@@ -1282,7 +1282,16 @@ export type ApprovalQueueKey = 'requisitions' | 'purchase_orders' | 'adjustments
 
 export type DashboardSummary = {
   as_of: string
-  sales_today: null | { count: number; total: Decimal; by_mode: Partial<Record<SaleMode, { count: number; total: Decimal }>>; voided_today: number }
+  sales_today: null | {
+    count: number
+    total: Decimal
+    by_mode: Partial<Record<SaleMode, { count: number; total: Decimal }>>
+    voided_today: number
+    /** Today's posted sales per hour that had any, in order. */
+    by_hour?: { hour: number; count: number; total: Decimal }[]
+  }
+  /** The last seven days, today included, oldest first. */
+  sales_7d?: null | { count: number; total: Decimal; by_day: { date: string; count: number; total: Decimal }[] }
   approvals: null | Partial<Record<ApprovalQueueKey, number>>
   inventory: null | {
     pending_qc_batches: number

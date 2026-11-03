@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useCurrentUser } from '../hooks/useCurrentUser'
 import { useOrganisationLogo } from '../hooks/useOrganisationLogo'
-import { HOSPITAL_NAV, LABORATORY_NAV, moduleForPath, moduleInfo } from '../lib/modules'
+import { HOSPITAL_NAV, LABORATORY_NAV, moduleForPath, moduleInfo, modulesInUse } from '../lib/modules'
 import { SESSION_MODE_LABEL, sessionModesFor, useSessionMode } from '../lib/sessionMode'
 import { NAV_ITEMS, withPermittedItems, withPlatformItems, type NavItem } from '../lib/navigation'
 import { usePermissions } from '../lib/permissions'
@@ -56,7 +56,7 @@ function SidebarInner({
       : module === 'LABORATORY'
         ? [{ title: 'Laboratory', items: LABORATORY_NAV }]
         : SECTIONS
-  const canSwitchModules = (user?.modules?.length ?? 0) > 1
+  const canSwitchModules = modulesInUse(user).length > 1
   const sessionMode = useSessionMode((s) => s.mode)
   const canSwitchSessionMode = module === 'PHARMACY' && sessionModesFor(user).length > 1
 

@@ -14,38 +14,36 @@ const CHANNEL_CONFIG: Record<SaleMode, { label: string; color: string; border: s
   DISPENSING: { label: 'Prescriptions', color: '#7c3aed', border: 'border-purple-600', bg: 'bg-purple-600' },
 }
 
-function buildCumulativeSalesPoints(sales: Sale[]): { time: string; amount: number }[] {
-  if (!sales.length) return []
+/**
+ * The cumulative revenue curve, from the server's hourly totals so it always
+ * ends at the day's full takings (a list of sales is only one page of them).
+ * Falls back to the loaded sales when the summary has no hourly figures.
+ */
+function buildCumulativeSalesPoints(byHour: { hour: number; total: string }[] | undefined, sales: Sale[]): { time: string; amount: number }[] {
+  const hourly = byHour ?? Object.values(
+    sales.filter((s) => s.posted_at ?? s.created_at).reduce<Record<number, { hour: number; total: string }>>((acc, s) => {
+      const hour = new Date(s.posted_at ?? s.created_at!).getHours()
+      acc[hour] = { hour, total: String(Number(acc[hour]?.total ?? 0) + Number(s.grand_total ?? 0)) }
+      return acc
+    }, {}),
+  ).sort((a, b) => a.hour - b.hour)
+  if (!hourly.length) return []
 
-  const valid = sales
-    .filter((s) => s.posted_at || s.created_at)
-    .sort((a, b) => new Date(a.posted_at ?? a.created_at!).getTime() - new Date(b.posted_at ?? b.created_at!).getTime())
-
-  if (!valid.length) return []
-
+  const label = (hour: number) => `${String(hour).padStart(2, '0')}:00`
   let running = 0
-  const points: { time: string; amount: number }[] = []
-
-  // Starting baseline point
-  const firstTime = new Date(valid[0].posted_at ?? valid[0].created_at!)
-  const firstHour = firstTime.getHours()
-  const baselineHour = `${String(Math.max(0, firstHour - 1)).padStart(2, '0')}:00`
-  points.push({ time: baselineHour, amount: 0 })
-
-  for (const s of valid) {
-    const d = new Date(s.posted_at ?? s.created_at!)
-    const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-    running += Number(s.grand_total ?? 0)
-    points.push({ time: timeStr, amount: Math.round(running * 100) / 100 })
+  // Each point is the running total at the end of its hour (24:00 for the last).
+  const points = [{ time: label(hourly[0].hour), amount: 0 }]
+  for (const h of hourly) {
+    running += Number(h.total)
+    points.push({ time: label(h.hour + 1), amount: Math.round(running * 100) / 100 })
   }
-
   return points
 }
 
 export function HeroSalesChartCard({ salesToday, salesList }: HeroSalesChartCardProps) {
-  const chartData = buildCumulativeSalesPoints(salesList)
+  const chartData = buildCumulativeSalesPoints(salesToday?.by_hour, salesList)
   const totalNumber = Number(salesToday?.total ?? 0)
-  const hasSales = salesList.length > 0 && totalNumber > 0 && chartData.length > 0
+  const hasSales = totalNumber > 0 && chartData.length > 0
   const channels: SaleMode[] = ['WHOLESALE', 'RETAIL', 'DISPENSING']
 
   return (

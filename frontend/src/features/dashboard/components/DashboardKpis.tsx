@@ -1,4 +1,4 @@
-import { AlertTriangle, Boxes, ShoppingCart, Wallet } from 'lucide-react'
+import { AlertTriangle, Boxes, CalendarRange, ShoppingCart, Wallet } from 'lucide-react'
 import { StatCard } from '../../../components/ui/StatCard'
 import { formatKes, formatQty } from '../../../lib/money'
 
@@ -7,6 +7,9 @@ export interface DashboardKpisProps {
   salesCount: number
   salesLoading?: boolean
   voidedCount?: number
+  /** The last seven days, today included; absent for someone who may not see sales. */
+  weekTotal?: string
+  weekCount?: number
   canAr?: boolean
   arTotal?: string
   arCustomersCount?: number
@@ -25,6 +28,8 @@ export function DashboardKpis({
   salesCount,
   salesLoading = false,
   voidedCount = 0,
+  weekTotal,
+  weekCount = 0,
   canAr = false,
   arTotal = '0',
   arCustomersCount = 0,
@@ -38,7 +43,7 @@ export function DashboardKpis({
   stockLoading = false,
 }: DashboardKpisProps) {
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section className={`grid gap-4 sm:grid-cols-2 ${canAr && weekTotal !== undefined ? 'lg:grid-cols-3 xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
       <StatCard
         icon={ShoppingCart}
         label="Sales Today"
@@ -49,6 +54,18 @@ export function DashboardKpis({
         tone="#2563eb"
         isLoading={salesLoading}
       />
+
+      {weekTotal !== undefined && (
+        <StatCard
+          icon={CalendarRange}
+          label="Sales Last 7 Days"
+          value={formatKes(weekTotal)}
+          hint={`${weekCount} posted sale${weekCount === 1 ? '' : 's'} · avg ${formatKes(String(Number(weekTotal) / 7))} a day`}
+          to="/sell/invoices"
+          tone="#0891b2"
+          isLoading={salesLoading}
+        />
+      )}
 
       {canAr && (
         <StatCard

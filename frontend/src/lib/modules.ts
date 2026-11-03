@@ -9,6 +9,8 @@ import { sessionModesFor } from './sessionMode'
  * permissions — never from role names); everything here is presentation
  * plus the post-login routing rule:
  *   0 modules → access denied, 1 → straight in, 2+ → the module splash.
+ * Only the modules in MODULES_IN_USE count for that rule, so while the
+ * hospital and laboratory are not in use everyone lands in the pharmacy.
  */
 export type ModuleInfo = {
   key: ModuleKey
@@ -46,6 +48,16 @@ export const MODULES: ModuleInfo[] = [
   },
 ]
 
+/** The modules sign-in and the module switcher offer. Hospital and laboratory stay reachable by URL for whoever holds them. */
+export const MODULES_IN_USE: ModuleKey[] = ['PHARMACY']
+
+/** The user's modules that are in use, or all of them when they hold none that are (so a hospital-only account still gets in). */
+export function modulesInUse(user: CurrentUser | null | undefined): ModuleKey[] {
+  const modules = user?.modules ?? []
+  const inUse = modules.filter((m) => MODULES_IN_USE.includes(m))
+  return inUse.length > 0 ? inUse : modules
+}
+
 export function moduleInfo(key: ModuleKey): ModuleInfo {
   return MODULES.find((m) => m.key === key) ?? MODULES[2]
 }
@@ -62,7 +74,7 @@ export function moduleForPath(pathname: string): ModuleKey {
  * Platform-only admins are handled before this is consulted.
  */
 export function postLoginTarget(user: CurrentUser): string {
-  const modules = user.modules ?? []
+  const modules = modulesInUse(user)
   if (modules.length === 0) return '/no-access'
   // A pharmacy that sells both retail and wholesale asks which one this session runs in.
   if (modules.length === 1 && (modules[0] !== 'PHARMACY' || sessionModesFor(user).length < 2)) return moduleInfo(modules[0]).home

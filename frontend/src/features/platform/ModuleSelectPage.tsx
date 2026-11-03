@@ -5,7 +5,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { forgetCachedUser, useCurrentUser } from '../../hooks/useCurrentUser'
-import { MODULES, moduleInfo, postLoginTarget } from '../../lib/modules'
+import { MODULES, moduleInfo, modulesInUse, postLoginTarget } from '../../lib/modules'
 import { sessionModesFor, useSessionMode } from '../../lib/sessionMode'
 import type { SaleMode } from '../../lib/types'
 
@@ -16,7 +16,8 @@ const MODE_CARDS: { mode: SaleMode; label: string; description: string; icon: ty
 
 /**
  * The neutral platform-level splash shown after login to anyone with access
- * to two or more modules. Only accessible modules are shown — the list is
+ * to two or more modules in use, or to a pharmacy that sells both retail and
+ * wholesale (then it only asks which of the two this session runs in). Only accessible modules are shown — the list is
  * decided server-side from permissions, never from role names.
  */
 export default function ModuleSelectPage() {
@@ -29,7 +30,7 @@ export default function ModuleSelectPage() {
   const [pickingMode, setPickingMode] = useState(searchParams.get('step') === 'mode')
 
   if (!user) return null
-  const modules = user.modules ?? []
+  const modules = modulesInUse(user)
   const pharmacyModes = sessionModesFor(user)
   const pharmacyOnly = modules.length === 1 && modules[0] === 'PHARMACY'
 

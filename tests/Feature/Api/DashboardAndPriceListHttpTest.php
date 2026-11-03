@@ -39,6 +39,31 @@ class DashboardAndPriceListHttpTest extends TestCase
         $this->getJson('/api/finance/chart-of-accounts')->assertOk()->assertJsonStructure(['data' => [['code', 'name', 'account_type', 'balance']]]);
     }
 
+    public function test_the_dashboard_shows_the_last_seven_days_of_sales_by_day_and_today_by_hour(): void
+    {
+        $this->grantPermissions(['sale.view', 'stock.view']);
+        Sanctum::actingAs($this->user);
+
+        $today = $this->checkout([$this->saleLine('TAB', '10', '5.0000')], [['method' => 'CASH', 'amount' => '50.0000']]);
+        $threeDaysAgo = $this->checkout([$this->saleLine('TAB', '4', '5.0000')], [['method' => 'CASH', 'amount' => '20.0000']]);
+        $lastWeek = $this->checkout([$this->saleLine('TAB', '2', '5.0000')], [['method' => 'CASH', 'amount' => '10.0000']]);
+        $threeDaysAgo->forceFill(['posted_at' => now()->subDays(3)])->save();
+        $lastWeek->forceFill(['posted_at' => now()->subDays(7)])->save();
+
+        $summary = $this->getJson('/api/dashboard/summary')->assertOk()
+            ->assertJsonPath('sales_today.count', 1)
+            ->assertJsonPath('sales_7d.count', 2)
+            ->assertJsonCount(7, 'sales_7d.by_day')
+            ->assertJsonPath('sales_7d.by_day.6.date', now()->toDateString())
+            ->assertJsonPath('sales_7d.by_day.3.date', now()->subDays(3)->toDateString())
+            ->assertJsonPath('sales_7d.by_day.3.count', 1)
+            ->json();
+
+        $expected = bcadd((string) $today->grand_total, (string) $threeDaysAgo->grand_total, 4);
+        $this->assertSame($expected, $summary['sales_7d']['total'], 'the sale from a week ago is outside the seven days');
+        $this->assertSame([['hour' => $today->fresh()->posted_at->hour, 'count' => 1, 'total' => bcadd((string) $today->grand_total, '0', 4)]], $summary['sales_today']['by_hour']);
+    }
+
     public function test_price_lists_and_effective_dated_rows(): void
     {
         $this->grantPermissions(['sale.view', 'price.manage']);

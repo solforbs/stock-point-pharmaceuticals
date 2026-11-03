@@ -72,6 +72,8 @@ export default function Dashboard() {
         salesCount={salesToday?.count ?? todayRows.length}
         salesLoading={summary.isLoading}
         voidedCount={salesToday?.voided_today}
+        weekTotal={s?.sales_7d?.total}
+        weekCount={s?.sales_7d?.count}
         canAr={canAr}
         arTotal={ar.data?.totals.total ?? s?.ar?.total ?? '0.0000'}
         arCustomersCount={ar.data?.data.length ?? s?.ar?.customers_count ?? 0}
