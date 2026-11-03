@@ -54,6 +54,29 @@ class BusinessModeSeparationTest extends TestCase
         $this->getJson('/api/sales', ['X-Business-Mode' => 'RETAIL'])->assertOk()->assertJsonCount(0, 'data');
     }
 
+    public function test_each_session_dashboard_counts_only_its_own_business_today_and_over_seven_days(): void
+    {
+        Store::ensureRetailStoreFor($this->branch);
+        $retailStore = Store::where('branch_id', $this->branch->id)->where('business_mode', 'RETAIL')->firstOrFail();
+        $this->checkout([$this->saleLine('TAB', '10', '5.0000')], [['method' => 'CASH', 'amount' => '50.0000']]);
+        // The dashboard reads posted sales only, so a sale moved onto the retail store stands in for a retail one.
+        $retailSale = $this->checkout([$this->saleLine('TAB', '4', '5.0000')], [['method' => 'CASH', 'amount' => '20.0000']]);
+        $retailSale->forceFill(['store_id' => $retailStore->id, 'posted_at' => now()->subDays(2)])->save();
+
+        $wholesale = $this->getJson('/api/dashboard/summary', ['X-Business-Mode' => 'WHOLESALE'])->assertOk()
+            ->assertJsonPath('sales_today.count', 1)
+            ->assertJsonPath('sales_7d.count', 1)
+            ->json();
+        $retail = $this->getJson('/api/dashboard/summary', ['X-Business-Mode' => 'RETAIL'])->assertOk()
+            ->assertJsonPath('sales_today.count', 0)
+            ->assertJsonPath('sales_7d.count', 1)
+            ->assertJsonPath('sales_7d.by_day.4.count', 1)
+            ->json();
+
+        $this->assertSame(bcadd((string) $retailSale->grand_total, '0', 4), $retail['sales_7d']['total']);
+        $this->assertNotSame($wholesale['sales_7d']['total'], $retail['sales_7d']['total']);
+    }
+
     public function test_a_branch_in_one_business_only_ignores_the_mode(): void
     {
         $this->branch->forceFill(['wholesale_enabled' => false])->save();
