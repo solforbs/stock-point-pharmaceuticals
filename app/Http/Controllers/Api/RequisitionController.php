@@ -28,11 +28,15 @@ class RequisitionController extends ApiController
         );
     }
 
-    public function show(Request $request, string $requisition): JsonResponse
+    public function show(Request $request, string $requisition, RequisitionService $requisitions): JsonResponse
     {
         $this->requirePermission($request, 'requisition.view');
 
-        return response()->json($this->find($request, $requisition)->load(['lines.product:id,code,name,base_uom_id', 'lines.product.baseUom:id,code', 'lines.product.uoms.uom:id,code', 'rfqs:id,requisition_id,doc_number,status']));
+        $record = $this->find($request, $requisition)->load(['requester:id,name', 'approver:id,name', 'lines.product:id,code,name,base_uom_id', 'lines.product.baseUom:id,code', 'lines.product.uoms.uom:id,code', 'rfqs:id,requisition_id,doc_number,status']);
+        // The last price paid per product, so the purchase request prints with an estimate.
+        $record->setAttribute('estimated_total', $requisitions->estimateCosts($record));
+
+        return response()->json($record);
     }
 
     public function store(Request $request, RequisitionService $requisitions): JsonResponse

@@ -683,6 +683,8 @@ export type PurchaseOrder = {
   supplier?: (NamedRef & { licence_expiry?: string | null; status?: string }) | null
   lines?: PurchaseOrderLine[]
   goods_receipts?: { id: string; purchase_order_id: string; doc_number: string; status: string; received_at: string | null }[]
+  /** The terms and conditions printed on the order. */
+  terms?: string[]
 }
 
 export type UserRef = { id: number; name: string; username: string | null }
@@ -928,6 +930,8 @@ export type RequisitionLine = {
   product_id: string
   qty_requested: Decimal
   notes: string | null
+  /** The last price this branch paid for the product on a purchase order. */
+  estimated_unit_cost?: Decimal | null
   product?: (NamedRef & { base_uom_id?: string; base_uom?: Uom | null; uoms?: ProductUom[] }) | null
 }
 
@@ -940,6 +944,9 @@ export type Requisition = {
   created_at?: string
   lines_count?: number
   lines?: RequisitionLine[]
+  estimated_total?: Decimal
+  requester?: { id: number; name: string } | null
+  approver?: { id: number; name: string } | null
   rfqs?: { id: string; doc_number: string; status: string }[]
 }
 

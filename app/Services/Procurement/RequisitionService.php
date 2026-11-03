@@ -241,6 +241,35 @@ class RequisitionService
     }
 
     /**
+     * Sets each line's estimated_unit_cost to the last price this branch paid
+     * for the product on a purchase order (null when it was never ordered),
+     * and returns the estimated total of the priced lines.
+     */
+    public function estimateCosts(Requisition $requisition): string
+    {
+        $lastPrices = PurchaseOrderLine::query()
+            ->join('purchase_orders', 'purchase_orders.id', '=', 'purchase_order_lines.purchase_order_id')
+            ->where('purchase_orders.branch_id', $requisition->branch_id)
+            ->where('purchase_orders.status', '!=', 'CANCELLED')
+            ->whereIn('purchase_order_lines.product_id', $requisition->lines->pluck('product_id'))
+            ->orderByDesc('purchase_orders.created_at')
+            ->get(['purchase_order_lines.product_id', 'purchase_order_lines.unit_price'])
+            ->unique('product_id')
+            ->pluck('unit_price', 'product_id');
+
+        $total = '0.0000';
+        foreach ($requisition->lines as $line) {
+            $price = $lastPrices[$line->product_id] ?? null;
+            $line->setAttribute('estimated_unit_cost', $price === null ? null : (string) $price);
+            if ($price !== null) {
+                $total = bcadd($total, bcmul((string) $line->qty_requested, (string) $price, 4), 4);
+            }
+        }
+
+        return $total;
+    }
+
+    /**
      * @param  list<string>  $expected
      */
     private function assertStatus(Requisition $requisition, array $expected): void

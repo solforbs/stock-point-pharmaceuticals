@@ -1,6 +1,12 @@
 @extends('pdf.layout', ['title' => $title, 'docNumber' => $order->doc_number, 'docDate' => $order->created_at?->format('j M Y, H:i')])
 
 @section('body')
+    <style>
+        .terms { margin-top: 14px; font-size: 9px; color: #374151; }
+        .terms ol { margin: 4px 0 0 0; padding-left: 16px; }
+        .terms li { margin-bottom: 2px; }
+    </style>
+
     <table class="cols">
         <tr>
             <td>
@@ -67,8 +73,13 @@
         @endif
     </table>
 
-    <div class="note">
-        All pharmaceutical goods delivered must comply with Kenya Pharmacy and Poisons Board (PPB) standards and have at least 75% shelf life remaining unless pre-authorized. Include original delivery note, tax invoice, and certificates of analysis (CoA) where applicable.
+    <div class="terms">
+        <h2>Terms &amp; conditions</h2>
+        <ol>
+            @foreach ($terms as $term)
+                <li>{{ $term }}</li>
+            @endforeach
+        </ol>
     </div>
 
     <table class="cols" style="margin-top: 30px;">

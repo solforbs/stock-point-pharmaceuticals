@@ -8,9 +8,12 @@ use App\Models\EtimsTransmission;
 use App\Models\GoodsReceipt;
 use App\Models\PurchaseOrder;
 use App\Models\Quotation;
+use App\Models\Requisition;
 use App\Models\Sale;
 use App\Models\User;
 use App\Services\Documents\PdfRenderer;
+use App\Services\Procurement\PurchaseOrderTerms;
+use App\Services\Procurement\RequisitionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -204,8 +207,31 @@ class DocumentPdfController extends ApiController
             'order' => $order,
             'total' => $total,
             'transport' => (string) $order->transport_cost,
+            'terms' => PurchaseOrderTerms::for($order),
             'money' => fn ($v) => number_format((float) $v, 2),
             'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
         ], $order->doc_number, $order->branch_id);
+    }
+
+    /** GET /api/requisitions/{requisition}/pdf — the purchase request (requisition) for approval or filing. */
+    public function purchaseRequest(Request $request, string $requisition, PdfRenderer $pdf, RequisitionService $requisitions): Response
+    {
+        $this->requirePermission($request, 'requisition.view');
+
+        $record = Requisition::where('branch_id', $this->branchId($request))
+            ->with(['branch', 'requester:id,name', 'approver:id,name', 'lines.product:id,code,name,base_uom_id', 'lines.product.baseUom:id,code'])
+            ->findOrFail($requisition);
+
+        $total = $requisitions->estimateCosts($record);
+
+        AuditLog::record('PURCHASE_REQUEST_PRINTED', 'requisition', $record->id, ['reference' => $record->doc_number]);
+
+        return $pdf->render('pdf.purchase-request', [
+            'title' => 'Purchase request',
+            'requisition' => $record,
+            'total' => $total,
+            'money' => fn ($v) => number_format((float) $v, 2),
+            'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
+        ], $record->doc_number, $record->branch_id);
     }
 }

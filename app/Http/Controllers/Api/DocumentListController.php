@@ -12,6 +12,7 @@ use App\Models\StockAdjustment;
 use App\Models\Store;
 use App\Models\SupplierInvoice;
 use App\Models\User;
+use App\Services\Procurement\PurchaseOrderTerms;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -45,6 +46,8 @@ class DocumentListController extends ApiController
             $line->setAttribute('transport_per_unit', $share);
             $line->setAttribute('landed_unit_price', $line->unit_price === null ? null : bcadd((string) $line->unit_price, $share, 4));
         }
+        // The terms printed on the PDF, so the Excel download carries the same.
+        $order->setAttribute('terms', PurchaseOrderTerms::for($order));
 
         return response()->json($order);
     }

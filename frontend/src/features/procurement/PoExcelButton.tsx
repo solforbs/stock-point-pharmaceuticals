@@ -11,7 +11,7 @@ import { buildXlsx } from '../../lib/xlsxWriter'
 
 const money = (v: string | number | null | undefined) => (v === null || v === undefined || v === '' ? null : Math.round(Number(v) * 100) / 100)
 
-/** The purchase order as an Excel workbook: the same letterhead, lines, transport and totals as its PDF, built here from the order. */
+/** The purchase order as an Excel workbook: the same letterhead, lines, transport, totals and terms as its PDF, built here from the order. */
 export function PoExcelButton({ id, docNumber, size = 'sm' }: { id: string; docNumber: string; size?: 'sm' | 'md' }) {
   const [busy, setBusy] = useState(false)
 
@@ -50,6 +50,7 @@ export function PoExcelButton({ id, docNumber, size = 'sm' }: { id: string; docN
           [null, null, 'Goods', null, null, null, null, null, money(goods)],
           [null, null, 'Transport', null, null, null, null, null, money(transport)],
           [null, null, 'Total incl. transport', null, null, null, null, null, money(goods + transport)],
+          ...(po.terms?.length ? [[], ['Terms & conditions'], ...po.terms.map((t, i) => [`${i + 1}. ${t}`])] : []),
         ],
         widths: [6, 14, 44, 10, 10, 14, 16, 14, 16],
       })

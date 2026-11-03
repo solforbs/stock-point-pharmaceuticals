@@ -42,6 +42,22 @@ class Requisition extends Model
         return $this->hasMany(RequisitionLine::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function requester(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
     /** The quotation requests raised from this requisition. */
     public function rfqs(): HasMany
     {

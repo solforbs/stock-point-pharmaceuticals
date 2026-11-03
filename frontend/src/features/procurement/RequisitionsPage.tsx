@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Calendar, Package, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { ProductSearch } from '../../components/ProductSearch'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
@@ -20,6 +21,7 @@ import { usePermissions } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Paginated, Product, ReorderSuggestion, Requisition, Rfq } from '../../lib/types'
 import { ExpiryBadge } from '../inventory/StockOnHandPage'
+import { PrExcelButton } from './PrExcelButton'
 import { SingleSourceModal } from './SingleSourceModal'
 
 const STATUSES = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'CONVERTED']
@@ -67,6 +69,17 @@ export default function RequisitionsPage() {
     { key: 'needed', header: 'Needed by', render: (r) => formatDate(r.needed_by), sortValue: (r) => r.needed_by ?? '' },
     { key: 'created', header: 'Created', render: (r) => formatDateTime(r.created_at), sortValue: (r) => r.created_at ?? '' },
     { key: 'notes', header: 'Notes', render: (r) => r.notes ?? '—' },
+    {
+      key: 'actions',
+      header: 'Download',
+      align: 'right',
+      render: (r) => (
+        <span className="inline-flex gap-1 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+          <PdfDownloadButton url={`/api/requisitions/${r.id}/pdf`} filename={r.doc_number} label="PDF" />
+          <PrExcelButton id={r.id} docNumber={r.doc_number} />
+        </span>
+      ),
+    },
   ]
 
   return (
@@ -309,6 +322,8 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
       actions={
         r ? (
           <div className="flex gap-2">
+            <PdfDownloadButton url={`/api/requisitions/${r.id}/pdf`} filename={r.doc_number} label="Download PR PDF" />
+            <PrExcelButton id={r.id} docNumber={r.doc_number} />
             {canEdit && !editLines && <Button size="sm" onClick={startEdit}>Edit lines</Button>}
             {r.status === 'DRAFT' && perms.has('requisition.create') && !editLines && <Button size="sm" variant="primary" disabled={submit.isPending} onClick={() => submit.mutate()}>Submit</Button>}
             {r.status === 'PENDING_APPROVAL' && perms.has('requisition.approve') && <><Button size="sm" variant="success" disabled={approve.isPending} onClick={() => approve.mutate()}>Approve</Button><Button size="sm" variant="danger" onClick={() => setRejecting(true)}>Reject</Button></>}
