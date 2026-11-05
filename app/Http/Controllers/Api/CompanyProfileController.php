@@ -14,7 +14,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * The company profile: the words and marks that present the business — the
- * tagline and contacts on every letterhead, the mission, vision and values in
+ * KRA PIN printed on every invoice and receipt, the tagline and contacts on
+ * every letterhead, the mission, vision and values in
  * the company profile document, and the logo, official stamp and authorised
  * signature printed on issued documents.
  *
@@ -33,7 +34,7 @@ class CompanyProfileController extends ApiController
     private const TEXT_FIELDS = [
         'tagline', 'about', 'mission', 'vision', 'core_values', 'services', 'website',
         'contact_email', 'contact_phone', 'physical_address', 'postal_address', 'signatory_name', 'signatory_title',
-        'mpesa_paybill', 'mpesa_account', 'mpesa_till', 'payment_note',
+        'mpesa_paybill', 'mpesa_account', 'mpesa_till', 'payment_note', 'kra_pin',
     ];
 
     /** GET /api/admin/company-profile */
@@ -60,7 +61,13 @@ class CompanyProfileController extends ApiController
             }
         }
 
+        // A PIN is written however it is typed; judge it as KRA prints it.
+        if ($request->filled('kra_pin')) {
+            $request->merge(['kra_pin' => strtoupper(preg_replace('/\s+/', '', (string) $request->input('kra_pin')) ?? '')]);
+        }
+
         $data = $request->validate([
+            'kra_pin' => ['sometimes', 'required', 'string', 'regex:'.Organisation::KRA_PIN_PATTERN],
             'tagline' => ['sometimes', 'nullable', 'string', 'max:200'],
             'about' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'mission' => ['sometimes', 'nullable', 'string', 'max:2000'],
@@ -80,7 +87,13 @@ class CompanyProfileController extends ApiController
             'mpesa_account' => ['sometimes', 'nullable', 'string', 'max:50'],
             'mpesa_till' => ['sometimes', 'nullable', 'string', 'max:20'],
             'payment_note' => ['sometimes', 'nullable', 'string', 'max:255'],
+        ], [
+            'kra_pin.regex' => 'A KRA PIN is A or P, nine digits and a letter — for example P051234567M.',
         ]);
+
+        if (isset($data['kra_pin']) && Organisation::isPlaceholderKraPin($data['kra_pin'])) {
+            return $this->error('PLACEHOLDER_PIN', 'That is the placeholder PIN, not a real one. Enter the PIN on your KRA certificate.', 422);
+        }
         $data = array_intersect_key($data, array_flip(self::TEXT_FIELDS));
 
         $before = $organisation->only(array_keys($data));
@@ -207,6 +220,9 @@ class CompanyProfileController extends ApiController
             'services' => $organisation->services ?? [],
             'images' => $images,
             'images_version' => $organisation->updated_at?->timestamp,
+            // The placeholder PIN is reported as not set, so it is never shown as if it were real.
+            'kra_pin' => $organisation->realKraPin(),
+            'kra_pin_is_placeholder' => Organisation::isPlaceholderKraPin($organisation->kra_pin),
         ] + $organisation->only(['id', 'name', 'legal_name', ...self::TEXT_FIELDS]);
     }
 }

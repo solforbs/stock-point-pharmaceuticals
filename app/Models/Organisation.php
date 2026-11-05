@@ -33,6 +33,9 @@ class Organisation extends Model
 
     public const TRIAL_DAYS = 7;
 
+    /** A KRA PIN: A or P, nine digits, a letter. */
+    public const KRA_PIN_PATTERN = '/^[AP]\d{9}[A-Z]$/';
+
     protected $fillable = [
         'name', 'legal_name', 'kra_pin', 'vat_number', 'vat_registered',
         'base_currency', 'fiscal_year_start', 'is_active', 'updated_by',
@@ -53,6 +56,23 @@ class Organisation extends Model
         'stamp' => 'stamp_path',
         'signature' => 'signature_path',
     ];
+
+    /**
+     * The installation is seeded with P000000000X, a PIN no business holds.
+     * Anything printing or filing the PIN treats it, or a blank, as not set.
+     */
+    public static function isPlaceholderKraPin(?string $pin): bool
+    {
+        $pin = trim((string) $pin);
+
+        return $pin === '' || preg_match('/^P0{6,}/i', $pin) === 1;
+    }
+
+    /** The business's real KRA PIN, or null while only the placeholder is recorded. */
+    public function realKraPin(): ?string
+    {
+        return self::isPlaceholderKraPin($this->kra_pin) ? null : trim((string) $this->kra_pin);
+    }
 
     protected function casts(): array
     {

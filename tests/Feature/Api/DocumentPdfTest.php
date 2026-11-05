@@ -42,6 +42,17 @@ class DocumentPdfTest extends TestCase
         $this->assertSame(1, AuditLog::where('action', 'INVOICE_PRINTED')->where('entity_id', $sale->id)->count());
     }
 
+    public function test_a_posted_sale_carries_its_cashier_and_payments_for_a_reprinted_receipt(): void
+    {
+        $sale = $this->checkout([$this->saleLine('TAB', '10', '2.7500')], [['method' => 'MPESA', 'amount' => '27.5000', 'reference' => 'QWE123RTY']]);
+
+        $this->getJson("/api/sales/{$sale->id}")->assertOk()
+            ->assertJsonPath('served_by', $this->user->name)
+            ->assertJsonCount(1, 'payments')
+            ->assertJsonPath('payments.0.method', 'MPESA')
+            ->assertJsonPath('payments.0.reference', 'QWE123RTY');
+    }
+
     public function test_a_sale_paid_in_full_prints_as_a_cash_sale_and_one_on_account_as_a_tax_invoice(): void
     {
         $sale = $this->checkout([$this->saleLine('TAB', '10', '2.7500')], [['method' => 'MPESA', 'amount' => '27.5000', 'reference' => 'QWE123RTY']]);

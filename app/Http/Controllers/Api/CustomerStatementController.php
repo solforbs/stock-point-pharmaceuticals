@@ -72,7 +72,9 @@ class CustomerStatementController extends ApiController
             'from' => $ctx->from,
             'to' => $ctx->to,
             'generated_at' => now()->toIso8601String(),
-            'organisation' => $branch->organisation,
+            'organisation' => $branch->organisation?->only(['id', 'name', 'legal_name']) + [
+                'kra_pin' => $branch->organisation?->realKraPin(),
+            ],
             'branch' => $branch->only(['id', 'code', 'name', 'address']),
             'customer' => $customer->only(['id', 'code', 'name', 'phone', 'email', 'address', 'payment_terms_days']) + [
                 'credit_limit' => (string) ($customer->credit->credit_limit ?? '0.0000'),

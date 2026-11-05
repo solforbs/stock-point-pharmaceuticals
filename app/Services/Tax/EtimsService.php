@@ -141,13 +141,12 @@ class EtimsService
 
     /**
      * Each institution files under its own KRA PIN; the configured PIN is
-     * only the fallback for an institution that has not recorded one yet.
+     * only the fallback for an institution that has not recorded a real one
+     * yet (the seeded placeholder is never sent to KRA).
      */
     private function sellerPin(string $organisationId): ?string
     {
-        $pin = trim((string) Organisation::whereKey($organisationId)->value('kra_pin'));
-
-        return $pin !== '' ? $pin : config('etims.seller.pin');
+        return Organisation::find($organisationId)?->realKraPin() ?? config('etims.seller.pin');
     }
 
     private function enqueue(Model $document, string $type): void

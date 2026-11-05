@@ -12,6 +12,7 @@ import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Card, DescriptionList, Field, Input, Select, Textarea } from '../../components/ui/primitives'
+import { useLetterhead } from '../../hooks/useLetterhead'
 import { apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { formatPct, formatQty } from '../../lib/money'
@@ -128,6 +129,8 @@ export default function RecallsPage() {
 }
 
 function RecallDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
+  const letterhead = useLetterhead().data
+  const companyName = letterhead ? letterhead.legal_name || letterhead.organisation : 'us'
   const queryClient = useQueryClient()
   const canAct = usePermission('recall.initiate')
   const [notifyRef, setNotifyRef] = useState('')
@@ -244,8 +247,8 @@ function RecallDrawer({ id, onClose }: { id: string | null; onClose: () => void 
                 <p className="mt-2"><b>URGENT PRODUCT RECALL — {r.doc_number}{r.external_reference ? ` (${r.external_reference})` : ''}</b></p>
                 <p className="mt-1">Reason: {r.reason}</p>
                 <p className="mt-1">Our records show you received <b>{formatQty(c.qty_distributed)}</b> base units of the affected batch(es): {t.batches.map((b) => `${b.batch?.batch_number ?? b.batch_id.slice(0, 8)} (${b.product?.name ?? ''})`).join(', ')}.</p>
-                <p className="mt-1">Please quarantine any remaining stock immediately, stop dispensing or selling it, and return it to Stockpoint Pharma quoting this recall number. A credit note will be issued on receipt.</p>
-                <p className="mt-1 text-slate-500">Issued {formatDate(new Date().toISOString())} · Stockpoint Pharma Quality Assurance</p>
+                <p className="mt-1">Please quarantine any remaining stock immediately, stop dispensing or selling it, and return it to {companyName} quoting this recall number. A credit note will be issued on receipt.</p>
+                <p className="mt-1 text-slate-500">Issued {formatDate(new Date().toISOString())} · {companyName} Quality Assurance</p>
               </div>
             ))}
             {t.customers.length === 0 && <p className="text-slate-500">No customers received this stock.</p>}

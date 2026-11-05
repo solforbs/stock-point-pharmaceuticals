@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 class OrganisationController extends ApiController
 {
     /** A KRA PIN: A or P, nine digits, a letter. */
-    public const KRA_PIN_PATTERN = '/^[AP]\d{9}[A-Z]$/';
+    public const KRA_PIN_PATTERN = Organisation::KRA_PIN_PATTERN;
 
     /** GET /api/admin/organisation */
     public function show(Request $request): JsonResponse
@@ -29,7 +29,7 @@ class OrganisationController extends ApiController
         return response()->json($organisation->only([
             'id', 'name', 'legal_name', 'kra_pin', 'vat_number', 'vat_registered', 'base_currency', 'country_code', 'timezone',
         ]) + [
-            'kra_pin_is_placeholder' => $this->isPlaceholder((string) $organisation->kra_pin),
+            'kra_pin_is_placeholder' => Organisation::isPlaceholderKraPin($organisation->kra_pin),
         ]);
     }
 
@@ -55,7 +55,7 @@ class OrganisationController extends ApiController
         ]);
 
         if (isset($data['kra_pin'])) {
-            if ($this->isPlaceholder($data['kra_pin'])) {
+            if (Organisation::isPlaceholderKraPin($data['kra_pin'])) {
                 return $this->error('PLACEHOLDER_PIN', 'That is the placeholder PIN, not a real one. Enter the PIN on your KRA certificate.', 422);
             }
         }
@@ -70,11 +70,5 @@ class OrganisationController extends ApiController
         ]);
 
         return $this->show($request);
-    }
-
-    /** The PIN the installation was seeded with, which no business actually holds. */
-    private function isPlaceholder(string $pin): bool
-    {
-        return $pin === '' || preg_match('/^P0{6,}/i', $pin) === 1;
     }
 }

@@ -6,10 +6,10 @@ import { Modal } from '../../components/ui/Modal'
 import { Button, Kbd } from '../../components/ui/primitives'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { apiGet } from '../../lib/api'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { dCmp, dIsPos, dSub, dSum, isValidDecimal } from '../../lib/decimal'
-import { formatDateTime } from '../../lib/format'
-import { formatMoney, formatQty } from '../../lib/money'
 import type { Sale } from '../../lib/types'
+import { ReceiptSlip } from '../sales/ReceiptSlip'
 import { useCartStore } from './cartStore'
 
 /**
@@ -26,6 +26,7 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
   const customer = useCartStore((s) => s.customer)
   const terminalId = useCartStore((s) => s.terminalId)
   const offline = useCartStore((s) => s.postedOffline)
+  const user = useCurrentUser().data
 
   // KRA signs the invoice just after posting: follow the sale until it has
   // the eTIMS invoice number and signature that belong on the receipt.
@@ -46,98 +47,22 @@ export function ReceiptView({ onNewSale }: { onNewSale: () => void }) {
 
   return (
     <Modal open onClose={onNewSale} title={<span className="flex items-center gap-2">Receipt {sale.doc_number} {offline ? <StatusBadge status="PENDING_SYNC" tone="amber" label="Waiting to sync" /> : <StatusBadge status={sale.status} />}</span>} width={520}>
-      <div className="font-mono text-xs tabular" id="pos-receipt">
-        <div className="text-center mb-3">
-          <div className="font-bold text-sm">STOCKPOINT PHARMA</div>
-          <div>{sale.sale_mode} · Terminal {terminalId}</div>
-          <div>{formatDateTime(sale.posted_at)}</div>
-          {customer && <div>Customer: {customer.name}</div>}
-        </div>
-        <table className="w-full">
-          <tbody>
-            {(sale.lines ?? []).map((line) => {
-              const cart = nameByProduct.get(line.product_id)
-              const quoted = quote?.lines.find((q) => q.product_id === line.product_id && q.uom_id === line.uom_id)
-              return (
-                <tr key={line.id} className="align-top">
-                  <td className="py-0.5 pr-2">
-                    {cart?.productName ?? quoted?.product_name ?? line.product?.name ?? line.product_id.slice(0, 8)}
-                    {line.is_bonus && <span className="ml-1 font-bold">FREE</span>}
-                    <div className="text-slate-500">
-                      {formatQty(line.qty)} {cart?.uomCode ?? quoted?.uom_code ?? ''} @ {formatMoney(line.unit_price)}
-                    </div>
-                  </td>
-                  <td className="py-0.5 text-right whitespace-nowrap">{formatMoney(line.line_total)}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-        <div className="border-t border-dashed border-slate-300 my-2" />
-        <div className="grid grid-cols-[1fr_auto] gap-y-0.5">
-          <span>Subtotal</span>
-          <span>{formatMoney(sale.subtotal)}</span>
-          {dIsPos(sale.discount_total) && (
-            <>
-              <span>Discount</span>
-              <span>-{formatMoney(sale.discount_total)}</span>
-            </>
-          )}
-          <span>VAT</span>
-          <span>{formatMoney(sale.tax_total)}</span>
-          <span className="font-bold text-sm">TOTAL</span>
-          <span className="font-bold text-sm">{formatMoney(sale.grand_total)}</span>
-          {payments.map((p, i) => (
-            <span key={i} className="contents">
-              <span>
-                {p.method}
-                {p.reference ? ` ${p.reference}` : ''}
-              </span>
-              <span>{formatMoney(p.amount)}</span>
-            </span>
-          ))}
-          {payments.length === 0 && (
-            <>
-              <span>On credit</span>
-              <span>{formatMoney(sale.grand_total)}</span>
-            </>
-          )}
-          {change && (
-            <>
-              <span>Cash tendered</span>
-              <span>{formatMoney(cashTendered)}</span>
-              <span className="font-bold">CHANGE</span>
-              <span className="font-bold">{formatMoney(change)}</span>
-            </>
-          )}
-          {!change && payments.length > 0 && (
-            <>
-              <span>Paid</span>
-              <span>{formatMoney(paid)}</span>
-            </>
-          )}
-        </div>
-        {!offline && etims?.etims_status === 'SUBMITTED' && (
-          <div className="mt-3 border-t border-dashed border-slate-300 pt-2 text-center">
-            <div className="font-bold">KRA eTIMS</div>
-            <div>CU invoice no. {etims.etims_invoice_number}</div>
-            {etims.etims_control_code && <div className="break-all">Signature {etims.etims_control_code}</div>}
-          </div>
-        )}
-        {!offline && etims?.etims_status === 'PENDING' && (
-          <div className="text-center mt-3 text-slate-500">eTIMS: waiting for KRA to sign this invoice…</div>
-        )}
-        {!offline && etims?.etims_status === 'FAILED' && (
-          <div className="text-center mt-3 text-amber-700">eTIMS: not yet accepted by KRA; it is retried from Compliance.</div>
-        )}
-        {offline && (
-          <div className="text-center mt-3 font-bold">
-            OFFLINE SALE: NOT A TAX INVOICE.
-            <div className="font-normal">The eTIMS invoice is issued when this sale reaches the server.</div>
-          </div>
-        )}
-        <div className="text-center mt-3 text-slate-500">Thank you. Goods sold in good condition; keep this receipt.</div>
-      </div>
+      <ReceiptSlip
+        sale={sale}
+        payments={payments}
+        servedBy={user?.name}
+        terminalId={terminalId}
+        customerName={customer?.name}
+        describeLine={(line) => {
+          const cart = nameByProduct.get(line.product_id)
+          const quoted = quote?.lines.find((q) => q.product_id === line.product_id && q.uom_id === line.uom_id)
+          return { name: cart?.productName ?? quoted?.product_name, uom: cart?.uomCode ?? quoted?.uom_code }
+        }}
+        cashTendered={change ? cashTendered : null}
+        change={change}
+        etims={etims}
+        offline={offline}
+      />
       <div className="flex items-center gap-2 mt-4">
         <Button variant="primary" size="lg" className="flex-1" onClick={onNewSale} autoFocus>
           New sale <Kbd>Enter</Kbd>

@@ -61,6 +61,28 @@ class CompanyProfileTest extends TestCase
             ->assertStatus(422)->assertJsonValidationErrors('contact_email');
     }
 
+    public function test_the_company_kra_pin_is_set_in_the_profile_and_printed_everywhere(): void
+    {
+        $this->org->update(['kra_pin' => 'P000000000X']);
+
+        $this->getJson('/api/admin/company-profile')->assertOk()
+            ->assertJsonPath('kra_pin', null)
+            ->assertJsonPath('kra_pin_is_placeholder', true);
+
+        $this->patchJson('/api/admin/company-profile', ['kra_pin' => 'P000000000X'])
+            ->assertStatus(422)->assertJsonPath('error.code', 'PLACEHOLDER_PIN');
+        $this->patchJson('/api/admin/company-profile', ['kra_pin' => '12345'])
+            ->assertStatus(422)->assertJsonValidationErrors('kra_pin');
+
+        $this->patchJson('/api/admin/company-profile', ['kra_pin' => 'p051 234 567m'])->assertOk()
+            ->assertJsonPath('kra_pin', 'P051234567M')
+            ->assertJsonPath('kra_pin_is_placeholder', false);
+
+        $this->assertSame('P051234567M', Organisation::findOrFail($this->org->id)->kra_pin);
+        $this->assertSame('P051234567M', app(PdfRenderer::class)->letterhead($this->branch->id)['kra_pin']);
+        $this->getJson('/api/documents/letterhead')->assertOk()->assertJsonPath('kra_pin', 'P051234567M');
+    }
+
     public function test_every_member_of_the_institution_sees_its_logo_for_the_sidebar_and_tab_icon(): void
     {
         $this->getJson('/api/user')->assertOk()->assertJsonPath('organisation.logo_version', null);

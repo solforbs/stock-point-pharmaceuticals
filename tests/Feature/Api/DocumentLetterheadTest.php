@@ -9,8 +9,8 @@ use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
 
 /**
- * Excel downloads are built in the browser: they take the same letterhead
- * the PDFs print from GET /api/documents/letterhead.
+ * The till receipt and the Excel downloads are built in the browser: they take
+ * the same letterhead the PDFs print from GET /api/documents/letterhead.
  */
 class DocumentLetterheadTest extends TestCase
 {
@@ -24,7 +24,7 @@ class DocumentLetterheadTest extends TestCase
         Sanctum::actingAs($this->user);
     }
 
-    public function test_the_letterhead_names_the_institution_branch_and_contacts_but_not_the_pin_or_stamp(): void
+    public function test_the_letterhead_names_the_institution_pin_branch_and_contacts_but_not_the_stamp(): void
     {
         $this->org->update(['legal_name' => 'Lodwar Pharma Ltd', 'contact_phone' => '0700 000 111', 'contact_email' => 'info@lodwar.test', 'kra_pin' => 'P051234567Q']);
 
@@ -32,11 +32,18 @@ class DocumentLetterheadTest extends TestCase
             ->assertJsonPath('legal_name', 'Lodwar Pharma Ltd')
             ->assertJsonPath('phone', '0700 000 111')
             ->assertJsonPath('email', 'info@lodwar.test')
-            ->assertJsonMissingPath('kra_pin')
+            ->assertJsonPath('kra_pin', 'P051234567Q')
             ->assertJsonPath('branch', $this->branch->name)
             ->assertJsonPath('logo', null)
             ->assertJsonMissingPath('stamp')
             ->assertJsonMissingPath('signature');
+    }
+
+    public function test_the_placeholder_pin_is_reported_as_not_set(): void
+    {
+        $this->org->update(['kra_pin' => 'P000000000X']);
+
+        $this->getJson('/api/documents/letterhead')->assertOk()->assertJsonPath('kra_pin', null);
     }
 
     public function test_the_logo_comes_as_a_jpeg_the_spreadsheet_can_hold(): void

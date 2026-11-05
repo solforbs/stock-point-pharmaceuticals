@@ -53,13 +53,10 @@ class PdfRenderer
         $branch = $branchId ? Branch::find($branchId) : null;
         $organisation = Organisation::find($branch?->organisation_id ?? app(TenantContext::class)->organisationId());
 
-        $pin = trim((string) $organisation?->kra_pin);
-        $placeholder = $pin === '' || preg_match('/^P0{6,}/i', $pin) === 1;
-
         return [
             'organisation' => $organisation->name ?? config('app.name'),
             'legal_name' => $organisation?->legal_name,
-            'kra_pin' => $placeholder ? null : $pin,
+            'kra_pin' => $organisation?->realKraPin(),
             'branch' => $branch?->name,
             'branch_code' => $branch?->code,
             'address' => $branch?->address ?: $organisation?->physical_address,

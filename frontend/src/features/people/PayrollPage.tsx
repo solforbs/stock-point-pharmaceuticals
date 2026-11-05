@@ -11,6 +11,7 @@ import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, Card, DescriptionList, Field, Input, Select } from '../../components/ui/primitives'
+import { useLetterhead } from '../../hooks/useLetterhead'
 import { apiGet, apiPost } from '../../lib/api'
 import { formatDate, formatDateTime } from '../../lib/format'
 import { formatMoney, formatPct } from '../../lib/money'
@@ -201,6 +202,8 @@ function RunDrawer({ id, onClose }: { id: string | null; onClose: () => void }) 
 }
 
 function PayslipModal({ runId, employeeId, onClose }: { runId: string | null; employeeId: string | null; onClose: () => void }) {
+  const letterhead = useLetterhead().data
+  const companyName = letterhead ? letterhead.legal_name || letterhead.organisation : ''
   const payslip = useQuery({ queryKey: ['payroll', 'payslip', runId, employeeId], queryFn: () => apiGet<Payslip>(`/api/payroll/runs/${runId}/payslips/${employeeId}`), enabled: !!runId && !!employeeId })
   const p = payslip.data
   const line: PayrollRunLine | undefined = p?.line
@@ -212,7 +215,7 @@ function PayslipModal({ runId, employeeId, onClose }: { runId: string | null; em
       {p && line && (
         <div className="space-y-4" id="payslip">
           <div className="flex justify-between">
-            <div><div className="font-black text-base tracking-tight">STOCKPOINT PHARMA</div><div className="text-xs text-slate-500 font-mono">Payslip · {MONTHS[p.run.period_month - 1]} {p.run.period_year} · {p.run.doc_number}</div></div>
+            <div><div className="font-black text-base tracking-tight uppercase">{companyName}</div><div className="text-xs text-slate-500 font-mono">Payslip · {MONTHS[p.run.period_month - 1]} {p.run.period_year} · {p.run.doc_number}</div></div>
             <StatusBadge status={p.run.status} />
           </div>
           <DescriptionList items={[{ label: 'Employee', value: `${p.employee?.employee_no ?? ''} · ${p.employee?.name ?? ''}` }, { label: 'Position', value: `${p.employee?.job_title ?? '—'}${p.employee?.department ? ` · ${p.employee.department}` : ''}` }, { label: 'KRA PIN', value: p.employee?.kra_pin ?? '—' }, { label: 'NSSF / SHIF', value: `${p.employee?.nssf_no ?? '—'} / ${p.employee?.shif_no ?? '—'}` }, { label: 'Bank', value: p.employee?.bank_name ?? '—' }, { label: 'Bands as of', value: formatDate(p.run.bands_as_of) }]} />

@@ -5,6 +5,8 @@ import type { XlsxLetterhead } from './xlsxWriter'
 export type Letterhead = {
   organisation: string
   legal_name: string | null
+  /** Null while no real KRA PIN is set in the company profile. */
+  kra_pin: string | null
   tagline: string | null
   branch: string | null
   branch_code: string | null

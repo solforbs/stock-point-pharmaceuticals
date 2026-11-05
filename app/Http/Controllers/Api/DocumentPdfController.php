@@ -28,9 +28,9 @@ class DocumentPdfController extends ApiController
 {
     /**
      * GET /api/documents/letterhead — the letterhead the PDFs print
-     * (institution, branch, contacts, logo), for documents the browser
-     * builds itself such as the Excel downloads. The KRA PIN, stamp and
-     * signature are left out.
+     * (institution, KRA PIN, branch, contacts, logo), for documents the
+     * browser builds itself such as the till receipt and the Excel downloads.
+     * The stamp and signature are left out.
      */
     public function letterhead(Request $request, PdfRenderer $pdf): JsonResponse
     {
@@ -38,7 +38,7 @@ class DocumentPdfController extends ApiController
         $logo = $letterhead['logo'] ?? null;
 
         return response()->json([
-            ...collect($letterhead)->only(['organisation', 'legal_name', 'tagline', 'branch', 'branch_code', 'address', 'postal_address', 'phone', 'email', 'website'])->all(),
+            ...collect($letterhead)->only(['organisation', 'legal_name', 'kra_pin', 'tagline', 'branch', 'branch_code', 'address', 'postal_address', 'phone', 'email', 'website'])->all(),
             // Only a JPEG or PNG can go into a spreadsheet.
             'logo' => is_string($logo) && preg_match('#^data:image/(jpeg|png);base64,#', $logo) === 1 ? $logo : null,
         ]);

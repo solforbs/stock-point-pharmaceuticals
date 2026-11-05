@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { InlineError } from '../../components/ui/States'
 import { Button, Field, Input } from '../../components/ui/primitives'
 import { apiGet, apiPatch, getApiError } from '../../lib/api'
@@ -16,21 +17,19 @@ type Organisation = {
 }
 
 /**
- * Part 13 — the business as it appears on every invoice. The KRA PIN is the
- * company's own for a limited company (it starts with P); a sole proprietor
- * uses their personal PIN (it starts with A).
+ * Part 13 — the business as it appears on every invoice. The KRA PIN is set
+ * in the company profile, so it is shown here but changed there.
  */
 export function OrganisationCard() {
   const queryClient = useQueryClient()
   const org = useQuery({ queryKey: ['admin', 'organisation'], queryFn: () => apiGet<Organisation>('/api/admin/organisation') })
-  const [form, setForm] = useState({ name: '', legal_name: '', kra_pin: '', vat_number: '', vat_registered: false })
+  const [form, setForm] = useState({ name: '', legal_name: '', vat_number: '', vat_registered: false })
 
   useEffect(() => {
     if (org.data) {
       setForm({
         name: org.data.name,
         legal_name: org.data.legal_name ?? '',
-        kra_pin: org.data.kra_pin_is_placeholder ? '' : (org.data.kra_pin ?? ''),
         vat_number: org.data.vat_number ?? '',
         vat_registered: org.data.vat_registered,
       })
@@ -43,7 +42,6 @@ export function OrganisationCard() {
       apiPatch<Organisation>('/api/admin/organisation', {
         name: form.name,
         legal_name: form.legal_name || null,
-        kra_pin: form.kra_pin.trim().toUpperCase(),
         vat_number: form.vat_number || null,
         vat_registered: form.vat_registered,
       }),
@@ -65,8 +63,8 @@ export function OrganisationCard() {
 
       {org.data?.kra_pin_is_placeholder && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          <span className="font-bold">No real KRA PIN is set.</span> Invoices currently say "KRA PIN not set". For a limited company
-          enter the <span className="font-bold">company's</span> PIN (starts with P); a sole proprietor enters their personal PIN (starts with A).
+          <span className="font-bold">No real KRA PIN is set.</span> Invoices and receipts currently say "KRA PIN not set".{' '}
+          <Link to="/admin/company-profile" className="font-bold underline">Set it in the Company Profile</Link>.
         </div>
       )}
 
@@ -77,8 +75,11 @@ export function OrganisationCard() {
         <Field label="Registered (legal) name" hint="As on the certificate of incorporation." error={err?.errors.legal_name?.[0]}>
           <Input value={form.legal_name} onChange={(e) => set({ legal_name: e.target.value })} />
         </Field>
-        <Field label="KRA PIN" required hint="As on the KRA PIN certificate, e.g. P051234567M." error={err?.errors.kra_pin?.[0] ?? (err?.code === 'PLACEHOLDER_PIN' ? err.message : undefined)}>
-          <Input value={form.kra_pin} maxLength={11} className="tabular uppercase" onChange={(e) => set({ kra_pin: e.target.value.toUpperCase().replace(/\s/g, '') })} placeholder="P051234567M" />
+        <Field label="KRA PIN" hint="Changed in the Company Profile.">
+          <div className="flex items-center gap-2 h-9 text-sm">
+            <span className="tabular font-semibold">{org.data && !org.data.kra_pin_is_placeholder ? org.data.kra_pin : 'Not set'}</span>
+            <Link to="/admin/company-profile" className="text-xs text-blue-700 underline">Edit</Link>
+          </div>
         </Field>
         <Field label="VAT number" error={err?.errors.vat_number?.[0]}>
           <Input value={form.vat_number} onChange={(e) => set({ vat_number: e.target.value })} />
@@ -89,10 +90,10 @@ export function OrganisationCard() {
         Registered for VAT
       </label>
 
-      {err && !Object.keys(err.errors).length && err.code !== 'PLACEHOLDER_PIN' && <InlineError error={save.error} />}
+      {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
 
       <div className="flex justify-end">
-        <Button variant="primary" disabled={!form.name.trim() || !form.kra_pin.trim() || save.isPending} onClick={() => save.mutate()}>
+        <Button variant="primary" disabled={!form.name.trim() || save.isPending} onClick={() => save.mutate()}>
           {save.isPending ? 'Saving…' : 'Save business details'}
         </Button>
       </div>

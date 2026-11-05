@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Printer } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PdfDownloadButton } from '../../components/PdfDownloadButton'
 import { PostingImpact } from '../../components/PostingImpact'
 import { Drawer } from '../../components/ui/Drawer'
-import { ConfirmDialog } from '../../components/ui/Modal'
+import { ConfirmDialog, Modal } from '../../components/ui/Modal'
 import { MoneyCell, QtyCell } from '../../components/ui/MoneyCell'
 import { LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
@@ -14,6 +16,7 @@ import { formatPct } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Sale } from '../../lib/types'
+import { ReceiptSlip } from './ReceiptSlip'
 
 export interface SaleDrawerProps {
   id: string | null
@@ -26,6 +29,7 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
   const canReturn = usePermission('return.create')
   const showCost = usePermission('product.cost.view')
   const [voiding, setVoiding] = useState(false)
+  const [reprinting, setReprinting] = useState(false)
   const sale = useQuery({ queryKey: ['sales', id], queryFn: () => apiGet<Sale>(`/api/sales/${id}`), enabled: !!id })
 
   const voidSale = useMutation({
@@ -47,14 +51,18 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
       subtitle={s ? `${s.sale_mode} · ${formatDateTime(s.posted_at)}` : undefined}
       width={740}
       actions={
-        s && s.status === 'POSTED' ? (
+        s ? (
           <div className="flex gap-2">
-            {canReturn && (
+            <Button size="sm" onClick={() => setReprinting(true)}>
+              <Printer size={12} /> Reprint receipt
+            </Button>
+            <PdfDownloadButton url={`/api/sales/${s.id}/pdf`} filename={s.doc_number} label="Invoice PDF" />
+            {s.status === 'POSTED' && canReturn && (
               <Link to={`/sell/returns?sale=${s.id}`} className="inline-flex items-center h-8 px-3 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                 Return items
               </Link>
             )}
-            {canVoid && <Button variant="danger" size="sm" onClick={() => setVoiding(true)}>Void sale</Button>}
+            {s.status === 'POSTED' && canVoid && <Button variant="danger" size="sm" onClick={() => setVoiding(true)}>Void sale</Button>}
           </div>
         ) : null
       }
@@ -143,6 +151,17 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
           </div>
           <PostingImpact sourceId={s.id} />
         </div>
+      )}
+      {s && (
+        <Modal open={reprinting} onClose={() => setReprinting(false)} title={`Reprint receipt ${s.doc_number}`} width={520}>
+          <ReceiptSlip sale={s} payments={s.payments ?? []} servedBy={s.served_by} terminalId={s.terminal_id} customerName={s.customer?.name} etims={s} reprint />
+          <div className="flex items-center gap-2 mt-4">
+            <Button variant="primary" size="lg" className="flex-1" onClick={() => window.print()} autoFocus>
+              <Printer size={14} /> Print
+            </Button>
+            <PdfDownloadButton size="md" url={`/api/sales/${s.id}/pdf`} filename={s.doc_number} label="Invoice PDF" />
+          </div>
+        </Modal>
       )}
       <ConfirmDialog
         open={voiding}

@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Sale;
 use App\Models\Store;
+use App\Models\User;
 use App\Services\Finance\ReceiptService;
 use App\Services\Sales\CheckoutService;
 use App\Services\Sales\VoidSaleService;
 use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SaleController extends ApiController
 {
@@ -56,7 +58,15 @@ class SaleController extends ApiController
             ->with(['customer:id,code,name,customer_type', 'lines.product:id,code,name,brand_name,strength,description,base_uom_id', 'lines.product.baseUom:id,code', 'lines.uom:id,code', 'lines.batchAllocations.batch:id,batch_number,expiry_date'])
             ->findOrFail($sale);
 
-        $payload = $sale->toArray();
+        // What a reprinted receipt needs: who made the sale, and the money
+        // allocated to it (a sale has no direct payment relation).
+        $payload = $sale->toArray() + [
+            'served_by' => User::where('id', $sale->user_id)->value('name'),
+            'payments' => DB::table('payment_allocations as pa')
+                ->join('payments as p', 'p.id', '=', 'pa.payment_id')
+                ->where('pa.allocated_to_type', 'sale')->where('pa.allocated_to_id', $sale->id)
+                ->get(['p.method', 'p.reference', 'pa.amount']),
+        ];
         if (! $request->user()->can('product.cost.view')) {
             // Part 18.2 — cost and margin are gated fields, not hidden buttons.
             unset($payload['cost_total']);

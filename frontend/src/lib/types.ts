@@ -493,6 +493,10 @@ export type Sale = {
   etims_control_code?: string | null
   customer?: (NamedRef & { customer_type?: string }) | null
   lines?: SaleLine[]
+  /** Sale detail only: the cashier who made the sale, for the reprinted receipt. */
+  served_by?: string | null
+  /** Sale detail only: the money allocated to this sale. */
+  payments?: { method: string; reference: string | null; amount: Decimal }[]
 }
 
 export type DocLine = {
@@ -1766,6 +1770,9 @@ export type CompanyProfile = {
   postal_address: string | null
   signatory_name: string | null
   signatory_title: string | null
+  /** Null while no real PIN is set (the seeded placeholder is never returned). */
+  kra_pin: string | null
+  kra_pin_is_placeholder: boolean
   mpesa_paybill?: string | null
   mpesa_account?: string | null
   mpesa_till?: string | null

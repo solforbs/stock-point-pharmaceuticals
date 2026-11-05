@@ -15,6 +15,7 @@ const MAX_IMAGE_BYTES = 2 * 1024 * 1024
 const QUERY_KEY = ['admin', 'company-profile'] as const
 
 type Form = {
+  kra_pin: string
   tagline: string
   about: string
   mission: string
@@ -35,13 +36,14 @@ type Form = {
 }
 
 const EMPTY: Form = {
-  tagline: '', about: '', mission: '', vision: '', core_values: '', services: '', website: '',
+  kra_pin: '', tagline: '', about: '', mission: '', vision: '', core_values: '', services: '', website: '',
   contact_email: '', contact_phone: '', physical_address: '', postal_address: '', signatory_name: '', signatory_title: '',
   mpesa_paybill: '', mpesa_account: '', mpesa_till: '', payment_note: '',
 }
 
 function toForm(p: CompanyProfile): Form {
   return {
+    kra_pin: p.kra_pin ?? '',
     tagline: p.tagline ?? '',
     about: p.about ?? '',
     mission: p.mission ?? '',
@@ -87,7 +89,10 @@ export default function CompanyProfilePage() {
     meta: { silent: true },
     mutationFn: () => {
       const blankToNull = (v: string) => (v.trim() === '' ? null : v.trim())
+      const kraPin = form.kra_pin.trim().toUpperCase()
       return apiPatch<CompanyProfile>('/api/admin/company-profile', {
+        // Left out while blank: a PIN once set is changed, never cleared.
+        ...(kraPin ? { kra_pin: kraPin } : {}),
         tagline: blankToNull(form.tagline),
         about: blankToNull(form.about),
         mission: blankToNull(form.mission),
@@ -110,6 +115,8 @@ export default function CompanyProfilePage() {
     onSuccess: (data) => {
       toast.success('Company profile saved')
       queryClient.setQueryData(QUERY_KEY, data)
+      queryClient.invalidateQueries({ queryKey: ['documents', 'letterhead'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'organisation'] })
     },
   })
 
@@ -140,6 +147,26 @@ export default function CompanyProfilePage() {
 
       {profile.data && (
         <div className="space-y-4">
+          <Card title="Tax identity" padded>
+            {profile.data.kra_pin_is_placeholder && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 mb-3">
+                <span className="font-bold">No real KRA PIN is set.</span> Invoices and receipts currently say "KRA PIN not set", and eTIMS
+                cannot file under your PIN. A limited company enters the <span className="font-bold">company's</span> PIN (starts with P); a sole
+                proprietor enters their personal PIN (starts with A).
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field
+                label="Company KRA PIN"
+                required
+                hint="As on the KRA PIN certificate, e.g. P051234567M. Printed on every invoice, receipt and statement, and used for eTIMS."
+                error={fieldError('kra_pin') ?? (err?.code === 'PLACEHOLDER_PIN' ? err.message : undefined)}
+              >
+                <Input value={form.kra_pin} maxLength={11} className="tabular uppercase" onChange={(e) => set({ kra_pin: e.target.value.toUpperCase().replace(/\s/g, '') })} placeholder="P051234567M" />
+              </Field>
+            </div>
+          </Card>
+
           <Card title="Logo, stamp and signature" padded>
             <p className="text-xs text-slate-500 mb-4">
               The logo heads every PDF. The stamp and signature are added to invoices, receipts, quotations, purchase orders,
@@ -224,7 +251,7 @@ export default function CompanyProfilePage() {
             </div>
           </Card>
 
-          {err && !Object.keys(err.errors).length && <InlineError error={save.error} />}
+          {err && !Object.keys(err.errors).length && err.code !== 'PLACEHOLDER_PIN' && <InlineError error={save.error} />}
 
           <div className="flex justify-end">
             <Button variant="primary" disabled={save.isPending} onClick={() => save.mutate()}>
