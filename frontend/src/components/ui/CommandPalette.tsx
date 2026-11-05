@@ -84,10 +84,27 @@ const QUICK_ACTIONS: SearchResult[] = [
 
 const RECENT_KEY = 'stockpoint_recent_searches'
 
+type StoredSearch = Omit<SearchResult, 'icon'>
+
+const KNOWN_ICONS = new Map<string, LucideIcon>(
+  [...ALL_NAV_RESULTS, ...QUICK_ACTIONS].map((r) => [r.id, r.icon]),
+)
+
+/** Icons are React components and do not survive JSON, so they are re-attached from the id. */
+function iconFor(id: string): LucideIcon {
+  if (id.startsWith('prod-')) return Pill
+  if (id.startsWith('cust-')) return UserSquare2
+  return KNOWN_ICONS.get(id) ?? LayoutDashboard
+}
+
 function getRecentSearches(): SearchResult[] {
   try {
     const raw = localStorage.getItem(RECENT_KEY)
-    return raw ? JSON.parse(raw) : []
+    const stored: StoredSearch[] = raw ? JSON.parse(raw) : []
+    if (!Array.isArray(stored)) return []
+    return stored
+      .filter((s) => s && typeof s.id === 'string' && typeof s.path === 'string')
+      .map((s) => ({ ...s, icon: iconFor(s.id) }))
   } catch {
     return []
   }
@@ -96,7 +113,9 @@ function getRecentSearches(): SearchResult[] {
 function saveRecentSearch(item: SearchResult) {
   try {
     const current = getRecentSearches().filter((x) => x.id !== item.id)
-    const updated = [item, ...current].slice(0, 5)
+    const updated: StoredSearch[] = [item, ...current]
+      .slice(0, 5)
+      .map(({ icon: _icon, ...rest }) => rest)
     localStorage.setItem(RECENT_KEY, JSON.stringify(updated))
   } catch {}
 }
