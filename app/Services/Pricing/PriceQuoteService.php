@@ -78,7 +78,7 @@ class PriceQuoteService
      * @param  array{
      *     organisation_id: string, branch_id: string, store_id: string, sale_mode: string,
      *     customer_id?: ?string, user_id: int, quote_date?: ?string,
-     *     header_discount?: ?string, header_discount_reason?: ?string,
+     *     header_discount?: ?string, header_discount_reason?: ?string, price_is_free?: bool,
      *     lines: list<array{
      *         line_ref?: string, product_id: string, uom_id: string, quantity: string,
      *         requested_discount_pct?: ?string, requested_discount_amount?: ?string, requested_discount_reason?: ?string,
@@ -235,11 +235,14 @@ class PriceQuoteService
         // customer pays exactly that.
         $landingPrice = Money::round(bcmul($basePrice, bcadd('1', $rateFraction, 6), 6), 2);
         $priceSource = $engine['source'];
+        // A quotation's creator decides its price outright, at a loss if they
+        // choose (price_is_free); the till keeps the cost guard.
+        $priceIsFree = ! empty($request['price_is_free']);
         $tillPrice = null;
         if (! empty($line['selling_price'])) {
             $sellingPrice = Money::round((string) $line['selling_price'], 2);
             $netTill = Money::round(bcdiv($sellingPrice, bcadd('1', $rateFraction, 6), 6), 2);
-            if ($costPerUom !== null && bccomp($netTill, Money::round($costPerUom, 2), 4) < 0) {
+            if (! $priceIsFree && $costPerUom !== null && bccomp($netTill, Money::round($costPerUom, 2), 4) < 0) {
                 throw new \InvalidArgumentException("{$product->name}: {$sellingPrice} is below what this stock cost (".Money::round(bcmul($costPerUom, bcadd('1', $rateFraction, 6), 6), 2).' a '.$uom->uom->code.'); it would be sold at a loss.');
             }
             if (bccomp($sellingPrice, $landingPrice, 4) !== 0) {
@@ -314,7 +317,10 @@ class PriceQuoteService
         }
         $overrideReason = $line['requested_discount_reason'] ?? null;
         if ($floorPrice !== null && bccomp($unitPrice, $floorPrice, 4) < 0) {
-            if ($authority->mayOverrideFloor && $overrideReason) {
+            if ($priceIsFree && $tillPrice !== null) {
+                $floorBreached = true;
+                $explain[] = "⚠ Below margin floor {$minMargin}% = {$floorPrice}: price set on the quotation";
+            } elseif ($authority->mayOverrideFloor && $overrideReason) {
                 $floorBreached = true;
                 $discountSource = 'MANUAL_FLOOR_OVERRIDE';
                 $explain[] = "⚠ Below margin floor {$minMargin}% = {$floorPrice}: overridden by authority — \"{$overrideReason}\"";

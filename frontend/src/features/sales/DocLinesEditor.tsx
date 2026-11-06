@@ -82,7 +82,7 @@ function UnitPriceInput({ line, productPrice, belowCost, changed, disabled, onPr
       }}
       onChange={(e) => onPrice(e.target.value.replace(/[^\d.]/g, ''))}
       className={`h-8 px-2 rounded-lg border text-xs font-bold tabular text-right outline-none ${
-        belowCost ? 'border-rose-400 bg-rose-50 text-rose-700' : changed ? 'border-blue-400 bg-blue-50/60 text-blue-800' : 'border-slate-200 bg-slate-50 text-slate-800'
+        belowCost ? 'border-amber-400 bg-amber-50 text-amber-800' : changed ? 'border-blue-400 bg-blue-50/60 text-blue-800' : 'border-slate-200 bg-slate-50 text-slate-800'
       } ${className}`}
     />
   )
@@ -100,7 +100,7 @@ function LinePriceCells({ line, pricing, disabled, onPrice }: { line: EditableLi
       <td className="text-right tabular text-xs text-slate-600 whitespace-nowrap">{productPrice ? formatMoney(productPrice) : isLoading ? '…' : '—'}</td>
       <td>
         <UnitPriceInput line={line} productPrice={productPrice} belowCost={belowCost} changed={changed} disabled={disabled} onPrice={onPrice} className="w-24" />
-        {belowCost && <div className="text-[11px] font-semibold text-rose-700 mt-0.5">{belowCostNote(unitCost)}</div>}
+        {belowCost && <div className="text-[11px] font-semibold text-amber-700 mt-0.5">{belowCostNote(unitCost)}</div>}
       </td>
       <td className="text-right tabular text-xs font-bold text-slate-900 whitespace-nowrap">{total ? formatMoney(total) : '—'}</td>
     </>
@@ -126,7 +126,7 @@ function LinePriceRow({ line, pricing, disabled, onPrice }: { line: EditableLine
           <div className="h-8 flex items-center justify-end text-xs tabular font-bold text-slate-900">{total ? formatMoney(total) : '—'}</div>
         </div>
       </div>
-      {belowCost && <div className="text-[11px] font-semibold text-rose-700">{belowCostNote(unitCost)}</div>}
+      {belowCost && <div className="text-[11px] font-semibold text-amber-700">{belowCostNote(unitCost)}</div>}
     </div>
   )
 }

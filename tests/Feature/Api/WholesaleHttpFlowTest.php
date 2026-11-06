@@ -155,13 +155,20 @@ class WholesaleHttpFlowTest extends TestCase
             ->assertJsonPath('grand_total', '6500.0000');
     }
 
-    public function test_a_quotation_price_below_what_the_stock_cost_is_refused(): void
+    public function test_a_quotation_may_be_priced_below_what_the_stock_cost(): void
     {
         $payload = $this->quotationPayload();
         $payload['lines'][0]['selling_price'] = '1';
 
-        $this->postJson('/api/quotations', $payload)->assertStatus(422);
-        $this->assertDatabaseCount('quotations', 0);
+        $quotation = $this->postJson('/api/quotations', $payload)
+            ->assertCreated()
+            ->assertJsonPath('lines.0.unit_price', '1.0000')
+            ->assertJsonPath('grand_total', '10.0000')
+            ->json();
+
+        $this->postJson("/api/quotations/{$quotation['id']}/accept", [], ['Idempotency-Key' => 'wo-loss'])
+            ->assertCreated()
+            ->assertJsonPath('grand_total', '10.0000');
     }
 
     /**

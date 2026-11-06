@@ -48,6 +48,7 @@ class QuotationService
                 'customer_id' => $data['customer_id'] ?? null,
                 'user_id' => $data['user_id'],
                 'header_discount' => $data['header_discount'] ?? null,
+                'price_is_free' => true,
                 'lines' => array_map(fn ($l) => [
                     'product_id' => $l['product_id'],
                     'uom_id' => $l['uom_id'],
