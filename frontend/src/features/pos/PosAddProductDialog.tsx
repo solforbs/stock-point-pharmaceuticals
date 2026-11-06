@@ -339,7 +339,7 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
                   }}
                   className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer disabled:opacity-40"
                 >
-                  Price list{priceListPrice ? ` · ${formatMoney(priceListPrice)}` : ''}
+                  Price on list{priceListPrice ? ` · ${formatMoney(priceListPrice)}` : ''}
                 </button>
               </div>
             ) : (
