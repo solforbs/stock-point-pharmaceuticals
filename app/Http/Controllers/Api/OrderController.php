@@ -48,6 +48,7 @@ class OrderController extends ApiController
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
             'lines.*.requested_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'lines.*.requested_discount_reason' => ['nullable', 'string', 'max:255'],
+            'lines.*.selling_price' => ['nullable', 'numeric', 'gt:0'],
         ]);
 
         $quotation = $quotations->create($data + [

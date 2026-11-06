@@ -163,7 +163,12 @@ export default function QuotationsPage() {
             icon={Pill}
             badge={`${lines.length} items`}
           >
-            <DocLinesEditor lines={lines} onChange={setLines} canDiscount={canDiscount} />
+            <DocLinesEditor
+              lines={lines}
+              onChange={setLines}
+              canDiscount={canDiscount}
+              pricing={effectiveStore ? { storeId: effectiveStore, customerId: customer?.id ?? null } : null}
+            />
           </FormSection>
 
           {/* Section 3: Terms & Commercial Notes */}

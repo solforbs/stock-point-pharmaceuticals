@@ -139,6 +139,31 @@ class WholesaleHttpFlowTest extends TestCase
         $this->getJson('/api/finance/ar-ageing')->assertStatus(403);
     }
 
+    public function test_the_quotation_creator_sets_the_final_unit_price_and_the_order_keeps_it(): void
+    {
+        $payload = $this->quotationPayload();
+        $payload['lines'][0]['selling_price'] = '650';
+
+        $quotation = $this->postJson('/api/quotations', $payload)
+            ->assertCreated()
+            ->assertJsonPath('lines.0.unit_price', '650.0000')
+            ->assertJsonPath('grand_total', '6500.0000')
+            ->json();
+
+        $this->postJson("/api/quotations/{$quotation['id']}/accept", [], ['Idempotency-Key' => 'wo-price'])
+            ->assertCreated()
+            ->assertJsonPath('grand_total', '6500.0000');
+    }
+
+    public function test_a_quotation_price_below_what_the_stock_cost_is_refused(): void
+    {
+        $payload = $this->quotationPayload();
+        $payload['lines'][0]['selling_price'] = '1';
+
+        $this->postJson('/api/quotations', $payload)->assertStatus(422);
+        $this->assertDatabaseCount('quotations', 0);
+    }
+
     /**
      * @return array<string, mixed>
      */

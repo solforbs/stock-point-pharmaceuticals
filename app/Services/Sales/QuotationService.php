@@ -31,6 +31,7 @@ class QuotationService
      *     lines: list<array{
      *         product_id: string, uom_id: string, qty?: string, quantity?: string,
      *         requested_discount_pct?: ?string, requested_discount_reason?: ?string,
+     *         selling_price?: ?string,
      *     }>,
      * }  $data
      */
@@ -53,6 +54,7 @@ class QuotationService
                     'quantity' => $l['quantity'] ?? $l['qty'],
                     'requested_discount_pct' => $l['requested_discount_pct'] ?? null,
                     'requested_discount_reason' => $l['requested_discount_reason'] ?? null,
+                    'selling_price' => $l['selling_price'] ?? null,
                 ], $data['lines']),
             ]);
 
