@@ -59,6 +59,8 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
   const listed = saleMode === 'WHOLESALE' ? (insightUom?.trade ?? insightUom?.retail) : (insightUom?.retail ?? insightUom?.trade)
   // The final shelf price: VAT was settled at receiving, so nothing is added on top here.
   const landingPrice = listed?.gross_price ?? (product.default_price ? dMulInt(product.default_price, factor) : null)
+  /** The catalogue default price, as printed on the exported price list, for the chosen unit. */
+  const priceListPrice = product.default_price && dIsPos(product.default_price) ? dMulInt(product.default_price, factor) : null
   const inCart = lines.find((l) => l.productId === product.id && l.uomId === uomId)
 
   // Open on the price this line already sells at, else the landing price.
@@ -329,14 +331,15 @@ function AddProductForm({ product, offline, onClose, onConfirm }: PosAddProductD
                 </label>
                 <button
                   type="button"
-                  disabled={!landingPrice}
+                  disabled={!priceListPrice}
+                  title={priceListPrice ? `Price list: ${formatMoney(priceListPrice)} / ${uomCode}` : 'No price on the price list'}
                   onClick={() => {
                     setNegotiatedPct('')
-                    if (landingPrice) setSellingPrice(dRound2(landingPrice))
+                    if (priceListPrice) setSellingPrice(dRound2(priceListPrice))
                   }}
                   className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer disabled:opacity-40"
                 >
-                  Landing price
+                  Price list{priceListPrice ? ` · ${formatMoney(priceListPrice)}` : ''}
                 </button>
               </div>
             ) : (

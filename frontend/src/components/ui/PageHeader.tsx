@@ -12,8 +12,8 @@ export function PageHeader({
   actions?: ReactNode
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 pb-1">
-      <div className="min-w-0">
+    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end justify-between gap-4 mb-6 pb-1">
+      <div className="min-w-0 sm:flex-1 sm:min-w-[22rem]">
         {parent && (
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50/80 border border-blue-200/60 text-blue-700 font-semibold text-xs mb-2.5 shadow-2xs">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
@@ -29,7 +29,7 @@ export function PageHeader({
           </p>
         )}
       </div>
-      {actions && <div className="flex items-center gap-2.5 shrink-0 flex-wrap">{actions}</div>}
+      {actions && <div className="flex items-center gap-2.5 flex-wrap max-w-full">{actions}</div>}
     </div>
   )
 }
