@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LicenceController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MasterDataController;
+use App\Http\Controllers\Api\MasterPriceListController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\OfflineSaleController;
 use App\Http\Controllers\Api\OperationsController;
@@ -201,6 +202,9 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     // 21.8 Inventory
     Route::get('/inventory/stock', [InventoryController::class, 'stock']);
     Route::post('/inventory/stock/pdf', [InventoryController::class, 'stockSheetPdf']);
+    Route::get('/inventory/master-price-list', [MasterPriceListController::class, 'show']);
+    Route::put('/inventory/master-price-list', [MasterPriceListController::class, 'save']);
+    Route::get('/inventory/master-price-list/pdf', [MasterPriceListController::class, 'pdf']);
     Route::get('/inventory/ledger', [InventoryController::class, 'ledger']);
     Route::post('/inventory/adjustments', [InventoryController::class, 'storeAdjustment']);
     Route::post('/inventory/opening-stock', [InventoryController::class, 'openingStock']);

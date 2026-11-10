@@ -13,12 +13,14 @@ use Illuminate\Support\Carbon;
  * Steps 1 and 2 of the blueprint's seven-step quote (Part 4.2–4.4 / V6 8.2):
  *   1. Customer contract price   (customer_prices)
  *   2. Active promotion          (promotions / promotion_lines)
+ *   M. Master price list         (price_lists.is_master) — set from Stock on
+ *      Hand; one price per base unit that outranks ranks 3-6
  *   3. Customer tier price list  (price_lists.tier_id)
  *   4. Mode price list           (price_lists.sale_mode)
  *   5. Branch override           (price_lists.branch_id)
  *   6. Product default price    (products.default_price)
  *
- * Ranks 3-6 are resolved first into a single list price (applying quantity
+ * Ranks M and 3-6 are resolved first into a single list price (applying quantity
  * breaks and factor-based pricing), then rank 1 (contract) and rank 2
  * (promotion) are compared against it — whichever is cheaper for the
  * customer wins, per Part 4.2's explicit tie-break rule.
@@ -154,9 +156,18 @@ class PricingEngine
         Product $product, ProductUom $uom, string $qty, ?Customer $customer,
         string $saleMode, ?string $branchId, ?string $costPerBaseUnit, Carbon $asOf, array &$explain,
     ): array {
+        // Master price list: priced per base unit, so a pack costs its factor times the unit price.
+        $row = $this->findProductPrice($product, (string) $product->base_uom_id, $asOf, fn ($q) => $q->where('is_master', true));
+        if ($row) {
+            $perUom = bcmul((string) $row->unit_price, (string) $uom->factor_to_base, 4);
+            $explain[] = "Master price list: {$row->unit_price} per base unit";
+
+            return ['price' => $perUom, 'rank_price' => $perUom, 'prices_include_tax' => (bool) ($row->priceList->prices_include_tax ?? false), 'price_list_id' => $row->price_list_id];
+        }
+
         // Rank 3: customer tier price list.
         if ($customer?->tier_id) {
-            $row = $this->findProductPrice($product, $uom, $asOf, fn ($q) => $q->where('tier_id', $customer->tier_id));
+            $row = $this->findProductPrice($product, $uom->uom_id, $asOf, fn ($q) => $q->where('tier_id', $customer->tier_id));
             if ($row) {
                 $explain[] = 'Rank 3 (customer tier price list)';
 
@@ -165,7 +176,7 @@ class PricingEngine
         }
 
         // Rank 4: mode price list (retail/wholesale standard list).
-        $row = $this->findProductPrice($product, $uom, $asOf, fn ($q) => $q->where('sale_mode', $saleMode)->whereNull('tier_id')->whereNull('branch_id'));
+        $row = $this->findProductPrice($product, $uom->uom_id, $asOf, fn ($q) => $q->where('sale_mode', $saleMode)->whereNull('tier_id')->whereNull('branch_id'));
         if ($row) {
             $explain[] = "Rank 4 (mode price list: {$saleMode})";
 
@@ -174,7 +185,7 @@ class PricingEngine
 
         // Rank 5: branch override.
         if ($branchId) {
-            $row = $this->findProductPrice($product, $uom, $asOf, fn ($q) => $q->where('branch_id', $branchId));
+            $row = $this->findProductPrice($product, $uom->uom_id, $asOf, fn ($q) => $q->where('branch_id', $branchId));
             if ($row) {
                 $explain[] = 'Rank 5 (branch override)';
 
@@ -206,13 +217,13 @@ class PricingEngine
         ];
     }
 
-    private function findProductPrice(Product $product, ProductUom $uom, Carbon $asOf, \Closure $priceListScope): ?ProductPrice
+    private function findProductPrice(Product $product, string $uomId, Carbon $asOf, \Closure $priceListScope): ?ProductPrice
     {
         $asOfDate = $asOf->toDateString();
 
         return $product->prices()
             ->with('priceList')
-            ->where('uom_id', $uom->uom_id)
+            ->where('uom_id', $uomId)
             ->whereDate('effective_from', '<=', $asOfDate)
             ->where(fn ($q) => $q->whereNull('effective_to')->orWhereDate('effective_to', '>=', $asOfDate))
             ->whereHas('priceList', function ($q) use ($priceListScope, $asOfDate) {
