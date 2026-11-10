@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Tags } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useDebounced } from '../../components/ProductSearch'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
@@ -14,6 +15,7 @@ import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { printStockSheet } from './printStockSheet'
 import type { ProductCategory, StockStateRow } from '../../lib/types'
 import { ExpiryBadge } from './ExpiryBadge'
+import { MasterPriceListDrawer } from './MasterPriceListDrawer'
 import { StockStatesTable } from './StockStatesTable'
 
 export { ExpiryBadge, StockStatesTable }
@@ -24,6 +26,8 @@ type Heading = { id: string; name: string; rows: StockStateRow[] }
 
 export default function StockOnHandPage() {
   const showCost = usePermission('product.cost.view')
+  const canViewPrices = usePermission('product.view')
+  const [priceListOpen, setPriceListOpen] = useState(false)
   const stores = useStores()
   const categories = useProductCategories()
   const [storeId, setStoreId] = useState('')
@@ -53,28 +57,36 @@ export default function StockOnHandPage() {
         title="Stock on Hand"
         subtitle="The authoritative live view of stock across the 8 balance states, calculated per store and grouped under its stock heading."
         actions={
-          <Button
-            disabled={!stock.data}
-            onClick={() => {
-              const store = (stores.data ?? []).find((s) => s.id === storeId)
-              const heading = (categories.data ?? []).find((c) => c.id === categoryId)
-              const opened = printStockSheet({
-                rows: stock.data?.data ?? [],
-                title: `${user.data?.organisation?.name ?? 'Stock'} - Stock on hand`,
-                filters: [store ? `Store ${store.code} · ${store.name}` : 'All stores', heading ? `Heading: ${heading.name}` : 'All headings', q ? `Search: ${q}` : null].filter(Boolean).join(' · '),
-                onDownloadPdf: async (content) => {
-                  await ensureCsrfCookie()
-                  const { data } = await api.post<Blob>('/api/inventory/stock/pdf', content, { responseType: 'blob' })
-                  downloadBlob(data, `${content.title} ${new Date().toISOString().slice(0, 10)}.pdf`, 'application/pdf')
-                },
-              })
-              if (!opened) toast.error('The print sheet was blocked', 'Allow pop-ups for this site, then try again.')
-            }}
-          >
-            Print / download stock list
-          </Button>
+          <>
+            {canViewPrices && (
+              <Button onClick={() => setPriceListOpen(true)}>
+                <Tags size={13} /> Master price list
+              </Button>
+            )}
+            <Button
+              disabled={!stock.data}
+              onClick={() => {
+                const store = (stores.data ?? []).find((s) => s.id === storeId)
+                const heading = (categories.data ?? []).find((c) => c.id === categoryId)
+                const opened = printStockSheet({
+                  rows: stock.data?.data ?? [],
+                  title: `${user.data?.organisation?.name ?? 'Stock'} - Stock on hand`,
+                  filters: [store ? `Store ${store.code} · ${store.name}` : 'All stores', heading ? `Heading: ${heading.name}` : 'All headings', q ? `Search: ${q}` : null].filter(Boolean).join(' · '),
+                  onDownloadPdf: async (content) => {
+                    await ensureCsrfCookie()
+                    const { data } = await api.post<Blob>('/api/inventory/stock/pdf', content, { responseType: 'blob' })
+                    downloadBlob(data, `${content.title} ${new Date().toISOString().slice(0, 10)}.pdf`, 'application/pdf')
+                  },
+                })
+                if (!opened) toast.error('The print sheet was blocked', 'Allow pop-ups for this site, then try again.')
+              }}
+            >
+              Print / download stock list
+            </Button>
+          </>
         }
       />
+      {priceListOpen && <MasterPriceListDrawer onClose={() => setPriceListOpen(false)} />}
       <div id="tour-stock-filters">
         <FilterBar>
           <Field label="Store">

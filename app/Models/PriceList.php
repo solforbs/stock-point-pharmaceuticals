@@ -17,13 +17,14 @@ class PriceList extends Model
 
     protected $fillable = [
         'organisation_id', 'code', 'name', 'sale_mode', 'tier_id', 'branch_id',
-        'currency', 'prices_include_tax', 'effective_from', 'effective_to', 'is_active', 'priority',
+        'currency', 'prices_include_tax', 'effective_from', 'effective_to', 'is_active', 'priority', 'is_master',
     ];
 
     protected function casts(): array
     {
         return [
             'prices_include_tax' => 'boolean',
+            'is_master' => 'boolean',
             'effective_from' => 'date:Y-m-d',
             'effective_to' => 'date:Y-m-d',
             'is_active' => 'boolean',
