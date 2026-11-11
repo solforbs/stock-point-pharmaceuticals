@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\AuditLog;
-use App\Models\BankAccount;
 use App\Models\Organisation;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Services\Admin\RecordDeletionService;
+use App\Services\Documents\PaymentDetails;
 use App\Services\Documents\PdfRenderer;
 use App\Services\Inventory\ProductImportService;
 use App\Services\Inventory\ProductImportValidationException;
@@ -198,24 +198,11 @@ class ProductCatalogueController extends ApiController
     }
 
     /**
-     * How customers pay, for the foot of the price list: M-PESA from the
-     * company profile, then the active bank accounts.
-     *
      * @return array{mpesa_paybill: ?string, mpesa_account: ?string, mpesa_till: ?string, note: ?string, account_name: string, banks: list<array{bank_name: ?string, account_name: ?string, account_number: ?string, branch_name: ?string}>}
      */
     private function paymentDetails(string $organisationId): array
     {
-        $organisation = Organisation::find($organisationId);
-
-        return [
-            'mpesa_paybill' => $organisation?->mpesa_paybill,
-            'mpesa_account' => $organisation?->mpesa_account,
-            'mpesa_till' => $organisation?->mpesa_till,
-            'note' => $organisation?->payment_note,
-            'account_name' => $organisation?->legal_name ?: ($organisation?->name ?? ''),
-            'banks' => BankAccount::where('organisation_id', $organisationId)->where('is_active', true)->orderBy('name')
-                ->get(['bank_name', 'account_name', 'account_number', 'branch_name'])->toArray(),
-        ];
+        return app(PaymentDetails::class)->for($organisationId);
     }
 
     /**

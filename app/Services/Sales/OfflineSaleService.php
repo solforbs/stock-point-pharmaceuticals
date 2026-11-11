@@ -390,7 +390,25 @@ class OfflineSaleService
 
     private function priceMapKey(Store $store): string
     {
-        return "pos:offline-price-map:{$store->id}";
+        return self::priceMapKeyFor($store->id);
+    }
+
+    private static function priceMapKeyFor(string $storeId): string
+    {
+        return "pos:offline-price-map:{$storeId}";
+    }
+
+    /**
+     * Drops the cached walk-in prices of these stores after a price change,
+     * so the next pack request re-prices instead of serving the old prices.
+     *
+     * @param  iterable<string>  $storeIds
+     */
+    public static function forgetPriceMaps(iterable $storeIds): void
+    {
+        foreach ($storeIds as $storeId) {
+            Cache::forget(self::priceMapKeyFor($storeId));
+        }
     }
 
     /**

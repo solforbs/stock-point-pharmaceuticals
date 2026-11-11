@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\LicenceController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MasterDataController;
+use App\Http\Controllers\Api\MasterPriceListController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\OfflineSaleController;
 use App\Http\Controllers\Api\OperationsController;
@@ -150,6 +151,9 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::patch('/customers/{customer}/credit', [MasterDataController::class, 'updateCredit']);
     Route::get('/customer-tiers', [MasterDataController::class, 'tiers']);
     Route::post('/customer-tiers', [PriceListController::class, 'storeTier']);
+    Route::get('/price-lists/master', [MasterPriceListController::class, 'show']);
+    Route::put('/price-lists/master', [MasterPriceListController::class, 'store']);
+    Route::get('/price-lists/master/pdf', [MasterPriceListController::class, 'pdf']);
     Route::get('/price-lists', [PriceListController::class, 'index']);
     Route::post('/price-lists', [PriceListController::class, 'store']);
     Route::patch('/price-lists/{list}', [PriceListController::class, 'update']);

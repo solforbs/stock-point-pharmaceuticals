@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Tags } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useDebounced } from '../../components/ProductSearch'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
@@ -14,6 +15,7 @@ import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { printStockSheet } from './printStockSheet'
 import type { ProductCategory, StockStateRow } from '../../lib/types'
 import { ExpiryBadge } from './ExpiryBadge'
+import { MasterPriceListDrawer } from './MasterPriceListDrawer'
 import { StockStatesTable } from './StockStatesTable'
 
 export { ExpiryBadge, StockStatesTable }
@@ -30,6 +32,7 @@ export default function StockOnHandPage() {
   const [categoryId, setCategoryId] = useState('')
   const [grouped, setGrouped] = useState(true)
   const [q, setQ] = useState('')
+  const [pricing, setPricing] = useState(false)
   const debouncedQ = useDebounced(q)
   const user = useCurrentUser()
 
@@ -53,6 +56,10 @@ export default function StockOnHandPage() {
         title="Stock on Hand"
         subtitle="The authoritative live view of stock across the 8 balance states, calculated per store and grouped under its stock heading."
         actions={
+          <>
+          <Button variant="primary" onClick={() => setPricing(true)}>
+            <Tags size={15} /> Master price list
+          </Button>
           <Button
             disabled={!stock.data}
             onClick={() => {
@@ -73,8 +80,10 @@ export default function StockOnHandPage() {
           >
             Print / download stock list
           </Button>
+          </>
         }
       />
+      <MasterPriceListDrawer open={pricing} onClose={() => setPricing(false)} />
       <div id="tour-stock-filters">
         <FilterBar>
           <Field label="Store">

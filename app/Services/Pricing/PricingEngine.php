@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
  *   1. Customer contract price   (customer_prices)
  *   2. Active promotion          (promotions / promotion_lines)
  *   3. Customer tier price list  (price_lists.tier_id)
- *   4. Mode price list           (price_lists.sale_mode)
+ *   4. Master price list, then the mode price list (price_lists.sale_mode BOTH, then RETAIL/WHOLESALE)
  *   5. Branch override           (price_lists.branch_id)
  *   6. Product default price    (products.default_price)
  *
@@ -162,6 +162,16 @@ class PricingEngine
 
                 return $this->fromPriceRow($row, $qty, $costPerBaseUnit, $product, $explain);
             }
+        }
+
+        // Rank 4a: the master price list — one list for every mode (sale_mode
+        // BOTH), set from Stock on Hand. It is the counter's price for all
+        // products, so it is read before the per-mode lists.
+        $row = $this->findProductPrice($product, $uom, $asOf, fn ($q) => $q->where('sale_mode', MasterPriceList::SALE_MODE)->whereNull('tier_id')->whereNull('branch_id'));
+        if ($row) {
+            $explain[] = 'Rank 4 (master price list)';
+
+            return $this->fromPriceRow($row, $qty, $costPerBaseUnit, $product, $explain);
         }
 
         // Rank 4: mode price list (retail/wholesale standard list).

@@ -5,7 +5,7 @@
          list is printed in blocks of 50 rows with fixed column widths that line up;
          only the first block carries the header. Every row is numbered (No.). --}}
     @php
-        $share = ['code' => 14, 'name' => 52, 'brand_name' => 22, 'price' => 14];
+        $share = ['code' => 14, 'name' => 52, 'brand_name' => 22, 'unit' => 9, 'price' => 14];
         $total = array_sum(array_intersect_key($share, array_flip($columns)));
         $widths = array_map(fn ($c) => round($share[$c] * 93 / max($total, 1), 2), $columns);
     @endphp
