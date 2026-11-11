@@ -110,13 +110,13 @@ class GoodsReceiptService
             }
 
             $receipt->update(['status' => 'POSTED', 'received_at' => $receipt->received_at ?? now()]);
-            $this->updatePurchaseOrderStatus($receipt);
+            $this->refreshPurchaseOrderStatus($receipt);
 
             return $receipt->fresh(['lines']);
         });
     }
 
-    private function updatePurchaseOrderStatus(GoodsReceipt $receipt): void
+    public function refreshPurchaseOrderStatus(GoodsReceipt $receipt): void
     {
         $po = $receipt->purchaseOrder;
         if (! $po) {

@@ -11,7 +11,7 @@ class PermissionSeeder extends Seeder
     // The exact fine-grained permission catalogue from the blueprint, Part 18.3.
     // Any of these grants access to the Pharmacy module (see ModuleCatalogue).
     public const PHARMACY_PERMISSIONS = [
-        'sale.view', 'sale.create', 'sale.void', 'sale.discount.apply', 'sale.discount.approve',
+        'sale.view', 'sale.create', 'sale.void', 'sale.correct', 'sale.discount.apply', 'sale.discount.approve',
         'sale.mode.switch', 'sale.price.override',
         'stock.view', 'stock.adjust', 'stock.adjust.approve', 'stock.count.post',
         'stock.transfer.create', 'stock.transfer.approve', 'stock.transfer.approve.own', 'stock.transfer.dispatch', 'stock.transfer.receive',
@@ -24,7 +24,7 @@ class PermissionSeeder extends Seeder
         'price.manage', 'price.simulate',
         'customer.credit.override',
         'requisition.view', 'requisition.create', 'requisition.approve',
-        'po.create', 'po.approve', 'grn.create', 'grn.qc.release', 'invoice.match',
+        'po.create', 'po.approve', 'grn.create', 'grn.correct', 'grn.qc.release', 'invoice.match',
         'rfq.view', 'rfq.manage', 'rfq.award',
         'return.create', 'return.post', 'supplier.return',
         'payment.record', 'petty.cash.manage',

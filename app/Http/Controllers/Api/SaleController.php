@@ -5,13 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Models\Sale;
 use App\Models\Store;
 use App\Models\User;
+use App\Services\Finance\NoOpenPeriodException;
 use App\Services\Finance\ReceiptService;
+use App\Services\Inventory\InsufficientStockException;
 use App\Services\Sales\CheckoutService;
+use App\Services\Sales\SaleCorrectionBlockedException;
+use App\Services\Sales\SaleCorrectionService;
 use App\Services\Sales\VoidSaleService;
 use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SaleController extends ApiController
 {
@@ -136,5 +141,34 @@ class SaleController extends ApiController
         $sale = Sale::where('branch_id', $this->branchId($request))->findOrFail($sale);
 
         return response()->json($voids->void($sale, $data['reason'], $request->user()->id));
+    }
+
+    /**
+     * POST /api/sales/{id}/correct — fix a posted invoice's date, line
+     * quantities or unit prices (net of VAT). See SaleCorrectionService.
+     */
+    public function correct(Request $request, string $sale, SaleCorrectionService $corrections): JsonResponse
+    {
+        $this->requirePermission($request, 'sale.correct');
+        $sale = Sale::where('branch_id', $this->branchId($request))->findOrFail($sale);
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:255'],
+            'posted_at' => ['nullable', 'date', 'before_or_equal:today'],
+            'lines' => ['nullable', 'array'],
+            'lines.*.id' => ['required', 'uuid', 'distinct', Rule::exists('sale_lines', 'id')->where('sale_id', $sale->id)],
+            'lines.*.qty' => ['required', 'numeric', 'gt:0'],
+            'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        try {
+            $corrected = $corrections->correct($sale, $data, $data['reason'], $request->user()->id);
+        } catch (SaleCorrectionBlockedException|InsufficientStockException $e) {
+            return $this->error('SALE_CORRECTION_BLOCKED', $e->getMessage(), 409);
+        } catch (NoOpenPeriodException $e) {
+            return $this->error('PERIOD_CLOSED', $e->getMessage().' The correction touches a closed period; issue a credit note instead.', 409);
+        }
+
+        return response()->json($corrected);
     }
 }

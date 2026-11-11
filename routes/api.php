@@ -176,6 +176,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/pos/offline-sales/{offlineSale}/dismiss', [OfflineSaleController::class, 'dismiss']);
     Route::get('/sales/{sale}', [SaleController::class, 'show']);
     Route::post('/sales/{sale}/void', [SaleController::class, 'void']);
+    Route::post('/sales/{sale}/correct', [SaleController::class, 'correct'])->whereUuid('sale');
 
     // 21.7 Wholesale orders
     Route::post('/quotations', [OrderController::class, 'storeQuotation']);
@@ -254,6 +255,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/purchase-orders/{po}/send', [ProcurementController::class, 'sendPurchaseOrder']);
     Route::post('/goods-receipts', [ProcurementController::class, 'storeGoodsReceipt']);
     Route::get('/goods-receipts/{receipt}', [ProcurementController::class, 'goodsReceipt']);
+    Route::post('/goods-receipts/{receipt}/correct', [ProcurementController::class, 'correctGoodsReceipt'])->whereUuid('receipt');
     Route::post('/supplier-invoices', [ProcurementController::class, 'storeSupplierInvoice']);
     Route::post('/supplier-invoices/{invoice}/match', [ProcurementController::class, 'matchSupplierInvoice']);
     Route::put('/supplier-invoices/{invoice}', [ProcurementController::class, 'updateSupplierInvoice'])->whereUuid('invoice');

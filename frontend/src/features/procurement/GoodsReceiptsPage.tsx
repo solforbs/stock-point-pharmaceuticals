@@ -7,6 +7,7 @@ import { GrnExcelButton } from './GrnExcelButton'
 import { ProductSearch } from '../../components/ProductSearch'
 import { DataTable, type Column } from '../../components/ui/DataTable'
 import { Drawer } from '../../components/ui/Drawer'
+import { CorrectReceiptModal } from '../corrections/CorrectionModals'
 import { MoneyCell, QtyCell } from '../../components/ui/MoneyCell'
 import { FilterBar, Page, PageHeader } from '../../components/ui/PageHeader'
 import { Pagination } from '../../components/ui/Pagination'
@@ -443,6 +444,8 @@ function sellingPriceEntries(line: GrnLine): { price_list_id: string; unit_price
 
 function ReceiptDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
   const receipt = useQuery({ queryKey: ['goods-receipts', id], queryFn: () => apiGet<GoodsReceipt>(`/api/goods-receipts/${id}`), enabled: !!id })
+  const canCorrect = usePermission('grn.correct')
+  const [correcting, setCorrecting] = useState(false)
   const g = receipt.data
   return (
     <Drawer open={!!id} onClose={onClose} title={g?.doc_number ?? 'Goods receipt'} subtitle={g ? `${g.purchase_order ? `PO ${g.purchase_order.doc_number}` : 'Emergency receipt'} · received ${formatDateTime(g.received_at)}` : undefined} width={900}>
@@ -450,7 +453,7 @@ function ReceiptDrawer({ id, onClose }: { id: string | null; onClose: () => void
       {receipt.isError && <InlineError error={receipt.error} />}
       {g && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2"><StatusBadge status={g.status} />{g.is_emergency && <StatusBadge status="EMERGENCY" tone="amber" label="Emergency" />}{g.purchase_order && <Link to={`/buy/purchase-orders?po=${g.purchase_order.id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open purchase order</Link>}<span className="ml-auto inline-flex gap-1"><PdfDownloadButton url={`/api/goods-receipts/${g.id}/pdf`} filename={g.doc_number} label="Download GRN" /><GrnExcelButton id={g.id} docNumber={g.doc_number} /></span></div>
+          <div className="flex items-center gap-2"><StatusBadge status={g.status} />{g.is_emergency && <StatusBadge status="EMERGENCY" tone="amber" label="Emergency" />}{g.purchase_order && <Link to={`/buy/purchase-orders?po=${g.purchase_order.id}`} className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold">Open purchase order</Link>}<span className="ml-auto inline-flex gap-1">{g.status === 'POSTED' && canCorrect && <Button size="sm" onClick={() => setCorrecting(true)}>Correct</Button>}<PdfDownloadButton url={`/api/goods-receipts/${g.id}/pdf`} filename={g.doc_number} label="Download GRN" /><GrnExcelButton id={g.id} docNumber={g.doc_number} /></span></div>
           <DescriptionList items={[{ label: 'Supplier', value: g.supplier?.name ?? g.supplier_id.slice(0, 8) }, { label: 'Store', value: g.store?.code ?? g.store_id.slice(0, 8) }]} />
           <table className="ui-table">
             <thead><tr><th>Batch</th><th>Brand</th><th>Expiry</th><th>Batch status</th><th className="text-right">Ordered</th><th className="text-right">Delivered</th><th className="text-right">Accepted</th><th className="text-right">Rejected</th><th className="text-right">Unit cost</th><th className="text-right">Landed cost</th></tr></thead>
@@ -474,6 +477,7 @@ function ReceiptDrawer({ id, onClose }: { id: string | null; onClose: () => void
               ))}
             </tbody>
           </table>
+          <CorrectReceiptModal receipt={g} open={correcting} onClose={() => setCorrecting(false)} />
         </div>
       )}
     </Drawer>

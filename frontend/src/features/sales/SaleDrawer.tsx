@@ -16,6 +16,7 @@ import { formatPct } from '../../lib/money'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Sale } from '../../lib/types'
+import { CorrectSaleModal } from '../corrections/CorrectionModals'
 import { ReceiptSlip } from './ReceiptSlip'
 
 export interface SaleDrawerProps {
@@ -28,7 +29,9 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
   const canVoid = usePermission('sale.void')
   const canReturn = usePermission('return.create')
   const showCost = usePermission('product.cost.view')
+  const canCorrect = usePermission('sale.correct')
   const [voiding, setVoiding] = useState(false)
+  const [correcting, setCorrecting] = useState(false)
   const [reprinting, setReprinting] = useState(false)
   const sale = useQuery({ queryKey: ['sales', id], queryFn: () => apiGet<Sale>(`/api/sales/${id}`), enabled: !!id })
 
@@ -62,6 +65,7 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
                 Return items
               </Link>
             )}
+            {s.status === 'POSTED' && canCorrect && <Button size="sm" onClick={() => setCorrecting(true)}>Correct</Button>}
             {s.status === 'POSTED' && canVoid && <Button variant="danger" size="sm" onClick={() => setVoiding(true)}>Void sale</Button>}
           </div>
         ) : null
@@ -163,6 +167,7 @@ export function SaleDrawer({ id, onClose }: SaleDrawerProps) {
           </div>
         </Modal>
       )}
+      {s && <CorrectSaleModal sale={s} open={correcting} onClose={() => setCorrecting(false)} />}
       <ConfirmDialog
         open={voiding}
         title={`Void ${s?.doc_number ?? ''}?`}

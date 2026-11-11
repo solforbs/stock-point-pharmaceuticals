@@ -710,12 +710,13 @@ export type GoodsReceiptLine = {
   batch_number: string
   brand_name?: string | null
   expiry_date: string
+  manufacture_date?: string | null
   unit_cost: Decimal
   trade_price: Decimal | null
   discount_pct: Decimal | null
   landed_unit_cost: Decimal | null
   batch?: ProductBatch | null
-  product?: { id: string; code: string; name: string } | null
+  product?: { id: string; code: string; name: string; uoms?: { uom_id: string; uom?: { code: string } | null }[] } | null
   uom?: { id: string; code: string } | null
 }
 

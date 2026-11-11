@@ -19,8 +19,11 @@ use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceLine;
 use App\Models\TaxCode;
+use App\Services\Finance\NoOpenPeriodException;
 use App\Services\Notifications\Notifier;
 use App\Services\Pricing\PriceListWriter;
+use App\Services\Procurement\GoodsReceiptCorrectionBlockedException;
+use App\Services\Procurement\GoodsReceiptCorrectionService;
 use App\Services\Procurement\GoodsReceiptService;
 use App\Services\Procurement\PurchaseOrderImportService;
 use App\Services\Procurement\PurchaseOrderImportValidationException;
@@ -638,8 +641,43 @@ class ProcurementController extends ApiController
         $this->requirePermission($request, 'grn.create');
 
         return response()->json(GoodsReceipt::where('branch_id', $this->branchId($request))->with([
-            'lines.batch', 'lines.product:id,code,name', 'lines.uom:id,code', 'purchaseOrder:id,doc_number,status', 'supplier:id,code,name', 'store:id,code,name',
+            'lines.batch', 'lines.product:id,code,name', 'lines.product.uoms.uom:id,code', 'lines.uom:id,code', 'purchaseOrder:id,doc_number,status', 'supplier:id,code,name', 'store:id,code,name',
         ])->findOrFail($receipt));
+    }
+
+    /**
+     * POST /api/goods-receipts/{id}/correct — fix a posted receipt's
+     * quantities, unit, cost, batch details or received date. Posted
+     * through reversing and adjusting entries; see GoodsReceiptCorrectionService.
+     */
+    public function correctGoodsReceipt(Request $request, string $receipt, GoodsReceiptCorrectionService $corrections): JsonResponse
+    {
+        $this->requirePermission($request, 'grn.correct');
+        $receipt = GoodsReceipt::where('branch_id', $this->branchId($request))->findOrFail($receipt);
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:255'],
+            'received_at' => ['nullable', 'date', 'before_or_equal:today'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.id' => ['required', 'uuid', 'distinct', Rule::exists('goods_receipt_lines', 'id')->where('goods_receipt_id', $receipt->id)],
+            'lines.*.qty_accepted' => ['required', 'numeric', 'min:0'],
+            'lines.*.qty_rejected' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
+            'lines.*.unit_cost' => ['required', 'numeric', 'min:0'],
+            'lines.*.batch_number' => ['required', 'string', 'max:100'],
+            'lines.*.expiry_date' => ['required', 'date'],
+            'lines.*.manufacture_date' => ['nullable', 'date'],
+        ]);
+
+        try {
+            $corrected = $corrections->correct($receipt, $data, $data['reason'], $request->user()->id);
+        } catch (GoodsReceiptCorrectionBlockedException|\DomainException $e) {
+            return $this->error('GRN_CORRECTION_BLOCKED', $e->getMessage(), 409);
+        } catch (NoOpenPeriodException $e) {
+            return $this->error('PERIOD_CLOSED', $e->getMessage().' The correction touches a closed period; reopen it or ask Finance to post an adjustment.', 409);
+        }
+
+        return response()->json($corrected->load(['lines.batch', 'lines.product:id,code,name', 'lines.product.uoms.uom:id,code', 'lines.uom:id,code']));
     }
 
     /** POST /api/supplier-invoices — the invoice as the supplier sent it; matching is a separate step. */
