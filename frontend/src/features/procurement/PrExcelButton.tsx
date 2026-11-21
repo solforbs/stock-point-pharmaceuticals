@@ -9,9 +9,8 @@ import { toastApiError } from '../../lib/toast'
 import type { Requisition } from '../../lib/types'
 import { buildXlsx } from '../../lib/xlsxWriter'
 
-const money = (v: string | number | null | undefined) => (v === null || v === undefined || v === '' ? null : Math.round(Number(v) * 100) / 100)
 
-/** The purchase request (requisition) as an editable Excel workbook: the same letterhead, lines and estimated costs as its PDF. */
+/** The purchase request (requisition) as an editable Excel workbook: the same letterhead and lines as its PDF, with no prices. */
 export function PrExcelButton({ id, docNumber, size = 'sm' }: { id: string; docNumber: string; size?: 'sm' | 'md' }) {
   const [busy, setBusy] = useState(false)
 
@@ -31,7 +30,7 @@ export function PrExcelButton({ id, docNumber, size = 'sm' }: { id: string; docN
         sheetName: docNumber,
         letterhead,
         title: `Purchase request ${docNumber} · ${details}`,
-        header: ['No.', 'Code', 'Product', 'Unit', 'Qty requested', 'Est. unit cost', 'Est. amount', 'Notes'],
+        header: ['No.', 'Code', 'Product', 'Unit', 'Qty requested', 'Notes'],
         rows: [
           ...lines.map((l, i) => [
             i + 1,
@@ -39,15 +38,12 @@ export function PrExcelButton({ id, docNumber, size = 'sm' }: { id: string; docN
             l.product?.name ?? l.product_id,
             l.product?.base_uom?.code ?? '',
             Number(l.qty_requested),
-            money(l.estimated_unit_cost),
-            l.estimated_unit_cost == null ? null : money(Number(l.qty_requested) * Number(l.estimated_unit_cost)),
             l.notes ?? '',
           ]),
           [],
-          [null, null, 'Estimated total', null, null, null, money(pr.estimated_total ?? 0)],
           ...(pr.notes ? [[], [`Notes: ${pr.notes}`]] : []),
         ],
-        widths: [6, 14, 44, 10, 14, 14, 16, 30],
+        widths: [6, 14, 44, 10, 14, 30],
       })
       downloadBlob(blob, `${docNumber}.xlsx`, blob.type)
     } catch (e) {

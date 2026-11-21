@@ -2,10 +2,17 @@
 
 namespace Tests\Feature\Api;
 
+use App\Mail\RequisitionToSupplierMail;
 use App\Models\AuditLog;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
+use App\Models\Requisition;
+use App\Models\Supplier;
 use App\Models\UnitOfMeasure;
+use App\Services\Documents\PdfRenderer;
+use App\Services\Procurement\RequisitionService;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\BuildsBlueprintWorld;
 use Tests\TestCase;
@@ -81,7 +88,7 @@ class RequisitionHttpTest extends TestCase
         $this->assertSame('4.2000', (string) $po->lines()->first()->unit_price);
     }
 
-    public function test_lines_can_be_changed_or_removed_until_the_requisition_is_approved(): void
+    public function test_lines_can_be_changed_or_removed_until_the_requisition_is_converted(): void
     {
         $other = Product::create([
             'organisation_id' => $this->org->id, 'code' => 'SWAP1', 'name' => 'Replacement',
@@ -104,6 +111,8 @@ class RequisitionHttpTest extends TestCase
         $this->putJson("/api/requisitions/{$req['id']}", ['lines' => []])->assertStatus(422);
 
         $this->postJson("/api/requisitions/{$req['id']}/approve")->assertOk();
+        $this->putJson("/api/requisitions/{$req['id']}", ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '2']]])->assertOk()->assertJsonPath('status', 'APPROVED');
+        Requisition::whereKey($req['id'])->update(['status' => 'CONVERTED']);
         $this->putJson("/api/requisitions/{$req['id']}", ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '1']]])
             ->assertStatus(409)->assertJsonPath('error.code', 'INVALID_STATE');
     }
@@ -189,5 +198,60 @@ class RequisitionHttpTest extends TestCase
         // Enough cover: the product drops off the list.
         $this->receive('R2', now()->addYears(2)->toDateString(), '1000', '2.0000');
         $this->getJson('/api/procurement/reorder-suggestions')->assertOk()->assertJsonCount(0, 'data');
+    }
+
+    public function test_an_approved_request_can_be_emailed_to_chosen_suppliers_with_a_message_and_a_priceless_pdf(): void
+    {
+        Mail::fake();
+        Storage::fake('local');
+        $this->grantPermissions(['rfq.manage'], 'Buyer');
+        $this->supplier->update(['email' => 'orders@pdl.example.test']);
+        $noEmail = Supplier::create(['organisation_id' => $this->org->id, 'code' => 'NOM', 'name' => 'No Mail Ltd', 'status' => 'ACTIVE']);
+        $req = $this->postJson('/api/requisitions', ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '300']]])->assertCreated()->json();
+
+        $this->postJson("/api/requisitions/{$req['id']}/send-to-suppliers", ['supplier_ids' => [$this->supplier->id], 'message' => 'Please quote.'])
+            ->assertStatus(409)->assertJsonPath('error.code', 'INVALID_STATE');
+
+        $this->postJson("/api/requisitions/{$req['id']}/submit")->assertOk();
+        $this->postJson("/api/requisitions/{$req['id']}/approve")->assertOk();
+
+        $this->postJson("/api/requisitions/{$req['id']}/send-to-suppliers", ['supplier_ids' => [$this->supplier->id], 'message' => ''])->assertStatus(422);
+        $this->postJson("/api/requisitions/{$req['id']}/send-to-suppliers", ['supplier_ids' => [$noEmail->id], 'message' => 'Please quote.'])->assertStatus(422);
+
+        $this->postJson("/api/requisitions/{$req['id']}/send-to-suppliers", [
+            'supplier_ids' => [$this->supplier->id, $noEmail->id], 'message' => 'Please quote by Friday.',
+        ])->assertOk()->assertJsonPath('queued', 1)->assertJsonPath('skipped_no_email.0', 'No Mail Ltd');
+
+        Mail::assertQueued(RequisitionToSupplierMail::class, function (RequisitionToSupplierMail $mail) {
+            return $mail->hasTo('orders@pdl.example.test')
+                && $mail->messageBody === 'Please quote by Friday.'
+                && Storage::disk('local')->exists($mail->pdfPath)
+                && str_starts_with(Storage::disk('local')->get($mail->pdfPath), '%PDF-')
+                && count($mail->attachments()) === 1
+                && str_contains($mail->docNumber, 'REQ');
+        });
+        Mail::assertQueuedCount(1);
+        $this->assertTrue(AuditLog::where('action', 'REQUISITION_SENT_TO_SUPPLIERS')->where('entity_id', $req['id'])->exists());
+        $this->assertSame('APPROVED', Requisition::findOrFail($req['id'])->status, 'sending a request does not change its status');
+    }
+
+    public function test_the_purchase_request_pdf_carries_no_estimated_costs_or_total(): void
+    {
+        $req = $this->postJson('/api/requisitions', ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '10']]])->assertCreated()->json();
+        $record = Requisition::findOrFail($req['id']);
+
+        $html = app(PdfRenderer::class)->html('pdf.purchase-request', app(RequisitionService::class)->purchaseRequestPdfData($record), $record->branch_id);
+
+        $this->assertStringContainsString('Qty requested', $html);
+        $this->assertStringNotContainsString('Est. unit cost', $html);
+        $this->assertStringNotContainsString('Est. amount', $html);
+        $this->assertStringNotContainsString('Estimated total', $html);
+    }
+
+    public function test_sending_to_suppliers_needs_the_quotation_permission(): void
+    {
+        $req = $this->postJson('/api/requisitions', ['lines' => [['product_id' => $this->amox->id, 'qty_base' => '10']]])->assertCreated()->json();
+
+        $this->postJson("/api/requisitions/{$req['id']}/send-to-suppliers", ['supplier_ids' => [$this->supplier->id], 'message' => 'Please quote.'])->assertStatus(403);
     }
 }
