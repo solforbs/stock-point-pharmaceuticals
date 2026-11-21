@@ -243,6 +243,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
     Route::post('/requisitions/{requisition}/reject', [RequisitionController::class, 'reject']);
     Route::post('/requisitions/{requisition}/convert', [RequisitionController::class, 'convert']);
     Route::post('/requisitions/{requisition}/request-quotation', [RequisitionController::class, 'requestQuotation']);
+    Route::post('/requisitions/{requisition}/send-to-suppliers', [RequisitionController::class, 'sendToSuppliers']);
     Route::get('/suppliers', [ProcurementController::class, 'suppliers']);
     Route::get('/suppliers/{supplier}', [ProcurementController::class, 'supplier'])->whereUuid('supplier');
     Route::post('/suppliers', [ProcurementController::class, 'storeSupplier']);

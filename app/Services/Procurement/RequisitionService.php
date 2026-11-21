@@ -61,14 +61,16 @@ class RequisitionService
     }
 
     /**
-     * Replaces the header and lines of a requisition nobody has approved yet:
-     * a product swapped for another, a line dropped, a quantity corrected.
+     * Replaces the header and lines of a requisition that has not been turned
+     * into a quotation or order: a product swapped for another, a line
+     * dropped, a quantity corrected. An approved one stays editable so the
+     * request can be trimmed before it goes to suppliers.
      *
      * @param  array{needed_by?: ?string, notes?: ?string, lines: list<array{product_id: string, qty_base: string|int|float, notes?: ?string}>}  $data
      */
     public function update(Requisition $requisition, array $data, int $userId): Requisition
     {
-        $this->assertStatus($requisition, ['DRAFT', 'PENDING_APPROVAL']);
+        $this->assertStatus($requisition, ['DRAFT', 'PENDING_APPROVAL', 'APPROVED']);
 
         return DB::transaction(function () use ($requisition, $data, $userId) {
             $before = $requisition->lines()->get(['product_id', 'qty_requested', 'notes'])->toArray();
@@ -238,6 +240,24 @@ class RequisitionService
 
             return $po->fresh(['lines']);
         });
+    }
+
+    /**
+     * What the purchase request PDF is drawn from. It carries no prices or
+     * totals: each supplier quotes their own, so an estimate would only
+     * anchor them.
+     *
+     * @return array<string, mixed>
+     */
+    public function purchaseRequestPdfData(Requisition $requisition): array
+    {
+        $requisition->load(['branch', 'requester:id,name', 'approver:id,name', 'lines.product:id,code,name,base_uom_id', 'lines.product.baseUom:id,code']);
+
+        return [
+            'title' => 'Purchase request',
+            'requisition' => $requisition,
+            'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
+        ];
     }
 
     /**

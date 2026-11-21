@@ -24,11 +24,27 @@ class PdfRenderer
      */
     public function render(string $view, array $data, string $filename, ?string $branchId = null): Response
     {
-        $pdf = Pdf::loadHTML($this->html($view, $data, $branchId))
+        return $this->build($view, $data, $branchId)->download($this->safeFilename($filename));
+    }
+
+    /**
+     * The finished PDF as raw bytes, for attaching to an email.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function output(string $view, array $data, ?string $branchId = null): string
+    {
+        return $this->build($view, $data, $branchId)->output();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function build(string $view, array $data, ?string $branchId): \Barryvdh\DomPDF\PDF
+    {
+        return Pdf::loadHTML($this->html($view, $data, $branchId))
             ->setPaper('a4')
             ->setOption(['isRemoteEnabled' => false, 'defaultFont' => 'DejaVu Sans', 'isFontSubsettingEnabled' => true]);
-
-        return $pdf->download($this->safeFilename($filename));
     }
 
     /**

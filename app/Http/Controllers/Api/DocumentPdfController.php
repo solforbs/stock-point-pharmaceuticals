@@ -218,20 +218,10 @@ class DocumentPdfController extends ApiController
     {
         $this->requirePermission($request, 'requisition.view');
 
-        $record = Requisition::where('branch_id', $this->branchId($request))
-            ->with(['branch', 'requester:id,name', 'approver:id,name', 'lines.product:id,code,name,base_uom_id', 'lines.product.baseUom:id,code'])
-            ->findOrFail($requisition);
-
-        $total = $requisitions->estimateCosts($record);
+        $record = Requisition::where('branch_id', $this->branchId($request))->findOrFail($requisition);
 
         AuditLog::record('PURCHASE_REQUEST_PRINTED', 'requisition', $record->id, ['reference' => $record->doc_number]);
 
-        return $pdf->render('pdf.purchase-request', [
-            'title' => 'Purchase request',
-            'requisition' => $record,
-            'total' => $total,
-            'money' => fn ($v) => number_format((float) $v, 2),
-            'qty' => fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.'),
-        ], $record->doc_number, $record->branch_id);
+        return $pdf->render('pdf.purchase-request', $requisitions->purchaseRequestPdfData($record), $record->doc_number, $record->branch_id);
     }
 }

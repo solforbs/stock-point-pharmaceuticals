@@ -2,17 +2,28 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Mail\RequisitionToSupplierMail;
+use App\Models\AuditLog;
+use App\Models\Branch;
+use App\Models\Organisation;
 use App\Models\PurchaseOrder;
 use App\Models\Requisition;
+use App\Models\Supplier;
 use App\Models\User;
+use App\Services\Documents\PdfRenderer;
 use App\Services\Notifications\Notifier;
+use App\Services\Procurement\InvalidRequisitionStatusException;
 use App\Services\Procurement\ReorderAdvisor;
 use App\Services\Procurement\RequisitionService;
 use App\Services\Procurement\RfqService;
 use App\Services\Tenancy\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /** Part 9.1 — requisition to purchase order, plus the reorder advisor. */
 class RequisitionController extends ApiController
@@ -148,6 +159,55 @@ class RequisitionController extends ApiController
         ]);
 
         return response()->json($requisitions->requestQuotation($this->find($request, $requisition), $data + ['user_id' => $request->user()->id], $rfqs), 201);
+    }
+
+    /**
+     * POST /api/requisitions/{id}/send-to-suppliers — email the purchase
+     * request (a PDF without prices) with a covering message to the chosen
+     * suppliers. The mails are queued; suppliers with no email address on
+     * file are reported back rather than silently skipped.
+     */
+    public function sendToSuppliers(Request $request, string $requisition, RequisitionService $requisitions, PdfRenderer $pdf): JsonResponse
+    {
+        $this->requirePermission($request, 'rfq.manage');
+
+        $data = $request->validate([
+            'supplier_ids' => ['required', 'array', 'min:1'],
+            'supplier_ids.*' => ['uuid', 'distinct', TenantRules::exists('suppliers')],
+            'message' => ['required', 'string', 'min:3', 'max:3000'],
+        ]);
+
+        $record = $this->find($request, $requisition);
+        if (in_array($record->status, ['DRAFT', 'REJECTED'], true)) {
+            throw new InvalidRequisitionStatusException("Requisition {$record->doc_number} is {$record->status}; only a submitted or approved request goes to suppliers.");
+        }
+
+        $suppliers = Supplier::whereIn('id', $data['supplier_ids'])->get();
+        $sendable = $suppliers->filter(fn (Supplier $s) => trim((string) $s->email) !== '');
+        $skipped = $suppliers->diff($sendable)->pluck('name')->values()->all();
+        if ($sendable->isEmpty()) {
+            throw ValidationException::withMessages(['supplier_ids' => 'None of the chosen suppliers has an email address on file.']);
+        }
+
+        $branch = Branch::find($record->branch_id);
+        $organisationName = (string) (Organisation::where('id', $branch?->organisation_id)->value('name') ?? config('app.name'));
+        $path = 'requisition-mail/'.$record->id.'-'.Str::uuid().'.pdf';
+        Storage::disk('local')->put($path, $pdf->output('pdf.purchase-request', $requisitions->purchaseRequestPdfData($record), $record->branch_id));
+
+        $user = $request->user();
+        foreach ($sendable as $supplier) {
+            Mail::to(trim($supplier->email), $supplier->contact_name ?: $supplier->name)->queue(new RequisitionToSupplierMail(
+                $record->doc_number, $organisationName, (string) $branch?->name, $supplier->contact_name ?: $supplier->name,
+                $data['message'], $path, $user->email, $user->name,
+            ));
+        }
+
+        AuditLog::record('REQUISITION_SENT_TO_SUPPLIERS', 'requisition', $record->id, [
+            'user_id' => $user->id, 'reference' => $record->doc_number,
+            'after_json' => ['suppliers' => $sendable->pluck('code')->values()->all(), 'no_email' => $skipped],
+        ]);
+
+        return response()->json(['queued' => $sendable->count(), 'skipped_no_email' => $skipped]);
     }
 
     /**

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Calendar, Package, Plus, Trash2 } from 'lucide-react'
+import { Calendar, Mail, Package, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PdfDownloadButton } from '../../components/PdfDownloadButton'
@@ -22,6 +22,7 @@ import { toast } from '../../lib/toast'
 import type { Paginated, Product, ReorderSuggestion, Requisition, Rfq } from '../../lib/types'
 import { ExpiryBadge } from '../inventory/StockOnHandPage'
 import { PrExcelButton } from './PrExcelButton'
+import { SendToSuppliersDrawer } from './SendToSuppliersDrawer'
 import { SingleSourceModal } from './SingleSourceModal'
 
 const STATUSES = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'CONVERTED']
@@ -40,6 +41,7 @@ export default function RequisitionsPage() {
   const [neededBy, setNeededBy] = useState('')
   const [notes, setNotes] = useState('')
   const [lines, setLines] = useState<ReqLine[]>([])
+  const [sending, setSending] = useState<{ id: string; doc: string } | null>(null)
   const selectedId = params.get('requisition')
 
   const list = useQuery({
@@ -75,6 +77,7 @@ export default function RequisitionsPage() {
       align: 'right',
       render: (r) => (
         <span className="inline-flex gap-1 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+          {canSend(r.status) && perms.has('rfq.manage') && <Button size="sm" onClick={() => setSending({ id: r.id, doc: r.doc_number })}><Mail size={12} /> Send to suppliers</Button>}
           <PdfDownloadButton url={`/api/requisitions/${r.id}/pdf`} filename={r.doc_number} label="PDF" />
           <PrExcelButton id={r.id} docNumber={r.doc_number} />
         </span>
@@ -197,7 +200,8 @@ export default function RequisitionsPage() {
         </div>
       </Drawer>
 
-      <RequisitionDrawer id={selectedId} onClose={() => setParams({})} />
+      <RequisitionDrawer id={selectedId} onClose={() => setParams({})} onSend={(id, doc) => setSending({ id, doc })} />
+      {sending && <SendToSuppliersDrawer key={sending.id} requisitionId={sending.id} docNumber={sending.doc} open onClose={() => setSending(null)} />}
     </Page>
   )
 }
@@ -254,7 +258,10 @@ function ReorderSuggestions({ canCreate, isCreating, onCreate }: { canCreate: bo
   )
 }
 
-function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
+/** A request goes to suppliers once it is submitted; drafts and rejected ones are still internal. */
+const canSend = (status: string) => !['DRAFT', 'REJECTED'].includes(status)
+
+function RequisitionDrawer({ id, onClose, onSend }: { id: string | null; onClose: () => void; onSend: (id: string, doc: string) => void }) {
   const queryClient = useQueryClient()
   const perms = usePermissions()
   const suppliers = useSuppliers()
@@ -296,7 +303,7 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
   })
 
   const r = req.data
-  const canEdit = !!r && (r.status === 'DRAFT' || r.status === 'PENDING_APPROVAL') && perms.has('requisition.create')
+  const canEdit = !!r && ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'].includes(r.status) && perms.has('requisition.create')
   function startEdit() {
     setEditLines((r?.lines ?? []).map((l) => ({ key: l.id, product_id: l.product_id, product_name: l.product?.name ?? l.product_id.slice(0, 8), unit: l.product?.base_uom?.code, qty_base: String(Number(l.qty_requested)), notes: l.notes ?? '' })))
     setReplacing(null)
@@ -322,8 +329,9 @@ function RequisitionDrawer({ id, onClose }: { id: string | null; onClose: () => 
       actions={
         r ? (
           <div className="flex gap-2">
-            <PdfDownloadButton url={`/api/requisitions/${r.id}/pdf`} filename={r.doc_number} label="Download PR PDF" />
-            <PrExcelButton id={r.id} docNumber={r.doc_number} />
+            {!editLines && canSend(r.status) && perms.has('rfq.manage') && <Button size="sm" onClick={() => onSend(r.id, r.doc_number)}><Mail size={12} /> Send to suppliers</Button>}
+            {!editLines && <PdfDownloadButton url={`/api/requisitions/${r.id}/pdf`} filename={r.doc_number} label="Download PR PDF" />}
+            {!editLines && <PrExcelButton id={r.id} docNumber={r.doc_number} />}
             {canEdit && !editLines && <Button size="sm" onClick={startEdit}>Edit lines</Button>}
             {r.status === 'DRAFT' && perms.has('requisition.create') && !editLines && <Button size="sm" variant="primary" disabled={submit.isPending} onClick={() => submit.mutate()}>Submit</Button>}
             {r.status === 'PENDING_APPROVAL' && perms.has('requisition.approve') && <><Button size="sm" variant="success" disabled={approve.isPending} onClick={() => approve.mutate()}>Approve</Button><Button size="sm" variant="danger" onClick={() => setRejecting(true)}>Reject</Button></>}

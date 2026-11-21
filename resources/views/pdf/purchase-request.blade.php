@@ -26,8 +26,6 @@
             <th>Item description</th>
             <th>Unit</th>
             <th class="num">Qty requested</th>
-            <th class="num">Est. unit cost</th>
-            <th class="num">Est. amount</th>
         </tr>
         </thead>
         <tbody>
@@ -41,19 +39,13 @@
                 </td>
                 <td>{{ $line->product?->baseUom?->code ?? '—' }}</td>
                 <td class="num">{{ $qty($line->qty_requested) }}</td>
-                <td class="num">{{ $line->estimated_unit_cost === null ? '—' : $money($line->estimated_unit_cost) }}</td>
-                <td class="num">{{ $line->estimated_unit_cost === null ? '—' : $money(bcmul((string) $line->qty_requested, (string) $line->estimated_unit_cost, 4)) }}</td>
             </tr>
         @endforeach
         </tbody>
     </table>
 
-    <table class="totals">
-        <tr class="grand"><td>Estimated total (KES)</td><td class="num">{{ $money($total) }}</td></tr>
-    </table>
-
     <div class="note">
-        This is a request to buy, not an order to a supplier. Estimated costs are the last price paid on a purchase order and are for budgeting only.
+        This is a purchase request, not an order. Prices are quoted separately by each supplier.
     </div>
 
     <table class="cols" style="margin-top: 30px;">
