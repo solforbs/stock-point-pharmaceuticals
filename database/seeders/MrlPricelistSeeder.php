@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Organisation;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\UnitOfMeasure;
@@ -30,6 +29,8 @@ use Illuminate\Support\Facades\DB;
  */
 class MrlPricelistSeeder extends Seeder
 {
+    use ResolvesSeedTargets;
+
     /**
      * @var list<array{0: string, 1: string, 2: string}> [code, description, price]
      */
@@ -138,7 +139,7 @@ class MrlPricelistSeeder extends Seeder
 
     public function run(): void
     {
-        $organisation = Organisation::firstOrFail();
+        $organisation = $this->seedOrganisation() ?? throw new \RuntimeException('Organisation not found.');
         $eaUomId = UnitOfMeasure::where('code', 'EA')->value('id');
 
         if (! $eaUomId) {

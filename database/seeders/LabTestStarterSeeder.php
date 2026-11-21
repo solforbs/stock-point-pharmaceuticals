@@ -52,6 +52,7 @@ class LabTestStarterSeeder extends Seeder
                         ->orderByRaw('organisation_id is not null')->value('id');
 
                     LabTest::firstOrCreate(['code' => $code], [
+                        'organisation_id' => 1,
                         'category_id' => $categoryId,
                         'name' => $name,
                         'price' => $price,

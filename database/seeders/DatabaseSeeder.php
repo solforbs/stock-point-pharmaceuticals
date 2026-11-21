@@ -26,8 +26,8 @@ class DatabaseSeeder extends Seeder
         // first administrator comes from `php artisan user:create-admin`.
         if (! app()->isProduction()) {
             User::firstOrCreate(
-                ['email' => 'test@example.com'],
-                ['name' => 'Test User', 'username' => 'testuser', 'password' => Hash::make('password')]
+                ['email' => 'jablessions76@gmail.com'],
+                ['name' => 'Isaac Nyamari', 'username' => 'testuser', 'password' => Hash::make('password')]
             );
         }
 
@@ -44,7 +44,7 @@ class DatabaseSeeder extends Seeder
             DosageFormSeeder::class,
             StorageConditionSeeder::class,
             HospitalLevelSeeder::class,
-            LabTestCategorySeeder::class,
+            // LabTestCategorySeeder::class,
             MrlPricelistSeeder::class,
             MrlPricelistRemainderSeeder::class,
             ProductTaxDefaultSeeder::class,
@@ -59,12 +59,12 @@ class DatabaseSeeder extends Seeder
         // environment is wanted.
         if (! app()->isProduction()) {
             $this->call([
-                LabTestStarterSeeder::class,
-                KenyanPharmaMasterSeeder::class,
-                KenyanPharmaStockSeeder::class,
-                KenyanPharmaSalesSeeder::class,
-                KenyanPharmaFinanceSeeder::class,
-                KenyanPharmaApprovalsSeeder::class,
+                // LabTestStarterSeeder::class,
+                // KenyanPharmaMasterSeeder::class,
+                // KenyanPharmaStockSeeder::class,
+                // KenyanPharmaSalesSeeder::class,
+                // KenyanPharmaFinanceSeeder::class,
+                // KenyanPharmaApprovalsSeeder::class,
             ]);
         }
     }

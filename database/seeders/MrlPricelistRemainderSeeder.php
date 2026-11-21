@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Organisation;
 use App\Models\UnitOfMeasure;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
@@ -55,9 +54,11 @@ use Illuminate\Support\Facades\File;
  */
 class MrlPricelistRemainderSeeder extends Seeder
 {
+    use ResolvesSeedTargets;
+
     public function run(): void
     {
-        $organisation = Organisation::firstOrFail();
+        $organisation = $this->seedOrganisation() ?? throw new \RuntimeException('Organisation not found.');
         $eaUomId = UnitOfMeasure::where('code', 'EA')->value('id');
 
         if (! $eaUomId) {

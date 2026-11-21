@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Organisation;
 use App\Models\StorageCondition;
 use App\Models\Store;
 use Illuminate\Database\Seeder;
@@ -15,6 +14,8 @@ use RuntimeException;
  */
 class StorageConditionSeeder extends Seeder
 {
+    use ResolvesSeedTargets;
+
     /** @var list<array{code: string, name: string, min: ?string, max: ?string, excursion: ?int, cold: bool}> */
     public const CONDITIONS = [
         ['code' => 'AMBIENT', 'name' => 'Ambient (15 °C – 30 °C)', 'min' => '15.00', 'max' => '30.00', 'excursion' => null, 'cold' => false],
@@ -26,7 +27,7 @@ class StorageConditionSeeder extends Seeder
 
     public function run(): void
     {
-        $org = Organisation::first();
+        $org = $this->seedOrganisation();
         if (! $org) {
             throw new RuntimeException('Organisation not found. Run OrganisationSeeder first.');
         }

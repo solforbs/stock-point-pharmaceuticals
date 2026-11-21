@@ -13,8 +13,17 @@ use App\Models\Organisation;
  */
 trait ResolvesSeedTargets
 {
+    /**
+     * SEED_ORGANISATION (an institution's id or exact name) points the demo
+     * seeders at that institution instead of the configured one.
+     */
     private function seedOrganisation(): ?Organisation
     {
+        $wanted = (string) env('SEED_ORGANISATION', '');
+        if ($wanted !== '') {
+            return Organisation::whereKey($wanted)->orWhere('name', $wanted)->firstOrFail();
+        }
+
         return Organisation::where('kra_pin', config('app.organisation.kra_pin'))->first()
             ?? Organisation::orderBy('created_at')->first();
     }
