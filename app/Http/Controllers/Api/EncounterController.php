@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Consultation;
 use App\Models\Encounter;
 use App\Models\EncounterCharge;
+use App\Models\Facility;
 use App\Models\LabTest;
 use App\Models\Product;
 use App\Services\Hospital\EncounterService;
@@ -24,12 +25,16 @@ use Illuminate\Http\Request;
  */
 class EncounterController extends ApiController
 {
+    /** Holding any of these makes the caller clinical staff, who may read a visit's medical content. */
+    private const CLINICAL_PERMISSIONS = ['hospital.consultation.manage', 'hospital.diagnosis.manage', 'hospital.prescription.create'];
+
     public function index(Request $request): JsonResponse
     {
         $this->requireAnyPermission($request, ['hospital.encounter.manage', 'hospital.consultation.manage', 'hospital.patient.view']);
 
         return response()->json(
             Encounter::query()
+                ->accessibleTo($request->user())
                 ->when($request->input('status'), fn ($q, $v) => $v === 'OPEN' ? $q->whereIn('status', Encounter::OPEN_STATUSES) : $q->where('status', $v))
                 ->when($request->input('facility_id'), fn ($q, $v) => $q->where('facility_id', $v))
                 ->when($request->input('patient_id'), fn ($q, $v) => $q->where('patient_id', $v))
@@ -42,12 +47,24 @@ class EncounterController extends ApiController
     {
         $this->requireAnyPermission($request, ['hospital.encounter.manage', 'hospital.consultation.manage', 'hospital.patient.view']);
 
-        return response()->json(Encounter::with([
+        $clinical = $request->user()->hasAnyPermission(self::CLINICAL_PERMISSIONS);
+
+        $record = $this->find($request, $encounter)->load([
             'patient', 'facility:id,name,pharmacy_branch_id,offers_pharmacy', 'department:id,name', 'attendingClinician:id,name',
-            'consultations.clinician:id,name', 'diagnoses.diagnosedBy:id,name', 'referrals.referredBy:id,name',
-            'charges', 'labOrders.tests', 'labOrders.orderedBy:id,name',
-            'prescriptions.lines', 'prescriptions.prescribedBy:id,name',
-        ])->findOrFail($encounter));
+            'charges',
+        ]);
+
+        if ($clinical) {
+            $record->load([
+                'consultations.clinician:id,name', 'diagnoses.diagnosedBy:id,name', 'referrals.referredBy:id,name',
+                'labOrders.tests', 'labOrders.orderedBy:id,name',
+                'prescriptions.lines', 'prescriptions.prescribedBy:id,name',
+            ]);
+        } else {
+            $record->charges->each(fn (EncounterCharge $charge) => $charge->hideClinicalDetail());
+        }
+
+        return response()->json($record->toArray() + ['clinical_access' => $clinical]);
     }
 
     public function store(Request $request, EncounterService $encounters): JsonResponse
@@ -63,6 +80,10 @@ class EncounterController extends ApiController
             'presenting_notes' => ['nullable', 'string'],
         ]);
 
+        if (! Facility::query()->accessibleTo($request->user())->whereKey($data['facility_id'])->exists()) {
+            return $this->error('FACILITY_ACCESS_DENIED', 'You are not assigned to that facility.', 403);
+        }
+
         return response()->json(
             $encounters->create($data, $request->user())->load(['patient:id,patient_no,first_name,last_name', 'charges']),
             201
@@ -73,14 +94,14 @@ class EncounterController extends ApiController
     {
         $this->requirePermission($request, 'hospital.consultation.manage');
 
-        return response()->json($encounters->startConsultation($this->find($encounter), $request->user()));
+        return response()->json($encounters->startConsultation($this->find($request, $encounter), $request->user()));
     }
 
     public function complete(Request $request, string $encounter, EncounterService $encounters): JsonResponse
     {
         $this->requirePermission($request, 'hospital.consultation.manage');
 
-        return response()->json($encounters->complete($this->find($encounter), $request->user()));
+        return response()->json($encounters->complete($this->find($request, $encounter), $request->user()));
     }
 
     public function cancel(Request $request, string $encounter, EncounterService $encounters): JsonResponse
@@ -88,7 +109,7 @@ class EncounterController extends ApiController
         $this->requirePermission($request, 'hospital.encounter.manage');
 
         return response()->json($encounters->cancel(
-            $this->find($encounter), $request->user(), $request->input('reason'),
+            $this->find($request, $encounter), $request->user(), $request->input('reason'),
         ));
     }
 
@@ -97,7 +118,7 @@ class EncounterController extends ApiController
     {
         $this->requirePermission($request, 'hospital.consultation.manage');
 
-        $record = $this->find($encounter);
+        $record = $this->find($request, $encounter);
         $data = $request->validate([
             'id' => ['nullable', 'uuid'],
             'chief_complaint' => ['nullable', 'string'],
@@ -128,7 +149,7 @@ class EncounterController extends ApiController
     {
         $this->requirePermission($request, 'hospital.diagnosis.manage');
 
-        $record = $this->find($encounter);
+        $record = $this->find($request, $encounter);
         $data = $request->validate([
             'diagnosis' => ['required', 'string', 'max:500'],
             'icd_code' => ['nullable', 'string', 'max:20'],
@@ -150,7 +171,7 @@ class EncounterController extends ApiController
     {
         $this->requirePermission($request, 'hospital.referral.manage');
 
-        $record = $this->find($encounter);
+        $record = $this->find($request, $encounter);
         $data = $request->validate([
             'referred_to' => ['required', 'string', 'max:300'],
             'reason' => ['required', 'string'],
@@ -171,9 +192,15 @@ class EncounterController extends ApiController
     {
         $this->requirePermission($request, 'hospital.encounter.manage');
 
-        $record = EncounterCharge::where('encounter_id', $this->find($encounter)->id)->findOrFail($charge);
+        $record = EncounterCharge::where('encounter_id', $this->find($request, $encounter)->id)->findOrFail($charge);
 
-        return response()->json($encounters->settleCharge($record, $request->user(), $request->boolean('waive')));
+        $settled = $encounters->settleCharge($record, $request->user(), $request->boolean('waive'));
+
+        if (! $request->user()->hasAnyPermission(self::CLINICAL_PERMISSIONS)) {
+            $settled->hideClinicalDetail();
+        }
+
+        return response()->json($settled->withoutRelations());
     }
 
     /**
@@ -240,7 +267,7 @@ class EncounterController extends ApiController
     {
         $this->requirePermission($request, 'laboratory.order.create');
 
-        $record = $this->find($encounter);
+        $record = $this->find($request, $encounter);
         $data = $request->validate([
             'facility_id' => ['required', 'uuid', TenantRules::exists('facilities')],
             'test_ids' => ['required', 'array', 'min:1'],
@@ -259,7 +286,7 @@ class EncounterController extends ApiController
     {
         $this->requirePermission($request, 'hospital.prescription.create');
 
-        $record = $this->find($encounter);
+        $record = $this->find($request, $encounter);
         $data = $request->validate([
             'branch_id' => ['nullable', 'uuid', TenantRules::exists('branches')],
             'notes' => ['nullable', 'string'],
@@ -278,8 +305,9 @@ class EncounterController extends ApiController
         );
     }
 
-    private function find(string $encounter): Encounter
+    /** A visit at a facility the user is not assigned to is "not found". */
+    private function find(Request $request, string $encounter): Encounter
     {
-        return Encounter::findOrFail($encounter);
+        return Encounter::query()->accessibleTo($request->user())->findOrFail($encounter);
     }
 }

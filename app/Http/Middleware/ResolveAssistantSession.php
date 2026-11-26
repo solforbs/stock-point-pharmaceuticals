@@ -23,7 +23,7 @@ class ResolveAssistantSession
         $token = $request->bearerToken() ?: (string) $request->input('session_token');
         $session = $token === '' ? null : $this->assistant->sessionFor($token);
 
-        if ($session === null || $session->user === null) {
+        if ($session === null || $session->user === null || ! $session->user->is_active) {
             return response()->json(['error' => [
                 'code' => 'ASSISTANT_SESSION_EXPIRED',
                 'message' => 'This assistant session has ended. Ask for a new code to carry on.',

@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -34,6 +36,9 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
+
+    /** Mirrors the column default, so a freshly created instance is not read as deactivated. */
+    protected $attributes = ['is_active' => true];
 
     /**
      * Get the attributes that should be cast.
@@ -67,6 +72,22 @@ class User extends Authenticatable
                 $user->organisation_id = app(TenantContext::class)->organisationId();
             }
         });
+    }
+
+    /**
+     * Signs the account out everywhere: stored sessions, the "remember me"
+     * cookie, API tokens and assistant passes. Reactivating the account later
+     * must not revive any of them.
+     */
+    public function endAllSessions(): void
+    {
+        if (config('session.driver') === 'database') {
+            DB::connection(config('session.connection'))->table(config('session.table'))->where('user_id', $this->getKey())->delete();
+        }
+
+        $this->forceFill(['remember_token' => Str::random(60)])->save();
+        $this->tokens()->delete();
+        AssistantSession::where('user_id', $this->getKey())->whereNull('revoked_at')->update(['revoked_at' => now()]);
     }
 
     /**

@@ -20,6 +20,7 @@ class LabOrderController extends ApiController
 
         return response()->json(
             LabOrder::query()
+                ->accessibleTo($request->user())
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->when($request->input('facility_id'), fn ($q, $v) => $q->where('facility_id', $v))
                 ->with(['patient:id,patient_no,first_name,last_name,sex,date_of_birth', 'facility:id,name', 'orderedBy:id,name'])
@@ -32,7 +33,7 @@ class LabOrderController extends ApiController
     {
         $this->requireAnyPermission($request, ['laboratory.view', 'laboratory.order.view']);
 
-        return response()->json($this->find($order)->load([
+        return response()->json($this->find($request, $order)->load([
             'patient:id,patient_no,first_name,last_name,sex,date_of_birth',
             'encounter:id,encounter_no,status', 'facility:id,name',
             'orderedBy:id,name', 'tests.resultEnteredBy:id,name', 'samples.collectedBy:id,name',
@@ -43,7 +44,7 @@ class LabOrderController extends ApiController
     {
         $this->requirePermission($request, 'laboratory.order.accept');
 
-        return response()->json($orders->accept($this->find($order), $request->user()));
+        return response()->json($orders->accept($this->find($request, $order), $request->user()));
     }
 
     public function collectSample(Request $request, string $order, LabOrderService $orders): JsonResponse
@@ -55,14 +56,14 @@ class LabOrderController extends ApiController
             'condition_notes' => ['nullable', 'string', 'max:300'],
         ]);
 
-        return response()->json($orders->collectSample($this->find($order), $data, $request->user()), 201);
+        return response()->json($orders->collectSample($this->find($request, $order), $data, $request->user()), 201);
     }
 
     public function startProcessing(Request $request, string $order, LabOrderService $orders): JsonResponse
     {
         $this->requirePermission($request, 'laboratory.result.enter');
 
-        return response()->json($orders->startProcessing($this->find($order), $request->user()));
+        return response()->json($orders->startProcessing($this->find($request, $order), $request->user()));
     }
 
     public function enterResults(Request $request, string $order, LabOrderService $orders): JsonResponse
@@ -77,7 +78,7 @@ class LabOrderController extends ApiController
             'results.*.is_abnormal' => ['nullable', 'boolean'],
         ]);
 
-        return response()->json($orders->enterResults($this->find($order), $data['results'], $request->user()));
+        return response()->json($orders->enterResults($this->find($request, $order), $data['results'], $request->user()));
     }
 
     public function cancel(Request $request, string $order, LabOrderService $orders): JsonResponse
@@ -86,11 +87,12 @@ class LabOrderController extends ApiController
 
         $data = $request->validate(['reason' => ['required', 'string', 'max:300']]);
 
-        return response()->json($orders->cancel($this->find($order), $request->user(), $data['reason']));
+        return response()->json($orders->cancel($this->find($request, $order), $request->user(), $data['reason']));
     }
 
-    private function find(string $order): LabOrder
+    /** An order at a facility the user is not assigned to is "not found". */
+    private function find(Request $request, string $order): LabOrder
     {
-        return LabOrder::findOrFail($order);
+        return LabOrder::query()->accessibleTo($request->user())->findOrFail($order);
     }
 }

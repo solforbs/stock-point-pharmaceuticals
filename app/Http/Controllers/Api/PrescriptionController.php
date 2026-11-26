@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Encounter;
 use App\Models\Prescription;
 use App\Services\Hospital\PrescriptionService;
 use App\Services\Tenancy\TenantRules;
@@ -43,6 +44,7 @@ class PrescriptionController extends ApiController
             'encounter:id,encounter_no', 'prescribedBy:id,name', 'dispensedBy:id,name',
             'lines.product:id,code,name', 'sale:id,doc_number,grand_total,status',
         ])->findOrFail($prescription);
+        $this->assertWithinFacilities($request, $record, 'prescription.view');
 
         // A pending prescription carries what the till will charge, so the
         // pharmacist collects the exact amount instead of computing one.
@@ -93,8 +95,22 @@ class PrescriptionController extends ApiController
     {
         $this->requireAnyPermission($request, ['hospital.prescription.create', 'prescription.dispense']);
 
-        return response()->json($prescriptions->cancel(
-            Prescription::findOrFail($prescription), $request->user(), $request->input('reason'),
-        ));
+        $record = Prescription::findOrFail($prescription);
+        $this->assertWithinFacilities($request, $record, 'prescription.dispense');
+
+        return response()->json($prescriptions->cancel($record, $request->user(), $request->input('reason')));
+    }
+
+    /**
+     * The pharmacy reaches a prescription through its own permission. A caller
+     * relying on the clinical one is limited to visits at their facilities.
+     */
+    private function assertWithinFacilities(Request $request, Prescription $prescription, string $pharmacyPermission): void
+    {
+        if ($request->user()->can($pharmacyPermission)) {
+            return;
+        }
+
+        Encounter::query()->accessibleTo($request->user())->findOrFail($prescription->encounter_id);
     }
 }

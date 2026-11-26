@@ -63,7 +63,7 @@ function EmailForm({ currentEmail }: { currentEmail: string }) {
   )
 }
 
-function PasswordForm() {
+export function PasswordForm({ onChanged }: { onChanged?: () => void }) {
   const [currentPassword, setCurrentPassword] = useState('')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -75,6 +75,7 @@ function PasswordForm() {
       setCurrentPassword('')
       setPassword('')
       setConfirmation('')
+      onChanged?.()
     },
   })
   const err = save.isError ? getApiError(save.error) : null

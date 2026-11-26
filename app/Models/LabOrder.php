@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganisation;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +33,18 @@ class LabOrder extends Model
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Orders this user may work with: performed by one of their laboratories,
+     * or ordered from a visit at one of their facilities (so a clinician still
+     * reads results from an outside laboratory).
+     */
+    public function scopeAccessibleTo(Builder $query, User $user): Builder
+    {
+        return $query->where(fn (Builder $q) => $q
+            ->whereIn($q->qualifyColumn('facility_id'), Facility::query()->accessibleTo($user)->select('facilities.id'))
+            ->orWhereHas('encounter', fn (Builder $encounter) => $encounter->accessibleTo($user)));
     }
 
     public function encounter(): BelongsTo

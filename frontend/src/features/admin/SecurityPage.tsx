@@ -18,14 +18,20 @@ export default function SecurityPage() {
   const queryClient = useQueryClient()
   const [setup, setSetup] = useState<Setup | null>(null)
   const [code, setCode] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('')
 
   const start = useMutation({
-    mutationFn: async () => (await api.post<Setup>('/auth/mfa/setup')).data,
+    meta: { silent: true },
+    mutationFn: async () => (await api.post<Setup>('/auth/mfa/setup', { current_password: currentPassword })).data,
     onSuccess: (data) => {
       setSetup(data)
       setCode('')
+      setCurrentPassword('')
+      // The previous authenticator is off until the new one verifies.
+      queryClient.invalidateQueries({ queryKey: ['auth', 'user'] })
     },
   })
+  const startError = start.isError ? getApiError(start.error) : null
 
   const verify = useMutation({
     meta: { silent: true },
@@ -56,7 +62,10 @@ export default function SecurityPage() {
               Roles with finance, admin, void or adjustment-approval permissions must use an authenticator app. Setting up a new
               authenticator replaces the previous one.
             </p>
-            <Button variant="primary" onClick={() => start.mutate()} disabled={start.isPending}>
+            <Field label="Current password" required error={startError?.errors.current_password?.[0] ?? startError?.message ?? null}>
+              <Input type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+            </Field>
+            <Button variant="primary" onClick={() => start.mutate()} disabled={!currentPassword || start.isPending}>
               {start.isPending ? 'Generating…' : user?.mfa_required ? 'Re-enrol a new authenticator' : 'Set up authenticator'}
             </Button>
           </div>

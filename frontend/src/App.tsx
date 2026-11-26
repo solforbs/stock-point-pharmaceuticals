@@ -17,6 +17,7 @@ const AboutPage = lazy(() => import('./features/site/AboutPage'))
 const ContactPage = lazy(() => import('./features/site/ContactPage'))
 const PlatformPage = lazy(() => import('./features/platform/PlatformPage'))
 const MyAccountPage = lazy(() => import('./features/admin/MyAccountPage'))
+const ChangePasswordPage = lazy(() => import('./features/admin/ChangePasswordPage'))
 const ModuleSelectPage = lazy(() => import('./features/platform/ModuleSelectPage'))
 const NoAccessPage = lazy(() => import('./features/platform/ModuleSelectPage').then((m) => ({ default: m.NoAccessPage })))
 const BillingPage = lazy(() => import('./features/billing/BillingPage'))
@@ -145,6 +146,8 @@ function App() {
           <Route path="/request-quote" element={<><RequestQuotePage /><AssistantWidget /></>} />
           <Route path="/register" element={<InvitationPage />} />
           <Route path="/activate" element={<InvitationPage />} />
+
+          <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
 
           {/* The platform console has its own light frame: no institution chrome. */}
           <Route path="/platform" element={<ProtectedRoute><PlatformPage /></ProtectedRoute>} />

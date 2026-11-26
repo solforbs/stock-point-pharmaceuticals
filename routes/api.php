@@ -73,7 +73,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->get('/user', function (Request $request) {
+Route::middleware(['auth:sanctum', 'account.standing', 'branch.context', 'tenant.access'])->get('/user', function (Request $request) {
     $user = $request->user()->load('roles');
     $activeBranchId = $request->attributes->get('active_branch_id');
 
@@ -125,7 +125,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->get('/us
 
 // Part 21 — the API catalogue. Every route is authenticated, branch-scoped
 // (Part 18.2) and permission-checked inside its controller.
-Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(function () {
+Route::middleware(['auth:sanctum', 'account.standing', 'branch.context', 'tenant.access'])->group(function () {
     // 21.3 Products and master data
     Route::get('/products', [ProductController::class, 'index']);
     Route::post('/products', [ProductController::class, 'store']);
@@ -562,7 +562,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(fu
 // Healthcare platform — the Hospital module. The module gate refuses anyone
 // without a hospital-catalogue permission, so no URL crosses modules; each
 // controller then checks its own fine-grained permission as usual.
-Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access', 'module.access:hospital'])
+Route::middleware(['auth:sanctum', 'account.standing', 'branch.context', 'tenant.access', 'module.access:hospital'])
     ->prefix('hospital')->group(function () {
         Route::get('/levels', [HospitalConfigController::class, 'levels']);
         Route::get('/facilities', [HospitalConfigController::class, 'facilities']);
@@ -602,7 +602,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access', 'module.ac
 
 // Healthcare platform — the Laboratory module: the bench queue and the
 // guarded order workflow, plus the administrator's test catalogue.
-Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access', 'module.access:laboratory'])
+Route::middleware(['auth:sanctum', 'account.standing', 'branch.context', 'tenant.access', 'module.access:laboratory'])
     ->prefix('laboratory')->group(function () {
         Route::get('/facilities', [LabConfigController::class, 'facilities']);
         Route::get('/categories', [LabConfigController::class, 'categories']);
@@ -622,7 +622,7 @@ Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access', 'module.ac
 
 // An institution's own plan and Paystack checkout. tenant.access leaves these
 // open even when the institution has lapsed, so it can always pay.
-Route::middleware(['auth:sanctum', 'branch.context', 'tenant.access'])->group(function () {
+Route::middleware(['auth:sanctum', 'account.standing', 'branch.context', 'tenant.access'])->group(function () {
     Route::get('/billing', [BillingController::class, 'show']);
     Route::post('/billing/checkout', [BillingController::class, 'checkout']);
     Route::post('/billing/verify', [BillingController::class, 'verify']);
@@ -653,7 +653,7 @@ Route::prefix('public')->group(function () {
 
 // The platform console: institutions, quote requests, plans and payments.
 // Every signed-in person's own login: email and password (current password required).
-Route::middleware(['auth:sanctum', 'throttle:10,1'])->prefix('account')->group(function () {
+Route::middleware(['auth:sanctum', 'account.standing', 'throttle:10,1'])->prefix('account')->group(function () {
     Route::patch('/email', [AccountController::class, 'updateEmail']);
     Route::patch('/password', [AccountController::class, 'updatePassword']);
 });
@@ -661,7 +661,7 @@ Route::middleware(['auth:sanctum', 'throttle:10,1'])->prefix('account')->group(f
 // Running the system itself — deployments (CI/CD), backups and system health —
 // belongs to the system administrators (platform administrators), never to an
 // institution's own staff, however senior. No institution context is needed.
-Route::middleware(['auth:sanctum', 'platform'])->group(function () {
+Route::middleware(['auth:sanctum', 'account.standing', 'platform'])->group(function () {
     Route::get('/admin/system-health', [OperationsController::class, 'systemHealth']);
     Route::post('/admin/system-health/retry-failed-jobs', [OperationsController::class, 'retryFailedJobs']);
     Route::post('/admin/system-health/forget-failed-job/{id}', [OperationsController::class, 'forgetFailedJob']);
@@ -673,7 +673,7 @@ Route::middleware(['auth:sanctum', 'platform'])->group(function () {
     Route::get('/admin/backups/{name}/download', [OperationsController::class, 'downloadBackup']);
 });
 
-Route::middleware(['auth:sanctum', 'platform'])->prefix('platform')->group(function () {
+Route::middleware(['auth:sanctum', 'account.standing', 'platform'])->prefix('platform')->group(function () {
     Route::get('/quote-requests', [PlatformController::class, 'quoteRequests']);
     Route::post('/quote-requests/{tenantRequest}/approve', [PlatformController::class, 'approveRequest']);
     Route::post('/quote-requests/{tenantRequest}/reject', [PlatformController::class, 'rejectRequest']);

@@ -36,6 +36,8 @@ export type CurrentUser = {
   email: string
   username?: string | null
   mfa_required?: boolean
+  /** Holding a temporary password: only replacing it is allowed. */
+  must_change_password?: boolean
   roles?: { id: number; name: string }[]
   permissions: string[]
   /** The platform modules this user may enter; drives the module splash. */
@@ -1998,6 +2000,8 @@ export type Encounter = {
   presenting_notes: string | null
   started_at: string
   completed_at: string | null
+  /** False when the viewer is not clinical staff: the medical content is then left out. */
+  clinical_access?: boolean
   consultations?: Consultation[]
   diagnoses?: Diagnosis[]
   referrals?: Referral[]
