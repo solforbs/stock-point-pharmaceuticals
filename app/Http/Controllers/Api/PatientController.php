@@ -34,7 +34,8 @@ class PatientController extends ApiController
         $this->requirePermission($request, 'hospital.patient.view');
 
         $record = Patient::with([
-            'encounters' => fn ($q) => $q->with(['facility:id,name', 'department:id,name', 'attendingClinician:id,name'])->limit(50),
+            'encounters' => fn ($q) => $q->accessibleTo($request->user())
+                ->with(['facility:id,name', 'department:id,name', 'attendingClinician:id,name'])->limit(50),
         ])->findOrFail($patient);
 
         AuditLog::record('PATIENT_VIEWED', 'patient', $record->id, [

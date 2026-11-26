@@ -144,6 +144,10 @@ class AdminController extends ApiController
             if (array_key_exists('assignments', $data)) {
                 $this->syncAssignments($user, $data['assignments'] ?? []);
             }
+
+            if (! $user->is_active) {
+                $user->endAllSessions();
+            }
         });
 
         $user = $user->fresh();

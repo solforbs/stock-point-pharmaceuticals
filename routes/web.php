@@ -21,7 +21,7 @@ Route::get('/', $spa);
 // authenticate with a Bearer token instead and never touch these routes.
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/auth/mfa/verify', [AuthController::class, 'mfaVerify'])->middleware('throttle:10,1');
-Route::post('/auth/mfa/setup', [AuthController::class, 'mfaSetup'])->middleware('auth:sanctum');
+Route::post('/auth/mfa/setup', [AuthController::class, 'mfaSetup'])->middleware(['auth:sanctum', 'account.standing', 'throttle:10,1']);
 Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 // Client-side routes (/dashboard, /sell/pos …) are the SPA's; unknown API,

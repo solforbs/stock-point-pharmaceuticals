@@ -39,23 +39,11 @@ class AuthController extends Controller
 
         $user = User::where('email', $credentials['email'])->first();
 
-        if ($user && $user->locked_until && $user->locked_until->isFuture()) {
-            $this->audit('LOGIN_LOCKED', $user);
-
-            return response()->json([
-                'error' => [
-                    'code' => 'ACCOUNT_LOCKED',
-                    'message' => 'Too many attempts — try again in '.max(1, (int) ceil(now()->diffInMinutes($user->locked_until, true))).' minutes.',
-                    'details' => ['locked_until' => $user->locked_until->toIso8601String()],
-                ],
-            ], 423);
+        if ($user && $this->isLocked($user)) {
+            return $this->lockedResponse($user);
         }
 
-        $passwordMatches = $user && (
-            Hash::check($credentials['password'], $user->password)
-            || (str_contains($credentials['password'], ' ') && Hash::check(str_replace(' ', '', $credentials['password']), $user->password))
-            || (! str_contains($credentials['password'], ' ') && Hash::check(str_replace('@', ' @', $credentials['password']), $user->password))
-        );
+        $passwordMatches = $user && Hash::check($credentials['password'], $user->password);
 
         if (! $user || ! $user->is_active || ! $passwordMatches) {
             if ($user) {
@@ -63,6 +51,10 @@ class AuthController extends Controller
             }
 
             throw ValidationException::withMessages(['email' => self::CREDENTIALS_MESSAGE]);
+        }
+
+        if (Hash::needsRehash($user->password)) {
+            $user->forceFill(['password' => $credentials['password']])->save();
         }
 
         if ($user->mfa_required && $user->mfa_secret) {
@@ -87,12 +79,16 @@ class AuthController extends Controller
         $pendingId = $request->session()->get('mfa.pending_user_id');
         $user = $pendingId ? User::find($pendingId) : $request->user();
 
-        if (! $user || ! $user->mfa_secret) {
+        if (! $user || ! $user->is_active || ! $user->mfa_secret) {
             throw ValidationException::withMessages(['code' => 'No authenticator is set up for this account.']);
         }
 
+        if ($this->isLocked($user)) {
+            return $this->lockedResponse($user);
+        }
+
         if (! $this->google2fa->verifyKey($user->mfa_secret, $data['code'])) {
-            $this->audit('MFA_FAILED', $user);
+            $this->recordFailure($user, 'MFA_FAILED');
             throw ValidationException::withMessages(['code' => 'That code is not valid.']);
         }
 
@@ -103,7 +99,7 @@ class AuthController extends Controller
             return $this->finishLogin($request, $user, $remember);
         }
 
-        $user->forceFill(['mfa_required' => true])->save();
+        $user->forceFill(['mfa_required' => true, 'failed_login_attempts' => 0, 'locked_until' => null])->save();
         $this->audit('MFA_ENABLED', $user);
 
         return response()->json(['mfa_required' => true]);
@@ -112,10 +108,18 @@ class AuthController extends Controller
     /**
      * Generates a fresh TOTP secret for the signed-in user. MFA is only
      * enforced once the user proves the authenticator works via mfaVerify.
+     * Because this switches the current second factor off until then, it asks
+     * for the password: an unattended open session must not be able to.
      */
     public function mfaSetup(Request $request): JsonResponse
     {
         $user = $request->user();
+        $data = $request->validate(['current_password' => ['required', 'string']]);
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages(['current_password' => 'Your current password is not right.']);
+        }
+
         $secret = $this->google2fa->generateSecretKey(32);
 
         $user->forceFill(['mfa_secret' => $secret, 'mfa_required' => false])->save();
@@ -157,7 +161,7 @@ class AuthController extends Controller
     /**
      * Part 18.2 — 5 failed attempts → 15 minute lock, exponential thereafter.
      */
-    private function recordFailure(User $user): void
+    private function recordFailure(User $user, string $action = 'LOGIN_FAILED'): void
     {
         $attempts = (int) $user->failed_login_attempts + 1;
         $update = ['failed_login_attempts' => $attempts];
@@ -168,7 +172,25 @@ class AuthController extends Controller
         }
 
         $user->forceFill($update)->save();
-        $this->audit('LOGIN_FAILED', $user, ['attempts' => $attempts, 'locked_until' => $user->locked_until?->toIso8601String()]);
+        $this->audit($action, $user, ['attempts' => $attempts, 'locked_until' => $user->locked_until?->toIso8601String()]);
+    }
+
+    private function isLocked(User $user): bool
+    {
+        return (bool) $user->locked_until?->isFuture();
+    }
+
+    private function lockedResponse(User $user): JsonResponse
+    {
+        $this->audit('LOGIN_LOCKED', $user);
+
+        return response()->json([
+            'error' => [
+                'code' => 'ACCOUNT_LOCKED',
+                'message' => 'Too many attempts — try again in '.max(1, (int) ceil(now()->diffInMinutes($user->locked_until, true))).' minutes.',
+                'details' => ['locked_until' => $user->locked_until->toIso8601String()],
+            ],
+        ], 423);
     }
 
     /**

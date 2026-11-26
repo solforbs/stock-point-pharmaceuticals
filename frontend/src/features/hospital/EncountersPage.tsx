@@ -174,6 +174,10 @@ function EncounterDrawer({ encounterId, onClose }: { encounterId: string | null;
 
           {canConsult && <ConsultationSection encounter={encounter} onSaved={refresh} />}
 
+          {encounter.clinical_access === false ? (
+            <div className="text-sm text-slate-500">Diagnoses, lab results, prescriptions and referrals are visible to clinical staff only.</div>
+          ) : (
+          <>
           <DiagnosesSection encounter={encounter} onSaved={refresh} />
 
           {/* Lab work */}
@@ -250,6 +254,8 @@ function EncounterDrawer({ encounterId, onClose }: { encounterId: string | null;
           </section>
 
           <ReferralsSection encounter={encounter} onSaved={refresh} />
+          </>
+          )}
 
           <ChargesSection encounter={encounter} onSaved={refresh} />
         </div>

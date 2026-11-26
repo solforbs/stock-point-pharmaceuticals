@@ -17,6 +17,11 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
   }
 
+  // A temporary password opens nothing until it is replaced (the API refuses too).
+  if (user.must_change_password) {
+    return location.pathname === '/change-password' ? children : <Navigate to="/change-password" replace />
+  }
+
   // A platform-only account belongs to no institution: its home is the console.
   if (!user.organisation && user.is_platform_admin && location.pathname !== '/platform') {
     return <Navigate to="/platform" replace />

@@ -25,6 +25,15 @@ class EncounterCharge extends Model
         return ['paid_at' => 'datetime'];
     }
 
+    /** A cashier needs the amount, not which test was ordered. */
+    public function hideClinicalDetail(): void
+    {
+        if ($this->charge_type === 'LAB_TEST') {
+            $this->setAttribute('description', 'Laboratory test');
+            $this->syncOriginalAttribute('description');
+        }
+    }
+
     public function encounter(): BelongsTo
     {
         return $this->belongsTo(Encounter::class);

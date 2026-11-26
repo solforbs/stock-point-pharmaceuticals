@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganisation;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -79,6 +80,15 @@ class Encounter extends Model
     public function prescriptions(): HasMany
     {
         return $this->hasMany(Prescription::class);
+    }
+
+    /** Visits at the facilities this user may work in (Facility::scopeAccessibleTo). */
+    public function scopeAccessibleTo(Builder $query, User $user): Builder
+    {
+        return $query->whereIn(
+            $query->qualifyColumn('facility_id'),
+            Facility::query()->accessibleTo($user)->select('facilities.id'),
+        );
     }
 
     public function isOpen(): bool

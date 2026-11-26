@@ -64,7 +64,7 @@ class LoginSecurityTest extends TestCase
     public function test_mfa_setup_then_verify_enables_the_second_factor_and_login_requires_it(): void
     {
         $this->actingAs($this->user);
-        $setup = $this->postJson('/auth/mfa/setup')->assertOk()->json();
+        $setup = $this->postJson('/auth/mfa/setup', ['current_password' => 'password-long-enough'])->assertOk()->json();
         $this->assertStringStartsWith('otpauth://totp/', $setup['otpauth_url']);
         $this->assertFalse($this->user->fresh()->mfa_required, 'Not enforced until the authenticator is proven');
 

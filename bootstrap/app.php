@@ -3,6 +3,7 @@
 use App\Exceptions\ApiErrorMap;
 use App\Http\Middleware\AttachRequestId;
 use App\Http\Middleware\EnforceInstitutionAccess;
+use App\Http\Middleware\EnsureAccountInGoodStanding;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\RequireModuleAccess;
 use App\Http\Middleware\ResolveActiveBranch;
@@ -28,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
     // and resolve to nothing unless that middleware has set the team id.
     ->withBroadcasting(
         __DIR__.'/../routes/channels.php',
-        ['middleware' => ['web', 'auth:sanctum', 'branch.context']],
+        ['middleware' => ['web', 'auth:sanctum', 'account.standing', 'branch.context']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->append(AttachRequestId::class);
         $middleware->alias([
+            'account.standing' => EnsureAccountInGoodStanding::class,
             'assistant.session' => ResolveAssistantSession::class,
             'branch.context' => ResolveActiveBranch::class,
             'module.access' => RequireModuleAccess::class,
