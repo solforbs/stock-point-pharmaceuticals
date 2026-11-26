@@ -61,6 +61,8 @@ class AccountStandingTest extends TestCase
 
     public function test_a_deactivated_accounts_assistant_pass_stops_working(): void
     {
+        // The assistant answers inside a branch, so the account needs a role in one.
+        $this->grantPermissions(['sale.view']);
         $token = 'assistant-pass-token';
         AssistantSession::create([
             'email' => $this->user->email, 'user_id' => $this->user->id,
