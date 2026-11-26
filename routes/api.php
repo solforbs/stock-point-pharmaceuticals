@@ -181,6 +181,7 @@ Route::middleware(['auth:sanctum', 'account.standing', 'branch.context', 'tenant
     // 21.7 Wholesale orders
     Route::post('/quotations', [OrderController::class, 'storeQuotation']);
     Route::get('/quotations/{quotation}', [OrderController::class, 'quotation']);
+    Route::put('/quotations/{quotation}', [OrderController::class, 'updateQuotation']);
     Route::post('/quotations/{quotation}/accept', [OrderController::class, 'acceptQuotation']);
     Route::get('/sales-orders', [OrderController::class, 'salesOrders']);
     Route::post('/sales-orders', [OrderController::class, 'storeSalesOrder']);

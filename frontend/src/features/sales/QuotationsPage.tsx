@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FileText, Pill, Plus, UserSquare2 } from 'lucide-react'
+import { FileText, Pencil, Pill, Plus, UserSquare2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CreditLimitResolver, type CreditResolution } from '../../components/CreditLimitResolver'
@@ -13,13 +13,13 @@ import { Pagination } from '../../components/ui/Pagination'
 import { InlineError, LoadingSkeleton } from '../../components/ui/States'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { Button, DescriptionList, DrawerFooter, Field, FormSection, Input, PrimaryAction, Select, Textarea } from '../../components/ui/primitives'
-import { apiGet, apiPost, getApiError, newIdempotencyKey, withIdempotency } from '../../lib/api'
+import { apiGet, apiPost, apiPut, getApiError, newIdempotencyKey, withIdempotency } from '../../lib/api'
 import { addDaysIso, formatDate, formatDateTime, titleCase } from '../../lib/format'
 import { useStores } from '../../lib/hooks'
 import { usePermission } from '../../lib/permissions'
 import { toast } from '../../lib/toast'
 import type { Customer, Paginated, Quotation, SalesOrder } from '../../lib/types'
-import { DocLinesEditor, linesPayload, type EditableLine } from './DocLinesEditor'
+import { DocLinesEditor, lineFromQuotationLine, linesPayload, type EditableLine } from './DocLinesEditor'
 
 const STATUSES = ['DRAFT', 'SENT', 'ACCEPTED', 'EXPIRED', 'CONVERTED', 'CANCELLED']
 
@@ -242,20 +242,34 @@ function QuotationDrawer({ id, onClose, onAccepted }: { id: string | null; onClo
     },
   })
 
+  const [editingId, setEditingId] = useState<string | null>(null)
+
   const q = quotation.data
   const acceptable = q?.status === 'DRAFT' || q?.status === 'SENT'
+  // The server refuses to accept from the start of the "valid until" day.
+  const expired = !!q && acceptable && q.valid_until <= addDaysIso(0)
+  const editing = !!q && acceptable && editingId === q.id
   return (
     <Drawer
       open={!!id}
-      onClose={onClose}
+      onClose={() => {
+        setEditingId(null)
+        accept.reset()
+        onClose()
+      }}
       title={q?.doc_number ?? 'Quotation'}
       subtitle={q ? `${q.customer?.name ?? ''} · valid until ${formatDate(q.valid_until)}` : undefined}
-      width={760}
+      width={editing ? 880 : 760}
       actions={
-        q ? (
+        q && !editing ? (
           <div className="flex items-center gap-2">
             <PdfDownloadButton url={`/api/quotations/${q.id}/pdf`} filename={q.doc_number} label="Download PDF" />
             {acceptable && (
+              <Button variant="secondary" size="sm" onClick={() => { accept.reset(); setEditingId(q.id) }} disabled={accept.isPending}>
+                <Pencil size={14} className="mr-1.5" /> Edit
+              </Button>
+            )}
+            {acceptable && !expired && (
               <Button variant="success" size="sm" onClick={() => accept.mutate({})} disabled={accept.isPending}>
                 {accept.isPending ? 'Accepting…' : 'Accept → sales order'}
               </Button>
@@ -272,8 +286,14 @@ function QuotationDrawer({ id, onClose, onAccepted }: { id: string | null; onClo
           {getApiError(accept.error).code !== 'CREDIT_LIMIT_EXCEEDED' && <InlineError error={accept.error} />}
         </div>
       )}
-      {q && (
+      {editing && <QuotationEditForm key={q.id} quotation={q} onDone={() => setEditingId(null)} />}
+      {q && !editing && (
         <div className="space-y-4">
+          {expired && (
+            <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+              This quotation expired on {formatDate(q.valid_until)}, so it cannot be accepted. Edit it and set a new valid-until date.
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <StatusBadge status={q.status} />
             {q.converted_sales_order_id && <span className="text-xs text-slate-500 font-medium">Converted to order {q.converted_sales_order_id.slice(0, 8)}</span>}
@@ -309,5 +329,49 @@ function QuotationDrawer({ id, onClose, onAccepted }: { id: string | null; onClo
         </div>
       )}
     </Drawer>
+  )
+}
+
+function QuotationEditForm({ quotation, onDone }: { quotation: Quotation; onDone: () => void }) {
+  const queryClient = useQueryClient()
+  const canDiscount = usePermission('sale.discount.apply')
+  const [validUntil, setValidUntil] = useState(() => (quotation.valid_until > addDaysIso(0) ? quotation.valid_until : addDaysIso(7)))
+  const [notes, setNotes] = useState(quotation.notes ?? '')
+  const [lines, setLines] = useState<EditableLine[]>(() =>
+    [...(quotation.lines ?? [])].sort((a, b) => a.line_number - b.line_number).flatMap((line) => lineFromQuotationLine(line) ?? []),
+  )
+
+  const save = useMutation({
+    meta: { silent: true },
+    mutationFn: () => apiPut<Quotation>(`/api/quotations/${quotation.id}`, { valid_until: validUntil, notes: notes || null, lines: linesPayload(lines) }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['quotations', updated.id], updated)
+      queryClient.invalidateQueries({ queryKey: ['quotations'] })
+      toast.success(`Quotation ${updated.doc_number} updated`)
+      onDone()
+    },
+  })
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-slate-600">
+        Changing a quantity keeps the quoted unit price, and any discount on that line changes in proportion. A new item, or a changed unit, price or discount, is priced again.
+      </p>
+      <Field label="Valid Until" required hint="Must be after today">
+        <Input type="date" min={addDaysIso(1)} value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className="w-full sm:w-56" />
+      </Field>
+      <DocLinesEditor
+        lines={lines}
+        onChange={setLines}
+        canDiscount={canDiscount}
+        disabled={save.isPending}
+        pricing={{ storeId: quotation.store_id, customerId: quotation.customer_id }}
+      />
+      <Field label="Delivery / Tender Notes">
+        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+      </Field>
+      {save.isError && <InlineError error={save.error} />}
+      <DrawerFooter onCancel={onDone} onSubmit={() => save.mutate()} submitLabel="Save Changes" isSubmitting={save.isPending} disabled={!validUntil || lines.length === 0} />
+    </div>
   )
 }

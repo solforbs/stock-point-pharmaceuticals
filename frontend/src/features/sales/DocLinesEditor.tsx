@@ -2,10 +2,10 @@ import { Trash2 } from 'lucide-react'
 import { defaultSalesUom, ProductSearch } from '../../components/ProductSearch'
 import { QuantityInput } from '../../components/ui/QuantityInput'
 import { Button } from '../../components/ui/primitives'
-import { dCmp, dIsPos, dMul, dMulInt, dRound2, isValidDecimal } from '../../lib/decimal'
+import { dCmp, dDiv, dIsPos, dMul, dMulInt, dRound2, isValidDecimal } from '../../lib/decimal'
 import { useProductInsight } from '../../lib/hooks'
 import { formatMoney } from '../../lib/money'
-import type { Product, ProductUom } from '../../lib/types'
+import type { DocLine, Product, ProductUom } from '../../lib/types'
 
 export type EditableLine = {
   key: string
@@ -17,6 +17,8 @@ export type EditableLine = {
   requested_discount_reason: string
   /** The final unit price (VAT inclusive) the creator decided on; empty keeps the product price. */
   unit_price: string
+  /** Set on a line already on the quotation being edited: its price stands while the unit does. */
+  quoted?: { id: string; uom_id: string; unit_price: string }
 }
 
 /** Where the line is priced from: shows each product's price and lets the creator set the final one. */
@@ -41,7 +43,8 @@ function useLineProductPrice(line: EditableLine, pricing: LinePricing) {
   const factor = line.uoms.find((u) => u.uom_id === line.uom_id)?.factor_to_base ?? 1
   const insightUom = data?.uoms.find((u) => u.uom_id === line.uom_id)
   const listed = insightUom?.trade ?? insightUom?.retail
-  const productPrice = listed?.gross_price ?? (line.product.default_price && dIsPos(line.product.default_price) ? dMulInt(line.product.default_price, factor) : null)
+  const quotedPrice = line.quoted?.uom_id === line.uom_id ? line.quoted.unit_price : null
+  const productPrice = quotedPrice ?? listed?.gross_price ?? (line.product.default_price && dIsPos(line.product.default_price) ? dMulInt(line.product.default_price, factor) : null)
   const unitCost = insightUom?.unit_cost ?? null
 
   const typed = line.unit_price.trim()
@@ -129,6 +132,23 @@ function LinePriceRow({ line, pricing, disabled, onPrice }: { line: EditableLine
       {belowCost && <div className="text-[11px] font-semibold text-amber-700">{belowCostNote(unitCost)}</div>}
     </div>
   )
+}
+
+/** A saved quotation line, back in the editor with its quoted unit price (VAT inclusive) as the product price. */
+export function lineFromQuotationLine(line: DocLine): EditableLine | null {
+  const product = line.product as Product | null | undefined
+  if (!product) return null
+  return {
+    key: line.id,
+    product,
+    uoms: (product.uoms ?? []).filter((u) => u.is_sales || u.is_base || u.uom_id === line.uom_id),
+    uom_id: line.uom_id,
+    quantity: line.qty.replace(/\.?0+$/, ''),
+    requested_discount_pct: '',
+    requested_discount_reason: '',
+    unit_price: '',
+    quoted: { id: line.id, uom_id: line.uom_id, unit_price: dRound2(dDiv(line.line_total, line.qty)) },
+  }
 }
 
 /** Shared line editor for quotations and sales orders: product, UOM, qty, discount, and (with pricing) the unit price. */
@@ -346,6 +366,7 @@ export function DocLinesEditor({
 
 export function linesPayload(lines: EditableLine[]) {
   return lines.map((l) => ({
+    ...(l.quoted ? { id: l.quoted.id } : {}),
     product_id: l.product.id,
     uom_id: l.uom_id,
     quantity: l.quantity,

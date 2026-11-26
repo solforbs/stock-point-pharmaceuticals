@@ -29,6 +29,12 @@ use Illuminate\Validation\Rule;
  */
 class OrderController extends ApiController
 {
+    /** What the quotation screen shows, and what its line editor needs of each product. */
+    private const QUOTATION_DETAIL = [
+        'lines.product:id,code,name,strength,is_discrete,default_price,base_uom_id',
+        'lines.product.baseUom', 'lines.product.uoms.uom', 'customer:id,code,name',
+    ];
+
     public function storeQuotation(Request $request, QuotationService $quotations): JsonResponse
     {
         $this->requirePermission($request, 'sale.create');
@@ -65,7 +71,31 @@ class OrderController extends ApiController
     {
         $this->requirePermission($request, 'sale.view');
 
-        return response()->json(Quotation::where('branch_id', $this->branchId($request))->with(['lines.product:id,code,name', 'customer:id,code,name'])->findOrFail($quotation));
+        return response()->json(Quotation::where('branch_id', $this->branchId($request))->with(self::QUOTATION_DETAIL)->findOrFail($quotation));
+    }
+
+    /** PUT /api/quotations/{id} — changes a quotation not yet accepted; quoted prices on unchanged items are honoured. */
+    public function updateQuotation(Request $request, string $quotation, QuotationService $quotations): JsonResponse
+    {
+        $this->requirePermission($request, 'sale.create');
+        $quotation = Quotation::where('branch_id', $this->branchId($request))->findOrFail($quotation);
+
+        $data = $request->validate([
+            'valid_until' => ['required', 'date', 'after:today'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.id' => ['nullable', 'uuid', 'distinct'],
+            'lines.*.product_id' => ['required', 'uuid', TenantRules::exists('products')],
+            'lines.*.uom_id' => ['required', 'uuid', TenantRules::exists('units_of_measure')],
+            'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
+            'lines.*.requested_discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'lines.*.requested_discount_reason' => ['nullable', 'string', 'max:255'],
+            'lines.*.selling_price' => ['nullable', 'numeric', 'gt:0'],
+        ]);
+
+        $updated = $quotations->update($quotation, $data + ['user_id' => $request->user()->id]);
+
+        return response()->json($updated->load(self::QUOTATION_DETAIL));
     }
 
     /** POST /api/quotations/{id}/accept — creates the order AND reserves stock (credit check inside). */
