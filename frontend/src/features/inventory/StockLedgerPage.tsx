@@ -52,6 +52,7 @@ export default function StockLedgerPage() {
 
   const columns: Column<LedgerRow>[] = [
     { key: 'when', header: 'When', render: (r) => <span className="tabular whitespace-nowrap">{formatDateTime(r.txn_datetime)}</span>, sortValue: (r) => r.txn_datetime },
+    { key: 'user', header: 'Done by', render: (r) => r.user?.name ?? '—', sortValue: (r) => r.user?.name ?? '' },
     { key: 'type', header: 'Movement', render: (r) => <StatusBadge status={r.txn_type} tone={Number(r.qty_base) < 0 ? 'red' : 'green'} label={titleCase(r.txn_type)} /> },
     { key: 'product', header: 'Product', render: (r) => r.product?.name ?? r.product_id.slice(0, 8) },
     { key: 'batch', header: 'Batch', render: (r) => <span className="tabular">{r.batch?.batch_number ?? r.batch_id.slice(0, 8)}</span> },

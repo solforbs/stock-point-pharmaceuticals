@@ -79,7 +79,10 @@ class HospitalConfigController extends ApiController
             'code' => ['nullable', 'string', 'max:30'],
         ]);
 
-        return response()->json($record->departments()->create($data), 201);
+        $created = $record->departments()->create($data);
+        AuditLog::record('DEPARTMENT_CREATED', 'department', $created->id, ['reference' => $created->name, 'after_json' => $data]);
+
+        return response()->json($created, 201);
     }
 
     public function updateDepartment(Request $request, string $department): JsonResponse
@@ -87,11 +90,14 @@ class HospitalConfigController extends ApiController
         $this->requirePermission($request, 'hospital.manage');
 
         $record = Department::findOrFail($department);
-        $record->update($request->validate([
+        $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:150'],
             'code' => ['nullable', 'string', 'max:30'],
             'is_active' => ['sometimes', 'boolean'],
-        ]));
+        ]);
+        $before = $record->only(array_keys($data));
+        $record->update($data);
+        AuditLog::record('DEPARTMENT_UPDATED', 'department', $record->id, ['reference' => $record->name, 'before_json' => $before, 'after_json' => $data, 'changed_fields' => array_keys($data)]);
 
         return response()->json($record);
     }

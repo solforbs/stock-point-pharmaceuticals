@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\AuditLog;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ProductPrice;
@@ -327,6 +328,11 @@ class ProductController extends ApiController
                 ]);
             }
 
+            AuditLog::record('PRODUCT_CREATED', 'product', $product->id, [
+                'reference' => $product->code,
+                'after_json' => $validated,
+            ]);
+
             return $product;
         });
 
@@ -364,7 +370,20 @@ class ProductController extends ApiController
             return $this->error('BASE_UOM_LOCKED', 'The base unit cannot change once stock has moved (Part 5.3). Create a new product instead.', 422);
         }
 
-        $product->update($validated + ['updated_by' => $request->user()->id]);
+        DB::transaction(function () use ($product, $validated, $request) {
+            $original = $product->getRawOriginal();
+            $product->update($validated + ['updated_by' => $request->user()->id]);
+            $changed = array_values(array_diff(array_keys($product->getChanges()), ['updated_by', 'updated_at']));
+
+            if ($changed !== []) {
+                AuditLog::record('PRODUCT_UPDATED', 'product', $product->id, [
+                    'reference' => $product->code,
+                    'before_json' => array_intersect_key($original, array_flip($changed)),
+                    'after_json' => array_intersect_key($product->getAttributes(), array_flip($changed)),
+                    'changed_fields' => $changed,
+                ]);
+            }
+        });
 
         return response()->json($product->fresh(['baseUom', 'uoms.uom']));
     }

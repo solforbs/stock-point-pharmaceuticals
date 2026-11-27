@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\AuditLog;
 use App\Models\ProductBatch;
 use App\Models\ProductCategory;
 use App\Models\StockAdjustment;
@@ -40,6 +41,7 @@ class InventoryController extends ApiController
             'rows.*.*' => ['nullable', 'string', 'max:500'],
         ]);
         set_time_limit(300);
+        AuditLog::record('STOCK_SHEET_PRINTED', 'branch', $this->branchId($request), ['reference' => $data['title'], 'after_json' => ['rows' => count($data['rows'])]]);
 
         return $pdf->render('pdf.stock-sheet', [
             'title' => $data['title'],
@@ -99,7 +101,7 @@ class InventoryController extends ApiController
             ->when($filters['txn_type'] ?? null, fn ($q, $v) => $q->where('txn_type', $v))
             ->when($filters['from'] ?? null, fn ($q, $v) => $q->whereDate('txn_datetime', '>=', $v))
             ->when($filters['to'] ?? null, fn ($q, $v) => $q->whereDate('txn_datetime', '<=', $v))
-            ->with(['product:id,code,name', 'batch:id,batch_number,expiry_date', 'store:id,code'])
+            ->with(['product:id,code,name', 'batch:id,batch_number,expiry_date', 'store:id,code', 'user:id,name'])
             ->orderBy('txn_datetime')->orderBy('created_at');
 
         $showCost = $request->user()->can('product.cost.view');
@@ -197,7 +199,7 @@ class InventoryController extends ApiController
             ->findOrFail($batch);
 
         $movements = StockLedger::where('batch_id', $batch->id)
-            ->with(['store:id,code'])
+            ->with(['store:id,code', 'user:id,name'])
             ->orderBy('txn_datetime')
             ->get(['id', 'txn_type', 'store_id', 'qty_base', 'unit_cost', 'source_doc_type', 'source_doc_id', 'txn_datetime', 'user_id']);
 

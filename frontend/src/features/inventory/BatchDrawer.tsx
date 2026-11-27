@@ -95,12 +95,13 @@ export function BatchDrawer({ id, onClose }: BatchDrawerProps) {
           <Card title={`Movements (${b.movements?.length ?? 0})`}>
             <table className="ui-table">
               <thead>
-                <tr><th>When</th><th>Type</th><th>Store</th><th className="text-right">Qty</th>{showCost && <th className="text-right">Unit cost</th>}<th>Source</th></tr>
+                <tr><th>When</th><th>Done by</th><th>Type</th><th>Store</th><th className="text-right">Qty</th>{showCost && <th className="text-right">Unit cost</th>}<th>Source</th></tr>
               </thead>
               <tbody>
                 {(b.movements ?? []).map((m) => (
                   <tr key={m.id}>
                     <td className="tabular whitespace-nowrap">{formatDateTime(m.txn_datetime)}</td>
+                    <td>{m.user?.name ?? '—'}</td>
                     <td>{titleCase(m.txn_type)}</td>
                     <td>{m.store?.code ?? '—'}</td>
                     <td className="text-right"><QtyCell value={m.qty_base} /></td>

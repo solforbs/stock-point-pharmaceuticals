@@ -214,6 +214,7 @@ class PlatformController extends ApiController
         } catch (InvitationUnusableException $e) {
             return $this->error('INVALID_STATE', $e->getMessage(), 409);
         }
+        AuditLog::record('TENANT_INVITATION_RESENT', 'tenant_invitation', (string) $fresh->id, ['reference' => $fresh->email]);
 
         return response()->json($this->invitationRow($fresh), 201);
     }

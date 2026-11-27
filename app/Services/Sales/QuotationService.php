@@ -84,6 +84,11 @@ class QuotationService
                 QuotationLine::create($this->pricedLine($line) + ['quotation_id' => $quotation->id, 'line_number' => $i + 1]);
             }
 
+            AuditLog::record('QUOTATION_CREATED', 'quotation', $quotation->id, [
+                'user_id' => $data['user_id'], 'branch_id' => $quotation->branch_id, 'reference' => $quotation->doc_number,
+                'after_json' => ['grand_total' => (string) $quotation->grand_total, 'lines' => count($quote['lines'])],
+            ]);
+
             return $quotation->fresh(['lines']);
         });
     }

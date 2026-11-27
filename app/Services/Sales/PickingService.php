@@ -110,6 +110,15 @@ class PickingService
                 'qty_picked_base' => bcadd((string) $salesOrderLine->qty_picked_base, $qtyPicked, 4),
             ]);
 
+            AuditLog::record('PICKING_LINE_PICKED', 'picking_list_line', (string) $line->id, [
+                'after_json' => [
+                    'picking_list_id' => $line->picking_list_id,
+                    'qty_to_pick_base' => (string) $line->qty_to_pick_base,
+                    'qty_picked_base' => $qtyPicked,
+                    'status' => $line->status,
+                ],
+            ]);
+
             return $line->fresh();
         });
     }

@@ -100,11 +100,19 @@ class StockCountService
         $variance = bcsub($countedQty, (string) $line->system_qty, 4);
         $unitCost = (string) ProductBatch::whereKey($line->batch_id)->value('landed_unit_cost');
 
+        $before = ['counted_qty' => $line->counted_qty, 'reason_code' => $line->reason_code];
+
         $line->update([
             'counted_qty' => bcadd($countedQty, '0', 4),
             'variance_qty' => $variance,
             'variance_value' => bcmul($variance, $unitCost, 4),
             'reason_code' => bccomp($variance, '0', 4) === 0 ? null : $reasonCode,
+        ]);
+
+        AuditLog::record('STOCK_COUNT_LINE_ENTERED', 'stock_count_line', (string) $line->id, [
+            'reference' => $count->doc_number,
+            'before_json' => $before,
+            'after_json' => ['counted_qty' => (string) $line->counted_qty, 'system_qty' => (string) $line->system_qty, 'variance_qty' => $variance, 'reason_code' => $line->reason_code],
         ]);
 
         return $line->fresh();

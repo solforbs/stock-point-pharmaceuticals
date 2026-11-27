@@ -91,6 +91,10 @@ class MasterDataController extends ApiController
                 'created_by' => $request->user()->id,
             ]);
             CustomerCredit::create(['customer_id' => $customer->id, 'credit_limit' => (string) ($data['credit_limit'] ?? '0')]);
+            AuditLog::record('CUSTOMER_CREATED', 'customer', $customer->id, [
+                'reference' => $customer->code,
+                'after_json' => ['name' => $customer->name, 'customer_type' => $customer->customer_type, 'credit_limit' => (string) ($data['credit_limit'] ?? '0')],
+            ]);
 
             return $customer;
         });
