@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\AuditLog;
 use App\Models\ProductCategory;
 use App\Models\StockAdjustment;
 use App\Models\StockLedger;
@@ -43,6 +44,26 @@ class InventoryHttpTest extends TestCase
         $this->revokeAllRoles();
         $this->grantPermissions(['sale.view'], 'Cashier');
         $this->postJson('/api/inventory/stock/pdf', $sheet)->assertForbidden();
+    }
+
+    public function test_stock_movements_and_product_edits_show_who_made_them_and_when(): void
+    {
+        $batch = $this->receive('W1', now()->addYears(2)->toDateString(), '100', '2.0000');
+
+        $this->getJson('/api/inventory/ledger?batch_id='.$batch->id)
+            ->assertOk()
+            ->assertJsonPath('data.0.user.name', $this->user->name)
+            ->assertJsonMissingPath('data.0.user.email')
+            ->assertJsonStructure(['data' => [['txn_datetime']]]);
+        $this->getJson("/api/batches/{$batch->id}")->assertOk()->assertJsonPath('movements.0.user.name', $this->user->name);
+
+        $this->grantPermissions(['product.edit']);
+        $this->patchJson("/api/products/{$this->amox->id}", ['reorder_point' => 75])->assertOk();
+
+        $log = AuditLog::where('action', 'PRODUCT_UPDATED')->sole();
+        $this->assertSame($this->user->id, $log->user_id);
+        $this->assertNotNull($log->occurred_at);
+        $this->assertSame(['reorder_point'], $log->changed_fields);
     }
 
     public function test_stock_reports_the_eight_states_from_the_batch_register(): void

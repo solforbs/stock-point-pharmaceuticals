@@ -95,6 +95,11 @@ class SalesOrderService
                 'tax_total' => $taxTotal, 'grand_total' => $grandTotal,
             ]);
 
+            AuditLog::record('SALES_ORDER_CREATED', 'sales_order', $order->id, [
+                'user_id' => $data['user_id'], 'branch_id' => $order->branch_id, 'reference' => $order->doc_number,
+                'after_json' => ['grand_total' => $grandTotal, 'lines' => count($data['lines'])],
+            ]);
+
             return $order->fresh(['lines']);
         });
     }

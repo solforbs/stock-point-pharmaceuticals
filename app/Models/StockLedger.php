@@ -61,6 +61,14 @@ class StockLedger extends Model
         return $this->belongsTo(Store::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function update(array $attributes = [], array $options = []): bool
     {
         throw new \LogicException('stock_ledgers is append-only — rows are never updated. Post a compensating row instead.');

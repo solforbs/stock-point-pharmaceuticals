@@ -142,9 +142,16 @@ class CustomerReturnService
         $taxPerBase = bccomp((string) $saleLine->qty_base, '0', 4) > 0 ? bcdiv((string) $saleLine->tax_amount, (string) $saleLine->qty_base, 6) : '0';
         $tax = $refundable && ! $saleLine->is_bonus ? bcadd(bcmul((string) $line->qty_base, $taxPerBase, 6), '0', 4) : '0.0000';
 
+        $before = ['disposition' => $line->disposition];
+
         $line->update(['disposition' => $disposition, 'inspection_notes' => $notes, 'line_net' => $net, 'tax_amount' => $tax, 'line_total' => bcadd($net, $tax, 4)]);
         $return->update(['inspected_by' => $userId]);
         $this->recalculate($return);
+
+        AuditLog::record('CUSTOMER_RETURN_LINE_INSPECTED', 'customer_return_line', (string) $line->id, [
+            'user_id' => $userId, 'reference' => $return->doc_number, 'reason' => $notes,
+            'before_json' => $before, 'after_json' => ['disposition' => $disposition],
+        ]);
 
         return $line->fresh();
     }

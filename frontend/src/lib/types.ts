@@ -273,6 +273,7 @@ export type LedgerRow = {
   source_doc_id: string | null
   txn_datetime: string
   user_id: number | null
+  user?: { id: number; name: string } | null
   running_balance?: Decimal
   product?: NamedRef | null
   batch?: { id: string; batch_number: string; expiry_date: string } | null

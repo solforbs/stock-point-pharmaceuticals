@@ -52,6 +52,10 @@ class SupplyRequestService
                 $total = bcadd($total, bcmul((string) $line['qty'], $estimate, 4), 4);
             }
             $request->update(['total_cost' => $total]);
+            AuditLog::record('SUPPLY_REQUEST_CREATED', 'supply_request', $request->id, [
+                'user_id' => $userId, 'branch_id' => $branchId, 'reference' => $request->doc_number,
+                'after_json' => ['total_cost' => $total, 'lines' => count($data['lines'])],
+            ]);
 
             return $request->load('lines');
         });
@@ -61,6 +65,7 @@ class SupplyRequestService
     {
         $this->requireStatus($request, ['DRAFT']);
         $request->update(['status' => 'PENDING_APPROVAL']);
+        AuditLog::record('SUPPLY_REQUEST_SUBMITTED', 'supply_request', $request->id, ['reference' => $request->doc_number]);
 
         return $request->fresh('lines');
     }
@@ -81,6 +86,7 @@ class SupplyRequestService
     {
         $this->requireStatus($request, ['PENDING_APPROVAL']);
         $request->update(['status' => 'REJECTED', 'approved_by' => $userId, 'approved_at' => now(), 'reject_reason' => $reason]);
+        AuditLog::record('SUPPLY_REQUEST_REJECTED', 'supply_request', $request->id, ['user_id' => $userId, 'reference' => $request->doc_number, 'reason' => $reason]);
 
         return $request->fresh('lines');
     }

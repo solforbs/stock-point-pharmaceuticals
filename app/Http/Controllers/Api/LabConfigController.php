@@ -42,7 +42,10 @@ class LabConfigController extends ApiController
 
         $data = $request->validate(['name' => ['required', 'string', 'max:100']]);
 
-        return response()->json(LabTestCategory::create($data), 201);
+        $category = LabTestCategory::create($data);
+        AuditLog::record('LAB_TEST_CATEGORY_CREATED', 'lab_test_category', $category->id, ['reference' => $category->name, 'after_json' => $data]);
+
+        return response()->json($category, 201);
     }
 
     public function tests(Request $request): JsonResponse
